@@ -1,0 +1,8 @@
+{
+  "title": "A chronology across three thousand years",
+  "height": 340,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 5 },
+    { "selector": "#timeline svg .tl-era", "min": 2 }
+  ]
+}

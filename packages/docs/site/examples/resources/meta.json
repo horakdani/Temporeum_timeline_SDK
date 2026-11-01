@@ -1,0 +1,12 @@
+{
+  "title": "A resource view: who does what, how loaded they are, and the work still to place",
+  "height": 460,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 6 },
+    { "selector": "#timeline svg .tl-layer--load path.tl-load", "min": 1 },
+    { "selector": "#timeline svg .tl-layer--load path.tl-load--over", "min": 1 },
+    { "selector": "#timeline svg .tl-layer--load path.tl-overload", "min": 1 },
+    { "selector": "#timeline svg .tl-item--overbooked", "min": 2 },
+    { "selector": "#backlog [role=listbox] [role=option]", "min": 3 }
+  ]
+}

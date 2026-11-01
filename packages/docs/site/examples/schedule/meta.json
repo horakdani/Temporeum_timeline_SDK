@@ -1,0 +1,10 @@
+{
+  "title": "Scheduling: dependencies in office hours, a deadline, the critical path, one command to undo",
+  "height": 520,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 6 },
+    { "selector": "#timeline svg .tl-layer--deps path", "min": 1 },
+    { "selector": "#plan li", "min": 6 },
+    { "selector": "#plan li[data-critical]", "min": 3 }
+  ]
+}

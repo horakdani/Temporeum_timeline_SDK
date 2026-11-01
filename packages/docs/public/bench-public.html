@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="hu">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Idővonal SDK — a publikus út mérése (G-PERF-PUBLIC)</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+      }
+      /* Ugyanaz a keret, mint a bench.html-ben: 1440 széles, 900 magas. */
+      #frame {
+        position: relative;
+        height: 900px;
+        overflow: hidden;
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "@temporeum/timeline-core": "/core/index.mjs",
+          "@temporeum/timeline-core/dom": "/core/dom.mjs",
+          "@temporeum/timeline-core/groups": "/core/groups.mjs",
+          "@temporeum/timeline-core/items": "/core/items.mjs",
+          "@temporeum/timeline-core/gantt": "/core/gantt.mjs",
+          "@temporeum/timeline-core/resources": "/core/resources.mjs",
+          "@temporeum/timeline-core/tools": "/core/tools.mjs",
+          "@temporeum/timeline-core/export": "/core/export.mjs",
+          "@temporeum/timeline-core/intl": "/core/intl.mjs",
+          "@temporeum/timeline-core/live": "/core/live.mjs",
+          "@temporeum/timeline-core/words": "/core/words.mjs",
+          "@temporeum/timeline-core/calendar": "/core/calendar.mjs",
+          "@temporeum/timeline-element": "/element/index.mjs"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="frame" data-bench="temporeum-timeline-public"></div>
+
+    <script type="module">
+      /*
+       * A publikus út mérése. Nem a mag kézi huzalozása (az a bench.html),
+       * hanem az, amit egy felhasználó hív: `createTimeline` a SHIPPELT
+       * element-bundle-ból, a mag dist-jével, alapbeállításokkal — a sűrűség
+       * kivételével, ami a mérés adatához kell, ahogy a bench.html-ben is.
+       * Ugyanaz az adat, ugyanaz az ujj, ugyanaz a számlálás (bench-kit.mjs).
+       *
+       * ?mode=space   (alap) a konfiguráció alapja, sceneSpace: "auto" —
+       *               10 000 elemnél ez elemteret jelent
+       * ?mode=exact   negatív kontroll: sceneSpace: false, minden képkocka
+       *               pontos (az 1.0.0-rc.0 publikus útja)
+       * ?editing=1&density=auto   a vis-összevetés lapjának beállítása
+       *               (bench/temporeum.html: szerkesztés be, a sűrűség
+       *               alapértéke) — a G-PERF-WHEEL így méri, hogy a kapu a
+       *               közölt számot jelezze előre
+       *
+       * A lap a hurkot nem látja (a példány belső része), ezért a két számát
+       * kívülről számolja: a kért rajzolás a lapra küldött pointer-esemény,
+       * a megrajzolt képkocka a példány értesítése (`subscribe`) — az
+       * képkockánként legfeljebb egyszer jön, és minden képkockán, amelyen a
+       * nézet változott.
+       */
+      import { createTimeline } from "@temporeum/timeline-element";
+      import { benchDomain, benchItems, createBenchKit, nextFrame } from "/bench-kit.mjs";
+
+      const params = new URLSearchParams(location.search);
+      const mode = params.get("mode") === "exact" ? "exact" : "space";
+
+      const items = benchItems();
+      const frame = document.querySelector("#frame");
+      const origin = benchDomain(items);
+
+      const timeline = createTimeline(frame, {
+        items,
+        domain: origin,
+        density: params.get("density") ?? "dense",
+        ariaLabel: "Tízezer elem",
+        ...(params.has("editing") ? { editing: { enabled: true } } : {}),
+        ...(mode === "exact" ? { sceneSpace: false } : {}),
+      });
+      let draws = 0;
+      timeline.subscribe(() => {
+        draws += 1;
+      });
+
+      async function settleAt(nextDomain) {
+        timeline.zoomTo(nextDomain);
+        await nextFrame();
+        await nextFrame();
+      }
+
+      const kit = createBenchKit({
+        frame,
+        counters: () => ({ requests: kit.dispatched, frames: draws }),
+        settleAt,
+        origin,
+      });
+
+      // Az első képkocka a méret-megfigyelőre vár.
+      while (timeline.result === undefined) await nextFrame();
+
+      const extras = {
+        end: () => ({ mode, reanchors: null, sceneSpace: frame.querySelector(".tl-tile") !== null }),
+      };
+
+      let builds;
+      try {
+        const [core, element] = await Promise.all(
+          ["/core/build.json", "/element/build.json"].map(async (url) => (await fetch(url, { cache: "no-store" })).json()),
+        );
+        builds = { core: core.source, element: element.source };
+      } catch {
+        builds = undefined;
+      }
+
+      window.tlBench = {
+        marker: "temporeum-timeline-bench-public",
+        build: builds === undefined ? undefined : { source: `${builds.core}|${builds.element}` },
+        mode,
+        poolLimit: null,
+        totalItems: items.length,
+        scenario: (name) => kit.scenario(name, extras),
+        startWheel: () => kit.startRecording(extras),
+        stopWheel: () => kit.stopRecording(),
+        domain: () => [...timeline.getSnapshot().domain],
+        visibility: kit.visibility,
+      };
+    </script>
+  </body>
+</html>

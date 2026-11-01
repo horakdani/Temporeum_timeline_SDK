@@ -1,0 +1,56 @@
+{
+  "note": "A G-RTL vizualis provenanciaja: a G-VISUAL matrixa tukrozve. A scenario, a matrix es minden fixture sha256-ja.",
+  "core": "1.0.0",
+  "scenarioSha256": "4f4072c87bdcc2d9c9a36e3a9dab5d53d3799d111529cdace802e1118d71741d",
+  "matrixSha256": "62ccae1ab76e3b50ef80eb4a910b4b85a74d849fdc8275c9b5acde03d19d9802",
+  "cases": [
+    {
+      "name": "360-horizontal-light-rtl",
+      "sha256": "f3660ad425a7faad075d14fbf96602a64acae8383b1b6b7be27a29c860a1b362"
+    },
+    {
+      "name": "360-horizontal-dark-rtl",
+      "sha256": "d78a234bbc044d4d097775abfbed3ff83120d518b23169a592b733ad03366a39"
+    },
+    {
+      "name": "360-vertical-light-rtl",
+      "sha256": "0b1363f7cc9674e19a2b0c6aea220b09d0531571e2c7845bdd9535f1bf7fb3d1"
+    },
+    {
+      "name": "360-vertical-dark-rtl",
+      "sha256": "d6e49703adc155a4efc3b5487ad295319e4d4e6d3fe66e6128cfbd37d7acd914"
+    },
+    {
+      "name": "768-horizontal-light-rtl",
+      "sha256": "19b4e4bdeba0fd8586329802ea3a1eb05d4c48fc1e31745ff3ef7d9db00f1b35"
+    },
+    {
+      "name": "768-horizontal-dark-rtl",
+      "sha256": "0cafcc697856ee3a421d7be5615c437f5fe38dd61caa2319c86afcbc59bc1c36"
+    },
+    {
+      "name": "768-vertical-light-rtl",
+      "sha256": "68879806082903783f038829ca4a4cd03676399a4bf78d3345ac546ef7ed110e"
+    },
+    {
+      "name": "768-vertical-dark-rtl",
+      "sha256": "a6f84504bfb2b80554ee96fd992eb995e7bd1fac877c18e27d27650b8a487385"
+    },
+    {
+      "name": "1440-horizontal-light-rtl",
+      "sha256": "1658b4b7c71cd31836044a0253da5d4561733230cc0bea5a83a9bd63152da824"
+    },
+    {
+      "name": "1440-horizontal-dark-rtl",
+      "sha256": "ef825e766bc6a956048b4f7c5e70f27a8837584e58bafb963161cef2ed623fb3"
+    },
+    {
+      "name": "1440-vertical-light-rtl",
+      "sha256": "853e04c81b5bdcaf0eca91a26fe7ba14c3534fc8d8c15420842fb04b73aa0f4c"
+    },
+    {
+      "name": "1440-vertical-dark-rtl",
+      "sha256": "6b8cb380d0c601d2cccb22afc914478460e342cf866a453932d87693b4a25de3"
+    }
+  ]
+}

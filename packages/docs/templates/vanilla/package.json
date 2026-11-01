@@ -1,0 +1,9 @@
+{
+  "name": "temporeum-timeline-vanilla",
+  "description": "Plain JavaScript with Vite: createTimeline and an undo button",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "vite", "build": "vite build", "preview": "vite preview" },
+  "dependencies": { "@temporeum/timeline-element": "^1.0.0" },
+  "devDependencies": { "vite": "^8.3.5" }
+}

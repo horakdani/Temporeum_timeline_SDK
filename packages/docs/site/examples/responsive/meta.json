@@ -1,0 +1,8 @@
+{
+  "title": "One timeline, two widths",
+  "height": 520,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 6 },
+    { "selector": "#orientation[data-orientation]", "min": 1 }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "title": "An editable roadmap, on a phone too, and every edit by keyboard",
+  "height": 460,
+  "layout": "showcase",
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 12 },
+    { "selector": "#steps li[data-step]", "min": 6 }
+  ]
+}

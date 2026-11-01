@@ -1,0 +1,33 @@
+<style>
+  /* The element draws in a shadow root. The page reaches it two ways: the
+     tokens it sets on the element, and ::part() for any node of the drawing. */
+  temporeum-timeline {
+    --tl-item-fill: #e6f4ea;
+    --tl-item-stroke: #1e7b45;
+    --tl-item-text: #10331f;
+    --tl-focus: #1e7b45;
+  }
+  temporeum-timeline::part(urgent) {
+    fill: #ffe1c2;
+    stroke: #a14a00;
+  }
+  temporeum-timeline::part(item-selected) {
+    stroke-width: 3;
+  }
+  temporeum-timeline::part(tick-label-major) {
+    font-weight: 600;
+  }
+</style>
+<temporeum-timeline height="300" theme="light" label="Editorial calendar">
+  <script type="application/json">
+    {
+      "items": [
+        { "id": "a", "start": "2026-06-01", "end": "2026-06-06", "label": "Draft" },
+        { "id": "b", "start": "2026-06-05", "end": "2026-06-10", "label": "Legal review", "className": "urgent" },
+        { "id": "c", "start": "2026-06-07", "end": "2026-06-13", "label": "Translate" },
+        { "id": "d", "start": "2026-06-14", "end": "2026-06-16", "label": "Publish" }
+      ],
+      "metrics": { "rowSize": 36, "fontSize": 14, "lineHeight": 18, "cornerRadius": 10, "fontFamily": "Georgia, 'Times New Roman', serif" }
+    }
+  </script>
+</temporeum-timeline>

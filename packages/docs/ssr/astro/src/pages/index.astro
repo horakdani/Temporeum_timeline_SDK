@@ -1,0 +1,30 @@
+---
+// Build közben, Node-ban fut: a lap a szerveren renderelt idővonalat kapja.
+import { renderTimelineHtml } from "@temporeum/timeline-element";
+
+import { config, WIDTH } from "../../shared/data.mjs";
+
+const html = renderTimelineHtml(config, { width: WIDTH, attributes: { id: "timeline" } });
+---
+<html lang="hu">
+  <head><meta charset="utf-8" /><title>Idővonal — Astro smoke</title></head>
+  <body style="margin: 0">
+    <main style="width: 960px">
+      <h1 style="font-size: 16px">Astro smoke</h1>
+      <Fragment set:html={html} />
+    </main>
+    <script>
+      import { defineTimelineElement, registerPlugin } from "@temporeum/timeline-element";
+      import { ganttPlugin } from "@temporeum/timeline-element/gantt";
+      import { groupsPlugin } from "@temporeum/timeline-element/groups";
+      import { intlPlugin } from "@temporeum/timeline-element/intl";
+      import { itemsPlugin } from "@temporeum/timeline-element/items";
+      import { resourcesPlugin } from "@temporeum/timeline-element/resources";
+      import { toolsPlugin } from "@temporeum/timeline-element/tools";
+      registerPlugin(ganttPlugin, resourcesPlugin, groupsPlugin, itemsPlugin, toolsPlugin, intlPlugin);
+      // Not `import ".../define"`: an import runs before this module's code, so the
+      // server-rendered element would be defined, and take over, before the plugins are registered.
+      defineTimelineElement();
+    </script>
+  </body>
+</html>

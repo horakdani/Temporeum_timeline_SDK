@@ -1,0 +1,8 @@
+{
+  "title": "The element styled from the page",
+  "height": 330,
+  "expect": [
+    { "selector": "temporeum-timeline svg [role=option]", "min": 4 },
+    { "selector": "temporeum-timeline svg [part~=urgent]", "min": 1 }
+  ]
+}

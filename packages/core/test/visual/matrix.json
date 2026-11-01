@@ -1,0 +1,10 @@
+{
+  "note": "A vizuális mátrix EGYETLEN forrása. A .mjs generátor és a vitest-tesztek is innen olvassák a szélességeket; az orientációk és a témák a magból jönnek (ORIENTATIONS, THEMES), nem innen.",
+  "widths": [360, 768, 1440],
+  "height": 480,
+  "densityForWidth": {
+    "360": "dense",
+    "768": "compact",
+    "1440": "comfortable"
+  }
+}

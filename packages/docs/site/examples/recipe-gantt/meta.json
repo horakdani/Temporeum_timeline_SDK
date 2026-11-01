@@ -1,0 +1,9 @@
+{
+  "title": "Gantt-style project plan",
+  "height": 430,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 9 },
+    { "selector": "#timeline svg .tl-marker", "min": 1 },
+    { "selector": "button#undo[disabled]", "min": 1 }
+  ]
+}

@@ -1,0 +1,35 @@
+---
+// NEGATÍV KONTROLL. Ugyanaz a szerveroldali rajz, de a kliens a
+// regisztráció előtt újraírja a burkoló innerHTML-jét — pontosan az, amit
+// a Vue 3.5 tett egy dinamikus v-html-lel a Nuxt-smoke első változatában.
+// A szerver csomópontjai eltűnnek; a mérőnek ezt látnia KELL, különben a
+// hydrates-állítás zöldje semmit nem jelent.
+import { renderTimelineHtml } from "@temporeum/timeline-element";
+
+import { config, WIDTH } from "../../shared/data.mjs";
+
+const html = renderTimelineHtml(config, { width: WIDTH, attributes: { id: "timeline" } });
+---
+<html lang="hu">
+  <head><meta charset="utf-8" /><title>Idővonal — naiv kliens</title></head>
+  <body style="margin: 0">
+    <main style="width: 960px">
+      <div id="holder"><Fragment set:html={html} /></div>
+    </main>
+    <script>
+      const holder = document.querySelector("#holder") as HTMLElement;
+      holder.innerHTML = holder.innerHTML;
+      const [{ registerPlugin }, { ganttPlugin }, { resourcesPlugin }, { groupsPlugin }, { itemsPlugin }, { toolsPlugin }, { intlPlugin }] = await Promise.all([
+        import("@temporeum/timeline-element"),
+        import("@temporeum/timeline-element/gantt"),
+        import("@temporeum/timeline-element/resources"),
+        import("@temporeum/timeline-element/groups"),
+        import("@temporeum/timeline-element/items"),
+        import("@temporeum/timeline-element/tools"),
+        import("@temporeum/timeline-element/intl"),
+      ]);
+      registerPlugin(ganttPlugin, resourcesPlugin, groupsPlugin, itemsPlugin, toolsPlugin, intlPlugin);
+      await import("@temporeum/timeline-element/define");
+    </script>
+  </body>
+</html>

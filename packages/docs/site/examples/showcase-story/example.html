@@ -1,0 +1,13 @@
+<style>
+  .stage { display: grid; grid-template-rows: 390px 214px; height: 618px; }
+  #story { min-height: 0; }
+  #timeline { height: 100%; border-top: 1px solid #d5d9de; }
+  @media (max-width: 640px) {
+    .stage { grid-template-rows: 430px 174px; }
+  }
+</style>
+<div class="stage">
+  <div id="story"></div>
+  <div id="timeline"></div>
+</div>
+<p class="log" id="status" aria-live="polite">Page with Previous and Next, ← and →, or pick an event on the timeline.</p>

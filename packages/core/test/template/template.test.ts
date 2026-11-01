@@ -1,0 +1,143 @@
+/**
+ * G-TEMPLATE: HTML templates for items.
+ *
+ *  - The same template gives the same tree on the client and on the server:
+ *    the frame mounted into a DOM shows exactly the server's markup.
+ *  - The item keeps its accessible name: the template is its picture.
+ *  - A template with a script, a handler or a `javascript:` URL does not run
+ *    by default — and the negative control: with `sanitize: false` the very
+ *    same template does reach the DOM as a script and a handler, so the
+ *    check can see one when there is one.
+ */
+
+import { describe, expect, it } from "vitest";
+
+import { mountScene } from "../../src/dom/mount.js";
+import { parseTemplate, templateHooks } from "../../src/items/index.js";
+import { renderTimeline } from "../../src/render.js";
+import { renderToSvgString } from "../../src/scene.js";
+import type { SceneElement } from "../../src/scene.js";
+import type { Item } from "../../src/types.js";
+import { differs, fakeContainer } from "../dom/fake-dom.js";
+import type { FakeElement } from "../dom/fake-dom.js";
+
+const DAY = 86_400_000;
+const ORIGIN = Date.UTC(2024, 0, 1);
+const EVIL =
+  '<b>Ann</b> <img src=x onerror="globalThis.__ran = 1"><script>globalThis.__ran = 2</script>' +
+  '<span onclick="globalThis.__ran = 3" class="tag">ok</span><a href="javascript:alert(1)">x</a><style>*{}</style>';
+
+const items: Item[] = [
+  { id: "a", start: ORIGIN, end: ORIGIN + 5 * DAY, label: "Ann's task" },
+  { id: "b", start: ORIGIN + 8 * DAY, end: ORIGIN + 12 * DAY, label: "Bob's task" },
+];
+
+function frame(template: string, sanitize?: boolean) {
+  return renderTimeline({
+    items,
+    domain: [ORIGIN - DAY, ORIGIN + 14 * DAY],
+    width: 900,
+    height: 200,
+    hooks: templateHooks<unknown>(() => template, sanitize === undefined ? {} : { sanitize }),
+  });
+}
+
+function all(node: SceneElement, into: SceneElement[] = []): SceneElement[] {
+  into.push(node);
+  for (const child of node.children ?? []) all(child, into);
+  return into;
+}
+
+function liveAll(node: FakeElement, into: FakeElement[] = []): FakeElement[] {
+  into.push(node);
+  for (const child of node.childNodes) if (child.nodeType === 1) liveAll(child as FakeElement, into);
+  return into;
+}
+
+describe("HTML templates", () => {
+  it("[claim:same-tree] the client mounts exactly the tree the server prints", () => {
+    const server = frame("<strong>{name}</strong> <em>due</em> <small>&lt;soon&gt;</small>");
+    const again = frame("<strong>{name}</strong> <em>due</em> <small>&lt;soon&gt;</small>");
+    expect(renderToSvgString(again.scene)).toBe(renderToSvgString(server.scene));
+    const { container } = fakeContainer();
+    const mount = mountScene(container as unknown as Element);
+    mount.update(server.scene);
+    const svg = container.childNodes[0] as FakeElement;
+    expect(differs(svg, server.scene)).toBeUndefined();
+    expect(renderToSvgString(server.scene)).toContain("&lt;soon&gt;");
+  });
+
+  it("[claim:accessible-name] the item keeps its accessible name, and the template replaces its label", () => {
+    const result = frame("<b>Rich</b> text");
+    const options = all(result.scene).filter((node) => node.attrs?.role === "option");
+    expect(options.map((node) => String(node.attrs?.["aria-label"]))).toEqual([
+      expect.stringContaining("Ann's task"),
+      expect.stringContaining("Bob's task"),
+    ]);
+    expect(all(result.scene).some((node) => String(node.attrs?.class).includes("tl-template"))).toBe(true);
+    expect(all(result.scene).some((node) => node.attrs?.["data-tl-label"] === "a")).toBe(false);
+  });
+
+  it("[claim:no-script] a template with a script or a handler does not run by default", () => {
+    const tree = parseTemplate(EVIL);
+    const nodes = tree.flatMap((node) => all(node));
+    expect(nodes.some((node) => node.tag === "script" || node.tag === "style" || node.tag === "img" || node.tag === "a")).toBe(false);
+    expect(nodes.some((node) => Object.keys(node.attrs ?? {}).some((name) => name.startsWith("on") || name === "href" || name === "src"))).toBe(false);
+    expect(nodes.map((node) => node.text ?? "").join("")).toContain("Ann");
+    const result = frame(EVIL);
+    const printed = renderToSvgString(result.scene);
+    expect(printed).not.toMatch(/<script|onerror|onclick|javascript:/i);
+    const { container } = fakeContainer();
+    mountScene(container as unknown as Element).update(result.scene);
+    const live = liveAll(container);
+    expect(live.some((node) => node.tagName === "script")).toBe(false);
+    expect(live.some((node) => [...node.attributes.keys()].some((name) => name.startsWith("on")))).toBe(false);
+  });
+
+  it("[claim:negative-control] with sanitize: false the same template does reach the DOM as a script and handlers", () => {
+    const result = frame(EVIL, false);
+    const printed = renderToSvgString(result.scene);
+    expect(printed).toMatch(/<script/i);
+    expect(printed).toMatch(/onerror/i);
+    const { container } = fakeContainer();
+    mountScene(container as unknown as Element).update(result.scene);
+    const live = liveAll(container);
+    expect(live.some((node) => node.tagName === "script")).toBe(true);
+    expect(live.some((node) => node.attributes.has("onerror"))).toBe(true);
+  });
+});
+
+describe("the template parser", () => {
+  it("keeps allowed tags and attributes, unwraps the rest, decodes entities", () => {
+    expect(parseTemplate('<span class="a" data-x="1" aria-hidden="true" style="color:red" id="n">t</span>')).toEqual([
+      { tag: "span", attrs: { class: "a", "data-x": "1", "aria-hidden": "true" }, text: "t" },
+    ]);
+    expect(parseTemplate("<blink>old</blink> &amp; &#65;&#x42; &nbsp;&bogus;")).toEqual([
+      { tag: "span", text: "old" },
+      { tag: "span", text: " & AB  &bogus;" },
+    ]);
+    expect(parseTemplate("a<br>b<br/>c")).toEqual([{ tag: "span", text: "a" }, { tag: "br" }, { tag: "span", text: "b" }, { tag: "br" }, { tag: "span", text: "c" }]);
+    expect(parseTemplate("<p>x<!-- no --><!doctype x><?pi?></p></div>")).toEqual([{ tag: "p", text: "x" }]);
+    expect(parseTemplate("<p>one <b>two</b> three</p>")).toEqual([
+      { tag: "p", text: "one ", children: [{ tag: "b", text: "two" }, { tag: "span", text: " three" }] },
+    ]);
+    expect(parseTemplate("1 < 2")).toEqual([{ tag: "span", text: "1 " }, { tag: "span", text: "< 2" }]);
+    expect(parseTemplate("<3 love>")).toEqual([{ tag: "span", text: "<3 love>" }]);
+    expect(parseTemplate("<script>never")).toEqual([]);
+    expect(parseTemplate("<b>x</b>", { allowTags: ["i"] })).toEqual([{ tag: "span", text: "x" }]);
+    expect(parseTemplate('<i title="t" lang="hu">x</i>', { allowAttributes: ["lang", "onclick"] })).toEqual([{ tag: "i", attrs: { lang: "hu" }, text: "x" }]);
+    expect(parseTemplate("<b a='1' b=2 c>x</b>", { allowAttributes: ["a", "b", "c"] })).toEqual([{ tag: "b", attrs: { a: "1", b: "2", c: "" }, text: "x" }]);
+  });
+
+  it("leaves an item as it was when the template is empty", () => {
+    const result = renderTimeline({
+      items,
+      domain: [ORIGIN - DAY, ORIGIN + 14 * DAY],
+      width: 900,
+      height: 200,
+      hooks: templateHooks<unknown>((item) => (item.id === "a" ? "" : null)),
+    });
+    expect(all(result.scene).some((node) => String(node.attrs?.class).includes("tl-template"))).toBe(false);
+    expect(all(result.scene).some((node) => node.attrs?.["data-tl-label"] === "a")).toBe(true);
+  });
+});

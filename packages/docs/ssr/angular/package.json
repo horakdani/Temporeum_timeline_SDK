@@ -1,0 +1,6 @@
+{
+  "name": "tl-ssr-angular",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "ng build" }
+}

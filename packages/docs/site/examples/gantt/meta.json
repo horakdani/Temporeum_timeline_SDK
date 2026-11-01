@@ -1,0 +1,14 @@
+{
+  "title": "A Gantt chart: dependencies, progress, baseline, milestone, task table",
+  "height": 440,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 6 },
+    { "selector": "#timeline svg .tl-layer--deps path.tl-dep--fs", "min": 1 },
+    { "selector": "#timeline svg .tl-layer--deps path.tl-dep--ss", "min": 1 },
+    { "selector": "#timeline svg .tl-layer--deps path.tl-dep--ff", "min": 1 },
+    { "selector": "#timeline svg .tl-progress", "min": 3 },
+    { "selector": "#timeline svg .tl-baseline", "min": 2 },
+    { "selector": "#timeline svg .tl-item--milestone", "min": 1 },
+    { "selector": "#grid [role=grid] [role=row][aria-rowindex]", "min": 7 }
+  ]
+}

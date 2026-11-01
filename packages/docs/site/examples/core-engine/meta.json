@@ -1,0 +1,8 @@
+{
+  "title": "The engine by hand: input machine, frame loop, scene space",
+  "height": 340,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 50 },
+    { "selector": "#frames[data-frames]", "min": 1 }
+  ]
+}

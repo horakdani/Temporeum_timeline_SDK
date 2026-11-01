@@ -1,0 +1,776 @@
+{
+  "standard": "WCAG 2.2",
+  "levels": [
+    "A",
+    "AA"
+  ],
+  "product": "@temporeum/timeline-core and @temporeum/timeline-element",
+  "version": "1.10.0",
+  "scope": "The timeline as the library draws it — the element, its views and tools, in the default configuration and with editing on — in Chromium, on the documentation's own pages. The page around it, its title, language, headings, links and help, is the host's.",
+  "statuses": {
+    "supports": "Supports",
+    "partially-supports": "Partially supports",
+    "does-not-support": "Does not support",
+    "not-applicable": "Not applicable"
+  },
+  "criteria": [
+    {
+      "id": "1.1.1",
+      "name": "Non-text Content",
+      "level": "A",
+      "status": "supports",
+      "remarks": "Every drawn item is an option named by its label, its dates and its lane; the axis, the lane bands and the repeated text are hidden from assistive technology, because the options already say it.",
+      "tests": [
+        {
+          "file": "packages/core/test/a11y/semantics.test.ts",
+          "test": "makes every drawn item an option with a unique id, a name with its dates"
+        },
+        {
+          "file": "packages/core/test/a11y/semantics.test.ts",
+          "test": "hides everything that repeats or decorates what the items say"
+        }
+      ]
+    },
+    {
+      "id": "1.2.1",
+      "name": "Audio-only and Video-only (Prerecorded)",
+      "level": "A",
+      "status": "not-applicable",
+      "remarks": "The library plays no audio and no video.",
+      "tests": []
+    },
+    {
+      "id": "1.2.2",
+      "name": "Captions (Prerecorded)",
+      "level": "A",
+      "status": "not-applicable",
+      "remarks": "The library plays no audio and no video.",
+      "tests": []
+    },
+    {
+      "id": "1.2.3",
+      "name": "Audio Description or Media Alternative (Prerecorded)",
+      "level": "A",
+      "status": "not-applicable",
+      "remarks": "The library plays no audio and no video.",
+      "tests": []
+    },
+    {
+      "id": "1.2.4",
+      "name": "Captions (Live)",
+      "level": "AA",
+      "status": "not-applicable",
+      "remarks": "The library plays no audio and no video.",
+      "tests": []
+    },
+    {
+      "id": "1.2.5",
+      "name": "Audio Description (Prerecorded)",
+      "level": "AA",
+      "status": "not-applicable",
+      "remarks": "The library plays no audio and no video.",
+      "tests": []
+    },
+    {
+      "id": "1.3.1",
+      "name": "Info and Relationships",
+      "level": "A",
+      "status": "supports",
+      "remarks": "The timeline is a listbox of options, each with its place among all items (`aria-posinset`, `aria-setsize`); nested groups are a tree; a Gantt task names its predecessors and successors.",
+      "tests": [
+        {
+          "file": "packages/core/test/a11y/semantics.test.ts",
+          "test": "its place among all items"
+        },
+        {
+          "file": "packages/core/test/gantt-a11y/gantt-a11y.test.ts",
+          "test": "[claim:links-named]"
+        }
+      ]
+    },
+    {
+      "id": "1.3.2",
+      "name": "Meaningful Sequence",
+      "level": "A",
+      "status": "supports",
+      "remarks": "The keyboard and the accessible order walk the items by start, then by row, the same in every orientation and direction.",
+      "tests": [
+        {
+          "file": "packages/core/test/keyboard/navigation.test.ts",
+          "test": "orders by start, then row, and is built once per layout"
+        },
+        {
+          "file": "packages/core/test/rtl/rtl.test.ts",
+          "test": "[claim:keys-mirrored]"
+        }
+      ]
+    },
+    {
+      "id": "1.3.3",
+      "name": "Sensory Characteristics",
+      "level": "A",
+      "status": "not-applicable",
+      "remarks": "The library gives no instructions; the words around a timeline are the host's.",
+      "tests": []
+    },
+    {
+      "id": "1.3.4",
+      "name": "Orientation",
+      "level": "AA",
+      "status": "supports",
+      "remarks": "Not locked to an orientation: below its breakpoint the timeline turns vertical, and follows a live resize without a reload.",
+      "tests": [
+        {
+          "file": "packages/core/test/responsive.test.ts",
+          "test": "is horizontal at and above the breakpoint, vertical below it"
+        },
+        {
+          "file": "packages/docs/e2e/responsive.spec.ts",
+          "test": "élő átméretezés"
+        }
+      ]
+    },
+    {
+      "id": "1.3.5",
+      "name": "Identify Input Purpose",
+      "level": "AA",
+      "status": "not-applicable",
+      "remarks": "The library collects no information about the user. The one input it draws, the date prompt (`g`), asks for a date to go to.",
+      "tests": []
+    },
+    {
+      "id": "1.4.1",
+      "name": "Use of Color",
+      "level": "A",
+      "status": "supports",
+      "remarks": "Selection and focus are an outline ring, not a colour; an overbooked resource is banded and its items say so in their names.",
+      "tests": [
+        {
+          "file": "packages/core/test/a11y/semantics.test.ts",
+          "test": "points at the keyboard's item, and rings it"
+        },
+        {
+          "file": "packages/core/test/resources/resources-edges.test.ts",
+          "test": "names an overbooked assignment"
+        }
+      ]
+    },
+    {
+      "id": "1.4.2",
+      "name": "Audio Control",
+      "level": "A",
+      "status": "not-applicable",
+      "remarks": "The library plays no audio.",
+      "tests": []
+    },
+    {
+      "id": "1.4.3",
+      "name": "Contrast (Minimum)",
+      "level": "AA",
+      "status": "supports",
+      "remarks": "Every text token against every surface it is drawn on is at least 4.5:1, in the light and the dark theme, computed as WCAG defines contrast.",
+      "tests": [
+        {
+          "file": "packages/core/test/a11y/contrast.test.ts",
+          "test": "computes contrast as WCAG defines it"
+        },
+        {
+          "file": "packages/core/test/a11y/contrast.test.ts",
+          "test": "is at least"
+        }
+      ]
+    },
+    {
+      "id": "1.4.4",
+      "name": "Resize Text",
+      "level": "AA",
+      "status": "partially-supports",
+      "remarks": "With page zoom the drawing is laid out again for the narrower width, and loses neither content nor function (tested down to 375 CSS pixels, a 1280-pixel window at more than 300%). Text-only zoom, which leaves the layout and enlarges only text, is not tested.",
+      "tests": [
+        {
+          "file": "packages/docs/e2e/responsive.spec.ts",
+          "test": "vízszintes lapgörgetés nincs"
+        }
+      ]
+    },
+    {
+      "id": "1.4.5",
+      "name": "Images of Text",
+      "level": "AA",
+      "status": "supports",
+      "remarks": "Item labels and tick labels are text — SVG text, or HTML in the item — in every theme and density; nothing is a picture of text.",
+      "tests": [
+        {
+          "file": "packages/core/test/acr/acr.test.ts",
+          "test": "[claim:text-not-image]"
+        }
+      ]
+    },
+    {
+      "id": "1.4.10",
+      "name": "Reflow",
+      "level": "AA",
+      "status": "partially-supports",
+      "remarks": "At narrow widths the timeline turns vertical, and the page does not scroll sideways; this is tested at 375 CSS pixels, not yet at WCAG's 320.",
+      "tests": [
+        {
+          "file": "packages/docs/e2e/responsive.spec.ts",
+          "test": "vízszintes lapgörgetés nincs"
+        },
+        {
+          "file": "packages/docs/e2e/responsive.spec.ts",
+          "test": "az explicit orientáció felülírja a mérést"
+        }
+      ]
+    },
+    {
+      "id": "1.4.11",
+      "name": "Non-text Contrast",
+      "level": "AA",
+      "status": "supports",
+      "remarks": "An item's outline, the focus ring, the selection outline, the major ticks and the loading mark are at least 3:1 against what they are drawn on, in both themes.",
+      "tests": [
+        {
+          "file": "packages/core/test/a11y/contrast.test.ts",
+          "test": "is at least"
+        }
+      ]
+    },
+    {
+      "id": "1.4.12",
+      "name": "Text Spacing",
+      "level": "AA",
+      "status": "partially-supports",
+      "remarks": "Not verified by a test. Labels are fitted to their box and shortened with an ellipsis, so wider spacing shortens them instead of overlapping them; the full text stays in the accessible name and the tooltip.",
+      "tests": []
+    },
+    {
+      "id": "1.4.13",
+      "name": "Content on Hover or Focus",
+      "level": "AA",
+      "status": "supports",
+      "remarks": "The tooltip shows on hover and on keyboard focus, the pointer can move onto it and it stays, it does not time out, and Escape dismisses it and nothing else.",
+      "tests": [
+        {
+          "file": "packages/docs/e2e/tooltip.spec.ts",
+          "test": "[claim:hover]"
+        },
+        {
+          "file": "packages/docs/e2e/tooltip.spec.ts",
+          "test": "[claim:hoverable]"
+        },
+        {
+          "file": "packages/docs/e2e/tooltip.spec.ts",
+          "test": "[claim:focus]"
+        }
+      ]
+    },
+    {
+      "id": "2.1.1",
+      "name": "Keyboard",
+      "level": "A",
+      "status": "supports",
+      "remarks": "Every gesture has a key, and a parity test holds each key to the command the gesture gives: pan, zoom, select, move, resize, change lane, add, remove, groups, time bars, the overview strip, range selection, the task grid.",
+      "tests": [
+        {
+          "file": "packages/core/test/keyboard/parity.test.ts",
+          "test": "[cap:view.pan.later]"
+        },
+        {
+          "file": "packages/core/test/keyboard/parity.test.ts",
+          "test": "[cap:item.reach]"
+        },
+        {
+          "file": "packages/core/test/keyboard/parity.test.ts",
+          "test": "[cap:edit.lane.next]"
+        },
+        {
+          "file": "packages/core/test/keyboard/entries.test.ts",
+          "test": "[cap:item.add]"
+        },
+        {
+          "file": "packages/core/test/keyboard/entries.test.ts",
+          "test": "[cap:timebar.move]"
+        },
+        {
+          "file": "packages/core/test/keyboard/entries.test.ts",
+          "test": "[cap:range.select]"
+        }
+      ]
+    },
+    {
+      "id": "2.1.2",
+      "name": "No Keyboard Trap",
+      "level": "A",
+      "status": "supports",
+      "remarks": "The timeline is one focus stop; Tab and Shift+Tab leave it, Escape lets go of the focus and the selection, and keys it does not use stay the page's.",
+      "tests": [
+        {
+          "file": "packages/core/test/a11y/semantics.test.ts",
+          "test": "is one focus stop, a listbox named and oriented for the reader"
+        },
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "Esc elengedi a fókuszt és a kijelölést"
+        },
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "a többi billentyű a lapé marad"
+        }
+      ]
+    },
+    {
+      "id": "2.1.4",
+      "name": "Character Key Shortcuts",
+      "level": "A",
+      "status": "supports",
+      "remarks": "Single-character keys (`+`, `-`, `g`, `n`, `r`, `[`, `]`) act only while the timeline has the focus; the host can replace the whole key table or switch the keys off with the gestures.",
+      "tests": [
+        {
+          "file": "packages/core/test/keyboard/navigation.test.ts",
+          "test": "takes a table of the host's own"
+        },
+        {
+          "file": "packages/core/test/keyboard/navigation.test.ts",
+          "test": "is off when the host says so"
+        },
+        {
+          "file": "packages/core/test/keyboard/navigation.test.ts",
+          "test": "leaves ctrl and meta to the browser"
+        }
+      ]
+    },
+    {
+      "id": "2.2.1",
+      "name": "Timing Adjustable",
+      "level": "A",
+      "status": "supports",
+      "remarks": "Nothing times out: the tooltip stays until it is dismissed, and nothing the library draws has a deadline.",
+      "tests": [
+        {
+          "file": "packages/docs/e2e/tooltip.spec.ts",
+          "test": "[claim:persistent]"
+        }
+      ]
+    },
+    {
+      "id": "2.2.2",
+      "name": "Pause, Stop, Hide",
+      "level": "A",
+      "status": "supports",
+      "remarks": "Rolling mode, the one thing that moves on its own, stops as soon as the reader pans or zooms, and resumes only on `follow()`; transitions are short and arrive in one frame under reduced motion.",
+      "tests": [
+        {
+          "file": "packages/web-component/test/p24.browser.test.ts",
+          "test": "keeps now in the view, lets go when the reader pans"
+        },
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "reduced-motion"
+        }
+      ]
+    },
+    {
+      "id": "2.3.1",
+      "name": "Three Flashes or Below Threshold",
+      "level": "A",
+      "status": "supports",
+      "remarks": "Nothing flashes: a zoom draws on every frame each label shown before it and after it, so no label blinks.",
+      "tests": [
+        {
+          "file": "packages/core/test/property/zoom-labels.test.ts",
+          "test": "shows on every frame of a zoom each label shown before it and after it"
+        }
+      ]
+    },
+    {
+      "id": "2.4.1",
+      "name": "Bypass Blocks",
+      "level": "A",
+      "status": "not-applicable",
+      "remarks": "A page-level criterion. The timeline is one focus stop, so it adds no block to bypass.",
+      "tests": []
+    },
+    {
+      "id": "2.4.2",
+      "name": "Page Titled",
+      "level": "A",
+      "status": "not-applicable",
+      "remarks": "A page-level criterion; the page is the host's.",
+      "tests": []
+    },
+    {
+      "id": "2.4.3",
+      "name": "Focus Order",
+      "level": "A",
+      "status": "supports",
+      "remarks": "One focus stop, entered with Tab; inside it the arrows move in reading order, and the date prompt hands the focus back where it was.",
+      "tests": [
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "Tab az idővonalra, nyilakkal minden elem, a fókusz látszik"
+        },
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "g, dátum, Enter: a nézet oda ugrik, és a fókusz visszatér"
+        }
+      ]
+    },
+    {
+      "id": "2.4.4",
+      "name": "Link Purpose (In Context)",
+      "level": "A",
+      "status": "not-applicable",
+      "remarks": "The library draws no links; a link in a template is the host's.",
+      "tests": []
+    },
+    {
+      "id": "2.4.5",
+      "name": "Multiple Ways",
+      "level": "AA",
+      "status": "not-applicable",
+      "remarks": "A site-level criterion.",
+      "tests": []
+    },
+    {
+      "id": "2.4.6",
+      "name": "Headings and Labels",
+      "level": "AA",
+      "status": "supports",
+      "remarks": "The listbox has the accessible name the host gives it; every button and word the library draws comes from the dictionary, so a host's language reaches all of them.",
+      "tests": [
+        {
+          "file": "packages/core/test/a11y/semantics.test.ts",
+          "test": "is one focus stop, a listbox named and oriented for the reader"
+        },
+        {
+          "file": "packages/core/test/i18n/i18n.test.ts",
+          "test": "[claim:pseudo]"
+        }
+      ]
+    },
+    {
+      "id": "2.4.7",
+      "name": "Focus Visible",
+      "level": "AA",
+      "status": "supports",
+      "remarks": "The focused item is drawn with a ring that meets 3:1, in both themes, and the ring moves with the arrows.",
+      "tests": [
+        {
+          "file": "packages/core/test/theme.test.ts",
+          "test": "styles focus visibly"
+        },
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "a fókusz látszik"
+        },
+        {
+          "file": "packages/core/test/a11y/contrast.test.ts",
+          "test": "is at least"
+        }
+      ]
+    },
+    {
+      "id": "2.4.11",
+      "name": "Focus Not Obscured (Minimum)",
+      "level": "AA",
+      "status": "supports",
+      "remarks": "An item the keyboard moves to is brought into view with a margin, across the lanes too, so the focus is not hidden at an edge.",
+      "tests": [
+        {
+          "file": "packages/core/test/keyboard/navigation.test.ts",
+          "test": "brings an off-screen item into view, keeping a margin"
+        },
+        {
+          "file": "packages/core/test/keyboard/navigation.test.ts",
+          "test": "scrolls the lanes to an item across, both ways"
+        }
+      ]
+    },
+    {
+      "id": "2.5.1",
+      "name": "Pointer Gestures",
+      "level": "A",
+      "status": "partially-supports",
+      "remarks": "Pinch and two-finger tap have single-pointer twins: a double tap zooms in, and zoom presets (`zoomPresets`) zoom out with one tap. Panning without a path takes the wheel or the keys; a one-tap pan control is not built in.",
+      "tests": [
+        {
+          "file": "packages/core/test/gesture/pointer.test.ts",
+          "test": "zooms in on a double tap, about the tapped point"
+        },
+        {
+          "file": "packages/core/test/gesture/pointer.test.ts",
+          "test": "gives every gesture a programmatic twin"
+        }
+      ]
+    },
+    {
+      "id": "2.5.2",
+      "name": "Pointer Cancellation",
+      "level": "A",
+      "status": "supports",
+      "remarks": "A gesture ends on pointer cancel without acting, a drag is not an edit until it passes its threshold, and every edit is one command that undo takes back exactly.",
+      "tests": [
+        {
+          "file": "packages/core/test/gesture/pointer.test.ts",
+          "test": "ends the gesture on pointercancel and stops panning"
+        },
+        {
+          "file": "packages/core/test/gesture/pointer.test.ts",
+          "test": "holds the drag threshold"
+        },
+        {
+          "file": "packages/docs/e2e/touch.spec.ts",
+          "test": "a visszavonás PONTOSAN visszaállítja a kiindulást"
+        }
+      ]
+    },
+    {
+      "id": "2.5.3",
+      "name": "Label in Name",
+      "level": "A",
+      "status": "supports",
+      "remarks": "An item's accessible name starts with the label it shows.",
+      "tests": [
+        {
+          "file": "packages/core/test/a11y/semantics.test.ts",
+          "test": "a name with its dates"
+        }
+      ]
+    },
+    {
+      "id": "2.5.4",
+      "name": "Motion Actuation",
+      "level": "A",
+      "status": "not-applicable",
+      "remarks": "Nothing is operated by moving the device.",
+      "tests": []
+    },
+    {
+      "id": "2.5.7",
+      "name": "Dragging Movements",
+      "level": "AA",
+      "status": "partially-supports",
+      "remarks": "Every drag has a keyboard twin (Alt and an arrow moves, Shift and an arrow resizes, the arrows move a time bar), and zooming has buttons. Moving or resizing an item with single pointer taps, without dragging, is not built in.",
+      "tests": [
+        {
+          "file": "packages/core/test/keyboard/parity.test.ts",
+          "test": "to the command a drag gives"
+        },
+        {
+          "file": "packages/core/test/keyboard/entries.test.ts",
+          "test": "[cap:timebar.move]"
+        }
+      ]
+    },
+    {
+      "id": "2.5.8",
+      "name": "Target Size (Minimum)",
+      "level": "AA",
+      "status": "partially-supports",
+      "remarks": "Under touch, an item is hit from beyond its edges, and the dense layout raises even a mouse's target to 24 CSS pixels. In the comfortable and compact layouts a mouse target can be smaller than 24 pixels where items are short and close together.",
+      "tests": [
+        {
+          "file": "packages/core/test/hitslop/target.test.ts",
+          "test": "dense raises even a mouse's target to 24 px"
+        },
+        {
+          "file": "packages/core/test/hitslop/target.test.ts",
+          "test": "a finger reaches a 2 px item it misses by 10 px along time"
+        }
+      ]
+    },
+    {
+      "id": "3.1.1",
+      "name": "Language of Page",
+      "level": "A",
+      "status": "not-applicable",
+      "remarks": "A page-level criterion; the page's language is the host's.",
+      "tests": []
+    },
+    {
+      "id": "3.1.2",
+      "name": "Language of Parts",
+      "level": "AA",
+      "status": "not-applicable",
+      "remarks": "The words the library says are the host's dictionary, in the page's language; the labels are the host's data.",
+      "tests": []
+    },
+    {
+      "id": "3.2.1",
+      "name": "On Focus",
+      "level": "A",
+      "status": "supports",
+      "remarks": "Focus changes nothing but the focus: it shows the tooltip and rings the item, and opens nothing, loads nothing and moves nowhere else.",
+      "tests": [
+        {
+          "file": "packages/docs/e2e/tooltip.spec.ts",
+          "test": "[claim:focus]"
+        },
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "Tab az idővonalra"
+        }
+      ]
+    },
+    {
+      "id": "3.2.2",
+      "name": "On Input",
+      "level": "A",
+      "status": "supports",
+      "remarks": "The date prompt changes the view only when the reader confirms it with Enter.",
+      "tests": [
+        {
+          "file": "packages/core/test/keyboard/navigation.test.ts",
+          "test": "asks the host for a date on g, and goTo centres it"
+        }
+      ]
+    },
+    {
+      "id": "3.2.3",
+      "name": "Consistent Navigation",
+      "level": "AA",
+      "status": "not-applicable",
+      "remarks": "A site-level criterion.",
+      "tests": []
+    },
+    {
+      "id": "3.2.4",
+      "name": "Consistent Identification",
+      "level": "AA",
+      "status": "supports",
+      "remarks": "The same function is called the same everywhere: every word comes from one dictionary, and the views say what the core says.",
+      "tests": [
+        {
+          "file": "packages/core/test/i18n/i18n.test.ts",
+          "test": "[claim:english-equal]"
+        },
+        {
+          "file": "packages/core/test/i18n/i18n.test.ts",
+          "test": "[claim:pseudo]"
+        }
+      ]
+    },
+    {
+      "id": "3.2.6",
+      "name": "Consistent Help",
+      "level": "A",
+      "status": "not-applicable",
+      "remarks": "A site-level criterion.",
+      "tests": []
+    },
+    {
+      "id": "3.3.1",
+      "name": "Error Identification",
+      "level": "A",
+      "status": "partially-supports",
+      "remarks": "A window that fails to load is marked on the axis, and the page stays free of accessibility errors; a move the host refuses (`canMove`) puts the item back without a message of the library's own — the host says why.",
+      "tests": [
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "az aszinkron lap elbukott ablakokkal"
+        },
+        {
+          "file": "packages/core/test/keyboard/parity.test.ts",
+          "test": "[rule:veto]"
+        }
+      ]
+    },
+    {
+      "id": "3.3.2",
+      "name": "Labels or Instructions",
+      "level": "A",
+      "status": "supports",
+      "remarks": "The date prompt's field is labelled, and passes axe with the prompt open.",
+      "tests": [
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "a dátumbekérő nyitva"
+        }
+      ]
+    },
+    {
+      "id": "3.3.3",
+      "name": "Error Suggestion",
+      "level": "AA",
+      "status": "partially-supports",
+      "remarks": "Not verified by a test: a date the prompt cannot read leaves the view where it was, without a suggestion.",
+      "tests": []
+    },
+    {
+      "id": "3.3.4",
+      "name": "Error Prevention (Legal, Financial, Data)",
+      "level": "AA",
+      "status": "supports",
+      "remarks": "The library saves nothing: every edit is one command with its own inverse, and undoing it restores the start exactly.",
+      "tests": [
+        {
+          "file": "packages/core/test/property/inverse.test.ts",
+          "test": "inverse"
+        },
+        {
+          "file": "packages/docs/e2e/touch.spec.ts",
+          "test": "a visszavonás PONTOSAN visszaállítja a kiindulást"
+        }
+      ]
+    },
+    {
+      "id": "3.3.7",
+      "name": "Redundant Entry",
+      "level": "A",
+      "status": "not-applicable",
+      "remarks": "The library asks for nothing twice; it has no multi-step process.",
+      "tests": []
+    },
+    {
+      "id": "3.3.8",
+      "name": "Accessible Authentication (Minimum)",
+      "level": "AA",
+      "status": "not-applicable",
+      "remarks": "The library has no authentication.",
+      "tests": []
+    },
+    {
+      "id": "4.1.1",
+      "name": "Parsing (Obsolete and removed)",
+      "level": "A",
+      "status": "not-applicable",
+      "remarks": "Obsolete and removed in WCAG 2.2; for HTML it is always satisfied.",
+      "tests": []
+    },
+    {
+      "id": "4.1.2",
+      "name": "Name, Role, Value",
+      "level": "A",
+      "status": "supports",
+      "remarks": "Every item has its role (`option`), name, state (`aria-selected`) and place; the listbox has its name and orientation; axe finds no violation on the demo, its variants and every documentation page with a live example.",
+      "tests": [
+        {
+          "file": "packages/core/test/a11y/semantics.test.ts",
+          "test": "makes every drawn item an option with a unique id"
+        },
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "a demó alaphelyzetben"
+        },
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "site: "
+        }
+      ]
+    },
+    {
+      "id": "4.1.3",
+      "name": "Status Messages",
+      "level": "AA",
+      "status": "supports",
+      "remarks": "Changes the reader did not cause by focus are announced politely: the calendar's period, the tools' announcements, through a polite live region.",
+      "tests": [
+        {
+          "file": "packages/web-component/test/p27.browser.test.ts",
+          "test": "the period keys and the buttons page the same way, and say so"
+        }
+      ]
+    }
+  ]
+}

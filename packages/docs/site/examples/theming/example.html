@@ -1,0 +1,15 @@
+<style>
+  /* The tokens are read on the timeline's root: set them there, or on one
+     item. Pale fills carry dark text, so they belong to the light theme only. */
+  #timeline .tl[data-tl-theme="light"] {
+    --tl-item-fill: #fde7f3;
+    --tl-item-stroke: #a3195b;
+    --tl-accent: #a3195b;
+    --tl-focus: #a3195b;
+  }
+  #timeline .tl[data-tl-theme="light"] .urgent { --tl-item-fill: #ffd6a5; }
+</style>
+<div style="padding: 6px 10px; border-bottom: 1px solid #d5d9de">
+  <button type="button" id="theme">Switch to dark</button>
+</div>
+<div id="timeline" style="height: 250px"></div>

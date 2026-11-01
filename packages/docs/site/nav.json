@@ -1,0 +1,60 @@
+[
+  {
+    "section": "Start",
+    "pages": [
+      "index",
+      "showcase",
+      "getting-started",
+      "frameworks",
+      "guides/migrating-from-vis-timeline",
+      "guides/migrating-from-frappe-gantt",
+      "guides/migrating-from-react-calendar-timeline",
+      "guides/migrating-from-timelinejs"
+    ]
+  },
+  {
+    "section": "Guides",
+    "pages": [
+      "guides/items-and-lanes",
+      "guides/groups-and-item-kinds",
+      "guides/gantt",
+      "guides/scheduling",
+      "guides/resources",
+      "guides/time-tools",
+      "guides/export",
+      "guides/internationalisation",
+      "guides/calendar",
+      "guides/storytelling",
+      "guides/editing",
+      "guides/responsive",
+      "guides/accessibility",
+      "guides/async-data",
+      "guides/clustering",
+      "guides/theming",
+      "guides/server-rendering",
+      "guides/performance",
+      "guides/core-engine"
+    ]
+  },
+  {
+    "section": "Recipes",
+    "pages": [
+      "recipes/gantt",
+      "recipes/log",
+      "recipes/chronology",
+      "recipes/roadmap"
+    ]
+  },
+  {
+    "section": "Reference",
+    "pages": [
+      "reference/api",
+      "reference/entry-points",
+      "conformance",
+      "benchmark",
+      "benchmark-field",
+      "stability",
+      "changelog"
+    ]
+  }
+]

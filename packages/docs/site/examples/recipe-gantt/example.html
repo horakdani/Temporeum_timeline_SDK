@@ -1,0 +1,13 @@
+<style>
+  /* An item's class sets the token its fill reads: no specificity fight. */
+  #timeline .phase-design { --tl-item-fill: #d6e4ff; }
+  #timeline .phase-build { --tl-item-fill: #d8f3dc; }
+  #timeline .phase-ship { --tl-item-fill: #ffe2c6; }
+  .toolbar { display: flex; gap: 8px; align-items: center; padding: 6px 10px; border-bottom: 1px solid #d5d9de; }
+</style>
+<div class="toolbar">
+  <button id="undo" type="button" disabled>Undo</button>
+  <button id="redo" type="button" disabled>Redo</button>
+  <span id="status" aria-live="polite">Drag a task to move it, drag its end to resize it.</span>
+</div>
+<div id="timeline" style="height: 380px"></div>

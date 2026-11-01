@@ -1,0 +1,8 @@
+{
+  "title": "The engine without a DOM: layout, ticks and an SVG string",
+  "height": 380,
+  "expect": [
+    { "selector": "#picture svg [role=option], #picture svg .tl-item", "min": 3 },
+    { "selector": "#out:not(:empty)", "min": 1 }
+  ]
+}

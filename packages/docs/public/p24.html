@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timeline SDK — P24: time tools</title>
+    <style>
+      body { margin: 0; font-family: system-ui, sans-serif; }
+      #timeline { position: relative; height: 360px; width: 1000px; }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "@temporeum/timeline-core": "/core/index.mjs",
+          "@temporeum/timeline-core/dom": "/core/dom.mjs",
+          "@temporeum/timeline-core/groups": "/core/groups.mjs",
+          "@temporeum/timeline-core/items": "/core/items.mjs",
+          "@temporeum/timeline-core/gantt": "/core/gantt.mjs",
+          "@temporeum/timeline-core/resources": "/core/resources.mjs",
+          "@temporeum/timeline-core/tools": "/core/tools.mjs",
+          "@temporeum/timeline-core/export": "/core/export.mjs",
+          "@temporeum/timeline-core/intl": "/core/intl.mjs",
+          "@temporeum/timeline-core/live": "/core/live.mjs",
+          "@temporeum/timeline-core/words": "/core/words.mjs",
+          "@temporeum/timeline-core/calendar": "/core/calendar.mjs",
+          "@temporeum/timeline-element": "/element/index.mjs",
+          "@temporeum/timeline-element/tools": "/element/tools.mjs"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main>
+      <h1>Time tools</h1>
+      <div id="timeline"></div>
+    </main>
+    <script type="module">
+      /*
+       * G-TOOLTIP (and the time tools for G-AXE), in a real browser, through
+       * the shipped bundles: a tooltip on hover, on focus and on a long press,
+       * over hidden nights, with a time bar, the overview strip and range
+       * selection on — every tool a reader can meet at once.
+       */
+      import { createTimeline, registerPlugin } from "@temporeum/timeline-element";
+      import { toolsPlugin } from "@temporeum/timeline-element/tools";
+      // The time tools are a plugin (P30).
+      registerPlugin(toolsPlugin);
+
+      const hour = 3_600_000;
+      const day = 24 * hour;
+      const monday = Date.UTC(2026, 4, 4);
+      const at = (days, hours = 0) => monday + days * day + hours * hour;
+      const element = document.querySelector("#timeline");
+      const timeline = createTimeline(element, {
+        items: [
+          { id: "a", label: "Cutting", start: at(0, 9), end: at(1, 12), laneId: "l1" },
+          { id: "b", label: "Welding", start: at(1, 13), end: at(3, 11), laneId: "l1" },
+          { id: "c", label: "Painting", start: at(2, 9), end: at(3, 16), laneId: "l2" },
+        ],
+        lanes: [{ id: "l1", label: "Line 1" }, { id: "l2", label: "Line 2" }],
+        domain: [at(0, 8), at(4, 17)],
+        timeZone: "UTC",
+        ariaLabel: "Plant schedule",
+        hiddenDates: [{ start: at(0, 17), end: at(1, 8), repeat: "daily" }],
+        timeBars: [{ id: "cutoff", time: at(2, 12), label: "Cut-off" }],
+        minimap: true,
+        rangeSelect: { snapMs: hour },
+        laneHeaders: true,
+        tooltip: true,
+      });
+      const tooltip = () => element.querySelector(".tl-tooltip");
+      window.tl = {
+        get ready() {
+          return element.querySelector("svg [role=option]") !== null;
+        },
+        shown: () => tooltip() !== null && !tooltip().hidden,
+        text: () => tooltip()?.textContent ?? "",
+        box: () => {
+          const node = tooltip();
+          if (node === null || node.hidden) return undefined;
+          const rect = node.getBoundingClientRect();
+          return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+        },
+        focusedId: () => timeline.getSnapshot().focusedId,
+        selectedIds: () => timeline.getSnapshot().selectedIds,
+        option: (id) => {
+          const rect = element.querySelector(`[data-tl-id="${id}"]`)?.getBoundingClientRect();
+          return rect === undefined ? undefined : { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+        },
+      };
+    </script>
+  </body>
+</html>

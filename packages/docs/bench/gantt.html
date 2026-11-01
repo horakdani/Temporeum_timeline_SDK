@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gantt benchmark — @temporeum/timeline-element</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: system-ui, sans-serif;
+      }
+      #frame {
+        position: relative;
+        width: 1440px;
+        height: 900px;
+        overflow: hidden;
+      }
+    </style>
+    <!-- The public path, as in temporeum.html: the built dist files by package name. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@temporeum/timeline-element": "/element/index.mjs",
+          "@temporeum/timeline-element/gantt": "/element/gantt.mjs",
+          "@temporeum/timeline-core": "/core/index.mjs",
+          "@temporeum/timeline-core/dom": "/core/dom.mjs",
+          "@temporeum/timeline-core/groups": "/core/groups.mjs",
+          "@temporeum/timeline-core/items": "/core/items.mjs",
+          "@temporeum/timeline-core/gantt": "/core/gantt.mjs",
+          "@temporeum/timeline-core/resources": "/core/resources.mjs",
+          "@temporeum/timeline-core/tools": "/core/tools.mjs",
+          "@temporeum/timeline-core/export": "/core/export.mjs",
+          "@temporeum/timeline-core/intl": "/core/intl.mjs",
+          "@temporeum/timeline-core/live": "/core/live.mjs",
+          "@temporeum/timeline-core/words": "/core/words.mjs",
+          "@temporeum/timeline-core/calendar": "/core/calendar.mjs"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="frame" data-bench-gantt="temporeum"></div>
+
+    <script type="module">
+      /*
+       * G-PERF-GANTT's page (scripts/sdk_bench_gantt.mjs):
+       *
+       *   window.benchGantt = {
+       *     marker, tasks, dependencies, cull,
+       *     ready,                  Promise — first complete render, two quiet rAFs after
+       *     frames.start() / .stop(),  rAF frame deltas (ms)
+       *     getRange(),             { start, end } of the view
+       *     axisY(),                a y on the axis band, where a drag pans
+       *     counts(),               { arrows, items } nodes in the document
+       *     edits(),                item edits seen (a pan must make none)
+       *   }
+       *
+       * `?cull=0` is the control: every arrow drawn on every frame.
+       */
+      import { createTimeline, registerPlugin } from "@temporeum/timeline-element";
+      import { ganttPlugin } from "@temporeum/timeline-element/gantt";
+      registerPlugin(ganttPlugin);
+
+      const params = new URLSearchParams(location.search);
+      const cull = params.get("cull") !== "0";
+      const LANES = 500;
+      const PER_LANE = 20;
+      const DAY = 86_400_000;
+      const START = Date.UTC(2026, 0, 1);
+
+      // 500 rows of 20 tasks: each a 3-to-6-day bar, one after the other in
+      // its row, each row starting a little later than the one above.
+      const items = [];
+      const lanes = [];
+      const dependencies = [];
+      for (let lane = 0; lane < LANES; lane += 1) {
+        lanes.push({ id: `l${lane}`, label: `Stream ${lane}` });
+        let at = START + (lane % 40) * DAY;
+        for (let step = 0; step < PER_LANE; step += 1) {
+          const id = `t${lane}-${step}`;
+          const length = (3 + ((lane * 7 + step * 3) % 4)) * DAY;
+          items.push({ id, start: at, end: at + length, laneId: `l${lane}`, label: `Task ${lane}.${step}`, progress: ((lane + step) % 10) / 10 });
+          // In-row chain: 19 finish-to-start per row.
+          if (step > 0) dependencies.push({ from: `t${lane}-${step - 1}`, to: id });
+          at += length + DAY;
+        }
+      }
+      // One cross-row dependency per row, to the next row: 500 more, 10 000 in all.
+      for (let lane = 0; lane < LANES; lane += 1) {
+        const next = (lane + 1) % LANES;
+        dependencies.push({ from: `t${lane}-${(lane * 3) % PER_LANE}`, to: `t${next}-${(lane * 3 + 2) % PER_LANE}`, type: lane % 2 === 0 ? "SS" : "FS" });
+      }
+      const view = [START + 30 * DAY, START + 90 * DAY];
+
+      const frame = document.querySelector("#frame");
+      let edits = 0;
+      const recorder = { times: [], on: false };
+      const record = (time) => {
+        if (!recorder.on) return;
+        recorder.times.push(time);
+        requestAnimationFrame(record);
+      };
+      const frames = {
+        start() {
+          recorder.times = [];
+          recorder.on = true;
+          requestAnimationFrame(record);
+        },
+        stop() {
+          recorder.on = false;
+          const t = recorder.times;
+          return t.slice(1).map((time, index) => time - t[index]);
+        },
+      };
+      let mutated = false;
+      new MutationObserver(() => {
+        mutated = true;
+      }).observe(frame, { subtree: true, childList: true, attributes: true, characterData: true });
+      const ready = new Promise((resolve) => {
+        let quiet = 0;
+        const check = () => {
+          const present = frame.querySelector("rect.tl-item") !== null;
+          if (present && !mutated) quiet += 1;
+          else quiet = 0;
+          mutated = false;
+          if (quiet >= 2) resolve(performance.now());
+          else requestAnimationFrame(check);
+        };
+        requestAnimationFrame(check);
+      });
+
+      const timeline = createTimeline(frame, {
+        items,
+        lanes,
+        gantt: { dependencies, cull },
+        domain: view,
+        height: 900,
+        orientation: "horizontal",
+        editing: { enabled: true },
+        ariaLabel: "Gantt benchmark",
+      });
+      timeline.on("itemMoved", () => {
+        edits += 1;
+      });
+      timeline.on("itemResized", () => {
+        edits += 1;
+      });
+
+      window.benchGantt = {
+        marker: "temporeum-bench-gantt",
+        tasks: items.length,
+        dependencies: dependencies.length,
+        cull,
+        ready,
+        frames,
+        getRange() {
+          const domain = timeline.getSnapshot().domain;
+          return { start: domain[0], end: domain[1] };
+        },
+        // The middle of the tick labels, as in temporeum.html: a drag there pans and edits nothing.
+        axisY() {
+          const box = frame.getBoundingClientRect();
+          const labels = [...frame.querySelectorAll("text.tl-tick-label")].map((node) => node.getBoundingClientRect());
+          if (labels.length === 0) return null;
+          return (Math.min(...labels.map((r) => r.top)) + Math.max(...labels.map((r) => r.bottom))) / 2 - box.top;
+        },
+        counts() {
+          return { arrows: [...frame.querySelectorAll("path.tl-dep")].reduce((sum, path) => sum + path.getAttribute("data-tl-dep").split(" ").length, 0), items: frame.querySelectorAll("[data-tl-id]").length };
+        },
+        edits() {
+          return edits;
+        },
+      };
+    </script>
+  </body>
+</html>

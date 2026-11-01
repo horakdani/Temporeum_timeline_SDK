@@ -1,0 +1,119 @@
+/* The docs site. Plain CSS, no build; light and dark from the platform.
+   Every text colour pair here is above 4.5:1 (G-AXE measures it). */
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --bg-alt: #f4f5f7;
+  --text: #1b1f24;
+  --muted: #4d5560;
+  --line: #d5d9de;
+  --link: #0b57d0;
+  --accent: #0b57d0;
+  --code-bg: #f4f5f7;
+  --ok: #146c2e;
+  --error: #b3261e;
+  --focus: #0b57d0;
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121417;
+    --bg-alt: #1c1f24;
+    --text: #e8eaed;
+    --muted: #b4bac2;
+    --line: #3a4048;
+    --link: #8ab4f8;
+    --accent: #8ab4f8;
+    --code-bg: #1c1f24;
+    --ok: #81c995;
+    --error: #f2b8b5;
+    --focus: #8ab4f8;
+  }
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); color: var(--text); }
+body { margin: 0; }
+a { color: var(--link); }
+a:focus-visible, button:focus-visible, textarea:focus-visible, pre:focus-visible, main:focus-visible, iframe:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+main:focus { outline: none; }
+.skip { position: absolute; left: -999px; top: 0; background: var(--bg); padding: 0.5rem 1rem; z-index: 10; }
+.skip:focus { left: 0.5rem; top: 0.5rem; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.top { display: flex; align-items: baseline; gap: 0.75rem; padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--line); }
+.brand { font-weight: 700; font-size: 1.1rem; color: var(--text); text-decoration: none; }
+.version { color: var(--muted); font-size: 0.875rem; }
+
+.layout { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 2rem; max-width: 80rem; margin: 0 auto; padding: 0 1.5rem; }
+.side { padding: 1.25rem 0; border-right: 1px solid var(--line); }
+.side ul, .toc ul { list-style: none; margin: 0 0 1rem; padding: 0; }
+.side li a { display: block; padding: 0.2rem 0.75rem 0.2rem 0; text-decoration: none; }
+.side li a[aria-current="page"] { font-weight: 700; color: var(--text); border-left: 3px solid var(--accent); padding-left: 0.5rem; margin-left: -0.75rem; }
+.nav-title { margin: 0.5rem 0 0.25rem; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+main { padding: 1.25rem 0 3rem; min-width: 0; }
+article { max-width: 52rem; }
+.toc { float: right; width: 14rem; margin: 0 0 1rem 1.5rem; padding: 0.75rem 1rem; border: 1px solid var(--line); border-radius: 6px; font-size: 0.9rem; }
+.toc .toc-3 { padding-left: 0.75rem; }
+/* WCAG 2.2 target size: a list of links is not inline text, so each one gets 24 px. */
+.toc li a { display: inline-block; min-height: 24px; padding: 2px 0; }
+.side li a { min-height: 24px; }
+@media (max-width: 64rem) { .toc { float: none; width: auto; margin: 0 0 1rem; } }
+@media (max-width: 48rem) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .side { border-right: none; border-bottom: 1px solid var(--line); }
+  .side ul { display: flex; flex-wrap: wrap; gap: 0 1rem; }
+}
+
+h1 { font-size: 2rem; line-height: 1.25; margin: 0.5rem 0 1rem; }
+h2 { font-size: 1.45rem; margin: 2.25rem 0 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--line); }
+h3 { font-size: 1.15rem; margin: 1.75rem 0 0.5rem; }
+h4 { font-size: 1rem; margin: 1.25rem 0 0.5rem; }
+blockquote { margin: 1rem 0; padding: 0.25rem 1rem; border-left: 4px solid var(--accent); background: var(--bg-alt); }
+code { font: 0.9em/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--code-bg); padding: 0.1em 0.3em; border-radius: 3px; }
+pre { margin: 0; padding: 0.9rem 1rem; overflow: auto; background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; }
+pre code { background: none; padding: 0; font-size: 0.85rem; }
+figure.code { margin: 1rem 0; }
+.code-source { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--muted); }
+
+.table-wrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; font-size: 0.92rem; min-width: 60%; }
+caption { text-align: left; color: var(--muted); font-size: 0.85rem; padding-bottom: 0.4rem; }
+th, td { border: 1px solid var(--line); padding: 0.4rem 0.6rem; vertical-align: top; text-align: left; }
+thead th { background: var(--bg-alt); }
+tbody th { font-weight: 600; }
+table.api td:nth-child(2) code { white-space: pre-wrap; word-break: break-word; }
+.range { color: var(--muted); font-size: 0.85em; }
+
+.example { margin: 1.5rem 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.example-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--bg-alt); border-bottom: 1px solid var(--line); }
+.example-head p { margin: 0; }
+.example-status { font-size: 0.9rem; color: var(--muted); }
+.example[data-state="ok"] .example-status { color: var(--ok); }
+.example[data-state="error"] .example-status { color: var(--error); font-weight: 600; }
+.example-body { display: grid; grid-template-columns: minmax(0, 1fr); }
+.example-code { padding: 0.75rem 1rem; border-bottom: 1px solid var(--line); }
+.example-code label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.25rem; }
+.example-code textarea {
+  display: block; width: 100%; min-height: 14rem; resize: vertical; padding: 0.75rem;
+  font: 0.85rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--text); background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; tab-size: 2;
+}
+.example-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+.example-actions button {
+  font: inherit; font-size: 0.9rem; padding: 0.3rem 0.9rem; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--accent); background: var(--bg); color: var(--link);
+}
+.example-actions button[data-action="run"] { background: var(--accent); color: var(--bg); }
+.example-frame { display: block; width: 100%; border: 0; background: #ffffff; }
+/* A demo takes the whole column, past the article's reading width. */
+.example--showcase { clear: both; width: min(60rem, calc(100vw - 21rem)); }
+@media (max-width: 48rem) { .example--showcase { width: auto; } }
+.example--showcase .example-code { border-bottom: 0; border-top: 1px solid var(--line); }
+.example--showcase .example-code summary { cursor: pointer; font-size: 0.9rem; color: var(--muted); }
+.example--showcase .example-code[open] summary { margin-bottom: 0.5rem; }
+
+.pager { display: flex; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--line); clear: both; }
+.bottom { border-top: 1px solid var(--line); padding: 1rem 1.5rem; color: var(--muted); font-size: 0.875rem; text-align: center; }

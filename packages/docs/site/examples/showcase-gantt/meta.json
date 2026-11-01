@@ -1,0 +1,12 @@
+{
+  "title": "A product launch: 300 tasks, dependencies, the critical path, team load, undo",
+  "height": 600,
+  "layout": "showcase",
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 8 },
+    { "selector": "#timeline svg .tl-layer--deps path", "min": 1 },
+    { "selector": "#timeline svg .critical", "min": 1 },
+    { "selector": "#timeline svg .tl-baseline", "min": 1 },
+    { "selector": "#status[data-tasks='313']", "min": 1 }
+  ]
+}

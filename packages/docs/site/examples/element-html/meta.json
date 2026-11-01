@@ -1,0 +1,5 @@
+{
+  "title": "The element in plain HTML",
+  "height": 300,
+  "expect": [{ "selector": "temporeum-timeline svg [role=option]", "min": 3 }]
+}

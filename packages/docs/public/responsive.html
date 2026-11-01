@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="hu">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Idővonal SDK — reszponzív</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+      }
+      #frame svg {
+        display: block;
+        width: 100%;
+      }
+      #status {
+        padding: 0.4rem 0.6rem;
+        font-size: 12px;
+        color: #445;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="frame"></div>
+    <div id="status"></div>
+
+    <script type="module">
+      import {
+        createHitTester,
+        createInputMachine,
+        createNavigator,
+        createTimeScale,
+        densityMetrics,
+        fitDensity,
+        projectRect,
+        renderTimeline,
+        resolveDensity,
+        resolveDetailSurface,
+        resolveOrientation,
+      } from "/core/index.mjs";
+      import { attachInput, mountScene, observeSize, openDetail } from "/core/dom.mjs";
+
+      // Ez a lap NEM dönt semmiről. Hogy egy szélesség melyik orientációt,
+      // melyik sűrűséget és melyik részlet-felületet jelenti, azt a mag
+      // mondja meg; a lap mér, rajzol és összeköt. Egy saját töréspont itt
+      // pontosan az a második szám lenne, ami a P4 touchAction-hibáját adta.
+
+      const DAY = 86_400_000;
+      const START = Date.UTC(2026, 0, 1);
+      // Négynapos elemek hatvan napon: 1440 px-en ~96 px, 768-on ~51 px,
+      // függőlegesen 520 px-en ~35 px egy elem — három különböző szint.
+      const items = [
+        { id: "a", start: START + 2 * DAY, end: START + 6 * DAY, label: "Tervezés", laneId: "l1" },
+        { id: "b", start: START + 4 * DAY, end: START + 8 * DAY, label: "Építés", laneId: "l1" },
+        { id: "c", start: START + 14 * DAY, end: START + 18 * DAY, label: "Tesztelés", laneId: "l1" },
+        { id: "d", start: START + 24 * DAY, end: START + 28 * DAY, label: "Átadás", laneId: "l2" },
+        { id: "e", start: START + 34 * DAY, end: START + 38 * DAY, label: "Bevezetés", laneId: "l2" },
+        { id: "f", start: START + 46 * DAY, end: START + 50 * DAY, label: "Mérés", laneId: "l2" },
+        // A tartomány jobb széléig ér: egy rá középre igazított popover itt
+        // lógna ki a képernyőből.
+        { id: "g", start: START + 56 * DAY, end: START + 60 * DAY, label: "Lezárás", laneId: "l1" },
+        // Egy valódi pillanat: a rajzolt hossza a szint minimuma, 2 px.
+        { id: "moment", start: START + 41 * DAY, label: "Mérföldkő", laneId: "l1" },
+      ];
+      const lanes = [
+        { id: "l1", label: "Munka" },
+        { id: "l2", label: "Szállítás" },
+      ];
+      const domain = [START, START + 60 * DAY];
+
+      const params = new URLSearchParams(location.search);
+      const settings = {
+        orientation: params.get("orientation") ?? "auto",
+        density: params.get("density") ?? "auto",
+        detailSurface: params.get("detail") ?? "auto",
+      };
+      // A konténer magassága a HOSZT döntése, nem a könyvtáré: vízszintesen
+      // egy sáv-blokk, függőlegesen egy képernyőnyi oszlop.
+      const heightFor = (orientation) => (orientation === "horizontal" ? 240 : 520);
+
+      const frame = document.querySelector("#frame");
+
+      const mount = mountScene(frame);
+      const status = document.querySelector("#status");
+
+      let width = 0;
+      let orientation;
+      let density;
+      let fit;
+      let tester;
+      let lastResult;
+      let detail;
+      let detailFor;
+      let draws = 0;
+      let lastTap = null;
+      const changes = [];
+
+      const machine = createInputMachine({
+        domain,
+        mainSize: 1,
+        crossSize: 1,
+        orientation: "horizontal",
+        editing: { enabled: false },
+      });
+
+      function closeDetail() {
+        detail?.close();
+      }
+
+      /** Egy elem doboza VIEWPORT-koordinátában, a popover horgonya. */
+      function clientBoxOf(id) {
+        const placed = lastResult?.layout.items.find((candidate) => candidate.item.id === id);
+        if (placed === undefined) {
+          return undefined;
+        }
+        const metrics = densityMetrics(density, orientation);
+        const scale = createTimeScale(domain, lastResult.viewport.mainSize);
+        const from = scale.toMain(placed.span.start);
+        const to = scale.toMain(placed.span.end);
+        const box = projectRect(
+          {
+            main: from,
+            mainSize: Math.max(to - from, metrics.minItemMainSize),
+            cross: metrics.axisSize + placed.cross,
+            crossSize: placed.crossSize,
+          },
+          orientation,
+        );
+        const origin = frame.getBoundingClientRect();
+        return { x: origin.left + box.x, y: origin.top + box.y, width: box.width, height: box.height };
+      }
+
+      function showDetail(hit, pointerType) {
+        const choice = resolveDetailSurface(settings.detailSurface, {
+          pointerType,
+          density,
+          width,
+        });
+        if (detail !== undefined && detailFor === hit.item.id && detail.surface === choice.surface) {
+          return choice;
+        }
+        closeDetail();
+        const from = new Date(hit.span.start).toISOString().slice(0, 10);
+        detail = openDetail(frame, {
+          surface: choice.surface,
+          content: `${hit.item.label} — ${from}`,
+          label: `${hit.item.label} részletei`,
+          closeLabel: "Bezárás",
+          anchor: clientBoxOf(hit.item.id),
+          onClose: () => {
+            detail = undefined;
+            detailFor = undefined;
+            publish();
+          },
+        });
+        detail.element.setAttribute("data-tl-item", hit.item.id);
+        detail.element.setAttribute("data-tl-trigger", choice.trigger);
+        detailFor = hit.item.id;
+        publish();
+        return choice;
+      }
+
+      function draw() {
+        if (width <= 0) {
+          return;
+        }
+        const height = heightFor(orientation);
+        const result = renderTimeline({
+          items,
+          lanes,
+          domain: machine.domain,
+          width,
+          height,
+          orientation,
+          density,
+          instanceId: "responsive",
+          crossOffset: machine.crossOffset,
+          focusedId: machine.focusedId,
+          locale: "hu",
+          ariaLabel: "Projekt idővonal",
+        });
+        lastResult = result;
+        draws += 1;
+        // A foltozó megtartja a csomópontokat, és csak azt írja, ami változott
+        // (P7). Egy innerHTML minden rajzolásnál eldobná és újraépítené őket.
+        mount.update(result.scene);
+        frame.querySelector("svg").setAttribute("data-testid", "timeline");
+        const metrics = densityMetrics(density, orientation);
+        const built = createHitTester({
+          layout: result.layout,
+          scale: createTimeScale(machine.domain, result.viewport.mainSize),
+          crossInset: metrics.axisSize,
+          crossOffset: machine.crossOffset,
+          minItemMainSize: metrics.minItemMainSize,
+          density,
+        });
+        tester = built;
+        machine.setKeyboard({ navigator: createNavigator(result.layout, { crossInset: metrics.axisSize }) });
+        publish();
+      }
+
+      /** A mag döntései egy mérésből. A lap ezeket csak alkalmazza. */
+      function respond(size) {
+        width = size.width;
+        const nextOrientation = resolveOrientation(settings.orientation, width, {
+          ...(orientation === undefined ? {} : { previous: orientation }),
+        });
+        const height = heightFor(nextOrientation);
+        fit = fitDensity({
+          items,
+          lanes,
+          domain: machine.domain,
+          width,
+          height,
+          orientation: nextOrientation,
+          ...(density === undefined || nextOrientation !== orientation ? {} : { previous: density }),
+        });
+        const nextDensity = resolveDensity(settings.density, fit);
+        if (nextOrientation !== orientation || nextDensity !== density) {
+          changes.push(`${String(width)}:${nextOrientation}:${nextDensity}`);
+          // Egy más vetületben a nyitott részlet rossz helyre mutat.
+          closeDetail();
+        }
+        orientation = nextOrientation;
+        density = nextDensity;
+        machine.setOrientation(orientation);
+        machine.resize(
+          orientation === "horizontal"
+            ? { mainSize: width, crossSize: height }
+            : { mainSize: height, crossSize: width },
+        );
+        draw();
+      }
+
+      function publish() {
+        status.textContent = `${String(width)} px · ${orientation} · ${density}`;
+        window.tl = {
+          width,
+          orientation,
+          density,
+          fit,
+          draws,
+          changes,
+          lastTap,
+          focusedId: machine.focusedId,
+          detail:
+            detail === undefined
+              ? null
+              : { surface: detail.surface, item: detailFor, trigger: detail.element.dataset.tlTrigger },
+          clientBoxOf,
+        };
+      }
+
+      attachInput(frame, {
+        machine,
+        onEffects(effects) {
+          let moved = false;
+          let refocused = false;
+          for (const effect of effects) {
+            if (effect.type === "viewport") {
+              moved = true;
+            } else if (effect.type === "focus") {
+              refocused = true;
+            } else if (effect.type === "activate") {
+              // Az Enter a koppintás ikre, az Esc az üresé: ugyanaz a
+              // részlet-felület, a billentyűzet a pontos mutató szerint.
+              const hit = effect.id === null ? undefined : tester?.lookup(effect.id);
+              if (hit === undefined) {
+                closeDetail();
+              } else {
+                showDetail(hit, "mouse");
+              }
+            } else if (effect.type === "tap" && effect.tapCount === 1 && effect.pointerCount === 1) {
+              lastTap = { main: effect.main, cross: effect.cross, pointerType: effect.pointerType };
+              // A koppintás pointer-típusa megy a találati táblának is: egy
+              // ujj 12 px-et kap, egy egér 4-et.
+              const hit = tester?.hitTest({ main: effect.main, cross: effect.cross }, effect.pointerType);
+              if (hit === undefined) {
+                closeDetail();
+              } else {
+                showDetail(hit, effect.pointerType);
+              }
+            }
+          }
+          if (moved) {
+            // A sűrűség az időegységre eső pixelből is jön: egy zoom után
+            // ugyanaz a doboz más szintet jelenthet.
+            respond({ width });
+          } else if (refocused) {
+            draw();
+          }
+          // Egy semmit el nem találó koppintás is állapot: a teszt ebből
+          // tudja, hogy a kattintás megérkezett, csak nem ért el semmit.
+          publish();
+        },
+      });
+
+      // Hover csak ott létezik, ahol a mag azt mondja: egérrel, tágas szinten,
+      // popoverrel. Ujjra ez a figyelő soha nem nyit semmit.
+      frame.addEventListener("pointermove", (event) => {
+        if (event.pointerType !== "mouse" || machine.phase !== "idle" || tester === undefined) {
+          return;
+        }
+        const choice = resolveDetailSurface(settings.detailSurface, {
+          pointerType: "mouse",
+          density,
+          width,
+        });
+        if (choice.trigger !== "hover") {
+          return;
+        }
+        const box = frame.getBoundingClientRect();
+        const x = event.clientX - box.left;
+        const y = event.clientY - box.top;
+        const point = orientation === "horizontal" ? { main: x, cross: y } : { main: y, cross: x };
+        const hit = tester.hitTest(point, "mouse");
+        if (hit === undefined) {
+          if (detail?.surface === "popover") {
+            closeDetail();
+          }
+          return;
+        }
+        showDetail(hit, "mouse");
+      });
+
+      publish();
+      // A döntés a KONTÉNER méretén él, ResizeObserverrel — nem a betöltéskori
+      // méreten, és nem az ablakon.
+      observeSize(frame, respond);
+    </script>
+  </body>
+</html>

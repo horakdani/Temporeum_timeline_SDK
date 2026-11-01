@@ -1,0 +1,110 @@
+{
+  "$comment": "A @temporeum/timeline-core belepesi pontjainak EGYETLEN forrasa. A rollup ebbol epit (scripts/build-config.mjs), a package.json exports-, typesVersions- es size-limit mezoit a `node ../../scripts/sdk_entries.mjs --write` irja, es a G-ENTRIES elteresnel bukik. Uj belepesi pont: egy sor ide, majd --write. A `name: index` a csomag gyokere (`.`); a tobbi a `./<name>` alutvonal. A `limit` minify + gzip, a belepesi pont TELJES felulete (import *), a kozos darabokkal egyutt.",
+  "entries": [
+    {
+      "name": "index",
+      "input": "src/index.ts",
+      "umd": "TemporeumTimeline",
+      "limit": "31 kB",
+      "label": "core — teljes publikus felület (ESM, minify + gzip)"
+    },
+    {
+      "name": "dom",
+      "input": "src/dom/index.ts",
+      "umd": "TemporeumTimelineDom",
+      "limit": "4 kB",
+      "label": "dom — a böngésző-kötés (ESM, minify + gzip)"
+    },
+    {
+      "name": "groups",
+      "input": "src/groups/index.ts",
+      "umd": "TemporeumTimelineGroups",
+      "limit": "2 kB",
+      "label": "groups — egymásba ágyazott csoportok (ESM, minify + gzip)"
+    },
+    {
+      "name": "items",
+      "input": "src/items/index.ts",
+      "umd": "TemporeumTimelineItems",
+      "limit": "4 kB",
+      "label": "items — elemtípusok, hozzáadás és törlés, HTML-sablon (ESM, minify + gzip)"
+    },
+    {
+      "name": "gantt",
+      "input": "src/gantt/index.ts",
+      "umd": "TemporeumTimelineGantt",
+      "limit": "4 kB",
+      "label": "gantt — függőségi nyilak, haladás, alapvonal, mérföldkő, feladattáblázat (ESM, minify + gzip)"
+    },
+    {
+      "name": "schedule",
+      "input": "src/schedule/index.ts",
+      "umd": "TemporeumTimelineSchedule",
+      "limit": "4 kB",
+      "label": "schedule — ütemező: függőségek, megkötések, munkanaptárak, kritikus út (ESM, minify + gzip)"
+    },
+    {
+      "name": "resources",
+      "input": "src/resources/index.ts",
+      "umd": "TemporeumTimelineResources",
+      "limit": "3 kB",
+      "label": "resources — erőforrás-nézet: kihasználtság, túlfoglalás, terhelési sávok, ütemezetlen feladatok (ESM, minify + gzip)"
+    },
+    {
+      "name": "tools",
+      "input": "src/tools/index.ts",
+      "umd": "TemporeumTimelineTools",
+      "limit": "6 kB",
+      "label": "tools — idő-eszközök: rejtett dátumok, saját idővonalak, gördülés, zoom-presetek, áttekintő sáv, tartomány-kijelölés, ragadó sávfejlécek, élő adat (ESM, minify + gzip)"
+    },
+    {
+      "name": "export",
+      "input": "src/export/index.ts",
+      "umd": "TemporeumTimelineExport",
+      "limit": "7.5 kB",
+      "label": "export — önálló SVG, PNG, saját PDF-író, nyomtatási nézet a teljes tartományra, oldalakra bontva (ESM, minify + gzip)"
+    },
+    {
+      "name": "intl",
+      "input": "src/intl/index.ts",
+      "umd": "TemporeumTimelineIntl",
+      "limit": "4 kB",
+      "label": "intl — jobbról balra, szótár, nem-Gergely naptárak tickjei (ESM, minify + gzip)"
+    },
+    {
+      "name": "live",
+      "input": "src/live/index.ts",
+      "umd": "TemporeumTimelineLive",
+      "limit": "2 kB",
+      "label": "live — élő adat: elemek hozzáadása, frissítése, törlése és a csak érintett sávok újrapakolása (ESM, minify + gzip)"
+    },
+    {
+      "name": "words",
+      "input": "src/words/index.ts",
+      "umd": "TemporeumTimelineWords",
+      "limit": "2 kB",
+      "label": "words — a könyvtár angol szavai és a kitöltőjük (ESM, minify + gzip)"
+    },
+    {
+      "name": "calendar",
+      "input": "src/calendar/index.ts",
+      "umd": "TemporeumTimelineCalendar",
+      "limit": "12 kB",
+      "label": "calendar — ismétlődő események (RFC 5545 RRULE), heti és napi nézet, iCal import és export (ESM, minify + gzip)"
+    },
+    {
+      "name": "vis-compat",
+      "input": "src/vis-compat/index.ts",
+      "umd": "TemporeumTimelineVisCompat",
+      "limit": "6 kB",
+      "label": "vis-compat — vis-timeline elemei, csoportjai és opciói Temporeum-konfigurációként (ESM, minify + gzip)"
+    },
+    {
+      "name": "story",
+      "input": "src/story/index.ts",
+      "umd": "TemporeumTimelineStory",
+      "limit": "5 kB",
+      "label": "story — diákra bontott történetek: TimelineJS JSON- és Google Sheets-import, médiafelismerés, dátumszöveg (ESM, minify + gzip)"
+    }
+  ]
+}

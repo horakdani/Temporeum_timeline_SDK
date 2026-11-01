@@ -1,0 +1,4 @@
+dist/
+coverage/
+.i18n-element-report.json
+.acr-element-report.json

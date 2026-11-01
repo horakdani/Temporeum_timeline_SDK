@@ -1,0 +1,9 @@
+{
+  "title": "Nested groups you can collapse and reorder",
+  "height": 420,
+  "expect": [
+    { "selector": "#timeline [role=tree] [role=treeitem]", "min": 5 },
+    { "selector": "#timeline svg [role=option]", "min": 5 },
+    { "selector": "#log", "min": 1 }
+  ]
+}

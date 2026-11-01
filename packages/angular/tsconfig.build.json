@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "build",
+    "declaration": true,
+    "declarationMap": false,
+    "sourceMap": false,
+    "inlineSources": false,
+    "importHelpers": false
+  },
+  "include": ["src/**/*.ts"],
+  // Partial compilation: the declarations a consumer's Angular links at
+  // build time (the Angular Package Format's way), so one build serves the
+  // Angular versions after this one too.
+  "angularCompilerOptions": {
+    "compilationMode": "partial",
+    "strictTemplates": true,
+    "strictInjectionParameters": true
+  }
+}

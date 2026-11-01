@@ -1,0 +1,8 @@
+{
+  "title": "Restyled with CSS alone",
+  "height": 300,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 4 },
+    { "selector": "#timeline svg[data-tl-theme]", "min": 1 }
+  ]
+}

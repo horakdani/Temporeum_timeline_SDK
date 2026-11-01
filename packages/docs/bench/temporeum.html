@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Comparison benchmark — @temporeum/timeline-element</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: system-ui, sans-serif;
+      }
+      /* The measured container: the viewport's 1440 x 900, the same box as vis.html. */
+      #frame {
+        position: relative;
+        width: 1440px;
+        height: 900px;
+        overflow: hidden;
+      }
+    </style>
+    <!--
+      The recommended 1.0 public path: the package names, resolved by an
+      import map to the BUILT dist files the comparison script serves. No
+      bundler, so the browser loads exactly the four files a no-build user
+      loads (core index + dom, element index + its shared chunk).
+    -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@temporeum/timeline-element": "/element/index.mjs",
+          "@temporeum/timeline-core": "/core/index.mjs",
+          "@temporeum/timeline-core/dom": "/core/dom.mjs",
+          "@temporeum/timeline-core/groups": "/core/groups.mjs",
+          "@temporeum/timeline-core/items": "/core/items.mjs",
+          "@temporeum/timeline-core/gantt": "/core/gantt.mjs",
+          "@temporeum/timeline-core/resources": "/core/resources.mjs",
+          "@temporeum/timeline-core/tools": "/core/tools.mjs",
+          "@temporeum/timeline-core/export": "/core/export.mjs",
+          "@temporeum/timeline-core/intl": "/core/intl.mjs",
+          "@temporeum/timeline-core/live": "/core/live.mjs",
+          "@temporeum/timeline-core/words": "/core/words.mjs",
+          "@temporeum/timeline-core/calendar": "/core/calendar.mjs"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="frame" data-bench-compare="temporeum"></div>
+
+    <script type="module">
+      /*
+       * One page per library, same dataset, same box. Shared contract with
+       * vis.html (read by scripts/sdk_bench_compare.mjs):
+       *
+       *   window.benchCompare = {
+       *     marker, library, n,
+       *     ready,                     Promise<{ readyMs, firstItemsMs }> — first complete render;
+       *                                firstItemsMs: the first rAF with item nodes, shown or not
+       *     frames.start() / .stop(),  rAF frame-delta recorder -> number[] (ms)
+       *     getRange(),                { start, end } of the visible window (epoch ms)
+       *     counts(),                  { itemNodes, labelNodes, visibleItems, elements }
+       *     axisY(),                   a y (container px) on the time axis band
+       *     edits(),                   how many item edits the page has seen
+       *   }
+       */
+      import { createTimeline } from "@temporeum/timeline-element";
+
+      const params = new URLSearchParams(location.search);
+      const n = Number(params.get("n") ?? 1000);
+
+      // --- the dataset: identical generator in vis.html --------------------
+      // 60 interleaved streams, an 8-day item every 10 days in each, so the
+      // items overlap and pack into ~48 rows. The view is the second fifth
+      // of the whole range.
+      const DAY = 86_400_000;
+      const START = Date.UTC(2026, 0, 1);
+      const STREAMS = 60;
+      const PERIOD = 10 * DAY;
+      const LENGTH = 8 * DAY;
+      const items = [];
+      for (let index = 0; index < n; index += 1) {
+        const stream = index % STREAMS;
+        const round = Math.floor(index / STREAMS);
+        const start = START + round * PERIOD + (stream * PERIOD) / STREAMS;
+        items.push({ id: `e${index}`, start, end: start + LENGTH, label: `Item ${index}` });
+      }
+      const total = items[items.length - 1].end - START;
+      const view = [START + total * 0.2, START + total * 0.4];
+
+      const frame = document.querySelector("#frame");
+      let edits = 0;
+
+      // --- the frame recorder (identical in vis.html) -----------------------
+      const recorder = { times: [], on: false };
+      const record = (time) => {
+        if (!recorder.on) return;
+        recorder.times.push(time);
+        requestAnimationFrame(record);
+      };
+      const frames = {
+        start() {
+          recorder.times = [];
+          recorder.on = true;
+          requestAnimationFrame(record);
+        },
+        stop() {
+          recorder.on = false;
+          const t = recorder.times;
+          return t.slice(1).map((time, index) => time - t[index]);
+        },
+      };
+
+      // --- ready: item nodes in the DOM and visible, then two quiet rAFs (identical in vis.html)
+      const itemSelector = "rect.tl-item";
+      let mutated = false;
+      new MutationObserver(() => {
+        mutated = true;
+      }).observe(frame, { subtree: true, childList: true, attributes: true, characterData: true });
+      const ready = new Promise((resolve) => {
+        let quiet = 0;
+        let firstItemsMs = null;
+        const check = () => {
+          // Present AND shown: vis keeps its root visibility:hidden until its
+          // initial range settles, and a hidden drawing is not a render.
+          const first = frame.querySelector(itemSelector);
+          if (first !== null && firstItemsMs === null) firstItemsMs = performance.now();
+          const present = first !== null && first.checkVisibility({ visibilityProperty: true, opacityProperty: true });
+          if (present && !mutated) quiet += 1;
+          else quiet = 0;
+          mutated = false;
+          if (quiet >= 2) resolve({ readyMs: performance.now(), firstItemsMs });
+          else requestAnimationFrame(check);
+        };
+        requestAnimationFrame(check);
+      });
+
+      // --- the library, as the README recommends ---------------------------
+      const timeline = createTimeline(frame, {
+        items,
+        domain: view,
+        height: 900,
+        editing: { enabled: true },
+        ariaLabel: "Benchmark",
+      });
+      timeline.on("itemMoved", () => {
+        edits += 1;
+      });
+      timeline.on("itemResized", () => {
+        edits += 1;
+      });
+
+      function counts() {
+        const box = frame.getBoundingClientRect();
+        const inside = (r) => r.right > box.left && r.left < box.right && r.bottom > box.top && r.top < box.bottom;
+        const nodes = frame.querySelectorAll(itemSelector);
+        let visibleItems = 0;
+        for (const node of nodes) if (inside(node.getBoundingClientRect())) visibleItems += 1;
+        return {
+          itemNodes: nodes.length,
+          labelNodes: frame.querySelectorAll(".tl-label").length,
+          visibleItems,
+          elements: frame.getElementsByTagName("*").length,
+        };
+      }
+
+      /** The middle of the axis band: the tick labels' row. A drag there pans, never edits. */
+      function axisY() {
+        const box = frame.getBoundingClientRect();
+        const labels = [...frame.querySelectorAll("text.tl-tick-label")].map((node) => node.getBoundingClientRect());
+        if (labels.length === 0) return null;
+        const top = Math.min(...labels.map((r) => r.top));
+        const bottom = Math.max(...labels.map((r) => r.bottom));
+        return (top + bottom) / 2 - box.top;
+      }
+
+      function getRange() {
+        const [start, end] = timeline.getSnapshot().domain;
+        return { start, end };
+      }
+
+      window.benchCompare = {
+        marker: "temporeum-bench-compare",
+        library: "temporeum",
+        n,
+        ready,
+        frames,
+        getRange,
+        counts,
+        axisY,
+        edits: () => edits,
+        view,
+        total,
+      };
+    </script>
+  </body>
+</html>

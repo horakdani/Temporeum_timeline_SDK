@@ -1,0 +1,6 @@
+{
+  "name": "tl-ssr-astro",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "astro build" }
+}

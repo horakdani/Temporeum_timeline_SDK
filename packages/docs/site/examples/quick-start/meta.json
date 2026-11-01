@@ -1,0 +1,8 @@
+{
+  "title": "A plan you can drag",
+  "height": 330,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 5 },
+    { "selector": "#log", "min": 1 }
+  ]
+}

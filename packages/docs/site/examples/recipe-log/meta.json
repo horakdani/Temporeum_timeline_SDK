@@ -1,0 +1,9 @@
+{
+  "title": "An event log, fetched by window and clustered",
+  "height": 360,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 10 },
+    { "selector": "#timeline svg .tl-cluster", "min": 1 },
+    { "selector": "#requests[data-count]", "min": 1 }
+  ]
+}

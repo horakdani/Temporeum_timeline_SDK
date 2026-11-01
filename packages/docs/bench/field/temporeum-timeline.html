@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      html, body { margin: 0; overflow: hidden; font-family: system-ui, sans-serif; }
+      #frame { position: relative; width: 1440px; height: 900px; overflow: hidden; }
+    </style>
+    <title>Field benchmark — Temporeum, timeline</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "@temporeum/timeline-element": "/element/index.mjs",
+          "@temporeum/timeline-core": "/core/index.mjs",
+          "@temporeum/timeline-core/dom": "/core/dom.mjs",
+          "@temporeum/timeline-core/groups": "/core/groups.mjs",
+          "@temporeum/timeline-core/items": "/core/items.mjs",
+          "@temporeum/timeline-core/gantt": "/core/gantt.mjs",
+          "@temporeum/timeline-core/resources": "/core/resources.mjs",
+          "@temporeum/timeline-core/tools": "/core/tools.mjs",
+          "@temporeum/timeline-core/export": "/core/export.mjs",
+          "@temporeum/timeline-core/intl": "/core/intl.mjs",
+          "@temporeum/timeline-core/live": "/core/live.mjs",
+          "@temporeum/timeline-core/words": "/core/words.mjs"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="frame" data-bench-field="temporeum:timeline"></div>
+    <script type="module">
+      import { createTimeline } from "@temporeum/timeline-element";
+      import { installBench, timelineData, timeWindow } from "./kit.js";
+      const n = Number(new URLSearchParams(location.search).get("n") ?? 1000);
+      const { items, groups, view } = timelineData(n);
+      const frame = document.querySelector("#frame");
+      let edits = 0;
+      // As the README recommends, with editing on, as users ship it.
+      const timeline = createTimeline(frame, {
+        items: items.map((item) => ({ id: item.id, start: item.start, end: item.end, label: item.label, laneId: item.group })),
+        lanes: groups.map((group) => ({ id: group.id, label: group.label })),
+        domain: view,
+        height: 900,
+        editing: { enabled: true },
+        ariaLabel: "Benchmark",
+      });
+      timeline.on("itemMoved", () => (edits += 1));
+      timeline.on("itemResized", () => (edits += 1));
+      const time = timeWindow(() => {
+        const [start, end] = timeline.getSnapshot().domain;
+        return { start, end };
+      });
+      time.mark();
+      installBench({
+        library: "temporeum",
+        workload: "timeline",
+        n,
+        frame,
+        itemSelector: "rect.tl-item",
+        ...time,
+        // A drag on the axis band pans and edits nothing.
+        pan() {
+          const box = frame.getBoundingClientRect();
+          const labels = [...frame.querySelectorAll("text.tl-tick-label")].map((node) => node.getBoundingClientRect());
+          const y = labels.length === 0 ? 12 : (Math.min(...labels.map((r) => r.top)) + Math.max(...labels.map((r) => r.bottom))) / 2 - box.top;
+          return { mode: "drag", x: 1100, y };
+        },
+        zoom: { supported: true, stepIn: Math.log(1.2) / 0.004, stepOut: Math.log(1.2) / 0.004 },
+        edits: () => edits,
+      });
+    </script>
+  </body>
+</html>

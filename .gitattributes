@@ -1,0 +1,2 @@
+# iCalendar fixtures: RFC 5545 lines end in CRLF, and the tests read them as written.
+*.ics -text

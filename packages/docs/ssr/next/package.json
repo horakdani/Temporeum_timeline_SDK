@@ -1,0 +1,5 @@
+{
+  "name": "tl-ssr-next",
+  "private": true,
+  "scripts": { "build": "next build", "start": "next start" }
+}

@@ -1,0 +1,10 @@
+{
+  "title": "A TimelineJS Google Sheet, read from its CSV",
+  "height": 520,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 3 },
+    { "selector": "#timeline svg .tl-era", "min": 1 },
+    { "selector": "#story .tl-story-headline", "min": 1 },
+    { "selector": "#log:not(:empty)", "min": 1 }
+  ]
+}

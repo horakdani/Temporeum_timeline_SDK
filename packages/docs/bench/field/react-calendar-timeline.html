@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      html, body { margin: 0; overflow: hidden; font-family: system-ui, sans-serif; }
+      #frame { position: relative; width: 1440px; height: 900px; overflow: hidden; }
+    </style>
+    <title>Field benchmark — react-calendar-timeline, timeline</title>
+    <link rel="stylesheet" href="/nm/react-calendar-timeline/dist/style.css" />
+    <script src="/work/rct.js"></script>
+  </head>
+  <body>
+    <div id="frame" data-bench-field="react-calendar-timeline:timeline"></div>
+    <script type="module">
+      import { installBench, timelineData, timeWindow } from "./kit.js";
+      const { React, createRoot, Timeline } = window.BenchRct;
+      const n = Number(new URLSearchParams(location.search).get("n") ?? 1000);
+      const { items, groups, view } = timelineData(n);
+      const frame = document.querySelector("#frame");
+      let edits = 0;
+      let range = { start: view[0], end: view[1] };
+      // Its defaults (moving, resizing and changing groups on), a group per row, the view as the other two have it.
+      createRoot(frame).render(
+        React.createElement(Timeline, {
+          groups: groups.map((group) => ({ id: group.id, title: group.label })),
+          items: items.map((item) => ({ id: item.id, group: item.group, title: item.label, start_time: item.start, end_time: item.end })),
+          defaultTimeStart: view[0],
+          defaultTimeEnd: view[1],
+          stackItems: true,
+          onItemMove: () => (edits += 1),
+          onItemResize: () => (edits += 1),
+          onTimeChange: (start, end, updateScrollCanvas) => {
+            range = { start, end };
+            updateScrollCanvas(start, end);
+          },
+        }),
+      );
+      const time = timeWindow(() => range);
+      time.mark();
+      installBench({
+        library: "react-calendar-timeline",
+        workload: "timeline",
+        n,
+        frame,
+        itemSelector: ".rct-item",
+        ...time,
+        // A drag on empty canvas scrolls; one on an item would move it. Find an empty spot at x = 1100.
+        pan() {
+          const box = frame.getBoundingClientRect();
+          const canvas = frame.querySelector(".rct-horizontal-lines") ?? frame.querySelector(".rct-scroll");
+          const r = canvas.getBoundingClientRect();
+          for (let y = r.top + 4; y < Math.min(r.bottom, box.bottom) - 4; y += 3) {
+            const hit = document.elementFromPoint(box.left + 1100, y);
+            if (hit !== null && hit.closest(".rct-item") === null && hit.closest(".rct-scroll") !== null) return { mode: "drag", x: 1100, y: y - box.top };
+          }
+          return { mode: "drag", x: 1100, y: r.top + 4 - box.top };
+        },
+        // ctrl + wheel scales the span by 1 + 10 deltaY / 500: in by 1.2 is deltaY -50/6, out by 1.2 is +10.
+        zoom: { supported: true, stepIn: 50 / 6, stepOut: 10 },
+        edits: () => edits,
+      });
+    </script>
+  </body>
+</html>

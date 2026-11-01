@@ -1,0 +1,10 @@
+{
+  "title": "Right to left, in Hebrew, Arabic and Persian, each on its own calendar",
+  "height": 420,
+  "expect": [
+    { "selector": "#timeline svg[dir=rtl] [role=option]", "min": 5 },
+    { "selector": "#timeline svg .tl-mirror", "min": 1 },
+    { "selector": "#timeline .tl-presets button", "min": 4 },
+    { "selector": "button[data-language]", "min": 3 }
+  ]
+}

@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="tl" viewBox="0 0 360 480" width="360" height="480" data-tl-orientation="horizontal" data-tl-density="dense" data-tl-theme="dark" data-tl-instance="360-horizontal-dark-rtl" role="listbox" tabindex="0" aria-label="Projekt idővonal" aria-orientation="horizontal" dir="rtl" data-tl-direction="rtl">
+  <style>.tl[data-tl-instance="360-horizontal-dark-rtl"]{--tl-surface:#14171c;--tl-surface-alt:#1b2027;--tl-text:#e9edf2;--tl-text-muted:#9aa4b2;--tl-line:#2c323b;--tl-line-strong:#7b8494;--tl-item-fill:#1e3350;--tl-item-stroke:#4f82c8;--tl-item-text:#e7f0fb;--tl-accent:#79aef5;--tl-now:#ff7a94;--tl-era:#262237;--tl-era-text:#c3c6e8;--tl-marker:#b08ae8;--tl-focus:#93b4ff}.tl[data-tl-instance="360-horizontal-dark-rtl"]{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-surface{fill:var(--tl-surface)}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-band{fill:var(--tl-surface-alt)}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-lane{fill:none}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-lane--pinned{fill:var(--tl-surface-alt)}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-tick{stroke:var(--tl-line);stroke-width:1}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-tick--major{stroke:var(--tl-line-strong)}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-tick-label{fill:var(--tl-text-muted);font-size:9px}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-tick-label--major{fill:var(--tl-text)}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-item{fill:var(--tl-item-fill);stroke:var(--tl-item-stroke);stroke-width:1}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-item--open{stroke-dasharray:4 3}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-item--selected{stroke:var(--tl-focus);stroke-width:2}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-label{fill:var(--tl-item-text);color:var(--tl-item-text);font-size:10px;pointer-events:none}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-label&gt;div{white-space:pre;margin:0;padding:0 0 0 4px;line-height:12px}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-label--after{fill:var(--tl-text);color:var(--tl-text)}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-cluster{fill:var(--tl-accent);stroke:var(--tl-surface);stroke-width:1;cursor:zoom-in}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-cluster--selected{stroke:var(--tl-focus);stroke-width:2}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-cluster-count{fill:var(--tl-surface);color:var(--tl-surface);font-weight:600}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-label--after.tl-cluster-count{fill:var(--tl-text);color:var(--tl-text)}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-era{fill:var(--tl-era)}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-era-label{fill:var(--tl-era-text);font-size:9px}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-now{stroke:var(--tl-now);stroke-width:2}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-now-label{fill:var(--tl-now);font-size:9px}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-marker{fill:var(--tl-marker)}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-marker-label{fill:var(--tl-marker);font-size:9px}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-accent{fill:var(--tl-accent)}.tl[data-tl-instance="360-horizontal-dark-rtl"]:focus-visible,.tl[data-tl-instance="360-horizontal-dark-rtl"] :focus-visible{outline:2px solid var(--tl-focus);outline-offset:1px}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-focus-ring{fill:none;stroke:var(--tl-focus);stroke-width:2;vector-effect:non-scaling-stroke;pointer-events:none}.tl[data-tl-instance="360-horizontal-dark-rtl"]:not(:focus) .tl-focus-ring{display:none}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-loading{stroke:var(--tl-accent);stroke-width:3;stroke-dasharray:10 5;vector-effect:non-scaling-stroke;pointer-events:none;animation:tl-loading 0.9s linear infinite}.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-loading--failed{stroke:var(--tl-now);stroke-dasharray:2 4;animation:none}@keyframes tl-loading{to{stroke-dashoffset:-15}}@media (prefers-reduced-motion:reduce){.tl[data-tl-instance="360-horizontal-dark-rtl"] .tl-loading{animation:none}}.tl[data-tl-instance="360-horizontal-dark-rtl"]{touch-action:none;overscroll-behavior:contain;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;cursor:grab}.tl[data-tl-instance="360-horizontal-dark-rtl"][data-tl-gesture="pan"],.tl[data-tl-instance="360-horizontal-dark-rtl"][data-tl-gesture="pinch"]{cursor:grabbing}.tl[data-tl-instance="360-horizontal-dark-rtl"][data-tl-edit="move"]{cursor:grabbing}.tl[data-tl-instance="360-horizontal-dark-rtl"][data-tl-edit="resize-start"],.tl[data-tl-instance="360-horizontal-dark-rtl"][data-tl-edit="resize-end"]{cursor:ew-resize}</style>
+  <style>.tl .tl-mirror text{transform-box:fill-box;transform-origin:center;transform:scaleX(-1);direction:rtl}.tl .tl-mirror text:not([text-anchor]),.tl .tl-mirror text[text-anchor="start"]{text-anchor:end}.tl .tl-mirror text[text-anchor="end"]{text-anchor:start}.tl .tl-mirror foreignObject&gt;*{transform:scaleX(-1);direction:rtl;unicode-bidi:plaintext;text-align:right}.tl .tl-mirror .tl-label&gt;div{padding:0 4px}</style>
+  <g class="tl-mirror" transform="matrix(-1 0 0 1 360 0)">
+    <rect class="tl-surface" x="0" y="0" width="360" height="480" aria-hidden="true"/>
+    <g class="tl-layer tl-layer--background" aria-hidden="true">
+      <rect class="tl-band" x="0" y="18" width="179.463" height="462"/>
+      <rect class="tl-era" data-tl-era="q1" x="0" y="18" width="179.463" height="462"/>
+      <text class="tl-era-label" x="4" y="24" dominant-baseline="central" text-anchor="start">Q1 vége</text>
+    </g>
+    <g class="tl-layer tl-layer--axis" aria-hidden="true">
+      <line class="tl-tick" x1="0" y1="0" x2="0" y2="480"/>
+      <text class="tl-tick-label" x="4" y="9" dominant-baseline="central" text-anchor="start">24</text>
+      <line class="tl-tick" x1="179.463" y1="0" x2="179.463" y2="480"/>
+      <text class="tl-tick-label" x="183.463" y="9" dominant-baseline="central" text-anchor="start">31</text>
+      <line class="tl-tick" x1="360" y1="0" x2="360" y2="480"/>
+    </g>
+    <g class="tl-layer tl-layer--lanes" aria-hidden="true">
+      <rect class="tl-lane tl-lane--pinned" data-tl-lane="mert" x="0" y="18" width="360" height="16"/>
+      <rect class="tl-lane" data-tl-lane="terv" x="0" y="40" width="360" height="34"/>
+      <rect class="tl-lane" data-tl-lane="epit" x="0" y="80" width="360" height="70"/>
+      <rect class="tl-lane" data-tl-lane="ures" x="0" y="156" width="360" height="16"/>
+    </g>
+    <g class="tl-layer tl-layer--items" role="none">
+      <rect id="360-horizontal-dark-rtl-i-roviden" role="option" aria-label="Egy nagyon hosszú megnevezés, ami biztosan nem fér el, Mar 26, 2025, 12:00 AM – Mar 26, 2025, 6:00 AM, Mérföldkövek" aria-selected="false" aria-posinset="4" aria-setsize="12" class="tl-item" data-tl-id="roviden" x="51.582" y="18" width="6.448" height="16" rx="2">
+        <title>Egy nagyon hosszú megnevezés, ami biztosan nem fér el, Mar 26, 2025, 12:00 AM – Mar 26, 2025, 6:00 AM, Mérföldkövek</title>
+      </rect>
+      <rect id="360-horizontal-dark-rtl-i-pillanat" role="option" aria-label="Pillanat, Mar 31, 2025, 9:30 AM, Mérföldkövek" aria-selected="false" aria-posinset="8" aria-setsize="12" class="tl-item tl-item--instant" data-tl-id="pillanat" x="189.672" y="18" width="2" height="16" rx="2">
+        <title>Pillanat, Mar 31, 2025, 9:30 AM, Mérföldkövek</title>
+      </rect>
+      <rect id="360-horizontal-dark-rtl-i-kiadas" role="option" aria-label="Kiadás, Apr 5, 2025, Mérföldkövek" aria-selected="false" aria-posinset="11" aria-setsize="12" class="tl-item" data-tl-id="kiadas" x="308.418" y="18" width="25.791" height="16" rx="2">
+        <title>Kiadás, Apr 5, 2025, Mérföldkövek</title>
+      </rect>
+      <rect id="360-horizontal-dark-rtl-i-elozmeny" role="option" aria-label="Előzmény, részben kilátszó, Mar 10, 2025 – Mar 26, 2025, Tervezés" aria-selected="false" aria-posinset="1" aria-setsize="12" class="tl-item" data-tl-id="elozmeny" x="-16" y="40" width="67.582" height="16" rx="2">
+        <title>Előzmény, részben kilátszó, Mar 10, 2025 – Mar 26, 2025, Tervezés</title>
+      </rect>
+      <rect id="360-horizontal-dark-rtl-i-kutatas" role="option" aria-label="Kutatás, Mar 25, 2025 – Mar 31, 2025, Tervezés" aria-selected="true" aria-posinset="3" aria-setsize="12" class="tl-item tl-item--selected" data-tl-id="kutatas" x="25.791" y="58" width="153.672" height="16" rx="2">
+        <title>Kutatás, Mar 25, 2025 – Mar 31, 2025, Tervezés</title>
+      </rect>
+      <rect id="360-horizontal-dark-rtl-i-interjuk" role="option" aria-label="Interjúk, Mar 27, 2025 – Mar 29, 2025, Tervezés" aria-selected="false" aria-posinset="5" aria-setsize="12" class="tl-item" data-tl-id="interjuk" x="77.373" y="40" width="51.582" height="16" rx="2">
+        <title>Interjúk, Mar 27, 2025 – Mar 29, 2025, Tervezés</title>
+      </rect>
+      <rect id="360-horizontal-dark-rtl-i-dontes" role="option" aria-label="Döntés napja, Mar 30, 2025, Tervezés" aria-selected="false" aria-posinset="7" aria-setsize="12" class="tl-item" data-tl-id="dontes" x="154.746" y="40" width="24.716" height="16" rx="2">
+        <title>Döntés napja, Mar 30, 2025, Tervezés</title>
+      </rect>
+      <rect id="360-horizontal-dark-rtl-i-nevtelen" role="option" aria-label="nevtelen, Apr 2, 2025 – Apr 4, 2025, Tervezés" aria-selected="false" aria-posinset="10" aria-setsize="12" class="tl-item" data-tl-id="nevtelen" x="231.045" y="40" width="51.582" height="16" rx="2">
+        <title>nevtelen, Apr 2, 2025 – Apr 4, 2025, Tervezés</title>
+      </rect>
+      <rect id="360-horizontal-dark-rtl-i-szakasz" role="option" aria-label="Első szakasz, Mar 24, 2025 – Apr 2, 2025, Építés" aria-selected="false" aria-posinset="2" aria-setsize="12" class="tl-item" data-tl-id="szakasz" x="0" y="80" width="231.045" height="34" rx="2">
+        <title>Első szakasz, Mar 24, 2025 – Apr 2, 2025, Építés</title>
+      </rect>
+      <rect id="360-horizontal-dark-rtl-i-fejlesztes" role="option" aria-label="Fejlesztés, nyitott, Mar 28, 2025 –, Építés" aria-selected="false" aria-posinset="6" aria-setsize="12" class="tl-item tl-item--open" data-tl-id="fejlesztes" x="103.164" y="116" width="272.836" height="16" rx="2">
+        <title>Fejlesztés, nyitott, Mar 28, 2025 –, Építés</title>
+      </rect>
+      <rect id="360-horizontal-dark-rtl-i-javitas" role="option" aria-label="Javítás, Apr 1, 2025 – Apr 3, 2025, Építés" aria-selected="false" aria-posinset="9" aria-setsize="12" class="tl-item" data-tl-id="javitas" x="205.254" y="134" width="51.582" height="16" rx="2">
+        <title>Javítás, Apr 1, 2025 – Apr 3, 2025, Építés</title>
+      </rect>
+    </g>
+    <g class="tl-layer tl-layer--labels" aria-hidden="true">
+      <foreignObject class="tl-label" data-tl-label="fejlesztes" x="103.164" y="118" width="94.2" height="12">
+        <div xmlns="http://www.w3.org/1999/xhtml">Fejlesztés, nyitott</div>
+      </foreignObject>
+      <foreignObject class="tl-label" data-tl-label="szakasz" x="0" y="91" width="70.4" height="12">
+        <div xmlns="http://www.w3.org/1999/xhtml">Első szakasz</div>
+      </foreignObject>
+      <foreignObject class="tl-label" data-tl-label="kutatas" x="25.791" y="60" width="43.9" height="12">
+        <div xmlns="http://www.w3.org/1999/xhtml">Kutatás</div>
+      </foreignObject>
+      <foreignObject class="tl-label" data-tl-label="elozmeny" x="0" y="42" width="51" height="12">
+        <div xmlns="http://www.w3.org/1999/xhtml">Előzmé…</div>
+      </foreignObject>
+      <foreignObject class="tl-label" data-tl-label="interjuk" x="77.373" y="42" width="43.8" height="12">
+        <div xmlns="http://www.w3.org/1999/xhtml">Interjúk</div>
+      </foreignObject>
+      <foreignObject class="tl-label" data-tl-label="javitas" x="205.254" y="136" width="46.5" height="12">
+        <div xmlns="http://www.w3.org/1999/xhtml">Javítás</div>
+      </foreignObject>
+      <foreignObject class="tl-label tl-label--after" data-tl-label="dontes" x="179.463" y="42" width="47.1" height="12">
+        <div xmlns="http://www.w3.org/1999/xhtml">Döntés…</div>
+      </foreignObject>
+      <foreignObject class="tl-label tl-label--after" data-tl-label="roviden" x="58.03" y="20" width="131.3" height="12">
+        <div xmlns="http://www.w3.org/1999/xhtml">Egy nagyon hosszú megn…</div>
+      </foreignObject>
+      <foreignObject class="tl-label tl-label--after" data-tl-label="pillanat" x="191.672" y="20" width="44.7" height="12">
+        <div xmlns="http://www.w3.org/1999/xhtml">Pillanat</div>
+      </foreignObject>
+    </g>
+    <g class="tl-layer tl-layer--foreground" aria-hidden="true">
+      <line class="tl-now" x1="166.567" y1="0" x2="166.567" y2="480"/>
+      <text class="tl-now-label" x="133.417" y="9" dominant-baseline="central" text-anchor="start">most</text>
+      <polygon class="tl-marker" data-tl-marker="atallas" points="156.896,4.5 161.396,13.5 152.396,13.5"/>
+      <circle class="tl-marker" data-tl-marker="demo" cx="282.627" cy="9" r="4.5"/>
+      <text class="tl-marker-label" x="291.127" y="9" dominant-baseline="central" text-anchor="start">demó</text>
+    </g>
+    <g class="tl-layer tl-layer--overlay" aria-hidden="true"/>
+  </g>
+</svg>

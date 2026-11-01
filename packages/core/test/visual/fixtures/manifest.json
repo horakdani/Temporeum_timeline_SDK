@@ -1,0 +1,140 @@
+{
+  "note": "A G-VISUAL provenanciája. A scenario és a fixture-ök sha256-ja; elavult fixture vagy kézi szerkesztés itt látszik.",
+  "core": "1.0.0-rc.4",
+  "scenarioSha256": "4f4072c87bdcc2d9c9a36e3a9dab5d53d3799d111529cdace802e1118d71741d",
+  "matrixSha256": "62ccae1ab76e3b50ef80eb4a910b4b85a74d849fdc8275c9b5acde03d19d9802",
+  "cases": [
+    {
+      "name": "360-horizontal-light",
+      "nodes": 67,
+      "items": 11,
+      "rows": 8,
+      "labelsKept": 9,
+      "labelsDropped": 1,
+      "ticks": 3,
+      "bytes": 12553,
+      "sha256": "df77a853a89d7c02ebe133cbfe86670fe154bde819ecc3e60691e522e597ef4c"
+    },
+    {
+      "name": "360-horizontal-dark",
+      "nodes": 67,
+      "items": 11,
+      "rows": 8,
+      "labelsKept": 9,
+      "labelsDropped": 1,
+      "ticks": 3,
+      "bytes": 12500,
+      "sha256": "7f859599847009cc61916cedcdda7332f9accd03c293e6b8a14ebf6c7224ff02"
+    },
+    {
+      "name": "360-vertical-light",
+      "nodes": 61,
+      "items": 9,
+      "rows": 8,
+      "labelsKept": 8,
+      "labelsDropped": 0,
+      "ticks": 3,
+      "bytes": 11607,
+      "sha256": "97008c104eeddf8215af6b0831be2831c5ff4b3622c6e601360bb6b0996b34cb"
+    },
+    {
+      "name": "360-vertical-dark",
+      "nodes": 61,
+      "items": 9,
+      "rows": 8,
+      "labelsKept": 8,
+      "labelsDropped": 0,
+      "ticks": 3,
+      "bytes": 11556,
+      "sha256": "ab9572fc46618455e19ffd6fd36586a8a7cf032e962aa0c0df2b9c1d88ee0070"
+    },
+    {
+      "name": "768-horizontal-light",
+      "nodes": 69,
+      "items": 11,
+      "rows": 8,
+      "labelsKept": 10,
+      "labelsDropped": 0,
+      "ticks": 3,
+      "bytes": 12805,
+      "sha256": "3a81902f34efc110b95ce93ee1cf448495f031b81b46d6dd8d30271b0d0de128"
+    },
+    {
+      "name": "768-horizontal-dark",
+      "nodes": 69,
+      "items": 11,
+      "rows": 8,
+      "labelsKept": 10,
+      "labelsDropped": 0,
+      "ticks": 3,
+      "bytes": 12752,
+      "sha256": "d9ab9b85c8590a98d0ece072a1dcb2c38b655c928b7235061f0c4226d7dc6c7a"
+    },
+    {
+      "name": "768-vertical-light",
+      "nodes": 67,
+      "items": 11,
+      "rows": 8,
+      "labelsKept": 9,
+      "labelsDropped": 0,
+      "ticks": 3,
+      "bytes": 12557,
+      "sha256": "e2b6a69d23aad61a7a7cfc6f4336a5e7c1bca35685fc2b157aae92a08f644720"
+    },
+    {
+      "name": "768-vertical-dark",
+      "nodes": 67,
+      "items": 11,
+      "rows": 8,
+      "labelsKept": 9,
+      "labelsDropped": 0,
+      "ticks": 3,
+      "bytes": 12504,
+      "sha256": "45b2232d05b47607345da25a3f95957d99d3bcd341f7f98a0254a21964a7445e"
+    },
+    {
+      "name": "1440-horizontal-light",
+      "nodes": 99,
+      "items": 11,
+      "rows": 8,
+      "labelsKept": 10,
+      "labelsDropped": 0,
+      "ticks": 15,
+      "bytes": 15546,
+      "sha256": "17f41d1d4852953798064fb5cdad856aac5d54b1d70564317b02d7e4323d8157"
+    },
+    {
+      "name": "1440-horizontal-dark",
+      "nodes": 99,
+      "items": 11,
+      "rows": 8,
+      "labelsKept": 10,
+      "labelsDropped": 0,
+      "ticks": 15,
+      "bytes": 15493,
+      "sha256": "366e2a26202f563f39ab52ad1e7d16338a731b177c59d156c9556e70246a8bae"
+    },
+    {
+      "name": "1440-vertical-light",
+      "nodes": 70,
+      "items": 11,
+      "rows": 8,
+      "labelsKept": 10,
+      "labelsDropped": 0,
+      "ticks": 3,
+      "bytes": 12914,
+      "sha256": "00f35840be5806e0932468c4e4194b50ead0f7df6526f1684f3b838f4f9b0047"
+    },
+    {
+      "name": "1440-vertical-dark",
+      "nodes": 70,
+      "items": 11,
+      "rows": 8,
+      "labelsKept": 10,
+      "labelsDropped": 0,
+      "ticks": 3,
+      "bytes": 12861,
+      "sha256": "a8c54fde077d0f2e012dd4bc16a0cfd6aba6c6a59d5f339fc569234461b81ba7"
+    }
+  ]
+}

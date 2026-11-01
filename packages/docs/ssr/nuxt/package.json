@@ -1,0 +1,6 @@
+{
+  "name": "tl-ssr-nuxt",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "nuxt build" }
+}

@@ -1,0 +1,535 @@
+{
+  "library": "frappe-gantt",
+  "version": "1.2.2",
+  "harness": "Each row's example runs in this harness: `container` is the timeline's element, `items` five tasks over March 2026, each in a lane of its own (`lanes`), with `progress`; `dependencies` a finish-to-start chain; `DAY` a day in milliseconds. `before` runs before `createTimeline`, `config` goes into its configuration, `after` runs with `timeline`. Every plugin is registered first (`registerPlugin` with the Gantt chart, the resource view, export, the time tools, groups, item kinds and other languages), as a page moving from frappe-gantt would: frappe-gantt draws all of its features without asking. Register only the ones your configuration uses, and a page loads only those.",
+  "statuses": {
+    "same": "Same name, same meaning.",
+    "renamed": "Same meaning, another name or place.",
+    "different": "Possible, done another way — read the note.",
+    "missing": "Not in Temporeum yet."
+  },
+  "rows": [
+    {
+      "area": "Setup",
+      "vis": "new Gantt(\"#gantt\", tasks, options)",
+      "status": "renamed",
+      "temporeum": "createTimeline(container, { items, lanes, gantt: { dependencies } })",
+      "note": "A task is an item in a lane of its own: the lanes are the chart's rows. `gantt` turns on the arrows, the progress fill and milestones; `mountTaskGrid` draws the table beside it.",
+      "uses": [
+        "TimelineConfig.gantt",
+        "TimelineGanttOptions.dependencies"
+      ],
+      "config": "gantt: { dependencies }"
+    },
+    {
+      "area": "Setup",
+      "vis": "gantt.refresh(tasks)",
+      "status": "renamed",
+      "temporeum": "timeline.setItems(items)",
+      "note": "Hand the timeline the next array; it redraws once.",
+      "uses": [
+        "Timeline.setItems"
+      ],
+      "config": "gantt: { dependencies }",
+      "after": "timeline.setItems(items.map((item) => (item.id === \"test\" ? { ...item, progress: 0.5 } : item)));"
+    },
+    {
+      "area": "Setup",
+      "vis": "gantt.update_task(id, details)",
+      "status": "renamed",
+      "temporeum": "timeline.updateItems([{ id, ...changes }])",
+      "note": "Several at once in one call; `undefined` takes a field away.",
+      "uses": [
+        "Timeline.updateItems"
+      ],
+      "config": "gantt: { dependencies }",
+      "after": "timeline.updateItems([{ id: \"build\", progress: 0.5 }]);"
+    },
+    {
+      "area": "Setup",
+      "vis": "gantt.update_options(options)",
+      "status": "renamed",
+      "temporeum": "timeline.update(config)",
+      "note": "A key given as `undefined` goes back to its default; a key left out keeps its value.",
+      "uses": [
+        "Timeline.update"
+      ],
+      "config": "gantt: { dependencies }",
+      "after": "timeline.update({ density: \"compact\" });"
+    },
+    {
+      "area": "Setup",
+      "vis": "container_height",
+      "status": "renamed",
+      "temporeum": "height",
+      "note": "In CSS pixels. Without one, the container's own height.",
+      "uses": [
+        "TimelineConfig.height"
+      ],
+      "config": "gantt: { dependencies },\nheight: 320"
+    },
+    {
+      "area": "Setup",
+      "vis": "language: \"fr\"",
+      "status": "renamed",
+      "temporeum": "locale: \"fr\"",
+      "note": "Month and day names come from `Intl` for any locale; the timeline's own words from `strings` (`@temporeum/timeline-core/intl`).",
+      "uses": [
+        "TimelineConfig.locale",
+        "TimelineConfig.strings"
+      ],
+      "config": "gantt: { dependencies },\nlocale: \"fr\""
+    },
+    {
+      "area": "View",
+      "vis": "view_mode: \"Week\", gantt.change_view_mode(\"Week\")",
+      "status": "different",
+      "temporeum": "zoomPresets: true, timeline.zoomToPreset(\"week\")",
+      "note": "Day, week, month and year are the default presets. A preset zooms the view to that span; the columns follow the zoom instead of being redrawn per mode.",
+      "uses": [
+        "TimelineConfig.zoomPresets",
+        "Timeline.zoomToPreset"
+      ],
+      "config": "gantt: { dependencies },\nzoomPresets: true",
+      "after": "timeline.zoomToPreset(\"week\");"
+    },
+    {
+      "area": "View",
+      "vis": "view_mode_select: true",
+      "status": "different",
+      "temporeum": "zoomPresets: true",
+      "note": "The presets are buttons over the timeline.",
+      "uses": [
+        "TimelineConfig.zoomPresets"
+      ],
+      "config": "gantt: { dependencies },\nzoomPresets: true"
+    },
+    {
+      "area": "View",
+      "vis": "scroll_to: \"start\" | \"end\" | date",
+      "status": "different",
+      "temporeum": "domain: [start, end]",
+      "note": "The first view. Without a domain the view fits the tasks, with a margin.",
+      "uses": [
+        "TimelineConfig.domain"
+      ],
+      "config": "gantt: { dependencies },\ndomain: [new Date(\"2026-03-01\"), new Date(\"2026-04-03\")]"
+    },
+    {
+      "area": "View",
+      "vis": "gantt.scroll_current()",
+      "status": "renamed",
+      "temporeum": "timeline.scrollTo(Date.now())",
+      "note": "The library never reads the clock; the host passes the time.",
+      "uses": [
+        "Timeline.scrollTo"
+      ],
+      "config": "gantt: { dependencies }",
+      "after": "const now = new Date(\"2026-03-16\"); // Date.now() in an app\ntimeline.scrollTo(now);"
+    },
+    {
+      "area": "View",
+      "vis": "today_button: true",
+      "status": "different",
+      "temporeum": "a button that calls timeline.scrollTo(Date.now())",
+      "note": "Not built in; one line of the host's.",
+      "uses": [
+        "Timeline.scrollTo"
+      ],
+      "config": "gantt: { dependencies }",
+      "after": "const today = document.createElement(\"button\");\ntoday.textContent = \"Today\";\ntoday.addEventListener(\"click\", () => timeline.scrollTo(Date.now()));\ncontainer.before(today);"
+    },
+    {
+      "area": "View",
+      "vis": "infinite_padding: true",
+      "status": "different",
+      "temporeum": "limits: { min, max } (unbounded by default)",
+      "note": "The view pans without end unless `limits` bounds it.",
+      "uses": [
+        "TimelineConfig.limits",
+        "DomainLimits.min",
+        "DomainLimits.max"
+      ],
+      "config": "gantt: { dependencies },\nlimits: { min: new Date(\"2026-01-01\"), max: new Date(\"2026-12-31\") }"
+    },
+    {
+      "area": "View",
+      "vis": "ignore: [\"weekend\"], is_weekend",
+      "status": "different",
+      "temporeum": "hiddenDates: [{ start, end, repeat: \"weekly\" }]",
+      "note": "A hidden stretch is cut out of the axis; with `repeat` it is a pattern — here every weekend.",
+      "uses": [
+        "TimelineConfig.hiddenDates"
+      ],
+      "config": "gantt: { dependencies },\nhiddenDates: [{ start: new Date(\"2026-03-07T00:00:00Z\"), end: new Date(\"2026-03-09T00:00:00Z\"), repeat: \"weekly\" }]"
+    },
+    {
+      "area": "View",
+      "vis": "holidays",
+      "status": "different",
+      "temporeum": "decorations: [{ kind: \"era\", id, start, end, label }]",
+      "note": "A named stretch drawn behind the tasks, with its label. A one-day holiday is a day long.",
+      "uses": [
+        "TimelineConfig.decorations",
+        "EraDecoration.label"
+      ],
+      "config": "gantt: { dependencies },\ndecorations: [{ kind: \"era\", id: \"easter\", start: new Date(\"2026-04-03\"), end: new Date(\"2026-04-07\"), label: \"Easter\" }]"
+    },
+    {
+      "area": "View",
+      "vis": "date_format, view_modes[].upper_text / lower_text",
+      "status": "different",
+      "temporeum": "formatTick(tick, timeZone)",
+      "note": "One function for every axis label; `tick.granularity` says what the label stands for.",
+      "uses": [
+        "TimelineConfig.formatTick",
+        "Tick.time",
+        "Tick.granularity"
+      ],
+      "config": "gantt: { dependencies },\nformatTick: (tick) => new Date(tick.time).toISOString().slice(0, 10)"
+    },
+    {
+      "area": "View",
+      "vis": "bar_height, padding",
+      "status": "different",
+      "temporeum": "density",
+      "note": "Row height follows the density; `auto` picks one at which every row fits.",
+      "uses": [
+        "TimelineConfig.density"
+      ],
+      "config": "gantt: { dependencies },\ndensity: \"compact\""
+    },
+    {
+      "area": "View",
+      "vis": "auto_move_label: true",
+      "status": "same",
+      "temporeum": "on by default",
+      "note": "A label stays on the visible part of a bar the edge cuts off; one that does not fit inside its bar is shortened with an ellipsis, or given up with `labelOverflow: \"drop\"`.",
+      "uses": [
+        "TimelineConfig.labelOverflow"
+      ],
+      "config": "gantt: { dependencies },\nlabelOverflow: \"ellipsis\""
+    },
+    {
+      "area": "View",
+      "vis": "popup, popup_on: \"hover\"",
+      "status": "renamed",
+      "temporeum": "tooltip: (item) => text",
+      "note": "On hover and on keyboard focus. The text is the item's; the library adds no HTML of its own.",
+      "uses": [
+        "TimelineConfig.tooltip"
+      ],
+      "config": "gantt: { dependencies },\ntooltip: (item) => `${item.label ?? item.id}: ${String(Math.round((item.progress ?? 0) * 100))}%`"
+    },
+    {
+      "area": "Editing",
+      "vis": "readonly: true",
+      "status": "different",
+      "temporeum": "the default (editing: { enabled: false })",
+      "note": "A Temporeum timeline is read-only until `editing.enabled`; frappe-gantt is editable until `readonly`.",
+      "uses": [
+        "TimelineConfig.editing",
+        "TimelineEditingOptions.enabled"
+      ],
+      "config": "gantt: { dependencies },\nediting: { enabled: false }"
+    },
+    {
+      "area": "Editing",
+      "vis": "readonly_dates: true",
+      "status": "different",
+      "temporeum": "item.movable: false, item.resizable: false",
+      "note": "Per item, with editing on.",
+      "uses": [
+        "Item.movable",
+        "Item.resizable"
+      ],
+      "config": "gantt: { dependencies },\nediting: { enabled: true }",
+      "after": "timeline.setItems(items.map((item) => ({ ...item, movable: false, resizable: false })));"
+    },
+    {
+      "area": "Editing",
+      "vis": "snap_at: \"1d\"",
+      "status": "renamed",
+      "temporeum": "editing: { snapMs: DAY }",
+      "note": "In milliseconds, from the epoch or `snapOrigin`.",
+      "uses": [
+        "TimelineEditingOptions.snapMs",
+        "TimelineEditingOptions.snapOrigin"
+      ],
+      "config": "gantt: { dependencies },\nediting: { enabled: true, snapMs: DAY }"
+    },
+    {
+      "area": "Editing",
+      "vis": "move_dependencies: true",
+      "status": "different",
+      "temporeum": "scheduleTasks(items, dependencies) from /schedule",
+      "note": "A move moves one task. The scheduler of `@temporeum/timeline-core/schedule` says where the ones after it go — with lags, constraints and working calendars — and `setItems` puts them there.",
+      "uses": [
+        "TimelineGanttOptions.dependencies"
+      ],
+      "imports": "import { scheduleTasks } from \"@temporeum/timeline-core/schedule\";",
+      "config": "gantt: { dependencies }",
+      "after": "const plan = scheduleTasks(items, dependencies);\ntimeline.setItems(items.map((item) => {\n  const task = plan.tasks.get(item.id);\n  return task === undefined ? item : { ...item, start: task.start, end: task.end };\n}));"
+    },
+    {
+      "area": "Tasks",
+      "vis": "task.id",
+      "status": "same",
+      "temporeum": "item.id, and the lane's id",
+      "note": "One lane per task, with the same id, keeps one task per row.",
+      "uses": [
+        "Item.id",
+        "Item.laneId"
+      ],
+      "config": "gantt: { dependencies }",
+      "before": "const extra = { id: \"docs\", laneId: \"docs\", label: \"Docs\", start: new Date(\"2026-03-16\"), end: new Date(\"2026-03-20\") };\nconst allLanes = [...lanes, { id: \"docs\", label: \"Docs\" }];",
+      "after": "timeline.update({ lanes: allLanes });\ntimeline.addItems([extra]);"
+    },
+    {
+      "area": "Tasks",
+      "vis": "task.name",
+      "status": "renamed",
+      "temporeum": "item.label",
+      "note": "Also the item's accessible name.",
+      "uses": [
+        "Item.label"
+      ],
+      "config": "gantt: { dependencies }",
+      "after": "timeline.updateItems([{ id: \"spec\", label: \"Specification\" }]);"
+    },
+    {
+      "area": "Tasks",
+      "vis": "task.start, task.end: \"YYYY-MM-DD\"",
+      "status": "different",
+      "temporeum": "item.start, item.end: Date or epoch ms",
+      "note": "frappe-gantt reads a date string as local midnight, and a date-only end as the end of that day. `new Date(2026, 2, 6)` is local midnight; `new Date(\"2026-03-06\")` is UTC midnight. For an inclusive end, add a day.",
+      "uses": [
+        "Item.start",
+        "Item.end"
+      ],
+      "config": "gantt: { dependencies }",
+      "before": "const frappeTask = { id: \"copy\", name: \"Copy\", start: \"2026-03-16\", end: \"2026-03-18\" };\nconst local = (text: string) => { const [y, m, d] = text.split(\"-\").map(Number); return new Date(y ?? 0, (m ?? 1) - 1, d ?? 1); };\nconst copy = { id: frappeTask.id, laneId: \"build\", label: frappeTask.name, start: local(frappeTask.start), end: new Date(local(frappeTask.end).getTime() + DAY) };",
+      "after": "timeline.addItems([copy]);"
+    },
+    {
+      "area": "Tasks",
+      "vis": "task.progress: 0 to 100",
+      "status": "different",
+      "temporeum": "item.progress: 0 to 1",
+      "note": "Divide by 100. Drawn as the filled part of the bar.",
+      "uses": [
+        "Item.progress"
+      ],
+      "config": "gantt: { dependencies }",
+      "after": "timeline.updateItems([{ id: \"build\", progress: 45 / 100 }]);"
+    },
+    {
+      "area": "Tasks",
+      "vis": "task.dependencies: \"a, b\"",
+      "status": "different",
+      "temporeum": "gantt: { dependencies: [{ from: \"a\", to: id }] }",
+      "note": "One list for the whole chart, each with its type (`FS` by default) and lag.",
+      "uses": [
+        "TimelineGanttOptions.dependencies",
+        "Dependency.from",
+        "Dependency.to",
+        "Dependency.type"
+      ],
+      "before": "const frappeDeps = [{ id: \"test\", dependencies: \"build, design\" }];\nconst fromFrappe = frappeDeps.flatMap((task) => task.dependencies.split(\",\").map((from) => ({ from: from.trim(), to: task.id })));",
+      "config": "gantt: { dependencies: [...dependencies, ...fromFrappe] }"
+    },
+    {
+      "area": "Tasks",
+      "vis": "task.custom_class",
+      "status": "renamed",
+      "temporeum": "item.className",
+      "note": "",
+      "uses": [
+        "Item.className"
+      ],
+      "config": "gantt: { dependencies }",
+      "after": "timeline.updateItems([{ id: \"test\", className: \"at-risk\" }]);"
+    },
+    {
+      "area": "Tasks",
+      "vis": "task.color, task.color_progress",
+      "status": "different",
+      "temporeum": "item.className and a stylesheet",
+      "note": "Colours come from the theme's custom properties and the item's class.",
+      "uses": [
+        "Item.className",
+        "TimelineConfig.theme"
+      ],
+      "config": "gantt: { dependencies },\ntheme: \"auto\"",
+      "after": "timeline.updateItems([{ id: \"spec\", className: \"done\" }]);"
+    },
+    {
+      "area": "Tasks",
+      "vis": "task.duration: \"3d\"",
+      "status": "different",
+      "temporeum": "item.end",
+      "note": "Give the end: start plus the duration.",
+      "uses": [
+        "Item.end"
+      ],
+      "config": "gantt: { dependencies }",
+      "before": "const begin = new Date(\"2026-03-23\");\nconst review = { id: \"review\", laneId: \"test\", label: \"Review\", start: begin, end: new Date(begin.getTime() + 3 * DAY) };",
+      "after": "timeline.addItems([review]);"
+    },
+    {
+      "area": "Tasks",
+      "vis": "task.description",
+      "status": "different",
+      "temporeum": "tooltip",
+      "note": "The tooltip reads it from the item, or from `data`.",
+      "uses": [
+        "TimelineConfig.tooltip",
+        "Item.data"
+      ],
+      "config": "gantt: { dependencies },\ntooltip: (item) => (item.id === \"build\" ? \"Build the release\" : null)"
+    },
+    {
+      "area": "Tasks",
+      "vis": "a zero-length task",
+      "status": "different",
+      "temporeum": "item.kind: \"milestone\"",
+      "note": "A diamond at its start, with the `gantt` option.",
+      "uses": [
+        "Item.kind"
+      ],
+      "config": "gantt: { dependencies }"
+    },
+    {
+      "area": "Events",
+      "vis": "on_click(task)",
+      "status": "renamed",
+      "temporeum": "on(\"itemClick\")",
+      "note": "Also fires for `Enter` on the focused item.",
+      "uses": [
+        "TimelineInstanceEventMap.itemClick"
+      ],
+      "config": "gantt: { dependencies }",
+      "after": "timeline.on(\"itemClick\", ({ item }) => console.log(item.id));"
+    },
+    {
+      "area": "Events",
+      "vis": "on_double_click(task)",
+      "status": "renamed",
+      "temporeum": "on(\"itemDblClick\")",
+      "note": "",
+      "uses": [
+        "TimelineInstanceEventMap.itemDblClick"
+      ],
+      "config": "gantt: { dependencies }",
+      "after": "timeline.on(\"itemDblClick\", ({ item }) => console.log(item.id));"
+    },
+    {
+      "area": "Events",
+      "vis": "on_hover(task)",
+      "status": "renamed",
+      "temporeum": "on(\"itemHover\")",
+      "note": "`item` is `null` when the pointer leaves every item.",
+      "uses": [
+        "TimelineInstanceEventMap.itemHover"
+      ],
+      "config": "gantt: { dependencies }",
+      "after": "timeline.on(\"itemHover\", ({ item }) => console.log(item?.id ?? \"none\"));"
+    },
+    {
+      "area": "Events",
+      "vis": "on_date_change(task, start, end)",
+      "status": "different",
+      "temporeum": "on(\"itemMoved\"), on(\"itemResized\")",
+      "note": "Each carries the item, where it was, where it is now, and the reversible command. The library never saves.",
+      "uses": [
+        "TimelineInstanceEventMap.itemMoved",
+        "TimelineInstanceEventMap.itemResized"
+      ],
+      "config": "gantt: { dependencies },\nediting: { enabled: true }",
+      "after": "timeline.on(\"itemMoved\", ({ item, to }) => console.log(item.id, to.start, to.end));\ntimeline.on(\"itemResized\", ({ item, to }) => console.log(item.id, to.end));"
+    },
+    {
+      "area": "Events",
+      "vis": "on_view_change(mode)",
+      "status": "renamed",
+      "temporeum": "on(\"viewportChanged\")",
+      "note": "Fires for every change of the view, with its reason.",
+      "uses": [
+        "TimelineInstanceEventMap.viewportChanged"
+      ],
+      "config": "gantt: { dependencies }",
+      "after": "timeline.on(\"viewportChanged\", ({ reason }) => console.log(reason));"
+    },
+    {
+      "area": "Events",
+      "vis": "on_date_click(date)",
+      "status": "different",
+      "temporeum": "rangeSelect: true, on(\"rangeSelected\")",
+      "note": "A drag on empty time selects a range; a click on it selects nothing.",
+      "uses": [
+        "TimelineConfig.rangeSelect",
+        "TimelineInstanceEventMap.rangeSelected"
+      ],
+      "config": "gantt: { dependencies },\nrangeSelect: true",
+      "after": "timeline.on(\"rangeSelected\", (range) => console.log(range));"
+    },
+    {
+      "area": "Events",
+      "vis": "on_progress_change(task, progress)",
+      "status": "missing",
+      "note": "Progress is drawn, not dragged: change it with `updateItems`.",
+      "absent": [
+        "TimelineInstanceEventMap.progressChange",
+        "TimelineInstanceEventMap.progressChanged"
+      ]
+    },
+    {
+      "area": "View",
+      "vis": "show_expected_progress",
+      "status": "missing",
+      "note": "`baseline` draws the planned span under the bar, which shows a slip; an expected-progress mark is not drawn.",
+      "absent": [
+        "TimelineGanttOptions.expectedProgress",
+        "Item.expectedProgress"
+      ]
+    },
+    {
+      "area": "View",
+      "vis": "arrow_curve",
+      "status": "missing",
+      "note": "Arrows are routed around the bars with right angles.",
+      "absent": [
+        "TimelineGanttOptions.arrowCurve"
+      ]
+    },
+    {
+      "area": "View",
+      "vis": "lines: \"vertical\" | \"horizontal\" | \"none\"",
+      "status": "missing",
+      "note": "The grid follows the axis ticks and the lanes; it is styled, not switched off by an option.",
+      "absent": [
+        "TimelineConfig.lines",
+        "TimelineConfig.gridLines"
+      ]
+    },
+    {
+      "area": "View",
+      "vis": "upper_header_height, lower_header_height",
+      "status": "missing",
+      "note": "The axis is one band of its own height.",
+      "absent": [
+        "TimelineConfig.headerHeight",
+        "TimelineConfig.upperHeaderHeight"
+      ]
+    },
+    {
+      "area": "Tasks",
+      "vis": "task.thumbnail",
+      "status": "missing",
+      "note": "No picture on the bar itself; a `template` draws sanitised HTML in its place.",
+      "absent": [
+        "Item.thumbnail"
+      ]
+    }
+  ]
+}

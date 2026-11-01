@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+.bench-*.json
+.*-report.json
+.*-control.json
+.*-log.json
+*.tgz
+.DS_Store

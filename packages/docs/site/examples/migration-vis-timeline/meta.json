@@ -1,0 +1,8 @@
+{
+  "title": "vis-timeline data, converted",
+  "height": 340,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 4 },
+    { "selector": "#log:not(:empty)", "min": 1 }
+  ]
+}

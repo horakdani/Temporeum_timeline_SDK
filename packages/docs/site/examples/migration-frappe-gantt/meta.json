@@ -1,0 +1,8 @@
+{
+  "title": "frappe-gantt tasks, converted",
+  "height": 380,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 5 },
+    { "selector": "#grid [role=row]", "min": 5 }
+  ]
+}

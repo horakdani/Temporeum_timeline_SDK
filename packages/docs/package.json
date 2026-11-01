@@ -1,0 +1,42 @@
+{
+  "name": "@temporeum/timeline-docs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Docs site with live examples and recipes, framework templates, the comparison benchmark, and the Playwright device-emulation suites.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "axe-core": "^4.14.0"
+  },
+  "scripts": {
+    "build": "npm run --silent build -w @temporeum/timeline-core && npm run --silent build -w @temporeum/timeline-element && node scripts/build-site.mjs",
+    "test": "npm run --silent build && node --test \"test/*.test.mjs\"",
+    "test:examples": "npm run --silent build && node ../../scripts/sdk_check_examples.mjs",
+    "test:migration": "npm run --silent build && node ../../scripts/sdk_check_migration.mjs",
+    "bench:compare": "node ../../scripts/sdk_bench_compare.mjs",
+    "bench:public": "npm run --silent build && node ../../scripts/sdk_bench.mjs public && node ../../scripts/sdk_check_perf.mjs public",
+    "bench:deep": "npm run --silent build && node ../../scripts/sdk_bench.mjs deep && node ../../scripts/sdk_check_perf_deep.mjs",
+    "bench:wheel": "npm run --silent build && node ../../scripts/sdk_bench.mjs wheel && node ../../scripts/sdk_check_perf_wheel.mjs",
+    "bench:labels": "npm run --silent build && node -e \"require('node:fs').rmSync('.bench-labels.json',{force:true})\" && node ../../scripts/sdk_bench_field.mjs labels && node ../../scripts/sdk_check_bench_labels.mjs",
+    "bench:pan-memory": "npm run --silent build && node -e \"require('node:fs').rmSync('.bench-pan-memory.json',{force:true})\" && node ../../scripts/sdk_bench_field.mjs pan-memory && node ../../scripts/sdk_check_pan_memory.mjs",
+    "bench:gantt": "npm run --silent build && node -e \"require('node:fs').rmSync('.bench-gantt.json',{force:true})\" && node ../../scripts/sdk_bench_gantt.mjs && node ../../scripts/sdk_check_perf_gantt.mjs",
+    "bench:resources": "npm run --silent build && node -e \"require('node:fs').rmSync('.bench-resources.json',{force:true})\" && node ../../scripts/sdk_bench_resources.mjs && node ../../scripts/sdk_check_perf_resources.mjs",
+    "serve": "node e2e/serve.mjs",
+    "test:e2e:touch": "npm run --silent build -w @temporeum/timeline-core && playwright test e2e/touch.spec.ts && node ../../scripts/sdk_check_e2e_touch.mjs",
+    "test:e2e:touch:webkit": "npm run --silent build -w @temporeum/timeline-core && node -e \"for (const f of ['.e2e-touch-webkit-report.json','.ios-touch-report.json']) require('node:fs').rmSync(f,{force:true})\" && (playwright test -c playwright.webkit.config.ts; node ../../scripts/sdk_ios_touch.mjs; node ../../scripts/sdk_check_e2e_touch_webkit.mjs)",
+    "test:e2e:responsive": "npm run --silent build -w @temporeum/timeline-core && playwright test -c playwright.responsive.config.ts && node ../../scripts/sdk_check_responsive.mjs",
+    "test:a11y": "npm run --silent build && node -e \"require('node:fs').rmSync('.axe-results.json',{force:true})\" && playwright test -c playwright.a11y.config.ts && node ../../scripts/sdk_check_a11y.mjs",
+    "test:e2e:async": "npm run --silent build -w @temporeum/timeline-core && node -e \"require('node:fs').rmSync('.async-browser-log.json',{force:true})\" && playwright test -c playwright.async.config.ts",
+    "test:e2e:cluster": "npm run --silent build -w @temporeum/timeline-core && node -e \"for (const f of ['.cluster-browser-log.json','.e2e-cluster-report.json']) require('node:fs').rmSync(f,{force:true})\" && playwright test -c playwright.cluster.config.ts",
+    "test:ssr": "node ../../scripts/sdk_check_ssr.mjs",
+    "test:e2e:print": "npm run --silent build -w @temporeum/timeline-core && npm run --silent build -w @temporeum/timeline-element && node -e \"for (const f of ['.print-browser-log.json','.e2e-print-report.json']) require('node:fs').rmSync(f,{force:true})\" && (TL_P19_SPEC=print.spec.ts TL_P19_REPORT=.e2e-print-report.json TL_P19_PORT=41769 playwright test -c playwright.p19.config.ts; node ../../scripts/sdk_check_print.mjs)",
+    "test:e2e:tooltip": "npm run --silent build -w @temporeum/timeline-core && npm run --silent build -w @temporeum/timeline-element && node -e \"for (const f of ['.tooltip-browser-log.json','.e2e-tooltip-report.json']) require('node:fs').rmSync(f,{force:true})\" && (TL_P19_SPEC=tooltip.spec.ts TL_P19_REPORT=.e2e-tooltip-report.json TL_P19_PORT=41767 playwright test -c playwright.p19.config.ts; node ../../scripts/sdk_check_tooltip.mjs)",
+    "test:e2e:drop": "npm run --silent build -w @temporeum/timeline-core && npm run --silent build -w @temporeum/timeline-element && node -e \"for (const f of ['.drop-browser-log.json','.e2e-drop-report.json']) require('node:fs').rmSync(f,{force:true})\" && (TL_P19_SPEC=drop.spec.ts TL_P19_REPORT=.e2e-drop-report.json playwright test -c playwright.p19.config.ts; node ../../scripts/sdk_check_drop.mjs)",
+    "test:e2e:template": "npm run --silent build -w @temporeum/timeline-core && npm run --silent build -w @temporeum/timeline-element && TL_P19_SPEC=template.spec.ts TL_P19_REPORT=.e2e-template-report.json playwright test -c playwright.p19.config.ts",
+    "bench:field": "npm run --silent build && node -e \"require('node:fs').rmSync('site/benchmark/field/results.json',{force:true})\" && node ../../scripts/sdk_bench_rivals.mjs && npm run --silent build && node ../../scripts/sdk_check_bench_field.mjs"
+  }
+}

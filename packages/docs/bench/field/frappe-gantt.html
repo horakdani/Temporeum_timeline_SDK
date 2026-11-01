@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      html, body { margin: 0; overflow: hidden; font-family: system-ui, sans-serif; }
+      #frame { position: relative; width: 1440px; height: 900px; overflow: hidden; }
+    </style>
+    <title>Field benchmark — frappe-gantt, Gantt</title>
+    <link rel="stylesheet" href="/nm/frappe-gantt/dist/frappe-gantt.css" />
+    <script src="/nm/frappe-gantt/dist/frappe-gantt.umd.js"></script>
+  </head>
+  <body>
+    <div id="frame" data-bench-field="frappe-gantt:gantt"></div>
+    <script type="module">
+      import { ganttData, installBench, timeWindow } from "./kit.js";
+      const n = Number(new URLSearchParams(location.search).get("n") ?? 500);
+      const { tasks, links } = ganttData(n);
+      const frame = document.querySelector("#frame");
+      let edits = 0;
+      const iso = (t) => new Date(t).toISOString().slice(0, 10);
+      const into = new Map();
+      for (const link of links) into.set(link.to, link.from);
+      // Its defaults (Day view, editable), the box's height, scrolled to the start like the other two.
+      const gantt = new Gantt(
+        frame,
+        tasks.map((task) => ({ id: task.id, name: task.label, start: iso(task.start), end: iso(task.end - 86_400_000), progress: task.progress * 100, dependencies: into.get(task.id) ?? "" })),
+        { container_height: 900, scroll_to: "start", on_date_change: () => (edits += 1), on_progress_change: () => (edits += 1) },
+      );
+      // Its view as times: the chart grows at the start while it is scrolled there (infinite_padding),
+      // which moves scrollLeft, so the window is read from the chart's own start and column width.
+      const scroller = () => frame.querySelector(".gantt-container");
+      const range = () => {
+        const left = gantt.gantt_start.getTime() + (scroller().scrollLeft / gantt.config.column_width) * 86_400_000;
+        return { start: left, end: left + (scroller().clientWidth / gantt.config.column_width) * 86_400_000 };
+      };
+      const view = timeWindow(range);
+      installBench({
+        library: "frappe-gantt",
+        workload: "gantt",
+        n,
+        frame,
+        itemSelector: ".bar-wrapper",
+        offsetPx: () => view.offsetPx(),
+        zoomFactor: () => null,
+        pan: () => (view.mark(), { mode: "wheel-x", x: 720, y: 450 }),
+        // Views are modes (Day, Week, Month); no wheel zoom.
+        zoom: { supported: false, stepIn: 0, stepOut: 0 },
+        edits: () => edits,
+      });
+    </script>
+  </body>
+</html>

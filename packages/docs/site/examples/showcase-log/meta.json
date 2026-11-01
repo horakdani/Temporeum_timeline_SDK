@@ -1,0 +1,10 @@
+{
+  "title": "A live log: a new entry every second, and a day of 100 000 loaded by window",
+  "height": 500,
+  "layout": "showcase",
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 5 },
+    { "selector": "#count[data-total]", "min": 1 },
+    { "selector": "#count[data-mode='live']", "min": 1 }
+  ]
+}

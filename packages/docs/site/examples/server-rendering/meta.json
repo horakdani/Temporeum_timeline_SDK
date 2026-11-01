@@ -1,0 +1,8 @@
+{
+  "title": "Server markup, taken over by the element",
+  "height": 330,
+  "expect": [
+    { "selector": "#server temporeum-timeline svg [role=option]", "min": 3 },
+    { "selector": "#result[data-same-svg=\"true\"]", "min": 1 }
+  ]
+}

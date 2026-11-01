@@ -1,0 +1,9 @@
+{
+  "title": "Add, remove and drop items in",
+  "height": 360,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 2 },
+    { "selector": "#timeline svg .tl-template", "min": 2 },
+    { "selector": "[data-task]", "min": 2 }
+  ]
+}

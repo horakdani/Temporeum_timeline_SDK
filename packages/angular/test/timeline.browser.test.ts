@@ -1,0 +1,229 @@
+import { createComponent, provideZonelessChangeDetection } from "@angular/core";
+import type { ApplicationRef, ComponentRef } from "@angular/core";
+import { createApplication } from "@angular/platform-browser";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { commands, userEvent } from "vitest/browser";
+
+import type { Item } from "@temporeum/timeline-core";
+
+import { TimelineComponent, timelineState } from "../src/index.js";
+import type { TimelineConfig, TimelineInstance } from "../src/index.js";
+
+/**
+ * The adapter in a real Chromium with the real Angular (JIT, zoneless).
+ *
+ * The claim is React's: the component subscribes to the instance as an
+ * external store and does not run change detection per event — no input
+ * reaches the instance and no signal changes for what a pan does not
+ * change.
+ */
+
+const DAY = 86_400_000;
+const T0 = Date.UTC(2026, 0, 1);
+const items: Item[] = [
+  { id: "a", start: T0 + 2 * DAY, end: T0 + 6 * DAY, label: "Tervezés", laneId: "l1" },
+  { id: "b", start: T0 + 8 * DAY, end: T0 + 13 * DAY, label: "Építés", laneId: "l1" },
+  { id: "c", start: T0 + 16 * DAY, end: T0 + 20 * DAY, label: "Átadás", laneId: "l2" },
+];
+const lanes = [
+  { id: "l1", label: "Munka" },
+  { id: "l2", label: "Szállítás" },
+];
+const domain: [number, number] = [T0, T0 + 24 * DAY];
+const base: TimelineConfig = { items, lanes, domain, height: 260 };
+
+let app: ApplicationRef | undefined;
+afterEach(() => {
+  app?.destroy();
+  app = undefined;
+  document.body.replaceChildren();
+});
+
+function host(): HTMLElement {
+  document.body.style.margin = "0";
+  const element = document.createElement("div");
+  element.style.width = "800px";
+  document.body.append(element);
+  return element;
+}
+
+const nextFrame = (): Promise<void> => new Promise((resolve) => requestAnimationFrame(() => resolve()));
+
+/** Frames the browser draws from now until `stop()`: what "a frame at a time" is measured against. */
+function countFrames(): { stop: () => number } {
+  let frames = 0;
+  let counting = true;
+  const tick = (): void => {
+    frames += 1;
+    if (counting) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+  return {
+    stop: () => {
+      counting = false;
+      return frames;
+    },
+  };
+}
+const node = (id: string): Element => document.querySelector(`[data-tl-id="${id}"]`) as Element;
+function centre(element: Element): { x: number; y: number } {
+  const box = element.getBoundingClientRect();
+  return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+}
+
+/** The component in an application of its own, its inputs set as a template would. */
+async function place(config: TimelineConfig = base): Promise<{ ref: ComponentRef<TimelineComponent>; timeline: TimelineInstance }> {
+  app = await createApplication({ providers: [provideZonelessChangeDetection()] });
+  const hostElement = document.createElement("tl-timeline");
+  host().append(hostElement);
+  const ref = createComponent(TimelineComponent, { environmentInjector: app.injector, hostElement });
+  ref.setInput("config", config);
+  app.attachView(ref.hostView);
+  app.tick();
+  await vi.waitFor(() => {
+    if (ref.instance.timeline?.result === undefined) throw new Error("not drawn yet");
+  });
+  await nextFrame();
+  return { ref, timeline: ref.instance.timeline as TimelineInstance };
+}
+
+describe("<tl-timeline> — Angular renders from the store, not from events", () => {
+  it("a pan of real pointer events changes the range signal a frame at a time, and the selection not at all", async () => {
+    const { ref, timeline } = await place();
+    const injector = ref.injector;
+    const { runInInjectionContext, signal } = await import("@angular/core");
+    const source = signal<TimelineInstance | null>(timeline);
+    const ranges: unknown[] = [];
+    const selections: unknown[] = [];
+    const range = runInInjectionContext(injector, () => timelineState(source, (snapshot) => snapshot.domain));
+    const selection = runInInjectionContext(injector, () => timelineState(source, (snapshot) => snapshot.selectedIds));
+    const { effect } = await import("@angular/core");
+    runInInjectionContext(injector, () => {
+      effect(() => ranges.push(range()));
+      effect(() => selections.push(selection()));
+    });
+    app?.tick();
+    const update = vi.spyOn(timeline, "update");
+    const svg = document.querySelector("svg") as SVGSVGElement;
+    const box = svg.getBoundingClientRect();
+    const y = box.top + 12;
+    const frames = countFrames();
+    await commands.mouse([{ type: "move", x: box.left + 600, y }, { type: "down" }, { type: "move", x: box.left + 200, y, steps: 30 }, { type: "up" }]);
+    await vi.waitFor(() => expect(ranges.length).toBeGreaterThan(1));
+    await nextFrame();
+    const drawn = frames.stop();
+    expect(selections).toHaveLength(1);
+    // At most once per drawn frame. The browser may draw a frame per move:
+    // sixty-two events in one frame are one notification (element.browser.test.ts).
+    expect(ranges.length - 1).toBeLessThanOrEqual(drawn);
+    // The pan is the instance's: no input went in.
+    expect(update).not.toHaveBeenCalled();
+  });
+});
+
+describe("<tl-timeline> — inputs and outputs", () => {
+  it("hands the instance only what changed — the same items array is not new data", async () => {
+    const { ref, timeline } = await place();
+    const update = vi.spyOn(timeline, "update");
+    ref.setInput("config", { ...base });
+    app?.tick();
+    expect(update).not.toHaveBeenCalled();
+
+    ref.setInput("config", { ...base, orientation: "vertical", items: [items[0] as Item] });
+    app?.tick();
+    await vi.waitFor(() => expect(document.querySelector("svg")?.getAttribute("data-tl-orientation")).toBe("vertical"));
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(Object.keys(update.mock.calls[0]?.[0] ?? {}).sort()).toEqual(["items", "orientation"]);
+    expect(document.querySelectorAll("[role=option]")).toHaveLength(1);
+    // A field taken away goes back to its default.
+    ref.setInput("config", { ...base, items: [items[0] as Item] });
+    app?.tick();
+    await vi.waitFor(() => expect(document.querySelector("svg")?.getAttribute("data-tl-orientation")).toBe("horizontal"));
+    expect(ref.location.nativeElement.querySelector("[data-tl-angular]")?.style.height).toBe("260px");
+  });
+
+  it("emits an edit, and every other instance event, as an output by its own name", async () => {
+    const { ref, timeline } = await place({ ...base, editing: { enabled: true, snapMs: DAY } });
+    const moved = vi.fn();
+    const command = vi.fn();
+    const changed = vi.fn();
+    ref.instance.itemMoved.subscribe(moved);
+    ref.instance.command.subscribe(command);
+    ref.instance.itemsChanged.subscribe(changed);
+    const from = centre(node("a"));
+    await commands.mouse([{ type: "move", x: from.x, y: from.y }, { type: "down" }, { type: "move", x: from.x + 90, y: from.y, steps: 6 }, { type: "up" }]);
+    await vi.waitFor(() => expect(moved).toHaveBeenCalledTimes(1));
+    expect(command).toHaveBeenCalledTimes(1);
+    expect(moved.mock.calls[0]?.[0].item.id).toBe("a");
+    changed.mockClear();
+    timeline.setItems([items[0] as Item]);
+    expect(changed).toHaveBeenCalledTimes(1);
+  });
+
+  it("a click selects through the instance, and the selection signal says it once", async () => {
+    const { ref, timeline } = await place();
+    const { runInInjectionContext, signal, effect } = await import("@angular/core");
+    const seen: unknown[] = [];
+    const selection = runInInjectionContext(ref.injector, () => timelineState(signal(timeline), (snapshot) => snapshot.selectedIds));
+    runInInjectionContext(ref.injector, () => effect(() => seen.push(selection())));
+    app?.tick();
+    await userEvent.click(node("b"));
+    await vi.waitFor(() => {
+      app?.tick();
+      expect(seen.at(-1)).toEqual(["b"]);
+    });
+    expect(seen.filter((value) => Array.isArray(value) && value.length === 1)).toHaveLength(1);
+  });
+
+  it("lets go of the instance on destroy, and says so with ready(null)", async () => {
+    const { ref, timeline } = await place();
+    const destroy = vi.spyOn(timeline, "destroy");
+    const ready = vi.fn();
+    ref.instance.ready.subscribe(ready);
+    ref.destroy();
+    expect(destroy).toHaveBeenCalledTimes(1);
+    expect(ready).toHaveBeenCalledWith(null);
+    expect(ref.instance.timeline).toBeNull();
+  });
+
+  it("keeps a selection the same when an isEqual says so, and holds nothing without an instance", async () => {
+    const { ref, timeline } = await place();
+    const { runInInjectionContext, signal } = await import("@angular/core");
+    const same = (a: readonly string[], b: readonly string[]): boolean => a.length === b.length && a.every((id, index) => b[index] === id);
+    const source = signal<TimelineInstance | null>(null);
+    // A new array each time: without isEqual, every snapshot would be a new value.
+    const state = runInInjectionContext(ref.injector, () => timelineState(source, (snapshot) => [...snapshot.selectedIds], same));
+    app?.tick();
+    expect(state()).toBeUndefined();
+    source.set(timeline);
+    app?.tick();
+    const first = state();
+    expect(first).toEqual([]);
+    timeline.zoomBy(2);
+    timeline.flush();
+    await nextFrame();
+    expect(state()).toBe(first);
+    timeline.select(["a"]);
+    timeline.flush();
+    await nextFrame();
+    expect(state()).toEqual(["a"]);
+  });
+
+  it("reads a config back as it was given, and takes null as no config at all", async () => {
+    const { ref, timeline } = await place();
+    expect(ref.instance.config).toEqual(base);
+    const update = vi.spyOn(timeline, "update");
+    ref.setInput("config", null);
+    app?.tick();
+    expect(ref.instance.config).toEqual({});
+    // Every field the host set goes back to its default; the scope stays.
+    const changed = update.mock.calls.at(-1)?.[0] ?? {};
+    expect(Object.keys(changed).sort()).toEqual(Object.keys(base).sort());
+    expect(Object.values(changed).every((value) => value === undefined)).toBe(true);
+  });
+
+  it("numbers the timelines of one application for their stylesheet scopes", async () => {
+    const { ref } = await place();
+    expect(ref.location.nativeElement.querySelector("svg")?.getAttribute("data-tl-instance")).toMatch(/^tl-ng\d+$/);
+  });
+});

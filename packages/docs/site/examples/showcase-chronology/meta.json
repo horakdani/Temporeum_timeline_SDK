@@ -1,0 +1,10 @@
+{
+  "title": "Five thousand years down to the minute: one chronology, one zoom",
+  "height": 540,
+  "layout": "showcase",
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 10 },
+    { "selector": "#timeline svg .tl-era", "min": 2 },
+    { "selector": "#log[data-items='61']", "min": 1 }
+  ]
+}

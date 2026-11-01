@@ -1,0 +1,45 @@
+{
+  "name": "temporeum-timeline",
+  "version": "0.0.0",
+  "private": true,
+  "description": "An editable, accessible, responsive timeline for the web — zero runtime dependencies.",
+  "license": "MIT",
+  "author": "Daniel Horak",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/horakdani/temporeum-timeline.git"
+  },
+  "homepage": "https://github.com/horakdani/temporeum-timeline#readme",
+  "bugs": {
+    "url": "https://github.com/horakdani/temporeum-timeline/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "workspaces": [
+    "packages/core",
+    "packages/web-component",
+    "packages/react",
+    "packages/vue",
+    "packages/svelte",
+    "packages/angular",
+    "packages/docs"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:all": "node scripts/sdk_test_all.mjs",
+    "size": "npm run size -w @temporeum/timeline-core",
+    "lint": "eslint .",
+    "deps": "node scripts/sdk_check_deps.mjs"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.0"
+  }
+}

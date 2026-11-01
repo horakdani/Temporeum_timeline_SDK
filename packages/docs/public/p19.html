@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timeline SDK — P19: drop and templates</title>
+    <style>
+      body { margin: 0; font-family: system-ui, sans-serif; }
+      #sources { display: flex; gap: 12px; padding: 8px; margin: 0; list-style: none; }
+      #sources li { padding: 4px 8px; border: 1px solid #999; border-radius: 4px; }
+      #timeline { position: relative; height: 320px; width: 1000px; }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "@temporeum/timeline-core": "/core/index.mjs",
+          "@temporeum/timeline-core/dom": "/core/dom.mjs",
+          "@temporeum/timeline-core/groups": "/core/groups.mjs",
+          "@temporeum/timeline-core/items": "/core/items.mjs",
+          "@temporeum/timeline-core/gantt": "/core/gantt.mjs",
+          "@temporeum/timeline-core/resources": "/core/resources.mjs",
+          "@temporeum/timeline-core/tools": "/core/tools.mjs",
+          "@temporeum/timeline-core/export": "/core/export.mjs",
+          "@temporeum/timeline-core/intl": "/core/intl.mjs",
+          "@temporeum/timeline-core/live": "/core/live.mjs",
+          "@temporeum/timeline-core/words": "/core/words.mjs",
+          "@temporeum/timeline-core/calendar": "/core/calendar.mjs",
+          "@temporeum/timeline-element": "/element/index.mjs",
+          "@temporeum/timeline-element/items": "/element/items.mjs"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <ul id="sources" aria-label="External items">
+      <li id="source-a" draggable="true" tabindex="0" data-task='{"id":"ext-a","label":"Dropped","durationMs":172800000}'>Drag me</li>
+      <li id="source-b" draggable="true" tabindex="0" data-task='{"id":"ext-b","label":"By key","durationMs":86400000}'>Or Enter me</li>
+    </ul>
+    <div id="timeline"></div>
+    <script type="module">
+      /*
+       * G-DROP and G-TEMPLATE, in a real browser, through the shipped bundles.
+       *
+       * ?mode=drop      createTimeline with editing.drop, two lanes and two
+       *                 external sources: one dragged in, one added with the
+       *                 keyboard twin (Enter -> timeline.dropItem).
+       * ?mode=template  a template carrying a script, an onerror handler and
+       *                 an onclick; &unsafe=1 is the negative control with
+       *                 sanitize: false.
+       */
+      import { densityMetrics } from "@temporeum/timeline-core";
+      import { createTimeline, registerPlugin, renderTimelineSvg } from "@temporeum/timeline-element";
+      import { itemsPlugin } from "@temporeum/timeline-element/items";
+      // Templates and dropping are the items plugin's (P30).
+      registerPlugin(itemsPlugin);
+
+      const params = new URLSearchParams(location.search);
+      const day = 86_400_000;
+      const start = Date.UTC(2026, 0, 5);
+      const domain = [start, start + 20 * day];
+      const element = document.querySelector("#timeline");
+
+      if (params.get("mode") === "template") {
+        const evil =
+          '<b>Rich</b> <img src="/missing.png" onerror="window.__ran = \'img\'"><script>window.__ran = "script"<\/script>' +
+          '<span onclick="window.__ran = \'click\'">text</span>';
+        const config = {
+          domain,
+          items: [
+            { id: "t1", start: start + day, end: start + 8 * day, label: "First" },
+            { id: "t2", start: start + 10 * day, end: start + 16 * day, label: "Second" },
+          ],
+          template: () => evil,
+          ...(params.get("unsafe") === "1" ? { templateOptions: { sanitize: false } } : {}),
+        };
+        createTimeline(element, config, { measureText: false });
+        const signature = (root) =>
+          [...root.querySelectorAll(".tl-template")]
+            .map((node) => {
+              const id = node.closest("[data-tl-id]")?.getAttribute("data-tl-id") ?? "";
+              const tags = [...node.querySelectorAll("*")].map((child) => `${child.localName}[${[...child.attributes].map((a) => `${a.name}=${a.value}`).sort().join(",")}]`);
+              return `${id}:${tags.join("|")}#${node.textContent}`;
+            })
+            .sort()
+            .join("\n");
+        // Read when asked: the first frame waits for the size observer.
+        window.tl = {
+          get ready() {
+            return element.querySelector("[role=option]") !== null;
+          },
+          get live() {
+            return signature(element);
+          },
+          get server() {
+            return signature(new DOMParser().parseFromString(renderTimelineSvg(config, { width: element.clientWidth }).svg, "image/svg+xml"));
+          },
+          get names() {
+            return [...element.querySelectorAll("[role=option]")].map((node) => node.getAttribute("aria-label"));
+          },
+        };
+      } else {
+        const timeline = createTimeline(element, {
+          domain,
+          lanes: [{ id: "ann", label: "Ann" }, { id: "ops", label: "Ops" }],
+          items: [
+            { id: "a1", start: start + 2 * day, end: start + 5 * day, laneId: "ann", label: "Ann's" },
+            { id: "o1", start: start + 3 * day, end: start + 7 * day, laneId: "ops", label: "Ops'" },
+          ],
+          editing: { enabled: true, drop: true },
+        });
+        for (const source of document.querySelectorAll("[data-task]")) {
+          source.addEventListener("dragstart", (event) => event.dataTransfer.setData("application/x-temporeum-item", source.dataset.task));
+          source.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") window.tl.dropped = timeline.dropItem(JSON.parse(source.dataset.task));
+          });
+        }
+        const placed = () => timeline.getLayout()?.items ?? [];
+        window.tl = {
+          get ready() {
+            return (timeline.getLayout()?.lanes.length ?? 0) > 0;
+          },
+          domain: () => timeline.getSnapshot().domain,
+          width: () => element.clientWidth,
+          /** A lane's band across, in the element's own pixels. */
+          laneBox: (id) => {
+            const lane = timeline.getLayout()?.lanes.find((each) => each.lane.id === id);
+            const snapshot = timeline.getSnapshot();
+            const axis = densityMetrics(snapshot.density, snapshot.orientation).axisSize;
+            return lane === undefined ? undefined : { cross: lane.cross + axis, crossSize: lane.crossSize };
+          },
+          find: (id) => {
+            const hit = placed().find((each) => each.item.id === id);
+            return hit === undefined ? undefined : { laneId: hit.laneId, start: Number(hit.item.start), end: Number(hit.item.end) };
+          },
+          focusedLane: () => {
+            const id = timeline.getSnapshot().focusedId;
+            return placed().find((each) => each.item.id === id)?.laneId;
+          },
+        };
+      }
+    </script>
+  </body>
+</html>

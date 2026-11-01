@@ -1,0 +1,878 @@
+{
+  "library": "vis-timeline",
+  "version": "8.5.6",
+  "harness": "Each row's example runs in this harness: `container` is the timeline's element, `items` five items over March 2026 in two lanes (`lanes`), `DAY` a day in milliseconds. `before` runs before `createTimeline`, `config` goes into its configuration, `after` runs with `timeline`. Every plugin is registered first (`registerPlugin` with the Gantt chart, the resource view, export, the time tools, groups, item kinds and other languages), as a page moving from vis-timeline would: vis-timeline draws all of its features without asking. Register only the ones your configuration uses, and a page loads only those.",
+  "statuses": {
+    "same": "Same name, same meaning.",
+    "renamed": "Same meaning, another name or place.",
+    "different": "Possible, done another way — read the note.",
+    "missing": "Not in Temporeum yet."
+  },
+  "rows": [
+    {
+      "area": "Setup",
+      "vis": "new Timeline(container, items, groups, options)",
+      "status": "renamed",
+      "temporeum": "createTimeline(container, { items, lanes, ...config })",
+      "note": "Plain arrays, no DataSet. One configuration object holds everything.",
+      "uses": [
+        "Timeline.update"
+      ],
+      "config": ""
+    },
+    {
+      "area": "Setup",
+      "vis": "the whole setup at once",
+      "status": "different",
+      "temporeum": "fromVis(items, groups, options) from /vis-compat",
+      "note": "`@temporeum/timeline-core/vis-compat` reads vis-timeline's items, groups and options by vis-timeline's own rules — date strings as moment reads them, item types, nested and hidden groups, `groupOrder` — and returns the configuration, and a warning for everything that did not carry over.",
+      "uses": [
+        "VisConversion.config",
+        "VisConversion.warnings",
+        "FromVisOptions.timeZone"
+      ],
+      "imports": "import { fromVis } from \"@temporeum/timeline-core/vis-compat\";",
+      "before": "const visGroups = [{ id: 1, content: \"Design\" }, { id: 2, content: \"Engineering\" }];\nconst visItems = [\n  { id: 1, group: 1, content: \"Research\", start: \"2026-03-02\", end: \"2026-03-09\" },\n  { id: 2, group: 2, content: \"Release\", start: \"2026-03-27\", type: \"point\" },\n];\nconst converted = fromVis(visItems, visGroups, { stack: true, editable: true, zoomMin: 7 * DAY });",
+      "after": "timeline.destroy();\nconst migrated = createTimeline(container, { ...converted.config, ariaLabel: \"Converted from vis-timeline\" });\nfor (const warning of converted.warnings) console.warn(warning.option, warning.message);\nconsole.log(migrated.getSnapshot().domain);"
+    },
+    {
+      "area": "Setup",
+      "vis": "DataSet add / update / remove",
+      "status": "different",
+      "temporeum": "timeline.setItems(nextItems)",
+      "note": "Items are immutable data: hand the timeline the next array. For data that is too big to hold, `items` can be a function that loads a window.",
+      "uses": [
+        "Timeline.setItems"
+      ],
+      "after": "timeline.setItems([...items, { id: \"extra\", start: new Date(\"2026-03-12\"), label: \"Added\", laneId: \"work\" }]);"
+    },
+    {
+      "area": "Setup",
+      "vis": "setOptions(options)",
+      "status": "renamed",
+      "temporeum": "timeline.update(config)",
+      "note": "A key given as `undefined` goes back to its default; a key left out keeps its value.",
+      "uses": [
+        "Timeline.update"
+      ],
+      "after": "timeline.update({ density: \"compact\" });"
+    },
+    {
+      "area": "Setup",
+      "vis": "autoResize",
+      "status": "same",
+      "temporeum": "always on",
+      "note": "The timeline follows its container's size. Below `breakpoint` it turns vertical when `orientation` is `\"auto\"`.",
+      "uses": [
+        "TimelineConfig.breakpoint",
+        "TimelineConfig.orientation"
+      ],
+      "config": "orientation: \"auto\", breakpoint: 480"
+    },
+    {
+      "area": "Setup",
+      "vis": "destroy()",
+      "status": "same",
+      "temporeum": "timeline.destroy()",
+      "note": "",
+      "uses": [
+        "Timeline.destroy"
+      ],
+      "after": "timeline.destroy();\nif (!timeline.destroyed) throw new Error(\"still alive\");",
+      "drawn": false
+    },
+    {
+      "area": "Window",
+      "vis": "start, end",
+      "status": "renamed",
+      "temporeum": "domain: [start, end]",
+      "note": "Without a domain the view fits the items, with a margin.",
+      "uses": [
+        "TimelineConfig.domain"
+      ],
+      "config": "domain: [new Date(\"2026-03-01\"), new Date(\"2026-04-01\")]"
+    },
+    {
+      "area": "Window",
+      "vis": "min, max",
+      "status": "renamed",
+      "temporeum": "limits: { min, max }",
+      "note": "",
+      "uses": [
+        "TimelineConfig.limits",
+        "DomainLimits.min",
+        "DomainLimits.max"
+      ],
+      "config": "limits: { min: new Date(\"2026-01-01\"), max: new Date(\"2026-12-31\") }"
+    },
+    {
+      "area": "Window",
+      "vis": "zoomMin, zoomMax",
+      "status": "renamed",
+      "temporeum": "limits: { minSpanMs, maxSpanMs }",
+      "note": "The shortest and longest visible span, in milliseconds.",
+      "uses": [
+        "DomainLimits.minSpanMs",
+        "DomainLimits.maxSpanMs"
+      ],
+      "config": "limits: { minSpanMs: DAY, maxSpanMs: 365 * DAY }"
+    },
+    {
+      "area": "Window",
+      "vis": "setWindow(start, end)",
+      "status": "renamed",
+      "temporeum": "timeline.zoomTo([start, end])",
+      "note": "",
+      "uses": [
+        "Timeline.zoomTo"
+      ],
+      "after": "timeline.zoomTo([new Date(\"2026-03-05\"), new Date(\"2026-03-20\")]);"
+    },
+    {
+      "area": "Window",
+      "vis": "getWindow()",
+      "status": "renamed",
+      "temporeum": "timeline.getSnapshot().domain",
+      "note": "The snapshot is also what `subscribe` listeners read: it fits React's `useSyncExternalStore`.",
+      "uses": [
+        "Timeline.getSnapshot",
+        "TimelineSnapshot.domain"
+      ],
+      "after": "const [start, end] = timeline.getSnapshot().domain;\nconsole.log(new Date(start), new Date(end));"
+    },
+    {
+      "area": "Window",
+      "vis": "moveTo(time)",
+      "status": "renamed",
+      "temporeum": "timeline.scrollTo(time)",
+      "note": "",
+      "uses": [
+        "Timeline.scrollTo"
+      ],
+      "after": "timeline.scrollTo(new Date(\"2026-03-15\"));"
+    },
+    {
+      "area": "Window",
+      "vis": "zoomIn(percentage), zoomOut(percentage)",
+      "status": "different",
+      "temporeum": "timeline.zoomBy(factor, around?)",
+      "note": "A factor above 1 zooms in. `around` is the time that stays put; the centre by default.",
+      "uses": [
+        "Timeline.zoomBy"
+      ],
+      "after": "timeline.zoomBy(2);\ntimeline.zoomBy(0.5, new Date(\"2026-03-10\"));"
+    },
+    {
+      "area": "Window",
+      "vis": "fit()",
+      "status": "different",
+      "temporeum": "timeline.zoomTo([first, last])",
+      "note": "There is no `fit()`: the first view fits the items when no `domain` is given; later, zoom to their extent.",
+      "uses": [
+        "Timeline.zoomTo"
+      ],
+      "after": "const starts = items.map((item) => item.start.getTime());\nconst ends = items.map((item) => (item.end ?? item.start).getTime());\ntimeline.zoomTo([Math.min(...starts) - DAY, Math.max(...ends) + DAY]);"
+    },
+    {
+      "area": "Window",
+      "vis": "zoomable: false",
+      "status": "renamed",
+      "temporeum": "interactions: { zoom: false }",
+      "note": "",
+      "uses": [
+        "TimelineConfig.interactions",
+        "InteractionOptions.zoom"
+      ],
+      "config": "interactions: { zoom: false }"
+    },
+    {
+      "area": "Window",
+      "vis": "moveable: false",
+      "status": "renamed",
+      "temporeum": "interactions: { pan: false }",
+      "note": "",
+      "uses": [
+        "InteractionOptions.pan"
+      ],
+      "config": "interactions: { pan: false }"
+    },
+    {
+      "area": "Window",
+      "vis": "zoomKey",
+      "status": "different",
+      "temporeum": "ctrl + wheel, or a pinch",
+      "note": "Fixed, not an option: a plain wheel pans or scrolls, ctrl + wheel (and a trackpad pinch, which browsers report as one) zooms.",
+      "uses": [
+        "InteractionOptions.zoom"
+      ],
+      "config": "interactions: { zoom: true }"
+    },
+    {
+      "area": "Window",
+      "vis": "horizontalScroll, verticalScroll",
+      "status": "different",
+      "temporeum": "touchAction: \"cooperative\"",
+      "note": "A plain wheel already pans along time and scrolls the lanes. On touch, `\"cooperative\"` leaves vertical page scrolling to the page, for a timeline inside an article.",
+      "uses": [
+        "TimelineConfig.touchAction"
+      ],
+      "config": "touchAction: \"cooperative\""
+    },
+    {
+      "area": "Window",
+      "vis": "rollingMode",
+      "status": "renamed",
+      "temporeum": "rolling: { offset }",
+      "note": "The view keeps its span and keeps now at `offset` (the middle by default), reading the clock every `intervalMs`. A pan or a zoom of the reader's lets go of it; `follow()` picks it up again.",
+      "uses": [
+        "TimelineConfig.rolling"
+      ],
+      "config": "rolling: { offset: 0.5 }",
+      "after": "timeline.addItems([{ id: \"now\", start: Date.now(), label: \"Now\", laneId: \"work\" }]);"
+    },
+    {
+      "area": "Window",
+      "vis": "hiddenDates",
+      "status": "different",
+      "temporeum": "hiddenDates: [{ start, end, repeat }]",
+      "note": "The same shape. `start` and `end` are `Date`s or epoch milliseconds, and a repeat is a calendar repeat in `timeZone`: a nightly range stays on the wall clock across a change of daylight saving.",
+      "uses": [
+        "TimelineConfig.hiddenDates"
+      ],
+      "config": "hiddenDates: [{ start: new Date(\"2026-03-07\"), end: new Date(\"2026-03-09\"), repeat: \"weekly\" }]"
+    },
+    {
+      "area": "Size and look",
+      "vis": "height",
+      "status": "same",
+      "temporeum": "height",
+      "note": "A number of CSS pixels. Without one, the container's own height when a stylesheet gives it one.",
+      "uses": [
+        "TimelineConfig.height"
+      ],
+      "config": "height: 240"
+    },
+    {
+      "area": "Size and look",
+      "vis": "width, minHeight, maxHeight",
+      "status": "different",
+      "temporeum": "the container's CSS",
+      "note": "The timeline fills its container; size the container.",
+      "uses": [],
+      "before": "container.style.width = \"600px\";\ncontainer.style.maxHeight = \"320px\";"
+    },
+    {
+      "area": "Size and look",
+      "vis": "margin",
+      "status": "different",
+      "temporeum": "density: \"comfortable\" | \"compact\" | \"dense\"",
+      "note": "Spacing comes in three densities, picked automatically by default to fit the items.",
+      "uses": [
+        "TimelineConfig.density"
+      ],
+      "config": "density: \"compact\""
+    },
+    {
+      "area": "Size and look",
+      "vis": "orientation: \"top\" | \"bottom\" (axis position)",
+      "status": "missing",
+      "temporeum": "",
+      "note": "Not to be confused with Temporeum's `orientation`, which is horizontal or vertical.",
+      "absent": [
+        "TimelineConfig.axis",
+        "TimelineConfig.axisPosition"
+      ],
+      "planned": ""
+    },
+    {
+      "area": "Size and look",
+      "vis": "stack: false",
+      "status": "renamed",
+      "temporeum": "packMode: \"overlap\"",
+      "note": "`\"pack\"` (the default) is vis's `stack: true`; `\"single\"` gives every item its own row. Also per lane.",
+      "uses": [
+        "TimelineConfig.packMode",
+        "Lane.packMode"
+      ],
+      "config": "packMode: \"overlap\""
+    },
+    {
+      "area": "Size and look",
+      "vis": "align",
+      "status": "missing",
+      "temporeum": "",
+      "note": "Labels start at the item's start, and move after it when they do not fit inside.",
+      "absent": [
+        "TimelineConfig.align",
+        "Item.align"
+      ],
+      "planned": ""
+    },
+    {
+      "area": "Size and look",
+      "vis": "template",
+      "status": "same",
+      "temporeum": "template: (item) => html",
+      "note": "Sanitised by default: scripts, handlers and anything outside an allow-list are dropped (`templateOptions`). For full control over the SVG, `hooks.renderItem` returns scene nodes.",
+      "uses": [
+        "TimelineConfig.template"
+      ],
+      "config": "template: (item) => `<strong>${item.label ?? \"\"}</strong>`"
+    },
+    {
+      "area": "Size and look",
+      "vis": "cluster",
+      "status": "same",
+      "temporeum": "cluster: true | { minCount, gap, itemSize }",
+      "note": "A cluster is one keyboard stop that opens into its items.",
+      "uses": [
+        "TimelineConfig.cluster",
+        "ClusterOptions.minCount"
+      ],
+      "config": "cluster: { minCount: 3 }"
+    },
+    {
+      "area": "Size and look",
+      "vis": "xss",
+      "status": "different",
+      "temporeum": "sanitised by default",
+      "note": "Labels and tooltips are text, never HTML. A `template` is HTML, run through the library's own sanitiser unless `templateOptions.sanitize` is `false`.",
+      "uses": [
+        "Item.label",
+        "TimelineConfig.templateOptions"
+      ],
+      "after": "timeline.setItems([{ id: \"x\", laneId: \"work\", start: new Date(\"2026-03-10\"), label: \"<img src=x onerror=alert(1)>\" }]);"
+    },
+    {
+      "area": "Axis",
+      "vis": "locale",
+      "status": "same",
+      "temporeum": "locale",
+      "note": "A BCP 47 tag, through `Intl`. `timeZone` sets the zone the axis is drawn in.",
+      "uses": [
+        "TimelineConfig.locale",
+        "TimelineConfig.timeZone"
+      ],
+      "config": "locale: \"de-DE\", timeZone: \"Europe/Berlin\""
+    },
+    {
+      "area": "Axis",
+      "vis": "locales",
+      "status": "different",
+      "temporeum": "strings",
+      "note": "Month and day names come from `Intl` for any `locale`. The timeline's own words — its name, the zoom buttons, \"New item\" — come from a dictionary: `strings` over `DEFAULT_STRINGS` (`@temporeum/timeline-core/intl`).",
+      "uses": [
+        "TimelineConfig.strings",
+        "TimelineConfig.locale"
+      ],
+      "config": "locale: \"nl\",\nstrings: { timeline: \"Tijdlijn\", newItem: \"Nieuw item\" }"
+    },
+    {
+      "area": "Axis",
+      "vis": "format",
+      "status": "different",
+      "temporeum": "formatTick(tick, timeZone)",
+      "note": "One function for every tick label; `tick.major` tells the major ones apart.",
+      "uses": [
+        "TimelineConfig.formatTick",
+        "Tick.major"
+      ],
+      "config": "formatTick: (tick) => (tick.major ? new Date(tick.time).toISOString().slice(0, 7) : String(new Date(tick.time).getUTCDate()))"
+    },
+    {
+      "area": "Axis",
+      "vis": "timeAxis: { scale, step }",
+      "status": "missing",
+      "temporeum": "",
+      "note": "Ticks are chosen automatically for the zoom level.",
+      "absent": [
+        "TimelineConfig.timeAxis"
+      ],
+      "planned": ""
+    },
+    {
+      "area": "Axis",
+      "vis": "showMajorLabels, showMinorLabels",
+      "status": "missing",
+      "temporeum": "",
+      "note": "`formatTick` can return an empty string for the labels to hide.",
+      "absent": [
+        "TimelineConfig.showMajorLabels",
+        "TimelineConfig.showMinorLabels"
+      ],
+      "planned": ""
+    },
+    {
+      "area": "Axis",
+      "vis": "showCurrentTime",
+      "status": "different",
+      "temporeum": "decorations: [{ kind: \"now\", time }]",
+      "note": "Drawn where you put it; update it with `timeline.update` when it should move.",
+      "uses": [
+        "TimelineConfig.decorations",
+        "NowDecoration.time"
+      ],
+      "config": "decorations: [{ kind: \"now\", time: new Date(\"2026-03-16\"), label: \"Today\" }]"
+    },
+    {
+      "area": "Axis",
+      "vis": "addCustomTime(time, id)",
+      "status": "different",
+      "temporeum": "timeBars: [{ id, time }]",
+      "note": "A time bar is a slider: drag it, or `Tab` to it and press an arrow. A move is `timeBarMoved` — vis's `timechanged` — and `timeline.timeBars` is where the reader left them.",
+      "uses": [
+        "TimelineConfig.timeBars"
+      ],
+      "config": "timeBars: [{ id: \"deadline\", time: new Date(\"2026-03-25\"), label: \"Deadline\" }]"
+    },
+    {
+      "area": "Axis",
+      "vis": "rtl",
+      "status": "renamed",
+      "temporeum": "direction: \"rtl\"",
+      "note": "Time runs from right to left, the lane labels and the keyboard's arrows follow. `\"auto\"` takes the container's `dir`.",
+      "uses": [
+        "TimelineConfig.direction"
+      ],
+      "config": "direction: \"rtl\""
+    },
+    {
+      "area": "Items",
+      "vis": "item.id",
+      "status": "different",
+      "temporeum": "id",
+      "note": "A string. Convert numeric ids with `String(id)`.",
+      "uses": [
+        "Item.id"
+      ],
+      "after": "timeline.setItems(items.map((item, index) => ({ ...item, id: String(index + 1) })));"
+    },
+    {
+      "area": "Items",
+      "vis": "item.content",
+      "status": "renamed",
+      "temporeum": "label",
+      "note": "Plain text. A label that does not fit is shortened with an ellipsis, up to 1 000 items per screen width.",
+      "uses": [
+        "Item.label"
+      ],
+      "after": "timeline.setItems(items.map((item) => ({ ...item, label: item.label.toUpperCase() })));"
+    },
+    {
+      "area": "Items",
+      "vis": "item.start, item.end",
+      "status": "different",
+      "temporeum": "start, end",
+      "note": "A `Date` or epoch milliseconds — not a string. Convert with `new Date(value)`.",
+      "uses": [
+        "Item.start",
+        "Item.end"
+      ],
+      "after": "timeline.setItems([{ id: \"a\", laneId: \"work\", start: new Date(\"2026-03-03\"), end: Date.UTC(2026, 2, 9) }]);"
+    },
+    {
+      "area": "Items",
+      "vis": "item.group",
+      "status": "renamed",
+      "temporeum": "laneId",
+      "note": "",
+      "uses": [
+        "Item.laneId"
+      ],
+      "after": "timeline.setItems(items.map((item) => ({ ...item, laneId: \"work\" })));"
+    },
+    {
+      "area": "Items",
+      "vis": "item.className",
+      "status": "same",
+      "temporeum": "className",
+      "note": "",
+      "uses": [
+        "Item.className"
+      ],
+      "after": "timeline.setItems(items.map((item) => ({ ...item, className: \"highlight\" })));"
+    },
+    {
+      "area": "Items",
+      "vis": "item.style",
+      "status": "missing",
+      "temporeum": "",
+      "note": "Use `className` and a stylesheet; the theme's custom properties style the rest.",
+      "absent": [
+        "Item.style"
+      ],
+      "planned": ""
+    },
+    {
+      "area": "Items",
+      "vis": "item.title",
+      "status": "different",
+      "temporeum": "tooltip: (item) => text",
+      "note": "Shown on hover and on keyboard focus. The item's accessible name stays its label, the dates and the lane; `hooks.describeItem` changes that.",
+      "uses": [
+        "TimelineConfig.tooltip",
+        "RenderHooks.describeItem"
+      ],
+      "config": "tooltip: (item) => `${item.label ?? item.id}: click to open`"
+    },
+    {
+      "area": "Items",
+      "vis": "item.editable: false",
+      "status": "different",
+      "temporeum": "movable: false, resizable: false",
+      "note": "Moving and resizing are separate.",
+      "uses": [
+        "Item.movable",
+        "Item.resizable"
+      ],
+      "config": "editing: { enabled: true }",
+      "after": "timeline.setItems(items.map((item) => ({ ...item, movable: false, resizable: false })));"
+    },
+    {
+      "area": "Items",
+      "vis": "item.selectable",
+      "status": "same",
+      "temporeum": "selectable",
+      "note": "",
+      "uses": [
+        "Item.selectable"
+      ],
+      "after": "timeline.setItems(items.map((item) => ({ ...item, selectable: false })));"
+    },
+    {
+      "area": "Items",
+      "vis": "item.type: \"point\"",
+      "status": "renamed",
+      "temporeum": "kind: \"point\"",
+      "note": "A dot at its start with a line to the axis. An item without `end` and without a kind is an instant drawn as a thin bar.",
+      "uses": [
+        "Item.kind"
+      ],
+      "after": "timeline.setItems([{ id: \"p\", laneId: \"work\", kind: \"point\", start: new Date(\"2026-03-10\"), label: \"A point\" }]);"
+    },
+    {
+      "area": "Items",
+      "vis": "item.type: \"background\"",
+      "status": "renamed",
+      "temporeum": "kind: \"background\"",
+      "note": "A labelled band behind every lane; nothing can hit it. A background bound to one group's rows is not here yet.",
+      "uses": [
+        "Item.kind"
+      ],
+      "after": "timeline.setItems([...items, { id: \"freeze\", kind: \"background\", start: new Date(\"2026-03-20\"), end: new Date(\"2026-03-27\"), label: \"Freeze\" }]);"
+    },
+    {
+      "area": "Items",
+      "vis": "item.type: \"box\", type option",
+      "status": "renamed",
+      "temporeum": "kind: \"box\"",
+      "note": "The item's bar with a line to the axis. Set it per item; there is no timeline-wide default type.",
+      "uses": [
+        "Item.kind"
+      ],
+      "after": "timeline.setItems([{ id: \"b\", laneId: \"work\", kind: \"box\", start: new Date(\"2026-03-12\"), label: \"A box\" }]);"
+    },
+    {
+      "area": "Items",
+      "vis": "item.subgroup, stackSubgroups",
+      "status": "missing",
+      "temporeum": "",
+      "note": "Rows inside a group's rows are not supported; nest a group instead (`groups` with `parentId`).",
+      "absent": [
+        "Item.subgroup",
+        "TimelineConfig.stackSubgroups"
+      ],
+      "planned": ""
+    },
+    {
+      "area": "Groups",
+      "vis": "groups",
+      "status": "renamed",
+      "temporeum": "groups (or lanes)",
+      "note": "An array of `{ id, label, parentId? }`; a group's `content` is its `label`, and an item names its group with `laneId`. Each group gets a header row you can collapse. Flat `lanes` without headers still work.",
+      "uses": [
+        "TimelineConfig.groups",
+        "TimelineConfig.lanes"
+      ],
+      "after": "timeline.update({ groups: [{ id: \"work\", label: \"Engineering\" }, { id: \"ship\", label: \"Release\" }] });"
+    },
+    {
+      "area": "Groups",
+      "vis": "setGroups(groups)",
+      "status": "renamed",
+      "temporeum": "timeline.update({ groups })",
+      "note": "",
+      "uses": [
+        "Timeline.update",
+        "TimelineConfig.groups"
+      ],
+      "after": "timeline.update({ groups: [{ id: \"work\", label: \"Engineering\" }, { id: \"later\", label: \"Later\" }] });"
+    },
+    {
+      "area": "Groups",
+      "vis": "groupOrder",
+      "status": "different",
+      "temporeum": "the order of `groups`",
+      "note": "Sort the array. A reader can reorder the groups too; that comes out as a `groupCommand`.",
+      "uses": [
+        "TimelineConfig.groups"
+      ],
+      "after": "timeline.update({ groups: [{ id: \"ship\", label: \"Release\" }, { id: \"work\", label: \"Engineering\" }] });"
+    },
+    {
+      "area": "Groups",
+      "vis": "nestedGroups, showNested",
+      "status": "different",
+      "temporeum": "groups: [{ id, parentId }]",
+      "note": "A group names its parent instead of its children. Collapsing is a click on the header, `Enter`, or `timeline.toggleGroup(id)`; a group starts collapsed with `collapsed: true`.",
+      "uses": [
+        "TimelineConfig.groups",
+        "Timeline.toggleGroup"
+      ],
+      "after": "timeline.update({ groups: [{ id: \"team\", label: \"Team\" }, { id: \"work\", label: \"Engineering\", parentId: \"team\" }] });\ntimeline.toggleGroup(\"team\", true);"
+    },
+    {
+      "area": "Groups",
+      "vis": "groupEditable (drag to reorder)",
+      "status": "different",
+      "temporeum": "drag a group header, or Alt + arrow",
+      "note": "Always on; the reorder is reported as a reversible `groupCommand` and the library does not save it.",
+      "uses": [
+        "TimelineInstanceEventMap.groupCommand",
+        "Timeline.applyCommand"
+      ],
+      "after": "timeline.on(\"groupCommand\", ({ command }) => console.log(command.after));"
+    },
+    {
+      "area": "Groups",
+      "vis": "groupTemplate",
+      "status": "missing",
+      "temporeum": "",
+      "note": "Lane labels are text.",
+      "absent": [
+        "RenderHooks.renderLane"
+      ],
+      "planned": ""
+    },
+    {
+      "area": "Editing",
+      "vis": "editable: true",
+      "status": "renamed",
+      "temporeum": "editing: { enabled: true }",
+      "note": "Move and resize, with a key for every gesture. Every edit is a reversible command.",
+      "uses": [
+        "TimelineConfig.editing",
+        "TimelineEditingOptions.enabled"
+      ],
+      "config": "editing: { enabled: true }"
+    },
+    {
+      "area": "Editing",
+      "vis": "editable: { updateGroup: true }",
+      "status": "renamed",
+      "temporeum": "editing: { crossLane: true }",
+      "note": "",
+      "uses": [
+        "TimelineEditingOptions.crossLane"
+      ],
+      "config": "editing: { enabled: true, crossLane: true }"
+    },
+    {
+      "area": "Editing",
+      "vis": "editable: { add, remove }, onAdd, onRemove",
+      "status": "renamed",
+      "temporeum": "editing: { add, remove, createItem, canAdd, canRemove }",
+      "note": "A double click on empty row space or `n` adds; the remove handle on a selected item or `Delete` removes. `canAdd` and `canRemove` are synchronous vetoes; `createItem` makes the new item.",
+      "uses": [
+        "TimelineEditingOptions.add",
+        "TimelineEditingOptions.remove",
+        "TimelineEditingOptions.createItem",
+        "TimelineEditingOptions.canRemove"
+      ],
+      "config": "editing: { enabled: true, add: true, remove: true, canRemove: (item) => item.id !== \"locked\" }"
+    },
+    {
+      "area": "Editing",
+      "vis": "snap",
+      "status": "different",
+      "temporeum": "editing: { snapMs, snapOrigin }",
+      "note": "A fixed grid instead of a function.",
+      "uses": [
+        "TimelineEditingOptions.snapMs",
+        "TimelineEditingOptions.snapOrigin"
+      ],
+      "config": "editing: { enabled: true, snapMs: DAY, snapOrigin: new Date(\"2026-03-01\") }"
+    },
+    {
+      "area": "Editing",
+      "vis": "onMoving, onMove",
+      "status": "different",
+      "temporeum": "editing.canMove(item, next)",
+      "note": "A synchronous yes or no for every step of a drag. The finished edit arrives as `itemMoved` with its command.",
+      "uses": [
+        "TimelineEditingOptions.canMove"
+      ],
+      "config": "editing: { enabled: true, canMove: (item, next) => next.start === undefined || new Date(next.start).getUTCDay() !== 0 }"
+    },
+    {
+      "area": "Editing",
+      "vis": "onUpdate",
+      "status": "different",
+      "temporeum": "on(\"itemDblClick\")",
+      "note": "Open your own editor on a double click.",
+      "uses": [
+        "TimelineInstanceEventMap.itemDblClick"
+      ],
+      "after": "timeline.on(\"itemDblClick\", ({ item }) => console.log(\"edit\", item.id));"
+    },
+    {
+      "area": "Editing",
+      "vis": "multiselect",
+      "status": "renamed",
+      "temporeum": "editing: { multiSelect: true }",
+      "note": "",
+      "uses": [
+        "TimelineEditingOptions.multiSelect"
+      ],
+      "config": "editing: { multiSelect: true }"
+    },
+    {
+      "area": "Editing",
+      "vis": "selectable: false",
+      "status": "different",
+      "temporeum": "selectable: false on each item",
+      "note": "",
+      "uses": [
+        "Item.selectable"
+      ],
+      "after": "timeline.setItems(items.map((item) => ({ ...item, selectable: false })));"
+    },
+    {
+      "area": "Selection",
+      "vis": "setSelection(ids)",
+      "status": "renamed",
+      "temporeum": "timeline.select(ids)",
+      "note": "Or own it: `selectedIds` in the configuration.",
+      "uses": [
+        "Timeline.select",
+        "TimelineConfig.selectedIds"
+      ],
+      "after": "timeline.select([items[0].id]);"
+    },
+    {
+      "area": "Selection",
+      "vis": "getSelection()",
+      "status": "renamed",
+      "temporeum": "timeline.getSnapshot().selectedIds",
+      "note": "",
+      "uses": [
+        "TimelineSnapshot.selectedIds"
+      ],
+      "after": "console.log(timeline.getSnapshot().selectedIds);"
+    },
+    {
+      "area": "Selection",
+      "vis": "focus(id)",
+      "status": "different",
+      "temporeum": "select([id]) + scrollTo(start)",
+      "note": "",
+      "uses": [
+        "Timeline.select",
+        "Timeline.scrollTo"
+      ],
+      "after": "timeline.select([items[2].id]);\ntimeline.scrollTo(items[2].start);"
+    },
+    {
+      "area": "Events",
+      "vis": "on(\"select\")",
+      "status": "renamed",
+      "temporeum": "on(\"selectionChanged\")",
+      "note": "`{ ids, previousIds }`.",
+      "uses": [
+        "TimelineInstanceEventMap.selectionChanged"
+      ],
+      "after": "timeline.on(\"selectionChanged\", ({ ids }) => console.log(ids));"
+    },
+    {
+      "area": "Events",
+      "vis": "on(\"rangechange\"), on(\"rangechanged\")",
+      "status": "renamed",
+      "temporeum": "on(\"viewportChanged\")",
+      "note": "`{ viewport, reason }`; `viewport.domain` is the window.",
+      "uses": [
+        "TimelineInstanceEventMap.viewportChanged"
+      ],
+      "after": "timeline.on(\"viewportChanged\", ({ viewport }) => console.log(viewport.domain));"
+    },
+    {
+      "area": "Events",
+      "vis": "on(\"click\") on an item",
+      "status": "renamed",
+      "temporeum": "on(\"itemClick\")",
+      "note": "",
+      "uses": [
+        "TimelineInstanceEventMap.itemClick"
+      ],
+      "after": "timeline.on(\"itemClick\", ({ item }) => console.log(item.id));"
+    },
+    {
+      "area": "Events",
+      "vis": "on(\"doubleClick\")",
+      "status": "renamed",
+      "temporeum": "on(\"itemDblClick\")",
+      "note": "",
+      "uses": [
+        "TimelineInstanceEventMap.itemDblClick"
+      ],
+      "after": "timeline.on(\"itemDblClick\", ({ item }) => console.log(item.id));"
+    },
+    {
+      "area": "Events",
+      "vis": "on(\"itemover\"), on(\"itemout\")",
+      "status": "renamed",
+      "temporeum": "on(\"itemHover\")",
+      "note": "One event; its payload says which item, or none.",
+      "uses": [
+        "TimelineInstanceEventMap.itemHover"
+      ],
+      "after": "timeline.on(\"itemHover\", (payload) => console.log(payload));"
+    },
+    {
+      "area": "Events",
+      "vis": "on(\"changed\") after an edit",
+      "status": "different",
+      "temporeum": "on(\"itemMoved\"), on(\"itemResized\"), on(\"command\")",
+      "note": "`command` carries every edit as a reversible command — the undo stack's input.",
+      "uses": [
+        "TimelineInstanceEventMap.itemMoved",
+        "TimelineInstanceEventMap.command"
+      ],
+      "after": "timeline.on(\"command\", ({ command }) => console.log(command));"
+    },
+    {
+      "area": "Events",
+      "vis": "on(\"timechange\"), addCustomTime",
+      "status": "renamed",
+      "temporeum": "timeBars, on(\"timeBarMoved\")",
+      "note": "A time bar is a slider: dragged, or moved with the arrows when it has the focus. The event says where it went, and where it was.",
+      "uses": [
+        "TimelineConfig.timeBars",
+        "TimelineInstanceEventMap.timeBarMoved"
+      ],
+      "config": "timeBars: [{ id: \"deadline\", time: new Date(\"2026-03-20\"), label: \"Deadline\" }]",
+      "after": "timeline.on(\"timeBarMoved\", ({ id, time }) => console.log(id, new Date(time)));"
+    },
+    {
+      "area": "Events",
+      "vis": "on(\"contextmenu\")",
+      "status": "missing",
+      "temporeum": "",
+      "note": "Listen for `contextmenu` on the container.",
+      "absent": [
+        "TimelineInstanceEventMap.itemContextMenu",
+        "TimelineInstanceEventMap.contextmenu"
+      ],
+      "planned": ""
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "title": "react-calendar-timeline data, converted",
+  "height": 320,
+  "expect": [{ "selector": "#timeline svg [role=option]", "min": 5 }]
+}

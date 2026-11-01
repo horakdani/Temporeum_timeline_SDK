@@ -1,0 +1,1128 @@
+{
+  "generatedAt": "2026-10-31T11:55:10.769Z",
+  "machine": {
+    "cpu": "Apple M4",
+    "cores": 10,
+    "memoryGB": 17,
+    "os": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:11:03 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T8132 (darwin 25.6.0 arm64)",
+    "node": "v22.22.0",
+    "chromium": "156.0.8078.4"
+  },
+  "settings": {
+    "throttle": 4,
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "repetitions": 5,
+    "ns": [
+      1000,
+      10000
+    ],
+    "missedFrameDefinition": "V = 1000/60 ms. An rAF interval d > 1.5 V counts round(d / V) - 1 lost frames. missed % = lost frames / (lost frames + recorded rAF intervals) x 100, over the whole recording window.",
+    "firstItemsDefinition": "navigationStart -> the first rAF at which item nodes exist in the container, visible or not",
+    "readyDefinition": "navigationStart (performance.now() in the page) -> the rAF at which item nodes are in the container AND visible (checkVisibility), and two consecutive rAFs have seen no DOM mutation in it",
+    "pan": {
+      "drags": 24,
+      "forward": 12,
+      "distancePx": 240,
+      "durationMs": 400,
+      "moveEveryMs": 16,
+      "gapMs": 100,
+      "startX": 1100,
+      "input": "page.mouse down/move/up on the time-axis band; frames recorded over all 24 drags and the gaps"
+    },
+    "zoom": {
+      "notches": 8,
+      "intervalMs": 50,
+      "stepFactor": 1.2,
+      "deltaY": {
+        "temporeum": 45.580389198488646,
+        "vis-timeline": 100
+      },
+      "input": "Control held + page.mouse.wheel at the centre of the timeline"
+    },
+    "runSeconds": 386
+  },
+  "libraries": {
+    "temporeum": {
+      "version": "1.0.0",
+      "coreVersion": "1.0.0",
+      "commit": "8929423e",
+      "files": [
+        "/core/chunks/index.mjs",
+        "/core/dom.mjs",
+        "/core/index.mjs",
+        "/core/live.mjs",
+        "/core/words.mjs",
+        "/element/element.shared.mjs",
+        "/element/index.mjs"
+      ]
+    },
+    "vis-timeline": {
+      "version": "8.5.6",
+      "visData": "8.0.6",
+      "files": [
+        "/vis/vis-timeline/standalone/umd/vis-timeline-graph2d.min.js"
+      ]
+    }
+  },
+  "results": [
+    {
+      "library": "temporeum",
+      "n": 1000,
+      "metric": "first-render-unthrottled",
+      "unit": "ms",
+      "median": 72.30000001192093,
+      "min": 72.30000001192093,
+      "max": 72.30000001192093,
+      "samples": [
+        72.30000001192093
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 1000,
+      "metric": "first-render",
+      "unit": "ms",
+      "median": 141.59999999403954,
+      "min": 139.30000001192093,
+      "max": 157.9000000357628,
+      "samples": [
+        157.9000000357628,
+        139.89999997615814,
+        157.5,
+        156.5,
+        141.39999997615814,
+        140.89999997615814,
+        141.80000001192093,
+        140.10000002384186,
+        157.39999997615814,
+        139.30000001192093
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 1000,
+      "metric": "first-items-in-dom",
+      "unit": "ms",
+      "median": 131.75,
+      "min": 130,
+      "max": 133.69999998807907,
+      "samples": [
+        131.80000001192093,
+        131.69999998807907,
+        133.69999998807907,
+        132.29999995231628,
+        131.19999998807907,
+        130.10000002384186,
+        132.10000002384186,
+        130.70000004768372,
+        132.60000002384186,
+        130
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 1000,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "median": 2.621936,
+      "min": 2.621196,
+      "max": 2.621952,
+      "samples": [
+        2.621196,
+        2.621936,
+        2.621936,
+        2.621952,
+        2.621952
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 1000,
+      "metric": "dom-nodes-after-load",
+      "unit": "nodes",
+      "median": 1624,
+      "min": 1624,
+      "max": 1624,
+      "samples": [
+        1624,
+        1624,
+        1624,
+        1624,
+        1624
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 1000,
+      "metric": "container-elements",
+      "unit": "elements",
+      "median": 1077,
+      "min": 1077,
+      "max": 1077,
+      "samples": [
+        1077,
+        1077,
+        1077,
+        1077,
+        1077
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 1000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "median": 259,
+      "min": 259,
+      "max": 259,
+      "samples": [
+        259,
+        259,
+        259,
+        259,
+        259
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 1000,
+      "metric": "label-nodes-after-load",
+      "unit": "nodes",
+      "median": 253,
+      "min": 253,
+      "max": 253,
+      "samples": [
+        253,
+        253,
+        253,
+        253,
+        253
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 1000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "median": 257,
+      "min": 257,
+      "max": 257,
+      "samples": [
+        257,
+        257,
+        257,
+        257,
+        257
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 1000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "median": 0,
+      "min": 0,
+      "max": 0,
+      "samples": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 1000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "median": 16.700000000000728,
+      "min": 16.700000000000728,
+      "max": 16.799999999999272,
+      "samples": [
+        16.700000000000728,
+        16.700000000000728,
+        16.799999999999272,
+        16.700000000000728,
+        16.799999999999272
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 1000,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "median": 4.119956,
+      "min": 4.117388,
+      "max": 4.123028,
+      "samples": [
+        4.122092,
+        4.117388,
+        4.119628,
+        4.119956,
+        4.123028
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 1000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "median": 0,
+      "min": 0,
+      "max": 0,
+      "samples": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 1000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "median": 16.700000000000045,
+      "min": 16.700000000000045,
+      "max": 16.700000000000045,
+      "samples": [
+        16.700000000000045,
+        16.700000000000045,
+        16.700000000000045,
+        16.700000000000045,
+        16.700000000000045
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 1000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "median": 4.299817198267631,
+      "min": 4.299817198267631,
+      "max": 4.299817198267631,
+      "samples": [
+        4.299817198267631,
+        4.299817198267631,
+        4.299817198267631,
+        4.299817198267631,
+        4.299817198267631
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 1000,
+      "metric": "first-render-unthrottled",
+      "unit": "ms",
+      "median": 1086.199999988079,
+      "min": 1086.199999988079,
+      "max": 1086.199999988079,
+      "samples": [
+        1086.199999988079
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 1000,
+      "metric": "first-render",
+      "unit": "ms",
+      "median": 1157.300000011921,
+      "min": 1156.699999988079,
+      "max": 1173.2000000476837,
+      "samples": [
+        1156.699999988079,
+        1158.4000000357628,
+        1157.5,
+        1158.199999988079,
+        1157.1000000238419,
+        1158.300000011921,
+        1173.2000000476837,
+        1156.7000000476837,
+        1157.1000000238419,
+        1157
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 1000,
+      "metric": "first-items-in-dom",
+      "unit": "ms",
+      "median": 283.15000000596046,
+      "min": 278.30000001192093,
+      "max": 293.30000001192093,
+      "samples": [
+        285.19999998807907,
+        282.80000001192093,
+        280.9000000357628,
+        283.5,
+        285,
+        285.80000001192093,
+        293.30000001192093,
+        282.60000002384186,
+        278.30000001192093,
+        280.5
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 1000,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "median": 6.426792,
+      "min": 6.423696,
+      "max": 6.42738,
+      "samples": [
+        6.426808,
+        6.4247,
+        6.423696,
+        6.426792,
+        6.42738
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 1000,
+      "metric": "dom-nodes-after-load",
+      "unit": "nodes",
+      "median": 1735,
+      "min": 1735,
+      "max": 1735,
+      "samples": [
+        1735,
+        1735,
+        1735,
+        1735,
+        1735
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 1000,
+      "metric": "container-elements",
+      "unit": "elements",
+      "median": 1334,
+      "min": 1334,
+      "max": 1334,
+      "samples": [
+        1334,
+        1334,
+        1334,
+        1334,
+        1334
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 1000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "median": 314,
+      "min": 314,
+      "max": 314,
+      "samples": [
+        314,
+        314,
+        314,
+        314,
+        314
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 1000,
+      "metric": "label-nodes-after-load",
+      "unit": "nodes",
+      "median": 314,
+      "min": 314,
+      "max": 314,
+      "samples": [
+        314,
+        314,
+        314,
+        314,
+        314
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 1000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "median": 112,
+      "min": 112,
+      "max": 112,
+      "samples": [
+        112,
+        112,
+        112,
+        112,
+        112
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 1000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "median": 0.4932182490752158,
+      "min": 0.24813895781637718,
+      "max": 0.6257822277847309,
+      "samples": [
+        0.4932182490752158,
+        0.24813895781637718,
+        0.6257822277847309,
+        0.6180469715698393,
+        0.37267080745341613
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 1000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "median": 16.700000000000728,
+      "min": 16.700000000000728,
+      "max": 16.799999999999272,
+      "samples": [
+        16.700000000000728,
+        16.700000000000728,
+        16.799999999999272,
+        16.700000000000728,
+        16.700000000000728
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 1000,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "median": 7.148772,
+      "min": 7.147068,
+      "max": 7.157684,
+      "samples": [
+        7.148636,
+        7.148772,
+        7.150088,
+        7.147068,
+        7.157684
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 1000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "median": 0,
+      "min": 0,
+      "max": 0,
+      "samples": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 1000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "median": 16.700000000000273,
+      "min": 16.700000000000045,
+      "max": 16.799999999999955,
+      "samples": [
+        16.799999999999955,
+        16.700000000000273,
+        16.700000000000045,
+        16.700000000000273,
+        16.700000000000273
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 1000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "median": 4.2998169610345185,
+      "min": 4.2998169610345185,
+      "max": 4.2998169610345185,
+      "samples": [
+        4.2998169610345185,
+        4.2998169610345185,
+        4.2998169610345185,
+        4.2998169610345185,
+        4.2998169610345185
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 10000,
+      "metric": "first-render-unthrottled",
+      "unit": "ms",
+      "median": 221.4000000357628,
+      "min": 221.4000000357628,
+      "max": 221.4000000357628,
+      "samples": [
+        221.4000000357628
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 10000,
+      "metric": "first-render",
+      "unit": "ms",
+      "median": 682.4499999582767,
+      "min": 657.9000000357628,
+      "max": 707.6999999880791,
+      "samples": [
+        690.2999999523163,
+        657.9000000357628,
+        673,
+        672.1999999880791,
+        674.5999999642372,
+        707.6999999880791,
+        672.6999999880791,
+        690.5,
+        691.1000000238419,
+        691.3000000119209
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 10000,
+      "metric": "first-items-in-dom",
+      "unit": "ms",
+      "median": 666.0999999940395,
+      "min": 645,
+      "max": 683.1999999880791,
+      "samples": [
+        669.1999999880791,
+        645,
+        654.8000000119209,
+        652.8999999761581,
+        664.8999999761581,
+        683.1999999880791,
+        660.5,
+        672.6999999880791,
+        681.9000000357628,
+        667.3000000119209
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 10000,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "median": 6.639152,
+      "min": 6.632896,
+      "max": 6.659208,
+      "samples": [
+        6.659208,
+        6.639152,
+        6.658232,
+        6.632896,
+        6.638452
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 10000,
+      "metric": "dom-nodes-after-load",
+      "unit": "nodes",
+      "median": 6341,
+      "min": 6341,
+      "max": 6341,
+      "samples": [
+        6341,
+        6341,
+        6341,
+        6341,
+        6341
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 10000,
+      "metric": "container-elements",
+      "unit": "elements",
+      "median": 4222,
+      "min": 4222,
+      "max": 4222,
+      "samples": [
+        4222,
+        4222,
+        4222,
+        4222,
+        4222
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 10000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "median": 2079,
+      "min": 2079,
+      "max": 2079,
+      "samples": [
+        2079,
+        2079,
+        2079,
+        2079,
+        2079
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 10000,
+      "metric": "label-nodes-after-load",
+      "unit": "nodes",
+      "median": 0,
+      "min": 0,
+      "max": 0,
+      "samples": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 10000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "median": 2057,
+      "min": 2057,
+      "max": 2057,
+      "samples": [
+        2057,
+        2057,
+        2057,
+        2057,
+        2057
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 10000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "median": 0.2518891687657431,
+      "min": 0.12562814070351758,
+      "max": 0.5031446540880503,
+      "samples": [
+        0.12562814070351758,
+        0.5031446540880503,
+        0.2518891687657431,
+        0.12610340479192939,
+        0.37974683544303794
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 10000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "median": 16.700000000000728,
+      "min": 16.700000000000728,
+      "max": 16.799999999999272,
+      "samples": [
+        16.700000000000728,
+        16.700000000000728,
+        16.799999999999272,
+        16.700000000000728,
+        16.799999999999272
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 10000,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "median": 11.782296,
+      "min": 11.77428,
+      "max": 11.799884,
+      "samples": [
+        11.782296,
+        11.799884,
+        11.7763,
+        11.77428,
+        11.785488
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 10000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "median": 0,
+      "min": 0,
+      "max": 0,
+      "samples": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 10000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "median": 16.700000000000045,
+      "min": 16.700000000000045,
+      "max": 16.799999999999955,
+      "samples": [
+        16.700000000000045,
+        16.700000000000045,
+        16.799999999999955,
+        16.799999999999955,
+        16.700000000000045
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": 10000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "median": 4.299817198269885,
+      "min": 4.299817198269885,
+      "max": 4.299817198269885,
+      "samples": [
+        4.299817198269885,
+        4.299817198269885,
+        4.299817198269885,
+        4.299817198269885,
+        4.299817198269885
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 10000,
+      "metric": "first-render-unthrottled",
+      "unit": "ms",
+      "median": 1104.6000000238419,
+      "min": 1104.6000000238419,
+      "max": 1104.6000000238419,
+      "samples": [
+        1104.6000000238419
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 10000,
+      "metric": "first-render",
+      "unit": "ms",
+      "median": 3545.550000011921,
+      "min": 3518.2999999523163,
+      "max": 3565.399999976158,
+      "samples": [
+        3551.300000011921,
+        3523.699999988079,
+        3563.800000011921,
+        3557.800000011921,
+        3539.800000011921,
+        3518.2999999523163,
+        3528.699999988079,
+        3557.2000000476837,
+        3536.800000011921,
+        3565.399999976158
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 10000,
+      "metric": "first-items-in-dom",
+      "unit": "ms",
+      "median": 3373.9000000059605,
+      "min": 3350.599999964237,
+      "max": 3396.399999976158,
+      "samples": [
+        3378.800000011921,
+        3353.7999999523163,
+        3389,
+        3384,
+        3366.300000011921,
+        3350.599999964237,
+        3355.199999988079,
+        3388.2000000476837,
+        3369,
+        3396.399999976158
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 10000,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "median": 37.543652,
+      "min": 37.539976,
+      "max": 37.54442,
+      "samples": [
+        37.542056,
+        37.54442,
+        37.539976,
+        37.543976,
+        37.543652
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 10000,
+      "metric": "dom-nodes-after-load",
+      "unit": "nodes",
+      "median": 15214,
+      "min": 15214,
+      "max": 15214,
+      "samples": [
+        15214,
+        15214,
+        15214,
+        15214,
+        15214
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 10000,
+      "metric": "container-elements",
+      "unit": "elements",
+      "median": 12120,
+      "min": 12120,
+      "max": 12120,
+      "samples": [
+        12120,
+        12120,
+        12120,
+        12120,
+        12120
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 10000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "median": 3014,
+      "min": 3014,
+      "max": 3014,
+      "samples": [
+        3014,
+        3014,
+        3014,
+        3014,
+        3014
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 10000,
+      "metric": "label-nodes-after-load",
+      "unit": "nodes",
+      "median": 3014,
+      "min": 3014,
+      "max": 3014,
+      "samples": [
+        3014,
+        3014,
+        3014,
+        3014,
+        3014
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 10000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "median": 695,
+      "min": 695,
+      "max": 695,
+      "samples": [
+        695,
+        695,
+        695,
+        695,
+        695
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 10000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "median": 58.25410544511668,
+      "min": 57.596566523605155,
+      "max": 58.712446351931334,
+      "samples": [
+        58.712446351931334,
+        57.596566523605155,
+        58.391003460207614,
+        58.25410544511668,
+        57.88113695090439
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 10000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "median": 166.70000000000073,
+      "min": 166.70000000000073,
+      "max": 183.20000000000073,
+      "samples": [
+        183.20000000000073,
+        166.70000000000073,
+        166.70000000000073,
+        166.70000000000073,
+        166.70000000000073
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 10000,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "median": 38.811668,
+      "min": 38.808492,
+      "max": 38.811872,
+      "samples": [
+        38.81178,
+        38.811668,
+        38.808492,
+        38.811872,
+        38.811636
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 10000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "median": 63.24786324786324,
+      "min": 62.60869565217392,
+      "max": 64.65517241379311,
+      "samples": [
+        63.793103448275865,
+        63.1578947368421,
+        63.24786324786324,
+        62.60869565217392,
+        64.65517241379311
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 10000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "median": 166.59999999999945,
+      "min": 133.39999999999964,
+      "max": 166.69999999999982,
+      "samples": [
+        166.69999999999982,
+        166.60000000000036,
+        166.59999999999945,
+        133.39999999999964,
+        150
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": 10000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "median": 4.2998169602655745,
+      "min": 4.2998169602655745,
+      "max": 4.2998169602655745,
+      "samples": [
+        4.2998169602655745,
+        4.2998169602655745,
+        4.2998169602655745,
+        4.2998169602655745,
+        4.2998169602655745
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": null,
+      "metric": "js-min",
+      "unit": "kB",
+      "median": 142.179,
+      "min": 142.179,
+      "max": 142.179,
+      "samples": [
+        142.179
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": null,
+      "metric": "js-min-gz",
+      "unit": "kB",
+      "median": 50.515,
+      "min": 50.515,
+      "max": 50.515,
+      "samples": [
+        50.515
+      ]
+    },
+    {
+      "library": "temporeum",
+      "n": null,
+      "metric": "js-oxc-min-gz",
+      "unit": "kB",
+      "median": 50.515,
+      "min": 50.515,
+      "max": 50.515,
+      "samples": [
+        50.515
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": null,
+      "metric": "js-min",
+      "unit": "kB",
+      "median": 548.303,
+      "min": 548.303,
+      "max": 548.303,
+      "samples": [
+        548.303
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": null,
+      "metric": "js-min-gz",
+      "unit": "kB",
+      "median": 155.822,
+      "min": 155.822,
+      "max": 155.822,
+      "samples": [
+        155.822
+      ]
+    },
+    {
+      "library": "vis-timeline",
+      "n": null,
+      "metric": "js-oxc-min-gz",
+      "unit": "kB",
+      "median": 154.249,
+      "min": 154.249,
+      "max": 154.249,
+      "samples": [
+        154.249
+      ]
+    }
+  ]
+}

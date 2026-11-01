@@ -1,0 +1,9 @@
+{
+  "title": "Ranges, boxes, points and a background",
+  "height": 300,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 4 },
+    { "selector": "#timeline svg .tl-item-line", "min": 3 },
+    { "selector": "#timeline svg .tl-background", "min": 1 }
+  ]
+}

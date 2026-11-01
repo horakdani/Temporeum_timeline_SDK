@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="hu">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Idővonal SDK — aszinkron, ablakozott adat</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+      }
+      #frame svg {
+        display: block;
+        width: 100%;
+      }
+      #bar {
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        padding: 0.4rem 0.6rem;
+        font-size: 12px;
+        color: #445;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="frame"></div>
+    <div id="bar">
+      <button id="retry" type="button" disabled>Újra a hibás ablakokat</button>
+      <span id="status"></span>
+    </div>
+    <p style="margin: 0; padding: 0 0.6rem; font-size: 12px; color: #445">
+      Három év naplója, de a lap egyszerre csak a látható ablakot kéri le. A betöltés a tengely
+      alsó szélén látszik: mozgó szaggatás, amíg tart; pöttyök, ahol a kérés elbukott.
+    </p>
+
+    <script type="module">
+      import {
+        createInputMachine,
+        createItemLoader,
+        createNavigator,
+        densityMetrics,
+        renderTimeline,
+      } from "/core/index.mjs";
+      import { attachInput, mountScene } from "/core/dom.mjs";
+
+      // A forrás a HOSZTÉ: itt egy hamis szerver, késleltetéssel. A könyvtár
+      // nem hálózik — csak megmondja, melyik időablak kell, és elengedi,
+      // amelyik már nem.
+      const params = new URLSearchParams(location.search);
+      const latency = Number(params.get("latency") ?? 300);
+      /** Egy szerver, ami nem tud megszakítani: az abortált kérésre is válaszol. */
+      const ignoreAbort = params.get("ignoreAbort") === "1";
+      const failRate = Number(params.get("fail") ?? 0);
+
+      const DAY = 86_400_000;
+      const START = Date.UTC(2024, 0, 1);
+      let seed = Number(params.get("seed") ?? 7);
+      const random = () => {
+        // mulberry32: ugyanaz a mag, ugyanaz a napló.
+        seed = (seed + 0x6d2b79f5) >>> 0;
+        let t = seed;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+      const KINDS = ["Telepítés", "Riasztás", "Mentés", "Karbantartás", "Kiadás"];
+      const universe = [];
+      for (let index = 0; index < 3000; index += 1) {
+        const start = START + Math.floor(random() * 3 * 365 * DAY);
+        const long = random() < 0.4;
+        universe.push({
+          id: `n${index}`,
+          start,
+          ...(long ? { end: start + Math.floor((0.2 + random() * 6) * DAY) } : {}),
+          label: KINDS[index % KINDS.length],
+          laneId: `l${index % 3}`,
+        });
+      }
+      const lanes = [
+        { id: "l0", label: "Éles" },
+        { id: "l1", label: "Teszt" },
+        { id: "l2", label: "Fejlesztői" },
+      ];
+
+      /** Minden kérés, sorszámmal — a teszt ebből ítél. */
+      const requests = [];
+
+      function source(domain, signal) {
+        const request = { n: requests.length, domain, aborted: false, answeredAfterAbort: false, settled: false };
+        requests.push(request);
+        return new Promise((resolve, reject) => {
+          const delay = latency * (0.3 + random());
+          const timer = setTimeout(() => {
+            request.settled = true;
+            if (request.aborted) {
+              request.answeredAfterAbort = true;
+            }
+            if (random() < failRate) {
+              reject(new Error("503"));
+              return;
+            }
+            const [from, to] = domain;
+            // Minden elem a nevében viszi, melyik kérés hozta: a vásznon
+            // olvasható, honnan jött.
+            resolve(
+              universe
+                .filter((item) => item.start < to && (item.end ?? item.start + 1) > from)
+                .map((item) => ({ ...item, label: `${item.label} @r${request.n}` })),
+            );
+          }, delay);
+          signal.addEventListener("abort", () => {
+            request.aborted = true;
+            if (!ignoreAbort) {
+              request.settled = true;
+              clearTimeout(timer);
+              reject(new DOMException("aborted", "AbortError"));
+            }
+          });
+        });
+      }
+
+      /**
+       * NEGATÍV KONTROLL (`?naive=1`): egy betöltő, ami ugyanúgy abortál, de
+       * MINDEN választ megtart. Csak azért van, hogy a teszt bizonyítsa: a
+       * szivárgás-mérő ezen a lapon lát — különben a nulla semmit nem jelent.
+       */
+      function naiveLoader() {
+        const held = new Map();
+        const running = new Map();
+        const listeners = new Set();
+        let merged = [];
+        return {
+          request([from, to]) {
+            const span = to - from;
+            const size = 2 ** Math.ceil(Math.log2(Math.max(span / 2, 1)));
+            const wanted = new Set();
+            for (let index = Math.floor((from - span / 2) / size); index * size < to + span / 2; index += 1) {
+              wanted.add(index * size);
+            }
+            for (const [start, controller] of running) {
+              if (!wanted.has(start)) {
+                controller.abort();
+                running.delete(start);
+              }
+            }
+            for (const start of wanted) {
+              if (held.has(`${size}:${start}`) || running.has(start)) {
+                continue;
+              }
+              const controller = new AbortController();
+              running.set(start, controller);
+              source([start, start + size], controller.signal).then(
+                (items) => {
+                  running.delete(start);
+                  held.set(`${size}:${start}`, items);
+                  merged = [...new Map([...held.values()].flat().map((item) => [item.id, item])).values()];
+                  for (const listener of listeners) listener({ reason: "loaded" });
+                },
+                () => running.delete(start),
+              );
+            }
+          },
+          get items() {
+            return merged;
+          },
+          loading: [],
+          get busy() {
+            return running.size > 0 || requests.some((request) => !request.settled);
+          },
+          get stats() {
+            return { windows: held.size, inFlight: running.size, aborted: 0 };
+          },
+          subscribe(listener) {
+            listeners.add(listener);
+          },
+          retry() {},
+        };
+      }
+
+      const loader = params.get("naive") === "1" ? naiveLoader() : createItemLoader({ source });
+
+      const frame = document.querySelector("#frame");
+      const status = document.querySelector("#status");
+      const retry = document.querySelector("#retry");
+      const mount = mountScene(frame);
+      const orientation = "horizontal";
+      const density = "comfortable";
+      const height = 240;
+      const metrics = densityMetrics(density, orientation);
+      let domain = [START + 400 * DAY, START + 460 * DAY];
+      let draws = 0;
+
+      const machine = createInputMachine({
+        domain,
+        mainSize: frame.clientWidth,
+        crossSize: height,
+        orientation,
+        limits: { min: START - 90 * DAY, max: START + 4 * 365 * DAY, minSpanMs: 3_600_000 },
+      });
+
+      function draw() {
+        // A kérés minden rajzolásnál megy: olcsó, ha semmi nem változott, és
+        // abban a pillanatban elengedi, ami kiesett a nézetből.
+        loader.request(domain);
+        const result = renderTimeline({
+          items: loader.items,
+          lanes,
+          domain,
+          width: frame.clientWidth,
+          height,
+          orientation,
+          density,
+          locale: "hu",
+          ariaLabel: "Napló idővonal",
+          instanceId: "log",
+          focusedId: machine.focusedId,
+          loading: loader.loading,
+          crossOffset: machine.crossOffset,
+        });
+        mount.update(result.scene);
+        draws += 1;
+        machine.setKeyboard({ navigator: createNavigator(result.layout, { crossInset: metrics.axisSize }) });
+        const stats = loader.stats;
+        retry.disabled = !loader.loading.some((range) => range.failed);
+        status.textContent = `${result.visibleCount} látható · ${loader.items.length} betöltve · ${stats.windows} ablak · ${stats.inFlight} kérés fut · ${stats.aborted} megszakítva`;
+      }
+
+      // Ami a forrásból később jön meg, az új rajzolást kér — képkockánként
+      // egyet, akárhány ablak érkezik is közben.
+      let queued = false;
+      loader.subscribe(() => {
+        if (queued) {
+          return;
+        }
+        queued = true;
+        requestAnimationFrame(() => {
+          queued = false;
+          draw();
+        });
+      });
+
+      retry.addEventListener("click", () => {
+        loader.retry();
+      });
+
+      attachInput(frame, {
+        machine,
+        onEffects(effects) {
+          for (const effect of effects) {
+            if (effect.type === "viewport") {
+              domain = effect.domain;
+            }
+          }
+          draw();
+        },
+      });
+
+      // A teszt egy MutationObserverrel MINDEN valaha beszúrt vagy átírt
+      // option nevét rögzíti — nem csak a végállapotot. A "soha" így mérhető:
+      // egy képkockányi szivárgás is nyomot hagy.
+      const seen = new Map();
+      const record = (node) => {
+        if (node.nodeType !== 1) {
+          return;
+        }
+        const label = node.getAttribute("aria-label");
+        if (node.getAttribute("role") === "option" && label !== null && !seen.has(label)) {
+          seen.set(label, draws);
+        }
+        for (const child of node.querySelectorAll?.("[role=option]") ?? []) {
+          record(child);
+        }
+      };
+      new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (mutation.type === "attributes") {
+            record(mutation.target);
+          }
+          for (const node of mutation.addedNodes) {
+            record(node);
+          }
+        }
+      }).observe(frame, { subtree: true, childList: true, attributes: true, attributeFilter: ["aria-label", "role"] });
+
+      window.tl = {
+        machine,
+        loader,
+        requests,
+        get domain() {
+          return domain;
+        },
+        report() {
+          const leaks = [];
+          for (const [label] of seen) {
+            const match = /@r(\d+)/.exec(label);
+            if (match !== null && requests[Number(match[1])]?.aborted) {
+              leaks.push(label);
+            }
+          }
+          return {
+            requests: requests.length,
+            aborted: requests.filter((request) => request.aborted).length,
+            answeredAfterAbort: requests.filter((request) => request.answeredAfterAbort).length,
+            namesSeen: seen.size,
+            draws,
+            leaks,
+            stats: loader.stats,
+          };
+        },
+      };
+
+      draw();
+      new ResizeObserver(() => {
+        if (frame.clientWidth > 0) {
+          machine.resize({ mainSize: frame.clientWidth, crossSize: height });
+          draw();
+        }
+      }).observe(frame);
+    </script>
+  </body>
+</html>

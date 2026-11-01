@@ -1,0 +1,210 @@
+{
+  "name": "@temporeum/timeline-element",
+  "version": "1.0.0",
+  "description": "An editable, accessible timeline for the web: <temporeum-timeline>, a live instance (createTimeline) and server-rendered markup that hydrates.",
+  "license": "MIT",
+  "author": "Daniel Horak",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/horakdani/temporeum-timeline.git",
+    "directory": "packages/web-component"
+  },
+  "homepage": "https://github.com/horakdani/temporeum-timeline#readme",
+  "bugs": {
+    "url": "https://github.com/horakdani/temporeum-timeline/issues"
+  },
+  "keywords": [
+    "timeline",
+    "web-component",
+    "custom-element",
+    "gantt",
+    "vis-timeline-alternative",
+    "editable",
+    "accessible",
+    "ssr"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "type": "module",
+  "sideEffects": [
+    "./dist/define.mjs",
+    "./dist/define.cjs",
+    "./dist/timeline-element.umd.js"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "unpkg": "./dist/timeline-element.umd.js",
+  "jsdelivr": "./dist/timeline-element.umd.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./define": {
+      "import": {
+        "types": "./dist/define.d.ts",
+        "default": "./dist/define.mjs"
+      },
+      "require": {
+        "types": "./dist/define.d.cts",
+        "default": "./dist/define.cjs"
+      }
+    },
+    "./calendar": {
+      "import": {
+        "types": "./dist/calendar.d.ts",
+        "default": "./dist/calendar.mjs"
+      },
+      "require": {
+        "types": "./dist/calendar.d.cts",
+        "default": "./dist/calendar.cjs"
+      }
+    },
+    "./gantt": {
+      "import": {
+        "types": "./dist/gantt.d.ts",
+        "default": "./dist/gantt.mjs"
+      },
+      "require": {
+        "types": "./dist/gantt.d.cts",
+        "default": "./dist/gantt.cjs"
+      }
+    },
+    "./resources": {
+      "import": {
+        "types": "./dist/resources.d.ts",
+        "default": "./dist/resources.mjs"
+      },
+      "require": {
+        "types": "./dist/resources.d.cts",
+        "default": "./dist/resources.cjs"
+      }
+    },
+    "./export": {
+      "import": {
+        "types": "./dist/export.d.ts",
+        "default": "./dist/export.mjs"
+      },
+      "require": {
+        "types": "./dist/export.d.cts",
+        "default": "./dist/export.cjs"
+      }
+    },
+    "./tools": {
+      "import": {
+        "types": "./dist/tools.d.ts",
+        "default": "./dist/tools.mjs"
+      },
+      "require": {
+        "types": "./dist/tools.d.cts",
+        "default": "./dist/tools.cjs"
+      }
+    },
+    "./groups": {
+      "import": {
+        "types": "./dist/groups.d.ts",
+        "default": "./dist/groups.mjs"
+      },
+      "require": {
+        "types": "./dist/groups.d.cts",
+        "default": "./dist/groups.cjs"
+      }
+    },
+    "./items": {
+      "import": {
+        "types": "./dist/items.d.ts",
+        "default": "./dist/items.mjs"
+      },
+      "require": {
+        "types": "./dist/items.d.cts",
+        "default": "./dist/items.cjs"
+      }
+    },
+    "./intl": {
+      "import": {
+        "types": "./dist/intl.d.ts",
+        "default": "./dist/intl.mjs"
+      },
+      "require": {
+        "types": "./dist/intl.d.cts",
+        "default": "./dist/intl.cjs"
+      }
+    },
+    "./story": {
+      "import": {
+        "types": "./dist/story.d.ts",
+        "default": "./dist/story.mjs"
+      },
+      "require": {
+        "types": "./dist/story.d.cts",
+        "default": "./dist/story.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "define": [
+        "./dist/define.d.cts"
+      ],
+      "calendar": [
+        "./dist/calendar.d.cts"
+      ],
+      "gantt": [
+        "./dist/gantt.d.cts"
+      ],
+      "resources": [
+        "./dist/resources.d.cts"
+      ],
+      "export": [
+        "./dist/export.d.cts"
+      ],
+      "tools": [
+        "./dist/tools.d.cts"
+      ],
+      "groups": [
+        "./dist/groups.d.cts"
+      ],
+      "items": [
+        "./dist/items.d.cts"
+      ],
+      "intl": [
+        "./dist/intl.d.cts"
+      ],
+      "story": [
+        "./dist/story.d.cts"
+      ]
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "dependencies": {
+    "@temporeum/timeline-core": "1.0.0"
+  },
+  "scripts": {
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.build.json --emitDeclarationOnly && rollup -c && node ../../scripts/sdk_cjs_types.mjs && node ../core/scripts/fingerprint.mjs .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run --silent build -w @temporeum/timeline-core && npm run --silent build && npm run --silent typecheck && vitest run --coverage"
+  },
+  "devDependencies": {
+    "@vitest/browser-playwright": "^5.0.5",
+    "@vitest/coverage-v8": "^5.0.5",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.5"
+  }
+}

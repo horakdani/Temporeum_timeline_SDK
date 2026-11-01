@@ -1,0 +1,5729 @@
+{
+  "generatedAt": "2026-10-31T14:27:01.650Z",
+  "smoke": false,
+  "machine": {
+    "cpu": "Apple M4",
+    "cores": 10,
+    "memoryGB": 17,
+    "os": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:11:03 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T8132 (darwin 25.6.0 arm64)",
+    "node": "v22.22.0"
+  },
+  "browsers": {
+    "chromium": "156.0.8078.4",
+    "firefox": "157.0",
+    "webkit": "27.2"
+  },
+  "settings": {
+    "throttle": null,
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "repetitions": 3,
+    "ns": {
+      "timeline": [
+        1000,
+        10000
+      ],
+      "gantt": [
+        500,
+        2000
+      ]
+    },
+    "missedFrameDefinition": "V = 1000/60 ms. An rAF interval d > 1.5 V counts round(d / V) - 1 lost frames. missed % = lost frames / (lost frames + recorded rAF intervals) x 100, over the whole recording window.",
+    "readyDefinition": "navigationStart -> the rAF at which item nodes are in the box AND visible, and two consecutive rAFs have seen no DOM mutation in it",
+    "pan": {
+      "strokes": 24,
+      "forward": 12,
+      "distancePx": 240,
+      "durationMs": 400,
+      "moveEveryMs": 16,
+      "gapMs": 100,
+      "wheelSteps": 25,
+      "input": "the library's own: drag (mouse down, move, up) or wheel-x (horizontal wheel steps), as the page says"
+    },
+    "zoom": {
+      "notches": 8,
+      "intervalMs": 50,
+      "tailMs": 300,
+      "input": "Control held + mouse wheel at the chart's centre, the page's |deltaY| per notch in and out: one 1.2x step where the library's rule allows it (Temporeum, vis-timeline, react-calendar-timeline), one mouse notch (100) for SVAR"
+    },
+    "heap": "Chromium only: CDP HeapProfiler.collectGarbage, then Performance.getMetrics JSHeapUsedSize",
+    "runSeconds": 2670
+  },
+  "libraries": {
+    "temporeum": {
+      "version": "1.0.0",
+      "commit": "a41b9d07"
+    },
+    "vis-timeline": {
+      "version": "8.5.6",
+      "with": {
+        "vis-data": "8.0.6"
+      }
+    },
+    "react-calendar-timeline": {
+      "version": "0.30.0-beta.4",
+      "with": {
+        "react": "18.3.1",
+        "dayjs": "1.11.13",
+        "interactjs": "1.10.27"
+      }
+    },
+    "frappe-gantt": {
+      "version": "1.2.2"
+    },
+    "svar": {
+      "name": "@svar-ui/react-gantt",
+      "version": "2.8.2",
+      "with": {
+        "react": "18.3.1"
+      }
+    },
+    "react (baseline)": {
+      "version": "18.3.1"
+    }
+  },
+  "workloads": {
+    "timeline": [
+      "temporeum",
+      "vis-timeline",
+      "react-calendar-timeline"
+    ],
+    "gantt": [
+      "temporeum",
+      "frappe-gantt",
+      "svar"
+    ]
+  },
+  "capabilities": {
+    "temporeum": {
+      "wheelZoom": true,
+      "pan": "wheel-x"
+    },
+    "vis-timeline": {
+      "wheelZoom": true,
+      "pan": "drag"
+    },
+    "react-calendar-timeline": {
+      "wheelZoom": true,
+      "pan": "drag"
+    },
+    "frappe-gantt": {
+      "wheelZoom": false,
+      "pan": "wheel-x"
+    },
+    "svar": {
+      "wheelZoom": true,
+      "pan": "wheel-x"
+    }
+  },
+  "files": {
+    "temporeum|timeline": [
+      "/core/chunks/index.mjs",
+      "/core/dom.mjs",
+      "/core/index.mjs",
+      "/core/live.mjs",
+      "/core/words.mjs",
+      "/element/element.shared.mjs",
+      "/element/index.mjs"
+    ],
+    "vis-timeline|timeline": [
+      "/vis/vis-timeline/standalone/umd/vis-timeline-graph2d.min.js"
+    ],
+    "react-calendar-timeline|timeline": [
+      "/work/rct.js"
+    ],
+    "temporeum|gantt": [
+      "/core/chunks/index.mjs",
+      "/core/dom.mjs",
+      "/core/gantt.mjs",
+      "/core/index.mjs",
+      "/core/live.mjs",
+      "/core/words.mjs",
+      "/element/element.shared.mjs",
+      "/element/gantt.mjs",
+      "/element/index.mjs"
+    ],
+    "frappe-gantt|gantt": [
+      "/nm/frappe-gantt/dist/frappe-gantt.umd.js"
+    ],
+    "svar|gantt": [
+      "/work/svar.js"
+    ]
+  },
+  "ignoredPageErrors": {
+    "pattern": "/^ResizeObserver loop (completed with undelivered notifications|limit exceeded)/",
+    "counts": {
+      "webkit|svar": 12
+    }
+  },
+  "results": [
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        72.09999996423721,
+        70.60000002384186,
+        71.69999998807907,
+        71.80000001192093,
+        70.19999998807907,
+        70.89999997615814
+      ],
+      "median": 71.2999999821186,
+      "min": 70.19999998807907,
+      "max": 72.09999996423721
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        868,
+        868,
+        868
+      ],
+      "median": 868,
+      "min": 868,
+      "max": 868
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        203,
+        203,
+        203
+      ],
+      "median": 203,
+      "min": 203,
+      "max": 203
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        197,
+        197,
+        197
+      ],
+      "median": 197,
+      "min": 197,
+      "max": 197
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "samples": [
+        2.577432,
+        2.577432,
+        2.573528
+      ],
+      "median": 2.577432,
+      "min": 2.573528,
+      "max": 2.577432
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.700000000000728,
+        16.799999999999272,
+        16.700000000000728
+      ],
+      "median": 16.700000000000728,
+      "min": 16.700000000000728,
+      "max": 16.799999999999272
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "samples": [
+        3.894752,
+        3.889468,
+        3.890344
+      ],
+      "median": 3.890344,
+      "min": 3.889468,
+      "max": 3.894752
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.799999999999955,
+        16.700000000000045,
+        16.799999999999955
+      ],
+      "median": 16.799999999999955,
+      "min": 16.700000000000045,
+      "max": 16.799999999999955
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        4.299817198267631,
+        4.299817198267631,
+        4.299817198267631
+      ],
+      "median": 4.299817198267631,
+      "min": 4.299817198267631,
+      "max": 4.299817198267631
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        104.69999998807907,
+        104,
+        104.69999998807907,
+        104.69999998807907,
+        104.80000001192093,
+        104.69999998807907
+      ],
+      "median": 104.69999998807907,
+      "min": 104,
+      "max": 104.80000001192093
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        3337,
+        3337,
+        3337
+      ],
+      "median": 3337,
+      "min": 3337,
+      "max": 3337
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        1629,
+        1629,
+        1629
+      ],
+      "median": 1629,
+      "min": 1629,
+      "max": 1629
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        1577,
+        1577,
+        1577
+      ],
+      "median": 1577,
+      "min": 1577,
+      "max": 1577
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "samples": [
+        6.477544,
+        6.50296,
+        6.501176
+      ],
+      "median": 6.501176,
+      "min": 6.477544,
+      "max": 6.50296
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.700000000000728,
+        16.799999999999272,
+        16.700000000000728
+      ],
+      "median": 16.700000000000728,
+      "min": 16.700000000000728,
+      "max": 16.799999999999272
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "samples": [
+        10.949528,
+        10.951244,
+        10.948304
+      ],
+      "median": 10.949528,
+      "min": 10.948304,
+      "max": 10.951244
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.700000000000045,
+        16.799999999999955,
+        16.700000000000045
+      ],
+      "median": 16.700000000000045,
+      "min": 16.700000000000045,
+      "max": 16.799999999999955
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        4.299817198269885,
+        4.299817198269885,
+        4.299817198269885
+      ],
+      "median": 4.299817198269885,
+      "min": 4.299817198269885,
+      "max": 4.299817198269885
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        1087,
+        1088.300000011921,
+        1088.5,
+        1088.0999999642372,
+        1104.5999999642372,
+        1104.8999999761581
+      ],
+      "median": 1088.4000000059605,
+      "min": 1087,
+      "max": 1104.8999999761581
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        680,
+        680,
+        680
+      ],
+      "median": 680,
+      "min": 680,
+      "max": 680
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        122,
+        122,
+        122
+      ],
+      "median": 122,
+      "min": 122,
+      "max": 122
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        92,
+        92,
+        92
+      ],
+      "median": 92,
+      "min": 92,
+      "max": 92
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "samples": [
+        6.633676,
+        6.63404,
+        6.633992
+      ],
+      "median": 6.633992,
+      "min": 6.633676,
+      "max": 6.63404
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0.1277139208173691,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0.1277139208173691
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.700000000000728,
+        16.700000000000728,
+        16.799999999999272
+      ],
+      "median": 16.700000000000728,
+      "min": 16.700000000000728,
+      "max": 16.799999999999272
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "samples": [
+        7.350788,
+        7.356484,
+        7.349868
+      ],
+      "median": 7.350788,
+      "min": 7.349868,
+      "max": 7.356484
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        1.5625,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 1.5625
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.700000000000045,
+        16.700000000000273,
+        16.800000000000182
+      ],
+      "median": 16.700000000000273,
+      "min": 16.700000000000045,
+      "max": 16.800000000000182
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        4.2998169610345185,
+        4.2998169610345185,
+        4.2998169610345185
+      ],
+      "median": 4.2998169610345185,
+      "min": 4.2998169610345185,
+      "max": 4.2998169610345185
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        1088.300000011921,
+        1088.199999988079,
+        1086.300000011921,
+        1087.699999988079,
+        1087.199999988079,
+        1086.5
+      ],
+      "median": 1087.449999988079,
+      "min": 1086.300000011921,
+      "max": 1088.300000011921
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        3802,
+        3802,
+        3802
+      ],
+      "median": 3802,
+      "min": 3802,
+      "max": 3802
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        906,
+        906,
+        906
+      ],
+      "median": 906,
+      "min": 906,
+      "max": 906
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        567,
+        567,
+        567
+      ],
+      "median": 567,
+      "min": 567,
+      "max": 567
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "samples": [
+        38.349336,
+        38.349076,
+        38.349316
+      ],
+      "median": 38.349316,
+      "min": 38.349076,
+      "max": 38.349336
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0.9791921664626682,
+        1.1111111111111112,
+        0.7380073800738007
+      ],
+      "median": 0.9791921664626682,
+      "min": 0.7380073800738007,
+      "max": 1.1111111111111112
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.799999999999272,
+        16.799999999999272,
+        16.799999999999272
+      ],
+      "median": 16.799999999999272,
+      "min": 16.799999999999272,
+      "max": 16.799999999999272
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "samples": [
+        39.21034,
+        39.217528,
+        39.20574
+      ],
+      "median": 39.21034,
+      "min": 39.20574,
+      "max": 39.217528
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.799999999999955,
+        16.700000000000045,
+        16.799999999999955
+      ],
+      "median": 16.799999999999955,
+      "min": 16.700000000000045,
+      "max": 16.799999999999955
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        4.299816959626618,
+        4.299816959626618,
+        4.299816959626618
+      ],
+      "median": 4.299816959626618,
+      "min": 4.299816959626618,
+      "max": 4.299816959626618
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        70.80000001192093,
+        70.09999996423721,
+        71.79999995231628,
+        71.5,
+        69.90000003576279,
+        71
+      ],
+      "median": 70.90000000596046,
+      "min": 69.90000003576279,
+      "max": 71.79999995231628
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        1635,
+        1635,
+        1635
+      ],
+      "median": 1635,
+      "min": 1635,
+      "max": 1635
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        629,
+        629,
+        629
+      ],
+      "median": 629,
+      "min": 629,
+      "max": 629
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        130,
+        130,
+        130
+      ],
+      "median": 130,
+      "min": 130,
+      "max": 130
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "samples": [
+        6.609552,
+        6.609344,
+        6.610732
+      ],
+      "median": 6.609552,
+      "min": 6.609344,
+      "max": 6.610732
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0.9937888198757764,
+        1.3513513513513513,
+        0.9987515605493134
+      ],
+      "median": 0.9987515605493134,
+      "min": 0.9937888198757764,
+      "max": 1.3513513513513513
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.799999999999272,
+        16.799999999999272,
+        16.799999999999272
+      ],
+      "median": 16.799999999999272,
+      "min": 16.799999999999272,
+      "max": 16.799999999999272
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "samples": [
+        8.289748,
+        8.194084,
+        8.175388
+      ],
+      "median": 8.194084,
+      "min": 8.175388,
+      "max": 8.289748
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        1.5625,
+        1.5625,
+        0
+      ],
+      "median": 1.5625,
+      "min": 0,
+      "max": 1.5625
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.700000000000045,
+        16.700000000000045,
+        16.799999999999955
+      ],
+      "median": 16.700000000000045,
+      "min": 16.700000000000045,
+      "max": 16.799999999999955
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 1000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        4.2998166973836565,
+        4.2998166973836565,
+        4.2998166973836565
+      ],
+      "median": 4.2998166973836565,
+      "min": 4.2998166973836565,
+      "max": 4.2998166973836565
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        285.5,
+        282,
+        285.5,
+        285.80000001192093,
+        286.5999999642372,
+        285.39999997615814
+      ],
+      "median": 285.5,
+      "min": 282,
+      "max": 286.5999999642372
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        12220,
+        12220,
+        12220
+      ],
+      "median": 12220,
+      "min": 12220,
+      "max": 12220
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        6029,
+        6029,
+        6029
+      ],
+      "median": 6029,
+      "min": 6029,
+      "max": 6029
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        1065,
+        1065,
+        1065
+      ],
+      "median": 1065,
+      "min": 1065,
+      "max": 1065
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "samples": [
+        36.354912,
+        36.354592,
+        36.355784
+      ],
+      "median": 36.354912,
+      "min": 36.354592,
+      "max": 36.355784
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        21.00502512562814,
+        19.312436804853387,
+        21.218274111675125
+      ],
+      "median": 21.00502512562814,
+      "min": 19.312436804853387,
+      "max": 21.218274111675125
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        33.399999999999636,
+        33.399999999999636,
+        33.399999999999636
+      ],
+      "median": 33.399999999999636,
+      "min": 33.399999999999636,
+      "max": 33.399999999999636
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "samples": [
+        42.352244,
+        42.438136,
+        42.479752
+      ],
+      "median": 42.438136,
+      "min": 42.352244,
+      "max": 42.479752
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        16.75977653631285,
+        17.613636363636363,
+        18.435754189944134
+      ],
+      "median": 17.613636363636363,
+      "min": 16.75977653631285,
+      "max": 18.435754189944134
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        33.39999999999998,
+        50,
+        33.40000000000009
+      ],
+      "median": 33.40000000000009,
+      "min": 33.39999999999998,
+      "max": 50
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "chromium",
+      "n": 10000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        4.2998166976546175,
+        4.2998166976546175,
+        4.2998166976546175
+      ],
+      "median": 4.2998166976546175,
+      "min": 4.2998166976546175,
+      "max": 4.2998166976546175
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        71.39999997615814,
+        72.40000003576279,
+        71.09999996423721,
+        71.39999997615814,
+        71.60000002384186,
+        71.30000001192093
+      ],
+      "median": 71.39999997615814,
+      "min": 71.09999996423721,
+      "max": 72.40000003576279
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        163,
+        163,
+        163
+      ],
+      "median": 163,
+      "min": 163,
+      "max": 163
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        13,
+        13,
+        13
+      ],
+      "median": 13,
+      "min": 13,
+      "max": 13
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        13,
+        13,
+        13
+      ],
+      "median": 13,
+      "min": 13,
+      "max": 13
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "samples": [
+        2.424976,
+        2.425372,
+        2.424976
+      ],
+      "median": 2.424976,
+      "min": 2.424976,
+      "max": 2.425372
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.700000000000728,
+        16.700000000000728,
+        16.799999999999272
+      ],
+      "median": 16.700000000000728,
+      "min": 16.700000000000728,
+      "max": 16.799999999999272
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "samples": [
+        4.298864,
+        4.060344,
+        3.26234
+      ],
+      "median": 4.060344,
+      "min": 3.26234,
+      "max": 4.298864
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.700000000000045,
+        16.800000000000068,
+        16.700000000000045
+      ],
+      "median": 16.700000000000045,
+      "min": 16.700000000000045,
+      "max": 16.800000000000068
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        4.299817198270844,
+        4.299817198270844,
+        4.299817198270844
+      ],
+      "median": 4.299817198270844,
+      "min": 4.299817198270844,
+      "max": 4.299817198270844
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        71.5,
+        71.30000001192093,
+        71.19999998807907,
+        71.5,
+        71.60000002384186,
+        71.39999997615814
+      ],
+      "median": 71.44999998807907,
+      "min": 71.19999998807907,
+      "max": 71.60000002384186
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        163,
+        163,
+        163
+      ],
+      "median": 163,
+      "min": 163,
+      "max": 163
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        13,
+        13,
+        13
+      ],
+      "median": 13,
+      "min": 13,
+      "max": 13
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        13,
+        13,
+        13
+      ],
+      "median": 13,
+      "min": 13,
+      "max": 13
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "samples": [
+        3.258648,
+        3.259752,
+        3.259436
+      ],
+      "median": 3.259436,
+      "min": 3.258648,
+      "max": 3.259752
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.799999999999272,
+        16.700000000000728,
+        16.799999999999272
+      ],
+      "median": 16.799999999999272,
+      "min": 16.700000000000728,
+      "max": 16.799999999999272
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "samples": [
+        4.268816,
+        4.0946,
+        4.244748
+      ],
+      "median": 4.244748,
+      "min": 4.0946,
+      "max": 4.268816
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.700000000000045,
+        16.700000000000045,
+        16.700000000000045
+      ],
+      "median": 16.700000000000045,
+      "min": 16.700000000000045,
+      "max": 16.700000000000045
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        4.299817198270844,
+        4.299817198270844,
+        4.299817198270844
+      ],
+      "median": 4.299817198270844,
+      "min": 4.299817198270844,
+      "max": 4.299817198270844
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        88.40000003576279,
+        86.09999996423721,
+        86.10000002384186
+      ],
+      "median": 86.10000002384186,
+      "min": 86.09999996423721,
+      "max": 88.40000003576279
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        7807,
+        7807,
+        7807
+      ],
+      "median": 7807,
+      "min": 7807,
+      "max": 7807
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        500,
+        500,
+        500
+      ],
+      "median": 500,
+      "min": 500,
+      "max": 500
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        10,
+        10,
+        10
+      ],
+      "median": 10,
+      "min": 10,
+      "max": 10
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "samples": [
+        2.62632,
+        2.62632,
+        2.6264
+      ],
+      "median": 2.62632,
+      "min": 2.62632,
+      "max": 2.6264
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        25.234697709350357,
+        25.206611570247933,
+        24.76512589252161
+      ],
+      "median": 25.206611570247933,
+      "min": 24.76512589252161,
+      "max": 25.234697709350357
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        66.60000000000036,
+        66.59999999999991,
+        66.69999999999709
+      ],
+      "median": 66.60000000000036,
+      "min": 66.59999999999991,
+      "max": 66.69999999999709
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "samples": [
+        3.183808,
+        3.18318,
+        3.18384
+      ],
+      "median": 3.183808,
+      "min": 3.18318,
+      "max": 3.18384
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        254.89999997615814,
+        255.4000000357628,
+        283.0999999642372
+      ],
+      "median": 255.4000000357628,
+      "min": 254.89999997615814,
+      "max": 283.0999999642372
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        30157,
+        30157,
+        30157
+      ],
+      "median": 30157,
+      "min": 30157,
+      "max": 30157
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        2000,
+        2000,
+        2000
+      ],
+      "median": 2000,
+      "min": 2000,
+      "max": 2000
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        10,
+        10,
+        10
+      ],
+      "median": 10,
+      "min": 10,
+      "max": 10
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "samples": [
+        5.55348,
+        5.553492,
+        5.553496
+      ],
+      "median": 5.553492,
+      "min": 5.55348,
+      "max": 5.553496
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        55.805687203791464,
+        56.528925619834716,
+        56.67134831460674
+      ],
+      "median": 56.528925619834716,
+      "min": 55.805687203791464,
+      "max": 56.67134831460674
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        266.7000000000007,
+        283.2999999999993,
+        283.2999999999993
+      ],
+      "median": 283.2999999999993,
+      "min": 266.7000000000007,
+      "max": 283.2999999999993
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "samples": [
+        6.03204,
+        5.968924,
+        6.063836
+      ],
+      "median": 6.03204,
+      "min": 5.968924,
+      "max": 6.063836
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        104.89999997615814,
+        86.39999997615814,
+        88.30000001192093,
+        88.10000002384186,
+        87.39999997615814,
+        88.29999995231628
+      ],
+      "median": 88.19999998807907,
+      "min": 86.39999997615814,
+      "max": 104.89999997615814
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        338,
+        338,
+        338
+      ],
+      "median": 338,
+      "min": 338,
+      "max": 338
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        26,
+        26,
+        26
+      ],
+      "median": 26,
+      "min": 26,
+      "max": 26
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        12,
+        12,
+        12
+      ],
+      "median": 12,
+      "min": 12,
+      "max": 12
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "samples": [
+        4.091608,
+        4.048556,
+        4.092964
+      ],
+      "median": 4.091608,
+      "min": 4.048556,
+      "max": 4.092964
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.799999999999272,
+        16.799999999999272,
+        16.799999999999272
+      ],
+      "median": 16.799999999999272,
+      "min": 16.799999999999272,
+      "max": 16.799999999999272
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "samples": [
+        4.085428,
+        4.082076,
+        4.083636
+      ],
+      "median": 4.083636,
+      "min": 4.082076,
+      "max": 4.085428
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.700000000000045,
+        16.700000000000045,
+        16.700000000000045
+      ],
+      "median": 16.700000000000045,
+      "min": 16.700000000000045,
+      "max": 16.700000000000045
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        3.28,
+        3.3,
+        3.28
+      ],
+      "median": 3.28,
+      "min": 3.28,
+      "max": 3.3
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        171.79999995231628,
+        170.29999995231628,
+        171,
+        171.70000004768372,
+        171.5,
+        169.70000004768372
+      ],
+      "median": 171.25,
+      "min": 169.70000004768372,
+      "max": 171.79999995231628
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        338,
+        338,
+        338
+      ],
+      "median": 338,
+      "min": 338,
+      "max": 338
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        26,
+        26,
+        26
+      ],
+      "median": 26,
+      "min": 26,
+      "max": 26
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        12,
+        12,
+        12
+      ],
+      "median": 12,
+      "min": 12,
+      "max": 12
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "samples": [
+        7.493172,
+        7.491888,
+        7.505484
+      ],
+      "median": 7.493172,
+      "min": 7.491888,
+      "max": 7.505484
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.700000000000728,
+        16.700000000004366,
+        16.799999999999272
+      ],
+      "median": 16.700000000004366,
+      "min": 16.700000000000728,
+      "max": 16.799999999999272
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "samples": [
+        5.237856,
+        5.241032,
+        5.237724
+      ],
+      "median": 5.237856,
+      "min": 5.237724,
+      "max": 5.241032
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.700000000000045,
+        16.700000000000045,
+        16.700000000000045
+      ],
+      "median": 16.700000000000045,
+      "min": 16.700000000000045,
+      "max": 16.700000000000045
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        3.28,
+        3.28,
+        3.32
+      ],
+      "median": 3.28,
+      "min": 3.28,
+      "max": 3.32
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        135,
+        82,
+        85,
+        74,
+        67,
+        78
+      ],
+      "median": 80,
+      "min": 67,
+      "max": 135
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        868,
+        868,
+        868
+      ],
+      "median": 868,
+      "min": 868,
+      "max": 868
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        203,
+        203,
+        203
+      ],
+      "median": 203,
+      "min": 203,
+      "max": 203
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        197,
+        197,
+        197
+      ],
+      "median": 197,
+      "min": 197,
+      "max": 197
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0.12453300124533001
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0.12453300124533001
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.68000000000029,
+        16.68000000000029,
+        16.68000000000029
+      ],
+      "median": 16.68000000000029,
+      "min": 16.68000000000029,
+      "max": 16.68000000000029
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.680000000000007,
+        16.680000000000064,
+        16.680000000000007
+      ],
+      "median": 16.680000000000007,
+      "min": 16.680000000000007,
+      "max": 16.680000000000064
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        3.5831807999988707,
+        3.5831807999988707,
+        3.5831807999988707
+      ],
+      "median": 3.5831807999988707,
+      "min": 3.5831807999988707,
+      "max": 3.5831807999988707
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        116,
+        120,
+        121,
+        122,
+        129,
+        126
+      ],
+      "median": 121.5,
+      "min": 116,
+      "max": 129
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        3337,
+        3337,
+        3337
+      ],
+      "median": 3337,
+      "min": 3337,
+      "max": 3337
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        1629,
+        1629,
+        1629
+      ],
+      "median": 1629,
+      "min": 1629,
+      "max": 1629
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        1578,
+        1578,
+        1578
+      ],
+      "median": 1578,
+      "min": 1578,
+      "max": 1578
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.68000000000029,
+        16.68000000000029,
+        16.68000000000029
+      ],
+      "median": 16.68000000000029,
+      "min": 16.68000000000029,
+      "max": 16.68000000000029
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        1.5873015873015872,
+        1.5873015873015872,
+        1.6129032258064515
+      ],
+      "median": 1.5873015873015872,
+      "min": 1.5873015873015872,
+      "max": 1.6129032258064515
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        17,
+        16.819999999999993,
+        16.680000000000064
+      ],
+      "median": 16.819999999999993,
+      "min": 16.680000000000064,
+      "max": 17
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        3.5831807999999503,
+        3.5831807999999503,
+        3.5831807999999503
+      ],
+      "median": 3.5831807999999503,
+      "min": 3.5831807999999503,
+      "max": 3.5831807999999503
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        1103,
+        1091,
+        1083,
+        1093,
+        1091,
+        1085
+      ],
+      "median": 1091,
+      "min": 1083,
+      "max": 1103
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        620,
+        620,
+        620
+      ],
+      "median": 620,
+      "min": 620,
+      "max": 620
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        107,
+        107,
+        107
+      ],
+      "median": 107,
+      "min": 107,
+      "max": 107
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        88,
+        88,
+        88
+      ],
+      "median": 88,
+      "min": 88,
+      "max": 88
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.68000000000029,
+        16.68000000000029,
+        16.68000000000029
+      ],
+      "median": 16.68000000000029,
+      "min": 16.68000000000029,
+      "max": 16.68000000000029
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.680000000000064,
+        16.840000000000146,
+        16.74000000000001
+      ],
+      "median": 16.74000000000001,
+      "min": 16.680000000000064,
+      "max": 16.840000000000146
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        25.628906294821327,
+        25.628906294821327,
+        25.628906294821327
+      ],
+      "median": 25.628906294821327,
+      "min": 25.628906294821327,
+      "max": 25.628906294821327
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        526,
+        524,
+        531,
+        536,
+        514,
+        522
+      ],
+      "median": 525,
+      "min": 514,
+      "max": 536
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        3198,
+        3198,
+        3198
+      ],
+      "median": 3198,
+      "min": 3198,
+      "max": 3198
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        755,
+        755,
+        755
+      ],
+      "median": 755,
+      "min": 755,
+      "max": 755
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        540,
+        540,
+        540
+      ],
+      "median": 540,
+      "min": 540,
+      "max": 540
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        3.341584158415842,
+        3.7804878048780486,
+        3.1862745098039214
+      ],
+      "median": 3.341584158415842,
+      "min": 3.1862745098039214,
+      "max": 3.7804878048780486
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        17,
+        16.840000000000146,
+        16.94000000000051
+      ],
+      "median": 16.94000000000051,
+      "min": 16.840000000000146,
+      "max": 17
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.680000000000064,
+        16.680000000000064,
+        16.680000000000064
+      ],
+      "median": 16.680000000000064,
+      "min": 16.680000000000064,
+      "max": 16.680000000000064
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        25.62890624766458,
+        25.62890624766458,
+        25.62890624766458
+      ],
+      "median": 25.62890624766458,
+      "min": 25.62890624766458,
+      "max": 25.62890624766458
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        98,
+        107,
+        124,
+        98,
+        100,
+        111
+      ],
+      "median": 103.5,
+      "min": 98,
+      "max": 124
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        1635,
+        1635,
+        1635
+      ],
+      "median": 1635,
+      "min": 1635,
+      "max": 1635
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        629,
+        629,
+        629
+      ],
+      "median": 629,
+      "min": 629,
+      "max": 629
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        130,
+        130,
+        130
+      ],
+      "median": 130,
+      "min": 130,
+      "max": 130
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0.12345679012345678,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0.12345679012345678
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.68000000000029,
+        16.68000000000029,
+        16.68000000000029
+      ],
+      "median": 16.68000000000029,
+      "min": 16.68000000000029,
+      "max": 16.68000000000029
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.680000000000064,
+        16.780000000000086,
+        16.680000000000064
+      ],
+      "median": 16.680000000000064,
+      "min": 16.680000000000064,
+      "max": 16.780000000000086
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 1000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        4.2998169610345185,
+        4.2998169610345185,
+        4.2998169610345185
+      ],
+      "median": 4.2998169610345185,
+      "min": 4.2998169610345185,
+      "max": 4.2998169610345185
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        378,
+        338,
+        337,
+        340,
+        389,
+        392
+      ],
+      "median": 359,
+      "min": 337,
+      "max": 392
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        12220,
+        12220,
+        12220
+      ],
+      "median": 12220,
+      "min": 12220,
+      "max": 12220
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        6029,
+        6029,
+        6029
+      ],
+      "median": 6029,
+      "min": 6029,
+      "max": 6029
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        1065,
+        1065,
+        1065
+      ],
+      "median": 1065,
+      "min": 1065,
+      "max": 1065
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        18.599311136624568,
+        17.98143851508121,
+        14.759725400457665
+      ],
+      "median": 17.98143851508121,
+      "min": 14.759725400457665,
+      "max": 18.599311136624568
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        33.340000000000146,
+        33.340000000000146,
+        33.340000000000146
+      ],
+      "median": 33.340000000000146,
+      "min": 33.340000000000146,
+      "max": 33.340000000000146
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        58.536585365853654,
+        54.21686746987952,
+        59.036144578313255
+      ],
+      "median": 58.536585365853654,
+      "min": 54.21686746987952,
+      "max": 59.036144578313255
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        116.68000000000006,
+        133.33999999999992,
+        116.67999999999984
+      ],
+      "median": 116.68000000000006,
+      "min": 116.67999999999984,
+      "max": 133.33999999999992
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "firefox",
+      "n": 10000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        4.2998169602655745,
+        4.2998169602655745,
+        4.2998169602655745
+      ],
+      "median": 4.2998169602655745,
+      "min": 4.2998169602655745,
+      "max": 4.2998169602655745
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        76,
+        79,
+        79,
+        85,
+        81,
+        84
+      ],
+      "median": 80,
+      "min": 76,
+      "max": 85
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        163,
+        163,
+        163
+      ],
+      "median": 163,
+      "min": 163,
+      "max": 163
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        13,
+        13,
+        13
+      ],
+      "median": 13,
+      "min": 13,
+      "max": 13
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        13,
+        13,
+        13
+      ],
+      "median": 13,
+      "min": 13,
+      "max": 13
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.68000000000029,
+        16.68000000000029,
+        16.68000000000029
+      ],
+      "median": 16.68000000000029,
+      "min": 16.68000000000029,
+      "max": 16.68000000000029
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.680000000000064,
+        16.680000000000064,
+        16.720000000000027
+      ],
+      "median": 16.680000000000064,
+      "min": 16.680000000000064,
+      "max": 16.720000000000027
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        3.583180799999955,
+        3.583180799999955,
+        3.583180799999955
+      ],
+      "median": 3.583180799999955,
+      "min": 3.583180799999955,
+      "max": 3.583180799999955
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        86,
+        85,
+        69,
+        80,
+        89,
+        86
+      ],
+      "median": 85.5,
+      "min": 69,
+      "max": 89
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        163,
+        163,
+        163
+      ],
+      "median": 163,
+      "min": 163,
+      "max": 163
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        13,
+        13,
+        13
+      ],
+      "median": 13,
+      "min": 13,
+      "max": 13
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        13,
+        13,
+        13
+      ],
+      "median": 13,
+      "min": 13,
+      "max": 13
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.68000000000029,
+        16.68000000000029,
+        16.68000000000029
+      ],
+      "median": 16.68000000000029,
+      "min": 16.68000000000029,
+      "max": 16.68000000000029
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.680000000000064,
+        16.680000000000064,
+        16.74000000000001
+      ],
+      "median": 16.680000000000064,
+      "min": 16.680000000000064,
+      "max": 16.74000000000001
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        3.583180799999955,
+        3.583180799999955,
+        3.583180799999955
+      ],
+      "median": 3.583180799999955,
+      "min": 3.583180799999955,
+      "max": 3.583180799999955
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        99,
+        110,
+        136
+      ],
+      "median": 110,
+      "min": 99,
+      "max": 136
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        7807,
+        7807,
+        7807
+      ],
+      "median": 7807,
+      "min": 7807,
+      "max": 7807
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        500,
+        500,
+        500
+      ],
+      "median": 500,
+      "min": 500,
+      "max": 500
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        10,
+        10,
+        10
+      ],
+      "median": 10,
+      "min": 10,
+      "max": 10
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0.06587615283267458,
+        0.13395847287340923,
+        0.06548788474132286
+      ],
+      "median": 0.06587615283267458,
+      "min": 0.06548788474132286,
+      "max": 0.13395847287340923
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.68000000000029,
+        16.68000000000029,
+        16.68000000000029
+      ],
+      "median": 16.68000000000029,
+      "min": 16.68000000000029,
+      "max": 16.68000000000029
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        324,
+        323,
+        325
+      ],
+      "median": 324,
+      "min": 323,
+      "max": 325
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        30157,
+        30157,
+        30157
+      ],
+      "median": 30157,
+      "min": 30157,
+      "max": 30157
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        2000,
+        2000,
+        2000
+      ],
+      "median": 2000,
+      "min": 2000,
+      "max": 2000
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        10,
+        10,
+        10
+      ],
+      "median": 10,
+      "min": 10,
+      "max": 10
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0.5871990604815032,
+        0.4759071980963712,
+        0.6376811594202898
+      ],
+      "median": 0.5871990604815032,
+      "min": 0.4759071980963712,
+      "max": 0.6376811594202898
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.68000000000029,
+        16.68000000000029,
+        16.68000000000029
+      ],
+      "median": 16.68000000000029,
+      "min": 16.68000000000029,
+      "max": 16.68000000000029
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        126,
+        128,
+        121,
+        126,
+        123,
+        131
+      ],
+      "median": 126,
+      "min": 121,
+      "max": 131
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        338,
+        338,
+        338
+      ],
+      "median": 338,
+      "min": 338,
+      "max": 338
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        26,
+        26,
+        26
+      ],
+      "median": 26,
+      "min": 26,
+      "max": 26
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        12,
+        12,
+        12
+      ],
+      "median": 12,
+      "min": 12,
+      "max": 12
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.68000000000029,
+        16.68000000000029,
+        16.68000000000029
+      ],
+      "median": 16.68000000000029,
+      "min": 16.68000000000029,
+      "max": 16.68000000000029
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.679999999999836,
+        16.680000000000064,
+        16.679999999999836
+      ],
+      "median": 16.679999999999836,
+      "min": 16.679999999999836,
+      "max": 16.680000000000064
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 500,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        2.76,
+        2.64,
+        2.74
+      ],
+      "median": 2.74,
+      "min": 2.64,
+      "max": 2.76
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        252,
+        243,
+        232,
+        239,
+        244,
+        246
+      ],
+      "median": 243.5,
+      "min": 232,
+      "max": 252
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        338,
+        338,
+        338
+      ],
+      "median": 338,
+      "min": 338,
+      "max": 338
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        26,
+        26,
+        26
+      ],
+      "median": 26,
+      "min": 26,
+      "max": 26
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        12,
+        12,
+        12
+      ],
+      "median": 12,
+      "min": 12,
+      "max": 12
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.68000000000029,
+        16.68000000000029,
+        16.68000000000029
+      ],
+      "median": 16.68000000000029,
+      "min": 16.68000000000029,
+      "max": 16.68000000000029
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.820000000000164,
+        16.679999999999836,
+        16.68000000000029
+      ],
+      "median": 16.68000000000029,
+      "min": 16.679999999999836,
+      "max": 16.820000000000164
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "firefox",
+      "n": 2000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        2.66,
+        2.76,
+        2.76
+      ],
+      "median": 2.76,
+      "min": 2.66,
+      "max": 2.76
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        178,
+        55,
+        58,
+        60,
+        53,
+        55
+      ],
+      "median": 56.5,
+      "min": 53,
+      "max": 178
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        868,
+        868,
+        868
+      ],
+      "median": 868,
+      "min": 868,
+      "max": 868
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        203,
+        203,
+        203
+      ],
+      "median": 203,
+      "min": 203,
+      "max": 203
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        197,
+        197,
+        197
+      ],
+      "median": 197,
+      "min": 197,
+      "max": 197
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        15,
+        15,
+        15
+      ],
+      "median": 15,
+      "min": 15,
+      "max": 15
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        1.282051282051282,
+        1.282051282051282,
+        2.564102564102564
+      ],
+      "median": 1.282051282051282,
+      "min": 1.282051282051282,
+      "max": 2.564102564102564
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16,
+        16,
+        18
+      ],
+      "median": 16,
+      "min": 16,
+      "max": 18
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        3.5254214873650196,
+        3.5254214873650196,
+        3.5254214873650196
+      ],
+      "median": 3.5254214873650196,
+      "min": 3.5254214873650196,
+      "max": 3.5254214873650196
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        107,
+        113,
+        113,
+        114,
+        112,
+        107
+      ],
+      "median": 112.5,
+      "min": 107,
+      "max": 114
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        3337,
+        3337,
+        3337
+      ],
+      "median": 3337,
+      "min": 3337,
+      "max": 3337
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        1629,
+        1629,
+        1629
+      ],
+      "median": 1629,
+      "min": 1629,
+      "max": 1629
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        1577,
+        1577,
+        1577
+      ],
+      "median": 1577,
+      "min": 1577,
+      "max": 1577
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16,
+        15,
+        15
+      ],
+      "median": 15,
+      "min": 15,
+      "max": 16
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        3.896103896103896,
+        3.8461538461538463,
+        3.896103896103896
+      ],
+      "median": 3.896103896103896,
+      "min": 3.8461538461538463,
+      "max": 3.896103896103896
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        20,
+        20,
+        21
+      ],
+      "median": 20,
+      "min": 20,
+      "max": 21
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        3.525421487365355,
+        3.525421487365355,
+        3.525421487365355
+      ],
+      "median": 3.525421487365355,
+      "min": 3.525421487365355,
+      "max": 3.525421487365355
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        1098,
+        1073,
+        1065,
+        1068,
+        1066,
+        1064
+      ],
+      "median": 1067,
+      "min": 1064,
+      "max": 1098
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        680,
+        680,
+        680
+      ],
+      "median": 680,
+      "min": 680,
+      "max": 680
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        122,
+        122,
+        122
+      ],
+      "median": 122,
+      "min": 122,
+      "max": 122
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        92,
+        92,
+        92
+      ],
+      "median": 92,
+      "min": 92,
+      "max": 92
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0.20876826722338201,
+        0.4158004158004158,
+        0.20855057351407716
+      ],
+      "median": 0.20876826722338201,
+      "min": 0.20855057351407716,
+      "max": 0.4158004158004158
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16,
+        15,
+        16
+      ],
+      "median": 16,
+      "min": 15,
+      "max": 16
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        18,
+        19,
+        19
+      ],
+      "median": 19,
+      "min": 18,
+      "max": 19
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        25.628906294821327,
+        25.628906294821327,
+        25.628906294821327
+      ],
+      "median": 25.628906294821327,
+      "min": 25.628906294821327,
+      "max": 25.628906294821327
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        1108,
+        1107,
+        1099,
+        1106,
+        1106,
+        1104
+      ],
+      "median": 1106,
+      "min": 1099,
+      "max": 1108
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        3802,
+        3802,
+        3802
+      ],
+      "median": 3802,
+      "min": 3802,
+      "max": 3802
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        906,
+        906,
+        906
+      ],
+      "median": 906,
+      "min": 906,
+      "max": 906
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        567,
+        567,
+        567
+      ],
+      "median": 567,
+      "min": 567,
+      "max": 567
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        23.068181818181817,
+        24.436936936936938,
+        25.363128491620113
+      ],
+      "median": 24.436936936936938,
+      "min": 23.068181818181817,
+      "max": 25.363128491620113
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        31,
+        32,
+        32
+      ],
+      "median": 32,
+      "min": 31,
+      "max": 32
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        7.894736842105263,
+        7.792207792207792,
+        8.974358974358974
+      ],
+      "median": 7.894736842105263,
+      "min": 7.792207792207792,
+      "max": 8.974358974358974
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        29,
+        28,
+        30
+      ],
+      "median": 29,
+      "min": 28,
+      "max": 30
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        25.62890624766458,
+        25.62890624766458,
+        25.62890624766458
+      ],
+      "median": 25.62890624766458,
+      "min": 25.62890624766458,
+      "max": 25.62890624766458
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        149,
+        145,
+        139,
+        144,
+        144,
+        146
+      ],
+      "median": 144.5,
+      "min": 139,
+      "max": 149
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        1635,
+        1635,
+        1635
+      ],
+      "median": 1635,
+      "min": 1635,
+      "max": 1635
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        629,
+        629,
+        629
+      ],
+      "median": 629,
+      "min": 629,
+      "max": 629
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        130,
+        130,
+        130
+      ],
+      "median": 130,
+      "min": 130,
+      "max": 130
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0.40774719673802245,
+        0.60790273556231,
+        0.3067484662576687
+      ],
+      "median": 0.40774719673802245,
+      "min": 0.3067484662576687,
+      "max": 0.60790273556231
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        20,
+        20,
+        20
+      ],
+      "median": 20,
+      "min": 20,
+      "max": 20
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        11.904761904761903,
+        12.048192771084338,
+        12.048192771084338
+      ],
+      "median": 12.048192771084338,
+      "min": 11.904761904761903,
+      "max": 12.048192771084338
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        36,
+        38,
+        38
+      ],
+      "median": 38,
+      "min": 36,
+      "max": 38
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 1000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        4.034276969040392,
+        4.034276969040392,
+        4.034276969040392
+      ],
+      "median": 4.034276969040392,
+      "min": 4.034276969040392,
+      "max": 4.034276969040392
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        892,
+        888,
+        901,
+        899,
+        901,
+        905
+      ],
+      "median": 900,
+      "min": 888,
+      "max": 905
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        12220,
+        12220,
+        12220
+      ],
+      "median": 12220,
+      "min": 12220,
+      "max": 12220
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        6029,
+        6029,
+        6029
+      ],
+      "median": 6029,
+      "min": 6029,
+      "max": 6029
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        1065,
+        1065,
+        1065
+      ],
+      "median": 1065,
+      "min": 1065,
+      "max": 1065
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        73.15875613747954,
+        73.04785894206549,
+        74.2016806722689
+      ],
+      "median": 73.15875613747954,
+      "min": 73.04785894206549,
+      "max": 74.2016806722689
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        117,
+        117,
+        118
+      ],
+      "median": 117,
+      "min": 117,
+      "max": 118
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        80.85106382978722,
+        80.76923076923077,
+        81.56424581005587
+      ],
+      "median": 80.85106382978722,
+      "min": 80.76923076923077,
+      "max": 81.56424581005587
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        201,
+        200,
+        201
+      ],
+      "median": 201,
+      "min": 200,
+      "max": 201
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": "webkit",
+      "n": 10000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        4.034276974674803,
+        4.034276974674803,
+        4.034276974674803
+      ],
+      "median": 4.034276974674803,
+      "min": 4.034276974674803,
+      "max": 4.034276974674803
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        53,
+        53,
+        64,
+        51,
+        59,
+        59
+      ],
+      "median": 56,
+      "min": 51,
+      "max": 64
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        163,
+        163,
+        163
+      ],
+      "median": 163,
+      "min": 163,
+      "max": 163
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        13,
+        13,
+        13
+      ],
+      "median": 13,
+      "min": 13,
+      "max": 13
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        13,
+        13,
+        13
+      ],
+      "median": 13,
+      "min": 13,
+      "max": 13
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        15,
+        15,
+        15
+      ],
+      "median": 15,
+      "min": 15,
+      "max": 15
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        15,
+        15,
+        15
+      ],
+      "median": 15,
+      "min": 15,
+      "max": 15
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        3.525421487364926,
+        3.525421487364926,
+        3.525421487364926
+      ],
+      "median": 3.525421487364926,
+      "min": 3.525421487364926,
+      "max": 3.525421487364926
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        54,
+        55,
+        60,
+        61,
+        61,
+        58
+      ],
+      "median": 59,
+      "min": 54,
+      "max": 61
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        163,
+        163,
+        163
+      ],
+      "median": 163,
+      "min": 163,
+      "max": 163
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        13,
+        13,
+        13
+      ],
+      "median": 13,
+      "min": 13,
+      "max": 13
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        13,
+        13,
+        13
+      ],
+      "median": 13,
+      "min": 13,
+      "max": 13
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        15,
+        15,
+        15
+      ],
+      "median": 15,
+      "min": 15,
+      "max": 15
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        15,
+        15,
+        15
+      ],
+      "median": 15,
+      "min": 15,
+      "max": 15
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        3.525421487364926,
+        3.525421487364926,
+        3.525421487364926
+      ],
+      "median": 3.525421487364926,
+      "min": 3.525421487364926,
+      "max": 3.525421487364926
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        134,
+        123,
+        130
+      ],
+      "median": 130,
+      "min": 123,
+      "max": 134
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        7807,
+        7807,
+        7807
+      ],
+      "median": 7807,
+      "min": 7807,
+      "max": 7807
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        500,
+        500,
+        500
+      ],
+      "median": 500,
+      "min": 500,
+      "max": 500
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        10,
+        10,
+        10
+      ],
+      "median": 10,
+      "min": 10,
+      "max": 10
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        20.59447983014862,
+        20.932697403285637,
+        20.709745762711865
+      ],
+      "median": 20.709745762711865,
+      "min": 20.59447983014862,
+      "max": 20.932697403285637
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        22,
+        22,
+        22
+      ],
+      "median": 22,
+      "min": 22,
+      "max": 22
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        526,
+        537,
+        537
+      ],
+      "median": 537,
+      "min": 526,
+      "max": 537
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        30157,
+        30157,
+        30157
+      ],
+      "median": 30157,
+      "min": 30157,
+      "max": 30157
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        2000,
+        2000,
+        2000
+      ],
+      "median": 2000,
+      "min": 2000,
+      "max": 2000
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        10,
+        10,
+        10
+      ],
+      "median": 10,
+      "min": 10,
+      "max": 10
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        65.33221546845525,
+        64.91851232762224,
+        65.01594048884166
+      ],
+      "median": 65.01594048884166,
+      "min": 64.91851232762224,
+      "max": 65.33221546845525
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        246,
+        246,
+        251
+      ],
+      "median": 246,
+      "min": 246,
+      "max": 251
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        171,
+        155,
+        151,
+        144,
+        143,
+        152
+      ],
+      "median": 151.5,
+      "min": 143,
+      "max": 171
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        338,
+        338,
+        338
+      ],
+      "median": 338,
+      "min": 338,
+      "max": 338
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        26,
+        26,
+        26
+      ],
+      "median": 26,
+      "min": 26,
+      "max": 26
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        12,
+        12,
+        12
+      ],
+      "median": 12,
+      "min": 12,
+      "max": 12
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        15,
+        15,
+        15
+      ],
+      "median": 15,
+      "min": 15,
+      "max": 15
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        15,
+        16,
+        15
+      ],
+      "median": 15,
+      "min": 15,
+      "max": 16
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 500,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        2.68,
+        2.68,
+        2.7
+      ],
+      "median": 2.68,
+      "min": 2.68,
+      "max": 2.7
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        429,
+        437,
+        432,
+        426,
+        439,
+        445
+      ],
+      "median": 434.5,
+      "min": 426,
+      "max": 445
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        338,
+        338,
+        338
+      ],
+      "median": 338,
+      "min": 338,
+      "max": 338
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        26,
+        26,
+        26
+      ],
+      "median": 26,
+      "min": 26,
+      "max": 26
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        12,
+        12,
+        12
+      ],
+      "median": 12,
+      "min": 12,
+      "max": 12
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0.06958942240779402,
+        0.06949270326615706,
+        0.06963788300835655
+      ],
+      "median": 0.06958942240779402,
+      "min": 0.06949270326615706,
+      "max": 0.06963788300835655
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        15,
+        15,
+        15
+      ],
+      "median": 15,
+      "min": 15,
+      "max": 15
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        1.2658227848101267,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 1.2658227848101267
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16,
+        15,
+        16
+      ],
+      "median": 16,
+      "min": 15,
+      "max": 16
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": "webkit",
+      "n": 2000,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        2.62,
+        2.68,
+        2.7
+      ],
+      "median": 2.68,
+      "min": 2.62,
+      "max": 2.7
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": null,
+      "n": null,
+      "metric": "js-min",
+      "unit": "kB",
+      "samples": [
+        142.178
+      ],
+      "median": 142.178,
+      "min": 142.178,
+      "max": 142.178
+    },
+    {
+      "library": "temporeum",
+      "workload": "timeline",
+      "browser": null,
+      "n": null,
+      "metric": "js-min-gz",
+      "unit": "kB",
+      "samples": [
+        50.514
+      ],
+      "median": 50.514,
+      "min": 50.514,
+      "max": 50.514
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": null,
+      "n": null,
+      "metric": "js-min",
+      "unit": "kB",
+      "samples": [
+        548.303
+      ],
+      "median": 548.303,
+      "min": 548.303,
+      "max": 548.303
+    },
+    {
+      "library": "vis-timeline",
+      "workload": "timeline",
+      "browser": null,
+      "n": null,
+      "metric": "js-min-gz",
+      "unit": "kB",
+      "samples": [
+        155.822
+      ],
+      "median": 155.822,
+      "min": 155.822,
+      "max": 155.822
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": null,
+      "n": null,
+      "metric": "js-min",
+      "unit": "kB",
+      "samples": [
+        328.681
+      ],
+      "median": 328.681,
+      "min": 328.681,
+      "max": 328.681
+    },
+    {
+      "library": "react-calendar-timeline",
+      "workload": "timeline",
+      "browser": null,
+      "n": null,
+      "metric": "js-min-gz",
+      "unit": "kB",
+      "samples": [
+        97.649
+      ],
+      "median": 97.649,
+      "min": 97.649,
+      "max": 97.649
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": null,
+      "n": null,
+      "metric": "js-min",
+      "unit": "kB",
+      "samples": [
+        162.01
+      ],
+      "median": 162.01,
+      "min": 162.01,
+      "max": 162.01
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": null,
+      "n": null,
+      "metric": "js-min-gz",
+      "unit": "kB",
+      "samples": [
+        58.336
+      ],
+      "median": 58.336,
+      "min": 58.336,
+      "max": 58.336
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": null,
+      "n": null,
+      "metric": "js-min",
+      "unit": "kB",
+      "samples": [
+        48.175
+      ],
+      "median": 48.175,
+      "min": 48.175,
+      "max": 48.175
+    },
+    {
+      "library": "frappe-gantt",
+      "workload": "gantt",
+      "browser": null,
+      "n": null,
+      "metric": "js-min-gz",
+      "unit": "kB",
+      "samples": [
+        13.45
+      ],
+      "median": 13.45,
+      "min": 13.45,
+      "max": 13.45
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": null,
+      "n": null,
+      "metric": "js-min",
+      "unit": "kB",
+      "samples": [
+        423.462
+      ],
+      "median": 423.462,
+      "min": 423.462,
+      "max": 423.462
+    },
+    {
+      "library": "svar",
+      "workload": "gantt",
+      "browser": null,
+      "n": null,
+      "metric": "js-min-gz",
+      "unit": "kB",
+      "samples": [
+        131.14
+      ],
+      "median": 131.14,
+      "min": 131.14,
+      "max": 131.14
+    },
+    {
+      "library": "react (baseline)",
+      "workload": null,
+      "browser": null,
+      "n": null,
+      "metric": "js-min",
+      "unit": "kB",
+      "samples": [
+        140.779
+      ],
+      "median": 140.779,
+      "min": 140.779,
+      "max": 140.779
+    },
+    {
+      "library": "react (baseline)",
+      "workload": null,
+      "browser": null,
+      "n": null,
+      "metric": "js-min-gz",
+      "unit": "kB",
+      "samples": [
+        44.948
+      ],
+      "median": 44.948,
+      "min": 44.948,
+      "max": 44.948
+    }
+  ]
+}

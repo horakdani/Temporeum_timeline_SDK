@@ -1,0 +1,9 @@
+{
+  "title": "A product roadmap by quarter",
+  "height": 360,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 7 },
+    { "selector": "#timeline svg .tl-era", "min": 4 },
+    { "selector": "#timeline svg .tl-now", "min": 1 }
+  ]
+}

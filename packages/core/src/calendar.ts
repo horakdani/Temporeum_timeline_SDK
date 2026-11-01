@@ -1,0 +1,288 @@
+/**
+ * Calendar arithmetic that is correct across time zones and daylight saving,
+ * with zero runtime dependencies.
+ *
+ * Two platform primitives carry this file, and the split between them is
+ * deliberate:
+ *
+ * 1. `Intl.DateTimeFormat` with `timeZoneName: "longOffset"` is the only
+ *    source of zone information. The platform already ships the IANA database,
+ *    so the package needs neither a date library nor a bundled zone table.
+ * 2. Every calendar *field* operation goes through `Date`'s UTC accessors,
+ *    which are proleptic Gregorian without a cutover and accept any year.
+ *
+ * The reason for (2) is the millennium end of the range: a calendar
+ * implementation that reads fields back out of `Intl` inherits whatever
+ * Julian/Gregorian changeover the host's ICU build applies, which would move
+ * a year-1000 tick by about ten days depending on the engine. Offsets are
+ * immune to that, so this file reads offsets from `Intl` and nothing else.
+ *
+ * Wall clock and instant are related by `wall = instant + offset`.
+ */
+
+import type { Granularity, TimeMs } from "./types.js";
+
+/**
+ * Wall-clock fields of an instant in a given time zone.
+ *
+ * `year` is astronomical: 1 BC is `0`, 2 BC is `-1`. `month` is 1-12.
+ */
+export interface CalendarParts {
+  readonly year: number;
+  readonly month: number;
+  readonly day: number;
+  readonly hour: number;
+  readonly minute: number;
+  readonly second: number;
+  readonly millisecond: number;
+}
+
+/** The zone used when a caller does not name one. Deterministic by design. */
+export const DEFAULT_TIME_ZONE = "UTC";
+
+const MS_PER_SECOND = 1000;
+const MS_PER_MINUTE = 60 * MS_PER_SECOND;
+const MS_PER_HOUR = 60 * MS_PER_MINUTE;
+
+/**
+ * Granularities with a fixed length in milliseconds.
+ *
+ * These are *durations*: adding an hour always advances 3 600 000 ms, even
+ * across a daylight-saving transition. Day and coarser are calendar
+ * operations instead, which is where the wall clock is preserved.
+ */
+const FIXED_UNIT_MS: Partial<Record<Granularity, number>> = {
+  millisecond: 1,
+  second: MS_PER_SECOND,
+  minute: MS_PER_MINUTE,
+  hour: MS_PER_HOUR,
+};
+
+/**
+ * Granularities that are a whole number of years.
+ *
+ * Exported for the tick ladder, which has to align a two-century step to a
+ * multiple of 200 years and needs the same table to do it.
+ */
+export const YEARS_PER_UNIT: Partial<Record<Granularity, number>> = {
+  year: 1,
+  decade: 10,
+  century: 100,
+  millennium: 1000,
+};
+
+const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const;
+
+const offsetFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function offsetFormatterFor(timeZone: string): Intl.DateTimeFormat {
+  const cached = offsetFormatters.get(timeZone);
+  if (cached !== undefined) {
+    return cached;
+  }
+  // Throws RangeError for an unknown zone — the right failure, surfaced at
+  // the first call rather than silently falling back to UTC.
+  const created = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    timeZoneName: "longOffset",
+  });
+  offsetFormatters.set(timeZone, created);
+  return created;
+}
+
+function assertFiniteTime(t: TimeMs): void {
+  if (!Number.isFinite(t)) {
+    throw new RangeError(`Invalid time value: ${String(t)}`);
+  }
+}
+
+/**
+ * The zone's UTC offset in milliseconds at the given instant.
+ *
+ * Positive east of Greenwich. Sub-minute historical offsets are preserved:
+ * Europe/Amsterdam in 1890 is `GMT+00:17:30`, and dropping those seconds
+ * would misplace an hour tick by half a minute.
+ */
+export function zoneOffsetMs(t: TimeMs, timeZone: string = DEFAULT_TIME_ZONE): number {
+  assertFiniteTime(t);
+  // The default zone, and the one most timelines run in: no Intl call. A
+  // frame's ticks ask this a few hundred times, and in UTC the answer is 0.
+  if (timeZone === "UTC") {
+    return 0;
+  }
+  const parts = offsetFormatterFor(timeZone).formatToParts(t);
+  let name = "";
+  for (const part of parts) {
+    if (part.type === "timeZoneName") {
+      name = part.value;
+    }
+  }
+  // "GMT" alone means exactly +00:00; otherwise "GMT±HH:MM" or "GMT±HH:MM:SS".
+  const match = /^GMT([+-])(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(name);
+  if (match === null) {
+    return 0;
+  }
+  const [, sign, hours = "0", minutes = "0", seconds = "0"] = match;
+  const magnitude =
+    Number(hours) * MS_PER_HOUR + Number(minutes) * MS_PER_MINUTE + Number(seconds) * MS_PER_SECOND;
+  return sign === "-" ? -magnitude : magnitude;
+}
+
+/** Whether a proleptic Gregorian year has a 29 February. */
+export function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
+/** Length of a month, 1-12, in days. */
+export function daysInMonth(year: number, month: number): number {
+  if (month === 2) {
+    return isLeapYear(year) ? 29 : 28;
+  }
+  return DAYS_PER_MONTH[month - 1] ?? 30;
+}
+
+/** Epoch milliseconds for calendar fields read as UTC. Fields may overflow. */
+function instantFromUtcParts(parts: CalendarParts): TimeMs {
+  // `Date.UTC` maps years 0-99 onto 1900-1999; `setUTCFullYear` does not, and
+  // the engine has to survive year 50 as well as year 2050.
+  const date = new Date(0);
+  date.setUTCFullYear(parts.year, parts.month - 1, parts.day);
+  date.setUTCHours(parts.hour, parts.minute, parts.second, parts.millisecond);
+  return date.getTime();
+}
+
+/** Calendar fields of an instant read as UTC. */
+function utcPartsOf(t: TimeMs): CalendarParts {
+  const date = new Date(t);
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+    hour: date.getUTCHours(),
+    minute: date.getUTCMinutes(),
+    second: date.getUTCSeconds(),
+    millisecond: date.getUTCMilliseconds(),
+  };
+}
+
+/** Wall-clock fields of an instant in a zone. */
+export function toCalendarParts(
+  t: TimeMs,
+  timeZone: string = DEFAULT_TIME_ZONE,
+): CalendarParts {
+  return utcPartsOf(t + zoneOffsetMs(t, timeZone));
+}
+
+/**
+ * The instant a wall-clock reading denotes in a zone.
+ *
+ * Two passes over the offset: the first guess can land on the far side of a
+ * daylight-saving transition, and re-reading the offset at the corrected
+ * instant converges for every zone in the database. A wall-clock time that
+ * does not exist (inside a spring-forward gap) resolves to the instant the
+ * gap ends.
+ */
+export function fromCalendarParts(
+  parts: CalendarParts,
+  timeZone: string = DEFAULT_TIME_ZONE,
+): TimeMs {
+  const asUtc = instantFromUtcParts(parts);
+  const firstGuess = asUtc - zoneOffsetMs(asUtc, timeZone);
+  return asUtc - zoneOffsetMs(firstGuess, timeZone);
+}
+
+function floorToMultiple(value: number, step: number): number {
+  return Math.floor(value / step) * step;
+}
+
+/** Calendar fields truncated to the start of the given unit. */
+function truncateParts(parts: CalendarParts, granularity: Granularity): CalendarParts {
+  const years = YEARS_PER_UNIT[granularity];
+  if (years !== undefined) {
+    return {
+      year: years === 1 ? parts.year : floorToMultiple(parts.year, years),
+      month: 1,
+      day: 1,
+      hour: 0,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+    };
+  }
+  switch (granularity) {
+    case "month":
+      return { ...parts, day: 1, hour: 0, minute: 0, second: 0, millisecond: 0 };
+    case "day":
+      return { ...parts, hour: 0, minute: 0, second: 0, millisecond: 0 };
+    case "hour":
+      return { ...parts, minute: 0, second: 0, millisecond: 0 };
+    case "minute":
+      return { ...parts, second: 0, millisecond: 0 };
+    case "second":
+      return { ...parts, millisecond: 0 };
+    default:
+      return parts;
+  }
+}
+
+/**
+ * The start of the unit containing `t`, in the given zone.
+ *
+ * Zone-aware on purpose: the start of a day in Asia/Kolkata is not on an hour
+ * boundary in UTC, and a tick generator that assumed it would be puts every
+ * label half an hour off.
+ */
+export function startOf(
+  t: TimeMs,
+  granularity: Granularity,
+  timeZone: string = DEFAULT_TIME_ZONE,
+): TimeMs {
+  return fromCalendarParts(truncateParts(toCalendarParts(t, timeZone), granularity), timeZone);
+}
+
+function shiftMonths(parts: CalendarParts, delta: number): CalendarParts {
+  const monthIndex = parts.month - 1 + delta;
+  const year = parts.year + Math.floor(monthIndex / 12);
+  const month = ((monthIndex % 12) + 12) % 12 + 1;
+  return { ...parts, year, month, day: Math.min(parts.day, daysInMonth(year, month)) };
+}
+
+/**
+ * Advance an instant by whole calendar units.
+ *
+ * Millisecond through hour are fixed durations. Day and coarser preserve the
+ * wall clock: one day after 12:00 on the Sunday Europe/Budapest springs
+ * forward is 12:00 the next day, 23 hours later. A month added to 31 January
+ * lands on the last day of February rather than overflowing into March.
+ */
+export function addCalendar(
+  t: TimeMs,
+  granularity: Granularity,
+  count: number,
+  timeZone: string = DEFAULT_TIME_ZONE,
+): TimeMs {
+  assertFiniteTime(t);
+  if (!Number.isFinite(count)) {
+    throw new RangeError(`Invalid step count: ${String(count)}`);
+  }
+  const fixed = FIXED_UNIT_MS[granularity];
+  if (fixed !== undefined) {
+    return t + fixed * count;
+  }
+  const parts = toCalendarParts(t, timeZone);
+  const years = YEARS_PER_UNIT[granularity];
+  if (years !== undefined) {
+    return fromCalendarParts(shiftMonths(parts, years * count * 12), timeZone);
+  }
+  if (granularity === "month") {
+    return fromCalendarParts(shiftMonths(parts, count), timeZone);
+  }
+  return fromCalendarParts({ ...parts, day: parts.day + count }, timeZone);
+}
+
+/** Day of the week of an instant in a zone, 1 = Monday to 7 = Sunday (ISO). */
+export function isoWeekday(t: TimeMs, timeZone: string = DEFAULT_TIME_ZONE): number {
+  const wall = t + zoneOffsetMs(t, timeZone);
+  const sundayFirst = new Date(wall).getUTCDay();
+  return sundayFirst === 0 ? 7 : sundayFirst;
+}

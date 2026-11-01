@@ -1,0 +1,12 @@
+{
+  "title": "Working hours only: hidden nights and weekends, a cut-off line, an overview strip and a range",
+  "height": 440,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 5 },
+    { "selector": "#timeline svg .tl-layer--minimap .tl-minimap-window", "min": 1 },
+    { "selector": "#timeline svg .tl-layer--lane-headers .tl-lane-header", "min": 3 },
+    { "selector": "#timeline .tl-timebar-grip[role=slider]", "min": 1 },
+    { "selector": "#timeline .tl-minimap-handle[role=slider]", "min": 1 },
+    { "selector": "#timeline .tl-presets button", "min": 4 }
+  ]
+}

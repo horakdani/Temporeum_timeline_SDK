@@ -1,0 +1,31 @@
+<style>
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 260px; height: 420px; }
+  .wrap.narrow { grid-template-columns: minmax(0, 1fr); grid-template-rows: 300px auto; height: auto; }
+  #timeline { height: 100%; min-height: 300px; }
+  .tour { border-left: 1px solid #d5d9de; padding: 8px 12px; overflow: auto; font-size: 13px; }
+  .narrow .tour { border-left: 0; border-top: 1px solid #d5d9de; }
+  .tour h2 { font-size: 14px; margin: 0 0 6px; }
+  .tour ol { margin: 0; padding-left: 1.3em; }
+  .tour li { margin: 0 0 6px; }
+  .tour li[data-done]::marker { content: "✓ "; color: #1a7f37; }
+  .tour li[data-done] { color: #1a7f37; }
+  kbd { border: 1px solid #8a939d; border-radius: 3px; padding: 0 3px; font: 12px ui-monospace, Menlo, monospace; }
+  #timeline .status-done { --tl-item-fill: #c8e6c9; }
+  #timeline .status-now { --tl-item-fill: #c6dbf7; }
+  #timeline .status-later { --tl-item-fill: #e4e7eb; }
+</style>
+<div class="wrap" id="wrap">
+  <div id="timeline"></div>
+  <section class="tour" aria-labelledby="tour-title">
+    <h2 id="tour-title">Keyboard only — try it</h2>
+    <ol id="steps">
+      <li data-step="focus">Press <kbd>Tab</kbd> until the roadmap has focus.</li>
+      <li data-step="walk">Walk the items with <kbd>←</kbd> <kbd>→</kbd> and <kbd>↑</kbd> <kbd>↓</kbd>.</li>
+      <li data-step="move">Move one a week later with <kbd>Alt</kbd> + <kbd>→</kbd>.</li>
+      <li data-step="lane">Move it to another team with <kbd>Alt</kbd> + <kbd>↓</kbd>.</li>
+      <li data-step="resize">Make it longer with <kbd>Shift</kbd> + <kbd>→</kbd>.</li>
+      <li data-step="undo">Take it all back with <kbd>u</kbd>, one step at a time.</li>
+    </ol>
+    <p id="said" aria-live="polite"></p>
+  </section>
+</div>

@@ -1,0 +1,318 @@
+{
+  "name": "@temporeum/timeline-core",
+  "version": "1.0.0",
+  "description": "An editable, responsive timeline engine: layout, ticks, collision-free lanes and rendering to an SVG scene, in Node or the browser. Zero runtime dependencies.",
+  "license": "MIT",
+  "author": "Daniel Horak",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/horakdani/temporeum-timeline.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/horakdani/temporeum-timeline#readme",
+  "bugs": {
+    "url": "https://github.com/horakdani/temporeum-timeline/issues"
+  },
+  "keywords": [
+    "timeline",
+    "gantt",
+    "chronology",
+    "svg",
+    "editable",
+    "accessible",
+    "responsive",
+    "zero-dependency"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "unpkg": "./dist/index.umd.js",
+  "jsdelivr": "./dist/index.umd.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./dom": {
+      "import": {
+        "types": "./dist/dom/index.d.ts",
+        "default": "./dist/dom.mjs"
+      },
+      "require": {
+        "types": "./dist/dom/index.d.cts",
+        "default": "./dist/dom.cjs"
+      }
+    },
+    "./groups": {
+      "import": {
+        "types": "./dist/groups/index.d.ts",
+        "default": "./dist/groups.mjs"
+      },
+      "require": {
+        "types": "./dist/groups/index.d.cts",
+        "default": "./dist/groups.cjs"
+      }
+    },
+    "./items": {
+      "import": {
+        "types": "./dist/items/index.d.ts",
+        "default": "./dist/items.mjs"
+      },
+      "require": {
+        "types": "./dist/items/index.d.cts",
+        "default": "./dist/items.cjs"
+      }
+    },
+    "./gantt": {
+      "import": {
+        "types": "./dist/gantt/index.d.ts",
+        "default": "./dist/gantt.mjs"
+      },
+      "require": {
+        "types": "./dist/gantt/index.d.cts",
+        "default": "./dist/gantt.cjs"
+      }
+    },
+    "./schedule": {
+      "import": {
+        "types": "./dist/schedule/index.d.ts",
+        "default": "./dist/schedule.mjs"
+      },
+      "require": {
+        "types": "./dist/schedule/index.d.cts",
+        "default": "./dist/schedule.cjs"
+      }
+    },
+    "./resources": {
+      "import": {
+        "types": "./dist/resources/index.d.ts",
+        "default": "./dist/resources.mjs"
+      },
+      "require": {
+        "types": "./dist/resources/index.d.cts",
+        "default": "./dist/resources.cjs"
+      }
+    },
+    "./tools": {
+      "import": {
+        "types": "./dist/tools/index.d.ts",
+        "default": "./dist/tools.mjs"
+      },
+      "require": {
+        "types": "./dist/tools/index.d.cts",
+        "default": "./dist/tools.cjs"
+      }
+    },
+    "./export": {
+      "import": {
+        "types": "./dist/export/index.d.ts",
+        "default": "./dist/export.mjs"
+      },
+      "require": {
+        "types": "./dist/export/index.d.cts",
+        "default": "./dist/export.cjs"
+      }
+    },
+    "./intl": {
+      "import": {
+        "types": "./dist/intl/index.d.ts",
+        "default": "./dist/intl.mjs"
+      },
+      "require": {
+        "types": "./dist/intl/index.d.cts",
+        "default": "./dist/intl.cjs"
+      }
+    },
+    "./live": {
+      "import": {
+        "types": "./dist/live/index.d.ts",
+        "default": "./dist/live.mjs"
+      },
+      "require": {
+        "types": "./dist/live/index.d.cts",
+        "default": "./dist/live.cjs"
+      }
+    },
+    "./words": {
+      "import": {
+        "types": "./dist/words/index.d.ts",
+        "default": "./dist/words.mjs"
+      },
+      "require": {
+        "types": "./dist/words/index.d.cts",
+        "default": "./dist/words.cjs"
+      }
+    },
+    "./calendar": {
+      "import": {
+        "types": "./dist/calendar/index.d.ts",
+        "default": "./dist/calendar.mjs"
+      },
+      "require": {
+        "types": "./dist/calendar/index.d.cts",
+        "default": "./dist/calendar.cjs"
+      }
+    },
+    "./vis-compat": {
+      "import": {
+        "types": "./dist/vis-compat/index.d.ts",
+        "default": "./dist/vis-compat.mjs"
+      },
+      "require": {
+        "types": "./dist/vis-compat/index.d.cts",
+        "default": "./dist/vis-compat.cjs"
+      }
+    },
+    "./story": {
+      "import": {
+        "types": "./dist/story/index.d.ts",
+        "default": "./dist/story.mjs"
+      },
+      "require": {
+        "types": "./dist/story/index.d.cts",
+        "default": "./dist/story.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "dom": [
+        "./dist/dom/index.d.cts"
+      ],
+      "groups": [
+        "./dist/groups/index.d.cts"
+      ],
+      "items": [
+        "./dist/items/index.d.cts"
+      ],
+      "gantt": [
+        "./dist/gantt/index.d.cts"
+      ],
+      "schedule": [
+        "./dist/schedule/index.d.cts"
+      ],
+      "resources": [
+        "./dist/resources/index.d.cts"
+      ],
+      "tools": [
+        "./dist/tools/index.d.cts"
+      ],
+      "export": [
+        "./dist/export/index.d.cts"
+      ],
+      "intl": [
+        "./dist/intl/index.d.cts"
+      ],
+      "live": [
+        "./dist/live/index.d.cts"
+      ],
+      "words": [
+        "./dist/words/index.d.cts"
+      ],
+      "calendar": [
+        "./dist/calendar/index.d.cts"
+      ],
+      "vis-compat": [
+        "./dist/vis-compat/index.d.cts"
+      ],
+      "story": [
+        "./dist/story/index.d.cts"
+      ]
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "scripts": {
+    "build": "node ./scripts/clean.mjs && npm run build:types && rollup -c && node ../../scripts/sdk_cjs_types.mjs && node ./scripts/fingerprint.mjs",
+    "build:types": "tsc -p tsconfig.build.json --emitDeclarationOnly",
+    "typecheck": "tsc -p tsconfig.json --noEmit && node ../../scripts/sdk_check_public_any.mjs",
+    "test": "vitest run",
+    "test:node": "vitest run --environment node && node ../../scripts/sdk_check_nodom.mjs",
+    "test:orientation": "vitest run test/geometry/ --reporter=default --reporter=json --outputFile.json=.orientation-report.json && node ../../scripts/sdk_check_orientation.mjs",
+    "test:property": "node ../../scripts/sdk_property_reset.mjs && vitest run test/property/ && node ../../scripts/sdk_check_property.mjs",
+    "test:coverage": "vitest run --coverage",
+    "size": "npm run --silent build && size-limit && node ../../scripts/sdk_size.mjs",
+    "test:visual": "node ../../scripts/sdk_visual_snapshots.mjs --check && vitest run test/visual/ --reporter=default --reporter=json --outputFile.json=.visual-report.json && node ../../scripts/sdk_check_visual.mjs",
+    "test:gesture": "vitest run test/gesture/ --reporter=default --reporter=json --outputFile.json=.gesture-report.json && node ../../scripts/sdk_check_gesture.mjs",
+    "test:zoom-anchor": "vitest run test/zoom-anchor/ && node ../../scripts/sdk_check_zoom_anchor.mjs",
+    "test:wheel-run": "node ../../scripts/sdk_property_reset.mjs wheel-run && node -e \"require('node:fs').rmSync('.wheel-run-control.json',{force:true})\" && vitest run test/property/wheel-run.test.ts && node ../../scripts/sdk_check_wheel_run.mjs",
+    "test:rest-labels": "node ../../scripts/sdk_property_reset.mjs rest-labels && node -e \"require('node:fs').rmSync('.rest-labels-control.json',{force:true})\" && vitest run test/property/rest-labels.test.ts && node ../../scripts/sdk_check_rest_labels.mjs",
+    "test:narrow-labels": "node ../../scripts/sdk_property_reset.mjs narrow-labels && node -e \"require('node:fs').rmSync('.narrow-labels-control.json',{force:true})\" && vitest run test/property/narrow-labels.test.ts && node ../../scripts/sdk_check_narrow_labels.mjs",
+    "test:zoom-labels": "node ../../scripts/sdk_property_reset.mjs zoom-labels && node -e \"require('node:fs').rmSync('.zoom-labels-control.json',{force:true})\" && vitest run test/property/zoom-labels.test.ts && node ../../scripts/sdk_check_zoom_labels.mjs",
+    "test:inverse": "node ../../scripts/sdk_property_reset.mjs inverse && vitest run test/property/inverse.test.ts && node ../../scripts/sdk_check_inverse.mjs",
+    "test:hybrid-pointer": "vitest run test/hybrid-pointer/ --reporter=default --reporter=json --outputFile.json=.hybrid-report.json && node ../../scripts/sdk_check_hybrid.mjs",
+    "test:canmove": "vitest run test/canmove/ --reporter=default --reporter=json --outputFile.json=.canmove-report.json && node ../../scripts/sdk_check_canmove.mjs",
+    "test:hitslop": "vitest run test/hitslop/ --reporter=default --reporter=json --outputFile.json=.hitslop-report.json && node ../../scripts/sdk_check_hitslop.mjs",
+    "test:keyboard": "vitest run test/keyboard/ --reporter=default --reporter=json --outputFile.json=.keyboard-report.json && node ../../scripts/sdk_check_keyboard.mjs",
+    "bench:assert": "npm run --silent build && node ../../scripts/sdk_bench.mjs perf && node ../../scripts/sdk_check_perf.mjs",
+    "bench:memory": "npm run --silent build && node ../../scripts/sdk_bench.mjs memory && node ../../scripts/sdk_check_memory.mjs",
+    "test:cluster": "node -e \"for (const f of ['.cluster-report.json','.cluster-log.json']) require('node:fs').rmSync(f,{force:true})\" && (vitest run test/cluster/ --reporter=default --reporter=json --outputFile.json=.cluster-report.json; npm run --silent test:e2e:cluster -w @temporeum/timeline-docs; node ../../scripts/sdk_check_cluster.mjs)",
+    "test:async-window": "node -e \"for (const f of ['.async-window-report.json','.async-window-log.json']) require('node:fs').rmSync(f,{force:true})\" && (vitest run test/async-window/ --reporter=default --reporter=json --outputFile.json=.async-window-report.json; npm run --silent test:e2e:async -w @temporeum/timeline-docs; node ../../scripts/sdk_check_async.mjs)",
+    "test:groups": "node -e \"require('node:fs').rmSync('.groups-report.json',{force:true})\" && (vitest run test/groups/ --reporter=default --reporter=json --outputFile.json=.groups-report.json; node ../../scripts/sdk_check_groups.mjs)",
+    "test:item-kinds": "node -e \"require('node:fs').rmSync('.item-kinds-report.json',{force:true})\" && (vitest run test/item-kinds/ --reporter=default --reporter=json --outputFile.json=.item-kinds-report.json; node ../../scripts/sdk_check_item_kinds.mjs)",
+    "test:add-remove": "node -e \"require('node:fs').rmSync('.add-remove-report.json',{force:true})\" && (vitest run test/add-remove/ --reporter=default --reporter=json --outputFile.json=.add-remove-report.json; node ../../scripts/sdk_check_add_remove.mjs)",
+    "test:template": "node -e \"for (const f of ['.template-report.json','../docs/.template-e2e.json']) require('node:fs').rmSync(f,{force:true})\" && (vitest run test/template/ --reporter=default --reporter=json --outputFile.json=.template-report.json; npm run --silent test:e2e:template -w @temporeum/timeline-docs; node ../../scripts/sdk_check_template.mjs)",
+    "test:dep-routing": "node -e \"require('node:fs').rmSync('.dep-routing-report.json',{force:true})\" && (vitest run test/dep-routing/ --reporter=default --reporter=json --outputFile.json=.dep-routing-report.json; node ../../scripts/sdk_check_dep_routing.mjs)",
+    "test:gantt-a11y": "node -e \"require('node:fs').rmSync('.gantt-a11y-report.json',{force:true})\" && (vitest run test/gantt-a11y/ --reporter=default --reporter=json --outputFile.json=.gantt-a11y-report.json; node ../../scripts/sdk_check_gantt_a11y.mjs)",
+    "test:task-grid": "node -e \"require('node:fs').rmSync('.task-grid-report.json',{force:true})\" && (vitest run test/task-grid/ --reporter=default --reporter=json --outputFile.json=.task-grid-report.json; node ../../scripts/sdk_check_task_grid.mjs)",
+    "test:schedule": "node -e \"require('node:fs').rmSync('.schedule-report.json',{force:true})\" && (vitest run test/schedule/ --reporter=default --reporter=json --outputFile.json=.schedule-report.json; node ../../scripts/sdk_check_schedule.mjs)",
+    "test:schedule-command": "node -e \"require('node:fs').rmSync('.schedule-command-report.json',{force:true})\" && (vitest run test/schedule-command/ --reporter=default --reporter=json --outputFile.json=.schedule-command-report.json; node ../../scripts/sdk_check_schedule_command.mjs)",
+    "test:schedule-cycles": "node -e \"require('node:fs').rmSync('.schedule-cycles-report.json',{force:true})\" && (vitest run test/schedule-cycles/ --reporter=default --reporter=json --outputFile.json=.schedule-cycles-report.json; node ../../scripts/sdk_check_schedule_cycles.mjs)",
+    "bench:schedule": "npm run --silent build && node ../../scripts/sdk_bench_schedule.mjs",
+    "test:resources": "node -e \"require('node:fs').rmSync('.resources-report.json',{force:true})\" && (vitest run test/resources/ --reporter=default --reporter=json --outputFile.json=.resources-report.json; node ../../scripts/sdk_check_resources.mjs)",
+    "test:backlog": "node -e \"require('node:fs').rmSync('.backlog-report.json',{force:true})\" && (vitest run test/backlog/ --reporter=default --reporter=json --outputFile.json=.backlog-report.json; node ../../scripts/sdk_check_backlog.mjs)",
+    "test:hidden-dates": "node -e \"require('node:fs').rmSync('.hidden-dates-report.json',{force:true})\" && (vitest run test/hidden-dates/ --reporter=default --reporter=json --outputFile.json=.hidden-dates-report.json; node ../../scripts/sdk_check_hidden_dates.mjs)",
+    "test:time-bars": "node -e \"require('node:fs').rmSync('.time-bars-report.json',{force:true})\" && (vitest run test/time-bars/ --reporter=default --reporter=json --outputFile.json=.time-bars-report.json; node ../../scripts/sdk_check_time_bars.mjs)",
+    "test:minimap": "node -e \"require('node:fs').rmSync('.minimap-report.json',{force:true})\" && (vitest run test/minimap/ --reporter=default --reporter=json --outputFile.json=.minimap-report.json; node ../../scripts/sdk_check_minimap.mjs)",
+    "test:range-select": "node -e \"require('node:fs').rmSync('.range-select-report.json',{force:true})\" && (vitest run test/range-select/ --reporter=default --reporter=json --outputFile.json=.range-select-report.json; node ../../scripts/sdk_check_range_select.mjs)",
+    "test:export-svg": "node -e \"for (const f of ['.export-svg-report.json','.export-svg-log.json']) require('node:fs').rmSync(f,{force:true})\" && (vitest run test/export-svg/ --reporter=default --reporter=json --outputFile.json=.export-svg-report.json; node ../../scripts/sdk_check_export_svg.mjs)",
+    "test:export-pdf": "node -e \"for (const f of ['.export-pdf-report.json','.export-pdf-log.json']) require('node:fs').rmSync(f,{force:true})\" && (vitest run test/export-pdf/ --reporter=default --reporter=json --outputFile.json=.export-pdf-report.json; node ../../scripts/sdk_check_export_pdf.mjs)",
+    "test:live-data": "node -e \"require('node:fs').rmSync('.live-data-report.json',{force:true})\" && (vitest run test/live-data/ --reporter=default --reporter=json --outputFile.json=.live-data-report.json; node ../../scripts/sdk_check_live_data.mjs)",
+    "test:rtl": "node -e \"require('node:fs').rmSync('.rtl-report.json',{force:true})\" && (node ../../scripts/sdk_rtl_snapshots.mjs --check && vitest run test/rtl/ --reporter=default --reporter=json --outputFile.json=.rtl-report.json; node ../../scripts/sdk_check_rtl.mjs)",
+    "test:i18n": "node -e \"require('node:fs').rmSync('.i18n-report.json',{force:true})\" && (vitest run test/i18n/ --reporter=default --reporter=json --outputFile.json=.i18n-report.json; node ../../scripts/sdk_check_i18n.mjs)",
+    "test:rrule": "node -e \"require('node:fs').rmSync('.rrule-report.json',{force:true})\" && (vitest run test/rrule/ --reporter=default --reporter=json --outputFile.json=.rrule-report.json; node ../../scripts/sdk_check_rrule.mjs)",
+    "test:ical": "node -e \"require('node:fs').rmSync('.ical-report.json',{force:true})\" && (vitest run test/ical/ --reporter=default --reporter=json --outputFile.json=.ical-report.json; node ../../scripts/sdk_check_ical.mjs)",
+    "test:calendar-view": "node -e \"require('node:fs').rmSync('.calendar-view-report.json',{force:true})\" && (vitest run test/calendar-view/ --reporter=default --reporter=json --outputFile.json=.calendar-view-report.json; node ../../scripts/sdk_check_calendar_view.mjs)",
+    "test:vis-compat": "node -e \"require('node:fs').rmSync('.vis-compat-report.json',{force:true})\" && (vitest run test/vis-compat/ --reporter=default --reporter=json --outputFile.json=.vis-compat-report.json; node ../../scripts/sdk_check_vis_compat.mjs)"
+  },
+  "size-limit": [
+    {
+      "name": "core — teljes publikus felület (ESM, minify + gzip)",
+      "path": "dist/index.mjs",
+      "import": "*",
+      "limit": "31 kB",
+      "gzip": true
+    }
+  ],
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^12.3.1",
+    "@size-limit/preset-small-lib": "^14.3.0",
+    "@types/node": "^26.6.5",
+    "@vitest/coverage-v8": "^5.0.5",
+    "pdfjs-dist": "^6.4.299",
+    "rollup": "^4.65.1",
+    "size-limit": "^14.3.0",
+    "tslib": "^2.8.1",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.5"
+  }
+}

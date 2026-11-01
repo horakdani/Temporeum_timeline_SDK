@@ -1,0 +1,547 @@
+{
+  "library": "react-calendar-timeline",
+  "version": "0.30.0-beta.4",
+  "harness": "Each row's example runs in this harness: `container` is the timeline's element, `items` five items over March 2026 in two lanes (`lanes`), `DAY` a day in milliseconds. `before` runs before `createTimeline`, `config` goes into its configuration, `after` runs with `timeline`. In React, the configuration is the props of `<Timeline>` from `@temporeum/timeline-react`. Every plugin is registered first (`registerPlugin` with the Gantt chart, the resource view, export, the time tools, groups, item kinds and other languages), as a page moving from react-calendar-timeline would: react-calendar-timeline draws all of its features without asking. Register only the ones your configuration uses, and a page loads only those.",
+  "statuses": {
+    "same": "Same name, same meaning.",
+    "renamed": "Same meaning, another name or place.",
+    "different": "Possible, done another way — read the note.",
+    "missing": "Not in Temporeum yet."
+  },
+  "rows": [
+    {
+      "area": "Setup",
+      "vis": "<Timeline groups items defaultTimeStart defaultTimeEnd />",
+      "status": "renamed",
+      "temporeum": "createTimeline(container, { items, lanes, domain })",
+      "note": "In React the same configuration is `<Timeline items={items} lanes={lanes} domain={domain} />` from `@temporeum/timeline-react`; every key on this page is the same prop, and each event `x` is an `onX` prop.",
+      "uses": [
+        "TimelineConfig.items",
+        "TimelineConfig.lanes",
+        "TimelineConfig.domain"
+      ],
+      "config": "domain: [new Date(\"2026-03-01\"), new Date(\"2026-04-08\")]"
+    },
+    {
+      "area": "Setup",
+      "vis": "moment or dayjs as a peer dependency",
+      "status": "different",
+      "temporeum": "Date or epoch milliseconds",
+      "note": "No date library. A moment or a dayjs converts with `.valueOf()`.",
+      "uses": [
+        "Item.start",
+        "Item.end"
+      ],
+      "before": "const fromLibrary = { valueOf: () => Date.UTC(2026, 2, 12) };\nconst meeting = { id: \"meeting\", laneId: \"work\", label: \"Meeting\", start: fromLibrary.valueOf() };",
+      "after": "timeline.addItems([meeting]);"
+    },
+    {
+      "area": "Setup",
+      "vis": "groups: [{ id, title }]",
+      "status": "renamed",
+      "temporeum": "lanes: [{ id, label }]",
+      "note": "Ids are strings.",
+      "uses": [
+        "Lane.id",
+        "Lane.label"
+      ],
+      "before": "const rctGroups = [{ id: 3, title: \"Support\" }];\nconst moreLanes = rctGroups.map((group) => ({ id: String(group.id), label: group.title }));",
+      "after": "timeline.update({ lanes: [...lanes, ...moreLanes] });"
+    },
+    {
+      "area": "Setup",
+      "vis": "items: [{ id, group, title, start_time, end_time }]",
+      "status": "different",
+      "temporeum": "{ id, laneId, label, start, end }",
+      "note": "Ids are strings; `group` is `laneId`; times are a `Date` or epoch milliseconds.",
+      "uses": [
+        "Item.id",
+        "Item.laneId",
+        "Item.label",
+        "Item.start",
+        "Item.end"
+      ],
+      "before": "const rctItem = { id: 9, group: \"ship\", title: \"Hotfix\", start_time: Date.UTC(2026, 2, 16), end_time: Date.UTC(2026, 2, 18) };\nconst hotfix = { id: String(rctItem.id), laneId: String(rctItem.group), label: rctItem.title, start: rctItem.start_time, end: rctItem.end_time };",
+      "after": "timeline.addItems([hotfix]);"
+    },
+    {
+      "area": "Setup",
+      "vis": "keys: { itemIdKey, itemTitleKey, ... }",
+      "status": "different",
+      "temporeum": "map the fields once",
+      "note": "There is one shape for items and lanes; convert other field names when the data comes in.",
+      "uses": [
+        "Item.label"
+      ],
+      "before": "const raw = [{ uid: \"x1\", name: \"Renamed fields\", from: Date.UTC(2026, 2, 24), lane: \"work\" }];\nconst mapped = raw.map((each) => ({ id: each.uid, label: each.name, start: each.from, laneId: each.lane }));",
+      "after": "timeline.addItems(mapped);"
+    },
+    {
+      "area": "Setup",
+      "vis": "resizeDetector",
+      "status": "same",
+      "temporeum": "always on",
+      "note": "The timeline follows its container's size; below `breakpoint` it turns vertical when `orientation` is `\"auto\"`.",
+      "uses": [
+        "TimelineConfig.breakpoint",
+        "TimelineConfig.orientation"
+      ],
+      "config": "orientation: \"auto\",\nbreakpoint: 480"
+    },
+    {
+      "area": "Setup",
+      "vis": "className",
+      "status": "different",
+      "temporeum": "the container's own class",
+      "note": "The container is the host's element; style it, and the theme's custom properties.",
+      "uses": [
+        "TimelineConfig.theme"
+      ],
+      "config": "theme: \"auto\"",
+      "after": "container.classList.add(\"project-timeline\");"
+    },
+    {
+      "area": "View",
+      "vis": "defaultTimeStart, defaultTimeEnd",
+      "status": "renamed",
+      "temporeum": "domain: [start, end]",
+      "note": "Without a domain the view fits the items, with a margin.",
+      "uses": [
+        "TimelineConfig.domain"
+      ],
+      "config": "domain: [new Date(\"2026-03-01\"), new Date(\"2026-04-01\")]"
+    },
+    {
+      "area": "View",
+      "vis": "visibleTimeStart, visibleTimeEnd, onTimeChange (controlled)",
+      "status": "different",
+      "temporeum": "timeline.zoomTo([start, end]), on(\"viewportChanged\")",
+      "note": "The timeline owns its view: set it with `zoomTo`, hear about it with `viewportChanged`. In React, take the instance with `timelineRef`.",
+      "uses": [
+        "Timeline.zoomTo",
+        "TimelineInstanceEventMap.viewportChanged"
+      ],
+      "after": "timeline.on(\"viewportChanged\", ({ viewport }) => console.log(viewport.domain));\ntimeline.zoomTo([new Date(\"2026-03-05\"), new Date(\"2026-03-20\")]);"
+    },
+    {
+      "area": "View",
+      "vis": "minZoom, maxZoom",
+      "status": "renamed",
+      "temporeum": "limits: { minSpanMs, maxSpanMs }",
+      "note": "The shortest and longest visible span, in milliseconds, as in react-calendar-timeline.",
+      "uses": [
+        "DomainLimits.minSpanMs",
+        "DomainLimits.maxSpanMs"
+      ],
+      "config": "limits: { minSpanMs: DAY, maxSpanMs: 365 * DAY }"
+    },
+    {
+      "area": "View",
+      "vis": "buffer",
+      "status": "different",
+      "temporeum": "automatic",
+      "note": "Nothing to set: once touched, the view draws a viewport ahead on each side while it rests.",
+      "uses": [
+        "TimelineConfig.sceneSpace"
+      ],
+      "config": "sceneSpace: \"auto\""
+    },
+    {
+      "area": "View",
+      "vis": "traditionalZoom",
+      "status": "different",
+      "temporeum": "ctrl + wheel, pinch, + and -",
+      "note": "A plain wheel scrolls or pans; ctrl + wheel and a pinch zoom; `+` and `-` zoom from the keyboard. `interactions.zoom: false` turns zooming off.",
+      "uses": [
+        "TimelineConfig.interactions",
+        "InteractionOptions.zoom"
+      ],
+      "config": "interactions: { zoom: true }"
+    },
+    {
+      "area": "View",
+      "vis": "sidebarWidth, sidebarContent",
+      "status": "different",
+      "temporeum": "laneHeaders: true",
+      "note": "The lane labels head their rows; with `laneHeaders` they stay in view while the view pans.",
+      "uses": [
+        "TimelineConfig.laneHeaders"
+      ],
+      "config": "laneHeaders: true"
+    },
+    {
+      "area": "View",
+      "vis": "lineHeight, itemHeightRatio",
+      "status": "different",
+      "temporeum": "density",
+      "note": "Row height follows the density; `auto` picks one at which every row fits.",
+      "uses": [
+        "TimelineConfig.density"
+      ],
+      "config": "density: \"comfortable\""
+    },
+    {
+      "area": "View",
+      "vis": "group.height",
+      "status": "renamed",
+      "temporeum": "lane.minCrossSize",
+      "note": "The least size across, in CSS pixels; a lane grows with its rows.",
+      "uses": [
+        "Lane.minCrossSize"
+      ],
+      "after": "timeline.update({ lanes: lanes.map((lane) => ({ ...lane, minCrossSize: 60 })) });"
+    },
+    {
+      "area": "View",
+      "vis": "stackItems, group.stackItems",
+      "status": "different",
+      "temporeum": "packMode: \"pack\" | \"overlap\", lane.packMode",
+      "note": "react-calendar-timeline overlaps items unless told to stack; Temporeum packs them into rows unless told otherwise. `packMode: \"overlap\"` is react-calendar-timeline's default.",
+      "uses": [
+        "TimelineConfig.packMode",
+        "Lane.packMode"
+      ],
+      "config": "packMode: \"overlap\""
+    },
+    {
+      "area": "View",
+      "vis": "selected",
+      "status": "renamed",
+      "temporeum": "selectedIds, timeline.select(ids)",
+      "note": "",
+      "uses": [
+        "TimelineConfig.selectedIds",
+        "Timeline.select"
+      ],
+      "config": "selectedIds: [\"build\"]",
+      "after": "timeline.select([\"review\"]);"
+    },
+    {
+      "area": "View",
+      "vis": "itemRenderer",
+      "status": "different",
+      "temporeum": "template (HTML) or hooks.renderItem (scene nodes)",
+      "note": "A `template` is sanitised HTML in place of the label; `hooks.renderItem` returns scene nodes, and also renders on the server.",
+      "uses": [
+        "TimelineConfig.template",
+        "RenderHooks.renderItem"
+      ],
+      "config": "template: (item) => `<strong>${item.label ?? \"\"}</strong>`"
+    },
+    {
+      "area": "View",
+      "vis": "item.itemProps.className",
+      "status": "renamed",
+      "temporeum": "item.className",
+      "note": "",
+      "uses": [
+        "Item.className"
+      ],
+      "after": "timeline.updateItems([{ id: \"launch\", className: \"highlight\" }]);"
+    },
+    {
+      "area": "View",
+      "vis": "<DateHeader labelFormat />",
+      "status": "different",
+      "temporeum": "formatTick(tick, timeZone)",
+      "note": "One function for every axis label; `tick.granularity` says what it stands for.",
+      "uses": [
+        "TimelineConfig.formatTick",
+        "Tick.granularity"
+      ],
+      "config": "formatTick: (tick) => new Date(tick.time).toISOString().slice(0, tick.granularity === \"year\" ? 4 : 10)"
+    },
+    {
+      "area": "View",
+      "vis": "<TodayMarker />",
+      "status": "different",
+      "temporeum": "decorations: [{ kind: \"now\", time: Date.now() }]",
+      "note": "The library never reads the clock; the host passes the time, and updates it if it should move.",
+      "uses": [
+        "TimelineConfig.decorations",
+        "NowDecoration.time"
+      ],
+      "config": "decorations: [{ kind: \"now\", time: Date.now() }]"
+    },
+    {
+      "area": "View",
+      "vis": "<CustomMarker date />",
+      "status": "renamed",
+      "temporeum": "decorations: [{ kind: \"marker\", id, time }], or timeBars",
+      "note": "A marker is drawn; a time bar (`timeBars`) can also be dragged, and says so with `timeBarMoved`.",
+      "uses": [
+        "TimelineConfig.decorations",
+        "MarkerDecoration.time",
+        "TimelineConfig.timeBars"
+      ],
+      "config": "decorations: [{ kind: \"marker\", id: \"freeze\", time: new Date(\"2026-03-25\"), label: \"Code freeze\" }]"
+    },
+    {
+      "area": "Editing",
+      "vis": "canMove, canResize, canChangeGroup",
+      "status": "different",
+      "temporeum": "editing: { enabled: true, crossLane: true }",
+      "note": "react-calendar-timeline is editable until told otherwise; Temporeum is read-only until `editing.enabled`. Moving between lanes is `crossLane`.",
+      "uses": [
+        "TimelineEditingOptions.enabled",
+        "TimelineEditingOptions.crossLane"
+      ],
+      "config": "editing: { enabled: true, crossLane: true }"
+    },
+    {
+      "area": "Editing",
+      "vis": "item.canMove, item.canResize",
+      "status": "renamed",
+      "temporeum": "item.movable, item.resizable",
+      "note": "",
+      "uses": [
+        "Item.movable",
+        "Item.resizable"
+      ],
+      "config": "editing: { enabled: true }",
+      "after": "timeline.updateItems([{ id: \"design\", movable: false, resizable: false }]);"
+    },
+    {
+      "area": "Editing",
+      "vis": "dragSnap",
+      "status": "renamed",
+      "temporeum": "editing.snapMs",
+      "note": "In milliseconds, as in react-calendar-timeline, from the epoch or `snapOrigin`.",
+      "uses": [
+        "TimelineEditingOptions.snapMs"
+      ],
+      "config": "editing: { enabled: true, snapMs: 15 * 60_000 }"
+    },
+    {
+      "area": "Editing",
+      "vis": "minResizeWidth",
+      "status": "different",
+      "temporeum": "editing.minDurationMs",
+      "note": "A least duration in time, not a least width in pixels.",
+      "uses": [
+        "TimelineEditingOptions.minDurationMs"
+      ],
+      "config": "editing: { enabled: true, minDurationMs: DAY }"
+    },
+    {
+      "area": "Editing",
+      "vis": "moveResizeValidator",
+      "status": "different",
+      "temporeum": "editing.canMove(item, next)",
+      "note": "Return `false` to refuse the move or the resize; snapping is `snapMs`.",
+      "uses": [
+        "TimelineEditingOptions.canMove"
+      ],
+      "config": "editing: { enabled: true, canMove: (item, next) => item.id !== \"launch\" || next.laneId === undefined }"
+    },
+    {
+      "area": "Editing",
+      "vis": "onCanvasDoubleClick(groupId, time)",
+      "status": "different",
+      "temporeum": "editing: { add: true }, on(\"itemAdded\")",
+      "note": "A double tap on empty lane space, or `n`, adds an item; `createItem` says what it is.",
+      "uses": [
+        "TimelineEditingOptions.add",
+        "TimelineEditingOptions.createItem",
+        "TimelineInstanceEventMap.itemAdded"
+      ],
+      "config": "editing: { enabled: true, add: true }",
+      "after": "timeline.on(\"itemAdded\", ({ item }) => console.log(item.id, item.start));"
+    },
+    {
+      "area": "Events",
+      "vis": "onItemClick(itemId, e, time)",
+      "status": "renamed",
+      "temporeum": "on(\"itemClick\")",
+      "note": "Also fires for `Enter` on the focused item.",
+      "uses": [
+        "TimelineInstanceEventMap.itemClick"
+      ],
+      "after": "timeline.on(\"itemClick\", ({ item }) => console.log(item.id));"
+    },
+    {
+      "area": "Events",
+      "vis": "onItemDoubleClick(itemId, e, time)",
+      "status": "renamed",
+      "temporeum": "on(\"itemDblClick\")",
+      "note": "",
+      "uses": [
+        "TimelineInstanceEventMap.itemDblClick"
+      ],
+      "after": "timeline.on(\"itemDblClick\", ({ item }) => console.log(item.id));"
+    },
+    {
+      "area": "Events",
+      "vis": "onItemSelect, onItemDeselect",
+      "status": "renamed",
+      "temporeum": "on(\"selectionChanged\")",
+      "note": "One event with the ids now selected and before.",
+      "uses": [
+        "TimelineInstanceEventMap.selectionChanged"
+      ],
+      "after": "timeline.on(\"selectionChanged\", ({ ids, previousIds }) => console.log(ids, previousIds));"
+    },
+    {
+      "area": "Events",
+      "vis": "onItemMove(itemId, dragTime, newGroupOrder)",
+      "status": "different",
+      "temporeum": "on(\"itemMoved\")",
+      "note": "Carries the item, where it was and where it is (`to.start`, `to.laneId`), and the reversible command. The library never saves.",
+      "uses": [
+        "TimelineInstanceEventMap.itemMoved"
+      ],
+      "config": "editing: { enabled: true, crossLane: true }",
+      "after": "timeline.on(\"itemMoved\", ({ item, to }) => console.log(item.id, to.start, to.laneId));"
+    },
+    {
+      "area": "Events",
+      "vis": "onItemResize(itemId, time, edge)",
+      "status": "renamed",
+      "temporeum": "on(\"itemResized\")",
+      "note": "",
+      "uses": [
+        "TimelineInstanceEventMap.itemResized"
+      ],
+      "config": "editing: { enabled: true }",
+      "after": "timeline.on(\"itemResized\", ({ item, to }) => console.log(item.id, to.start, to.end));"
+    },
+    {
+      "area": "Events",
+      "vis": "onZoom, onBoundsChange",
+      "status": "renamed",
+      "temporeum": "on(\"viewportChanged\")",
+      "note": "With its `reason`: `zoom`, `pan`, `resize`, `api`.",
+      "uses": [
+        "TimelineInstanceEventMap.viewportChanged"
+      ],
+      "after": "timeline.on(\"viewportChanged\", ({ reason }) => console.log(reason));"
+    },
+    {
+      "area": "Events",
+      "vis": "onCanvasClick(groupId, time)",
+      "status": "different",
+      "temporeum": "rangeSelect: true, on(\"rangeSelected\")",
+      "note": "A drag on empty time selects a range; a click on it selects nothing.",
+      "uses": [
+        "TimelineConfig.rangeSelect",
+        "TimelineInstanceEventMap.rangeSelected"
+      ],
+      "config": "rangeSelect: true",
+      "after": "timeline.on(\"rangeSelected\", (range) => console.log(range));"
+    },
+    {
+      "area": "Events",
+      "vis": "onItemDrag",
+      "status": "missing",
+      "note": "A move is reported once, when it ends (`itemMoved`); `getSnapshot().editing` says one is under way.",
+      "absent": [
+        "TimelineInstanceEventMap.itemDrag",
+        "TimelineInstanceEventMap.itemDragging"
+      ]
+    },
+    {
+      "area": "Events",
+      "vis": "onItemContextMenu, onCanvasContextMenu",
+      "status": "missing",
+      "note": "Listen for `contextmenu` on the container.",
+      "absent": [
+        "TimelineInstanceEventMap.itemContextMenu",
+        "TimelineInstanceEventMap.contextmenu"
+      ]
+    },
+    {
+      "area": "Editing",
+      "vis": "useResizeHandle",
+      "status": "missing",
+      "note": "An item is resized at its edges, or with `Shift` and an arrow.",
+      "absent": [
+        "TimelineConfig.useResizeHandle"
+      ]
+    },
+    {
+      "area": "View",
+      "vis": "rightSidebarWidth, rightSidebarContent, group.rightTitle",
+      "status": "missing",
+      "note": "One column of lane labels.",
+      "absent": [
+        "TimelineConfig.rightSidebar",
+        "Lane.rightTitle"
+      ]
+    },
+    {
+      "area": "View",
+      "vis": "groupRenderer",
+      "status": "missing",
+      "note": "Lane labels are text.",
+      "absent": [
+        "TimelineConfig.groupRenderer",
+        "RenderHooks.renderLane"
+      ]
+    },
+    {
+      "area": "View",
+      "vis": "timeSteps",
+      "status": "missing",
+      "note": "Ticks are chosen for the zoom level; `formatTick` writes them.",
+      "absent": [
+        "TimelineConfig.timeSteps",
+        "TimelineConfig.timeAxis"
+      ]
+    },
+    {
+      "area": "View",
+      "vis": "verticalLineClassNamesForTime",
+      "status": "missing",
+      "note": "`decorations: [{ kind: \"banding\" }]` alternates the tick bands; a class per time is not supported.",
+      "absent": [
+        "TimelineConfig.verticalLineClassNamesForTime"
+      ]
+    },
+    {
+      "area": "View",
+      "vis": "horizontalLineClassNamesForGroup",
+      "status": "missing",
+      "note": "Groups take a `className` (`groups`); plain lanes do not.",
+      "absent": [
+        "Lane.className"
+      ]
+    },
+    {
+      "area": "View",
+      "vis": "item.itemProps.style",
+      "status": "missing",
+      "note": "Use `className` and a stylesheet.",
+      "absent": [
+        "Item.style"
+      ]
+    },
+    {
+      "area": "View",
+      "vis": "<CursorMarker />",
+      "status": "missing",
+      "note": "",
+      "absent": [
+        "TimelineConfig.cursorMarker"
+      ]
+    },
+    {
+      "area": "View",
+      "vis": "<TimelineHeaders>, <SidebarHeader>, <CustomHeader>",
+      "status": "missing",
+      "note": "The axis is one band, drawn by the library; `formatTick` writes its labels.",
+      "absent": [
+        "TimelineConfig.headers",
+        "RenderHooks.renderHeader"
+      ]
+    },
+    {
+      "area": "View",
+      "vis": "scrollRef",
+      "status": "missing",
+      "note": "The view moves with `zoomTo` and `scrollTo`, not a scroll element.",
+      "absent": [
+        "TimelineConfig.scrollRef"
+      ]
+    }
+  ]
+}

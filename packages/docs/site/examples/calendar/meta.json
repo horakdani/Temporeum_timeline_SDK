@@ -1,0 +1,10 @@
+{
+  "title": "A calendar file: its week, its timeline, and the file again",
+  "height": 900,
+  "expect": [
+    { "selector": "#week svg[role=listbox] [role=option]", "min": 8 },
+    { "selector": "#timeline svg [role=option]", "min": 8 },
+    { "selector": "#week .tl-cal-bar button", "min": 3 },
+    { "selector": "#ics:not(:empty)", "min": 1 }
+  ]
+}

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timeline SDK — P25: export and print</title>
+    <style>
+      body { margin: 0; font-family: system-ui, sans-serif; }
+      #timeline { position: relative; height: 420px; width: 1000px; }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "@temporeum/timeline-core": "/core/index.mjs",
+          "@temporeum/timeline-core/dom": "/core/dom.mjs",
+          "@temporeum/timeline-core/groups": "/core/groups.mjs",
+          "@temporeum/timeline-core/items": "/core/items.mjs",
+          "@temporeum/timeline-core/gantt": "/core/gantt.mjs",
+          "@temporeum/timeline-core/resources": "/core/resources.mjs",
+          "@temporeum/timeline-core/tools": "/core/tools.mjs",
+          "@temporeum/timeline-core/export": "/core/export.mjs",
+          "@temporeum/timeline-core/intl": "/core/intl.mjs",
+          "@temporeum/timeline-core/live": "/core/live.mjs",
+          "@temporeum/timeline-core/words": "/core/words.mjs",
+          "@temporeum/timeline-core/calendar": "/core/calendar.mjs",
+          "@temporeum/timeline-element": "/element/index.mjs",
+          "@temporeum/timeline-element/export": "/element/export.mjs",
+          "@temporeum/timeline-element/gantt": "/element/gantt.mjs"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main>
+      <h1>Export and print</h1>
+      <div id="timeline"></div>
+    </main>
+    <script type="module">
+      /*
+       * G-PRINT (and the element's exports), in a real browser, through the
+       * shipped bundles: a plan too tall for one sheet — twelve lanes, two
+       * hundred tasks over a quarter, dependency arrows — printed whole.
+       * The view on screen shows two weeks of it; paper shows all of it.
+       */
+      import { createTimeline, registerPlugin } from "@temporeum/timeline-element";
+      import { exportPlugin } from "@temporeum/timeline-element/export";
+      import { ganttPlugin } from "@temporeum/timeline-element/gantt";
+      registerPlugin(exportPlugin, ganttPlugin);
+
+      const day = 86_400_000;
+      const start = Date.UTC(2026, 0, 5);
+      const lanes = Array.from({ length: 12 }, (_, at) => ({ id: `l${String(at)}`, label: `Crew ${String(at + 1)}` }));
+      const items = Array.from({ length: 200 }, (_, at) => {
+        const from = start + ((at * 37) % 84) * day;
+        return {
+          id: `t${String(at).padStart(3, "0")}`,
+          label: `T${String(at).padStart(3, "0")}`,
+          start: from,
+          end: from + (3 + (at % 6)) * day,
+          laneId: `l${String(at % 12)}`,
+        };
+      });
+      const dependencies = Array.from({ length: 30 }, (_, at) => ({ id: `d${String(at)}`, from: items[at * 6].id, to: items[at * 6 + 12].id }));
+      const element = document.querySelector("#timeline");
+      const timeline = createTimeline(element, {
+        items,
+        lanes,
+        domain: [start, start + 14 * day],
+        timeZone: "UTC",
+        ariaLabel: "Quarter plan — Ütemterv",
+        gantt: { dependencies },
+      });
+      window.tl = {
+        get ready() {
+          return element.querySelector("svg [data-tl-id]") !== null;
+        },
+        ids: () => items.map((item) => item.id),
+        labels: () => Object.fromEntries(items.map((item) => [item.id, item.label])),
+        /** Mount the print view as `print()` does, the dialog stubbed: what each page holds. */
+        mountPrint(options = {}) {
+          window.print = () => {};
+          timeline.print(options);
+          return [...document.querySelectorAll("body > [data-tl-print] > section")].map((section) => ({
+            ids: [...new Set([...section.querySelectorAll("[data-tl-id]")].map((node) => node.getAttribute("data-tl-id")))],
+            height: section.getBoundingClientRect().height,
+            svgHeight: section.querySelector("svg")?.getBoundingClientRect().height ?? 0,
+          }));
+        },
+        afterPrint() {
+          window.dispatchEvent(new Event("afterprint"));
+          return document.querySelector("body > [data-tl-print]") === null;
+        },
+        pdf: (options = {}) => [...timeline.exportPDF(options)],
+        svg: () => timeline.exportSVG(),
+        async png() {
+          const blob = await timeline.exportPNG({ scale: 1 });
+          const bitmap = await createImageBitmap(blob);
+          return { type: blob.type, width: bitmap.width, height: bitmap.height, bytes: blob.size };
+        },
+      };
+    </script>
+  </body>
+</html>

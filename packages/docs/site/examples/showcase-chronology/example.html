@@ -1,0 +1,15 @@
+<style>
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 10px; border-bottom: 1px solid #d5d9de; }
+  .bar button { padding: 3px 10px; border: 1px solid #8a939d; border-radius: 4px; background: #fff; }
+  .bar button[aria-pressed="true"] { background: #1b1f24; color: #fff; }
+  #timeline { height: 470px; }
+</style>
+<div class="bar" role="group" aria-label="Zoom to">
+  <button type="button" data-zoom="all" aria-pressed="false">5 000 years</button>
+  <button type="button" data-zoom="antiquity" aria-pressed="true">Antiquity</button>
+  <button type="button" data-zoom="modern" aria-pressed="false">Since 1450</button>
+  <button type="button" data-zoom="apollo" aria-pressed="false">Apollo 11, 8 days</button>
+  <button type="button" data-zoom="landing" aria-pressed="false">The landing, 12 hours</button>
+</div>
+<div id="timeline"></div>
+<p class="log" id="log" aria-live="polite">One timeline from the first pharaohs to the Moon: zoom with ctrl + wheel, a pinch or + and -, or jump with the buttons. The axis changes from millennia to minutes on the way.</p>

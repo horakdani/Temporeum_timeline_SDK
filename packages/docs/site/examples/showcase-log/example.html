@@ -1,0 +1,23 @@
+<style>
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 10px; border-bottom: 1px solid #d5d9de; }
+  .bar button { padding: 3px 10px; border: 1px solid #8a939d; border-radius: 4px; background: #fff; }
+  .bar button[aria-pressed="true"] { background: #1b1f24; color: #fff; }
+  .bar output { margin-left: auto; font-size: 12px; color: #444c55; }
+  #timeline { height: 400px; }
+  #timeline .level-error { --tl-item-fill: #f2b8b5; --tl-item-stroke: #b3261e; }
+  #timeline .level-warn { --tl-item-fill: #f9dfa0; --tl-item-stroke: #8a5a00; }
+  #timeline .level-info { --tl-item-fill: #c6dbf7; --tl-item-stroke: #2a5ca8; }
+</style>
+<div class="bar">
+  <button type="button" data-level="error" aria-pressed="true">Errors</button>
+  <button type="button" data-level="warn" aria-pressed="true">Warnings</button>
+  <button type="button" data-level="info" aria-pressed="true">Info</button>
+  <span role="group" aria-label="What to show">
+    <button type="button" data-mode="live" aria-pressed="true">Live: the last hour</button>
+    <button type="button" data-mode="day" aria-pressed="false">The whole day</button>
+  </span>
+  <button type="button" id="follow" aria-pressed="true">Follow</button>
+  <output id="count" aria-live="off"></output>
+</div>
+<div id="timeline"></div>
+<p class="log" id="log" aria-live="polite"></p>

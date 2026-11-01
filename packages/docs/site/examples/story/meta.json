@@ -1,0 +1,9 @@
+{
+  "title": "A story beside its timeline",
+  "height": 520,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 4 },
+    { "selector": "#story .tl-story-headline", "min": 1 },
+    { "selector": "#story .tl-story-next", "min": 1 }
+  ]
+}

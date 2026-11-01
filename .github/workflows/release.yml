@@ -1,0 +1,70 @@
+# Publishes the six packages to npm with provenance, the engine first. Started by hand only
+# (Actions → Release → Run workflow) by a maintainer with release rights;
+# see RELEASING.md.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dist-tag:
+        description: "npm dist-tag: latest for a release, next for a pre-release"
+        required: true
+        default: latest
+        type: choice
+        options: [latest, next]
+
+permissions:
+  contents: write # the v<version> tag
+  id-token: write # npm provenance
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          registry-url: "https://registry.npmjs.org"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium chromium-headless-shell
+
+      - name: version
+        id: version
+        run: |
+          version=$(node -p "require('./packages/core/package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          case "$version" in
+            *-*) [ "${{ inputs.dist-tag }}" = "next" ] || { echo "::error::$version is a pre-release: publish it under next"; exit 1; } ;;
+            *)   [ "${{ inputs.dist-tag }}" = "latest" ] || { echo "::error::$version is a release: publish it under latest"; exit 1; } ;;
+          esac
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null; then
+            echo "::error::v$version is already tagged"; exit 1
+          fi
+
+      - name: build and test
+        run: |
+          npm run build
+          npm test
+          npm run deps
+          node scripts/sdk_check_exports.mjs
+          node scripts/sdk_check_pack.mjs
+
+      - name: publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          for pkg in packages/core packages/web-component packages/react packages/vue packages/svelte packages/angular; do
+            (cd "$pkg" && npm publish --provenance --access public --tag "${{ inputs.dist-tag }}")
+          done
+
+      - name: tag
+        run: |
+          git tag "v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"

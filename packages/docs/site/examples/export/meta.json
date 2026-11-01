@@ -1,0 +1,9 @@
+{
+  "title": "A quarter's plan, exported: SVG, PNG and PDF files, and the browser's print",
+  "height": 460,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 5 },
+    { "selector": "#timeline svg .tl-layer--deps path", "min": 1 },
+    { "selector": "button[data-export]", "min": 4 }
+  ]
+}

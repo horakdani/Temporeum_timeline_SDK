@@ -1,0 +1,10 @@
+{
+  "name": "Temporeum Timeline",
+  "repository": "https://github.com/horakdani/temporeum-timeline",
+  "docs": "https://horakdani.github.io/temporeum-timeline/",
+  "homepage": "https://github.com/horakdani/temporeum-timeline#readme",
+  "branch": "main",
+  "license": "MIT",
+  "copyright": "Copyright (c) 2026 Daniel Horak and contributors",
+  "author": "Daniel Horak"
+}
