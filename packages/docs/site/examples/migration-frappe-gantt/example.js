@@ -20,6 +20,7 @@ const local = (text) => {
   const [year, month, day] = text.split("-").map(Number);
   return new Date(year, month - 1, day);
 };
+/** @type {import("@temporeum/timeline-core").Item[]} */
 const items = frappeTasks.map((task) => ({
   id: task.id,
   laneId: task.id,

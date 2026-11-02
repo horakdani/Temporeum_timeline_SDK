@@ -17,6 +17,7 @@ function hash(n) {
 }
 const levelOf = (h) => (h % 50 === 0 ? "error" : h % 9 === 0 ? "warn" : "info");
 let serial = 0;
+/** @returns {import("@temporeum/timeline-core").Item<{ level: string }> & { start: number }} */
 function entry(time) {
   serial += 1;
   const h = hash(serial);

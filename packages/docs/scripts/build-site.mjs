@@ -137,12 +137,16 @@ export function loadExamples(docsDir = DOCS_DIR) {
     }
     // "showcase": the result first and full width, the code folded away under it — for a demo, not a lesson.
     if (meta.layout !== undefined && meta.layout !== "showcase") fail(`example "${id}": layout is "showcase" or absent`);
+    // What the sandboxed frame may do beyond running scripts: save a file, open the print dialog. Never same-origin.
+    const grants = meta.allow ?? [];
+    if (!Array.isArray(grants) || grants.some((grant) => grant !== "downloads" && grant !== "modals")) fail(`example "${id}": allow is a list of "downloads" and "modals"`);
     const htmlPath = join(dir, "example.html");
     examples.set(id, {
       id,
       title: meta.title,
       layout: meta.layout ?? "lesson",
       height: meta.height ?? 360,
+      allow: grants,
       expect: meta.expect,
       code: readFileSync(codePath, "utf8"),
       html: existsSync(htmlPath) ? readFileSync(htmlPath, "utf8") : '<div id="timeline"></div>',
@@ -159,7 +163,7 @@ function renderExample(example) {
     `<textarea id="${codeId}" spellcheck="false" autocapitalize="off" autocomplete="off" rows="16">${escapeHtml(example.code)}</textarea>`,
     `<div class="example-actions"><button type="button" data-action="run">Run</button><button type="button" data-action="reset">Reset</button></div>`,
   ];
-  const frame = `<iframe class="example-frame" title="${escapeHtml(example.title)} — result" sandbox="allow-scripts" style="height:${String(example.height)}px"></iframe>`;
+  const frame = `<iframe class="example-frame" title="${escapeHtml(example.title)} — result" sandbox="${["allow-scripts", ...example.allow.map((grant) => `allow-${grant}`)].join(" ")}" style="height:${String(example.height)}px"></iframe>`;
   const code = showcase
     ? [`<details class="example-code"><summary>The code</summary><label for="${codeId}">Code — edit it and press Run</label>`, ...editor, `</details>`]
     : [`<div class="example-code"><label for="${codeId}">Code — edit it and press Run</label>`, ...editor, `</div>`];

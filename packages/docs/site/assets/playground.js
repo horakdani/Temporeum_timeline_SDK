@@ -52,8 +52,8 @@ function srcdoc(example, code, token) {
     `<style>${FRAME_STYLE}</style>`,
     "</head><body>",
     example.html,
-    `<script type="module">${guard(code)}\n</script>`,
-    "<script type=\"module\">window.__ran();</script>",
+    // "ran" at the end of the module itself: a module that awaits (a font, a fetch) has run when its last line has.
+    `<script type="module">${guard(code)}\n;window.__ran();\n</script>`,
     "</body></html>",
   ].join("\n");
 }

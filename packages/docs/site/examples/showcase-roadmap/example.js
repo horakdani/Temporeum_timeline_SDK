@@ -10,6 +10,7 @@ const quarter = (y, q) => Date.UTC(y, (q - 1) * 3, 1);
 const TODAY = Date.UTC(2026, 4, 18);
 
 // A made-up product's year: what shipped, what is in flight, what is planned.
+/** @type {[string, string, string, [number, number], number, string][]} */
 const plan = [
   ["sso", "Single sign-on", "platform", [2026, 1], 9, "done"],
   ["audit", "Audit log", "platform", [2026, 2], 10, "now"],

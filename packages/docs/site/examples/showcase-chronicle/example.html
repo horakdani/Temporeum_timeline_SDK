@@ -1,0 +1,275 @@
+<style>
+  /* Everything below is the page's own CSS: the timeline and the story are styled from outside. */
+  @font-face { font-family: "Geist"; font-weight: 400; src: url("assets/font-geist-400.woff2") format("woff2"); }
+  @font-face { font-family: "Geist"; font-weight: 500; src: url("assets/font-geist-500.woff2") format("woff2"); }
+  @font-face { font-family: "Geist"; font-weight: 600; src: url("assets/font-geist-600.woff2") format("woff2"); }
+  @font-face { font-family: "Geist Mono"; font-weight: 500; src: url("assets/font-geist-mono-500.woff2") format("woff2"); }
+  @font-face { font-family: "Instrument Serif"; src: url("assets/font-instrument-serif-400.woff2") format("woff2"); }
+  @font-face { font-family: "Instrument Serif"; font-style: italic; src: url("assets/font-instrument-serif-400-italic.woff2") format("woff2"); }
+  :root {
+    --ink: #07090d;
+    --ivory: #f2ede4;
+    --muted: #8f8a80;
+    --gold: #e8c27a;
+    --peach: #ffb38a;
+    --rule: rgba(242, 237, 228, 0.08);
+    --display: "Instrument Serif", Georgia, serif;
+    --sans: Geist, system-ui, sans-serif;
+    --mono: "Geist Mono", ui-monospace, monospace;
+    --c-neareast: #ef9a62;
+    --c-med: #6fb0f0;
+    --c-asia: #4fd1a5;
+    --c-americas: #f2c94c;
+    --c-europe: #f08bb0;
+    --c-science: #a98bff;
+    --c-space: #d7deea;
+  }
+  html, body { background: var(--ink); color: var(--ivory); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+  button { font-family: var(--sans); }
+  .chronicle {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1px 300px auto auto minmax(0, 1fr);
+    height: 892px;
+    background:
+      radial-gradient(90% 55% at 15% -5%, rgba(232, 194, 122, 0.14), transparent 60%),
+      radial-gradient(70% 50% at 100% 30%, rgba(111, 176, 240, 0.08), transparent 70%),
+      var(--ink);
+  }
+
+  /* The masthead and the tour's progress. */
+  .masthead { display: flex; align-items: center; gap: 16px; padding: 14px 24px 12px; }
+  .kicker { display: block; font: 500 10.5px/1 var(--mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+  .kicker b { color: var(--gold); font-weight: 500; }
+  .masthead h1 { margin: 6px 0 0; font: 400 30px/1 var(--display); letter-spacing: -0.01em; }
+  .masthead h1 em { background: linear-gradient(90deg, var(--gold), var(--peach)); -webkit-background-clip: text; background-clip: text; color: var(--gold); -webkit-text-fill-color: transparent; padding-right: 2px; }
+  .masthead .spacer { flex: 1; }
+  .play {
+    flex: none; display: inline-flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 18px 0 8px; white-space: nowrap;
+    border: 0; border-radius: 999px; color: var(--ink); font-weight: 600; font-size: 13.5px; cursor: pointer;
+    background: var(--gold) linear-gradient(90deg, var(--gold), var(--peach)); box-shadow: 0 8px 30px -8px rgba(232, 194, 122, 0.6);
+  }
+  .play:hover { filter: brightness(1.06); }
+  .play svg { width: 26px; height: 26px; padding: 7px; box-sizing: border-box; border-radius: 50%; background: rgba(7, 9, 13, 0.9); fill: var(--gold); }
+  .play .pause { display: none; }
+  .play[data-playing] .pause { display: block; }
+  .play[data-playing] .start { display: none; }
+  .progress { background: var(--rule); }
+  .progress span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--gold), var(--peach)); box-shadow: 0 0 12px var(--gold); transition: width 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  /* The story panel: the SDK's markup, the page's type, a year set large behind it. */
+  #stage { position: relative; min-height: 0; overflow: hidden; }
+  #numeral {
+    position: absolute; right: 18px; bottom: -34px; z-index: 0; pointer-events: none; white-space: nowrap;
+    font: italic 400 180px/1 var(--display); letter-spacing: -0.03em; color: transparent; -webkit-text-stroke: 1px rgba(242, 237, 228, 0.09);
+  }
+  #story { position: relative; z-index: 1; height: 100%; }
+  #story .tl-story { padding: 20px 24px 14px; background: transparent; box-shadow: none; font: 14.5px/1.6 var(--sans); }
+  #story .tl-story-slide { gap: 18px 32px; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); border-inline-start-width: 2px; padding-inline-start: 20px; }
+  #story .tl-story-media img { height: 196px; max-height: none; width: 100%; object-fit: cover; border-radius: 14px; box-shadow: 0 24px 50px -24px rgba(0, 0, 0, 0.95), 0 0 0 1px var(--rule); }
+  #story .tl-story-date { display: flex; align-items: center; gap: 10px; font: 500 11px/1.4 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
+  #story .tl-story-date::before { content: ""; width: 22px; height: 1px; background: currentColor; }
+  #story .tl-story-headline { font: 400 42px/1.02 var(--display); letter-spacing: -0.015em; margin: 8px 0 12px; }
+  #story .tl-story-title .tl-story-headline { font-size: 52px; }
+  #story .tl-story-headline i { color: var(--gold); }
+  #story .tl-story-text { color: #c9c3b8; max-width: 48ch; }
+  #story .tl-story-text em, #story .tl-story-text i { color: var(--ivory); }
+  #story .tl-story-nav button { min-height: 34px; padding: 0 16px; border-radius: 999px; border-color: var(--rule); background: rgba(255, 255, 255, 0.04); font-weight: 500; }
+  #story .tl-story-nav .tl-story-next { border-color: rgba(232, 194, 122, 0.5); color: var(--gold); }
+  #story .tl-story-nav button:hover:not(:disabled) { background: rgba(232, 194, 122, 0.12); }
+  #story .tl-story-position { font: 500 11px/1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; }
+  /* A new slide rises in, its picture drifts. */
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+  @keyframes drift { from { transform: scale(1.08); } }
+  @keyframes fade { from { opacity: 0; } }
+  .turn .tl-story-body { animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .turn .tl-story-media img { animation: drift 7s ease-out both, fade 0.5s both; }
+  #numeral::before { content: attr(data-year); }
+  .turn #numeral { animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  @media (prefers-reduced-motion: reduce) { .turn *, .turn #numeral { animation: none !important; } }
+
+  /* The overview: every event of the five thousand years, and the view as a lens. */
+  .overview { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 18px; align-items: start; padding: 12px 24px 8px; border-top: 1px solid var(--rule); }
+  #track { position: relative; height: 77px; cursor: pointer; touch-action: none; user-select: none; }
+  #sections { position: absolute; inset: 0 0 auto; height: 24px; }
+  .section {
+    position: absolute; top: 0; height: 24px; padding: 0 6px 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;
+    border: 0; border-left: 1px solid var(--rule); background: transparent; color: var(--muted); font: 500 9.5px/18px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
+  }
+  .section:hover, .section[aria-current="true"] { color: var(--gold); }
+  #marks { position: absolute; left: 0; right: 0; top: 31px; width: 100%; height: 46px; }
+  #moments { position: absolute; left: 0; right: 0; top: 30px; height: 0; }
+  .moment { position: absolute; top: -2.5px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--ivory); opacity: 0.45; cursor: pointer; transition: transform 0.3s, opacity 0.3s; }
+  .moment.current { opacity: 1; background: var(--c); transform: scale(1.8); box-shadow: 0 0 10px var(--c); }
+  .shade { position: absolute; top: 24px; bottom: 0; background: rgba(7, 9, 13, 0.62); pointer-events: none; }
+  .shade.before { left: 0; width: var(--from, 0%); }
+  .shade.after { left: var(--to, 100%); right: 0; }
+  .shade.above, .shade.below { left: var(--from, 0%); right: calc(100% - var(--to, 100%)); }
+  .shade.above { top: 31px; bottom: auto; height: var(--vt, 0px); }
+  .shade.below { top: calc(31px + var(--vt, 0px) + var(--vh, 46px)); }
+  #lens {
+    position: absolute; top: calc(28px + var(--vt, 0px)); height: calc(var(--vh, 46px) + 6px); left: var(--from, 0%); width: max(calc(var(--to, 100%) - var(--from, 0%)), 6px); box-sizing: border-box;
+    border: 1.5px solid var(--gold); border-radius: 6px; background: rgba(232, 194, 122, 0.07); box-shadow: 0 0 0 1px rgba(7, 9, 13, 0.6), 0 0 22px -4px rgba(232, 194, 122, 0.7); cursor: grab;
+  }
+  #lens:active { cursor: grabbing; }
+  #lens .grip { position: absolute; left: 0; right: 0; bottom: -8px; height: 14px; cursor: ns-resize; touch-action: none; }
+  #lens .grip-t { position: absolute; left: 0; right: 0; top: -8px; height: 14px; cursor: ns-resize; touch-action: none; }
+  #lens .grip-t::after { content: ""; position: absolute; left: 50%; top: 5px; width: min(22px, 60%); height: 3px; margin-left: calc(min(22px, 60%) / -2); border-radius: 2px; background: var(--gold); box-shadow: 0 0 0 1px rgba(7, 9, 13, 0.6); }
+  #lens .grip-l { position: absolute; top: 0; bottom: 0; left: -8px; width: 14px; cursor: ew-resize; touch-action: none; }
+  #lens .grip-l::after { content: ""; position: absolute; top: 50%; left: 5px; height: min(18px, 60%); width: 3px; transform: translateY(-50%); border-radius: 2px; background: var(--gold); box-shadow: 0 0 0 1px rgba(7, 9, 13, 0.6); }
+  #lens .grip-x { position: absolute; top: 0; bottom: 0; right: -8px; width: 14px; cursor: ew-resize; touch-action: none; }
+  #lens .grip-x::after { content: ""; position: absolute; top: 50%; right: 5px; height: min(18px, 60%); width: 3px; transform: translateY(-50%); border-radius: 2px; background: var(--gold); box-shadow: 0 0 0 1px rgba(7, 9, 13, 0.6); }
+  #lens .grip::after { content: ""; position: absolute; left: 50%; bottom: 5px; width: min(22px, 60%); height: 3px; margin-left: calc(min(22px, 60%) / -2); border-radius: 2px; background: var(--gold); box-shadow: 0 0 0 1px rgba(7, 9, 13, 0.6); }
+  .scale { position: relative; height: 12px; font: 500 9.5px/12px var(--mono); color: var(--muted); }
+  .scale span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .jumps { display: flex; flex-direction: column; gap: 6px; padding-top: 14px; }
+  .jump { min-height: 28px; padding: 0 12px; border: 1px solid var(--rule); border-radius: 999px; background: rgba(255, 255, 255, 0.03); color: var(--ivory); font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .jump:hover { border-color: rgba(232, 194, 122, 0.5); color: var(--gold); }
+
+  /* The legend, which spotlights a region. */
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 24px 10px; }
+  .edit { display: flex; flex: none; align-items: center; gap: 6px; }
+  .tool { min-height: 26px; padding: 0 12px; border: 1px solid var(--rule); border-radius: 999px; background: transparent; color: var(--ivory); font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .tool:hover:not(:disabled) { border-color: rgba(232, 194, 122, 0.5); color: var(--gold); }
+  .tool:disabled { color: var(--muted); opacity: 0.55; cursor: default; }
+  .tool[aria-pressed="true"] { color: var(--ink); background: var(--gold); border-color: var(--gold); font-weight: 600; }
+  /* With editing on, a bar can be taken: its cursor says so. */
+  .chronicle[data-editing] #timeline .tl-item { cursor: grab; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; min-height: 26px; padding: 0 11px; border: 1px solid var(--rule); border-radius: 999px; background: transparent; color: var(--muted); font-size: 12px; cursor: pointer; }
+  .chip:hover { color: var(--ivory); }
+  .chip[aria-pressed="true"] { color: var(--ink); background: var(--c); border-color: var(--c); font-weight: 600; }
+  .chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); }
+  .chip[aria-pressed="true"] i { background: var(--ink); box-shadow: none; }
+
+  /* The timeline: a gradient of its region's colour per bar, light on what the story tells. */
+  /* The tools' layer (the tooltip) is placed against the nearest positioned box: make it the timeline's. */
+  #timeline { position: relative; min-height: 0; border-top: 1px solid var(--rule); }
+  #timeline .tl-surface { fill: transparent; }
+  #timeline .lane-neareast { --c: var(--c-neareast); }
+  #timeline .lane-med { --c: var(--c-med); }
+  #timeline .lane-asia { --c: var(--c-asia); }
+  #timeline .lane-americas { --c: var(--c-americas); }
+  #timeline .lane-europe { --c: var(--c-europe); }
+  #timeline .lane-science { --c: var(--c-science); }
+  #timeline .lane-space { --c: var(--c-space); }
+  #timeline rect.tl-item { stroke: color-mix(in srgb, var(--c) 55%, transparent); stroke-width: 1px; }
+  #timeline rect.lane-neareast { fill: url(#fill-neareast); }
+  #timeline rect.lane-med { fill: url(#fill-med); }
+  #timeline rect.lane-asia { fill: url(#fill-asia); }
+  #timeline rect.lane-americas { fill: url(#fill-americas); }
+  #timeline rect.lane-europe { fill: url(#fill-europe); }
+  #timeline rect.lane-science { fill: url(#fill-science); }
+  #timeline rect.lane-space { fill: url(#fill-space); }
+  #timeline .tl-item-line { stroke: var(--c); stroke-opacity: 0.18; }
+  #timeline .tl-item-dot { fill: var(--c); stroke: var(--ink); stroke-width: 2px; }
+  #timeline .has-slide .tl-item-dot { stroke: var(--ivory); stroke-width: 1.5px; filter: drop-shadow(0 0 5px var(--c)); }
+  #timeline rect.tl-item.has-slide { stroke: var(--c); }
+  #timeline .tl-item--selected, #timeline .tl-item--selected .tl-item-dot { stroke: #fff; filter: drop-shadow(0 0 8px var(--c)); }
+  #timeline .tl-label { color: #d9d3c8; }
+  #timeline .tl-tick { stroke: rgba(242, 237, 228, 0.05); }
+  #timeline .tl-tick-label { fill: var(--muted); }
+  #timeline .tl-tick-label--major { fill: var(--ivory); font-weight: 500; }
+  #timeline .tl-era-label { display: none; }
+  #timeline .era-bronze { fill: rgba(239, 154, 98, 0.035); }
+  #timeline .era-antiquity { fill: rgba(111, 176, 240, 0.03); }
+  #timeline .era-medieval { fill: rgba(240, 139, 176, 0.03); }
+  #timeline .era-modern { fill: rgba(169, 139, 255, 0.035); }
+  /* A lane's name sits in the gap above its first row, clear of the bars. */
+  #timeline .tl-lane-header { transform: translateY(-19px); }
+  #timeline .tl-lane-header-bg { display: none; }
+  #timeline .tl-lane-header-text { font-weight: 600; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; fill: var(--c, var(--muted)); }
+  #timeline [data-tl-lane-header="neareast"] { --c: var(--c-neareast); }
+  #timeline [data-tl-lane-header="med"] { --c: var(--c-med); }
+  #timeline [data-tl-lane-header="asia"] { --c: var(--c-asia); }
+  #timeline [data-tl-lane-header="americas"] { --c: var(--c-americas); }
+  #timeline [data-tl-lane-header="europe"] { --c: var(--c-europe); }
+  #timeline [data-tl-lane-header="science"] { --c: var(--c-science); }
+  #timeline [data-tl-lane-header="space"] { --c: var(--c-space); }
+  #timeline .tl-cluster { fill: rgba(232, 194, 122, 0.16); stroke: var(--gold); }
+  #timeline .tl-cluster-count { fill: var(--gold); font-weight: 600; }
+  #timeline .tl-now { stroke-dasharray: 2 4; }
+  #timeline .tl-tooltip { background: rgba(12, 15, 21, 0.94); backdrop-filter: blur(8px); color: var(--ivory); border: 1px solid rgba(232, 194, 122, 0.4); border-radius: 10px; padding: 8px 12px; font: 500 12.5px/1.5 var(--sans); box-shadow: 0 16px 40px -12px #000; }
+  /* The bars' content, in the boxes the timeline gives the page: the name, then the years. */
+  #timeline [data-tl-slot] { height: 100%; }
+  .bar { box-sizing: border-box; display: flex; align-items: center; gap: 8px; height: 100%; padding: 0 10px 0 12px; overflow: hidden; white-space: nowrap; border-radius: 8px; }
+  .bar b { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 500 13px/1.45 var(--sans); color: var(--ivory); }
+  .bar small::after { content: attr(data-when); }
+  .bar small { flex: 0 1000 auto; min-width: 0; overflow: hidden; font: 500 10px/1.6 var(--mono); color: color-mix(in srgb, var(--c) 75%, var(--ivory)); }
+
+  .log { color: var(--muted); border-top: 1px solid var(--rule); background: var(--ink); }
+
+  @media (max-width: 640px) {
+    .chronicle { grid-template-rows: auto 1px 340px auto auto minmax(0, 1fr); }
+    .masthead { padding: 12px 14px 10px; gap: 10px; }
+    .masthead h1 { font-size: 22px; }
+    .play { padding: 0 8px; }
+    .play span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    #numeral { font-size: 110px; bottom: -18px; }
+    #story .tl-story { padding: 12px 14px 10px; }
+    #story .tl-story-slide { grid-template-columns: minmax(0, 1fr); gap: 10px; padding-inline-start: 12px; }
+    #story .tl-story-headline { font-size: 30px; margin: 4px 0 6px; }
+    #story .tl-story-title .tl-story-headline { font-size: 34px; }
+    #story .tl-story-media img { height: 116px; }
+    .overview { grid-template-columns: minmax(0, 1fr); padding: 10px 14px 8px; }
+    .jumps { flex-direction: row; padding-top: 0; }
+    .kicker .span { display: none; }
+    .scale span:nth-child(even) { display: none; }
+    .section { font-size: 8.5px; letter-spacing: 0.06em; }
+    .legend { flex-wrap: nowrap; overflow-x: auto; padding: 0 14px 8px; scrollbar-width: none; }
+    .masthead { flex-wrap: wrap; }
+    .masthead > div:first-child { flex: 1 1 100%; }
+    .masthead .spacer { display: none; }
+    .edit { flex: 1; }
+    .chip { flex: none; }
+  }
+</style>
+<svg id="paints" width="0" height="0" style="position: absolute" aria-hidden="true"><defs></defs></svg>
+<div class="chronicle" id="chronicle">
+  <header class="masthead">
+    <div>
+      <span class="kicker"><b>A chronicle</b><span class="span"> · 3100 BC — AD 1991</span></span>
+      <h1>Five thousand years, <em>from the Nile to the Moon</em></h1>
+    </div>
+    <span class="spacer"></span>
+    <div class="edit" role="group" aria-label="Edit the chronology">
+      <button type="button" class="tool" id="edit" aria-pressed="false">Rewrite history</button>
+      <button type="button" class="tool" id="undo" disabled>Undo</button>
+      <button type="button" class="tool" id="restore" disabled>Restore</button>
+    </div>
+    <div class="edit" role="group" aria-label="Take it with you">
+      <button type="button" class="tool" id="png">PNG</button>
+      <button type="button" class="tool" id="pdf">PDF</button>
+      <button type="button" class="tool" id="print">Print</button>
+    </div>
+    <button type="button" class="play" id="play">
+      <svg class="start" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9.5-5.5z" /></svg>
+      <svg class="pause" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5h3v11H3zM8 1.5h3v11H8z" /></svg>
+      <span>Play the tour</span>
+    </button>
+  </header>
+  <div class="progress" aria-hidden="true"><span id="progress"></span></div>
+  <div id="stage"><span id="numeral" aria-hidden="true" data-year="5000"></span><div id="story"></div></div>
+  <section class="overview" id="overview" aria-label="Overview">
+    <div>
+      <div id="track">
+        <div id="sections" role="group" aria-label="Fly to an age"></div>
+        <div id="moments" aria-hidden="true"></div>
+        <svg id="marks" viewBox="0 0 1000 56" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <div class="shade before"></div>
+        <div class="shade after"></div>
+        <div class="shade above"></div>
+        <div class="shade below"></div>
+        <div id="lens" tabindex="0" role="slider" aria-label="The view on the five thousand years: arrows pan, + and − zoom, shift with up and down arrows zooms the lanes"><span class="grip" aria-hidden="true"></span><span class="grip-t" aria-hidden="true"></span><span class="grip-l" aria-hidden="true"></span><span class="grip-x" aria-hidden="true"></span></div>
+      </div>
+      <div class="scale" id="scale" aria-hidden="true"></div>
+    </div>
+    <div class="jumps">
+      <button type="button" class="jump" id="whole">All 5 000 years</button>
+      <button type="button" class="jump" id="apollo">Apollo 11, to the minute</button>
+    </div>
+  </section>
+  <div class="legend" role="group" aria-label="Spotlight a region" id="legend"></div>
+  <div id="timeline"></div>
+</div>
+<p class="log" id="log" aria-live="polite">Press Play, page with ← and →, or pick any event on the timeline. Drag the lens on the overview, or scroll the wheel, pinch or press + and − on the timeline (shift + wheel pans). Pull the lens’s left or right edge to zoom across, its top or bottom edge (or alt + wheel) to zoom the lanes.</p>

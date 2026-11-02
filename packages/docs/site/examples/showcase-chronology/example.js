@@ -12,6 +12,7 @@ function year(y) {
   return date.getTime();
 }
 // Known to the year (most dates before 1500 are approximate or traditional): an instant covers its year.
+/** @returns {import("@temporeum/timeline-core").Item} */
 const known = (id, label, laneId, from, to) => ({
   id,
   label,
@@ -21,6 +22,7 @@ const known = (id, label, laneId, from, to) => ({
   granularity: "year",
 });
 // Known to the minute, in UTC.
+/** @returns {import("@temporeum/timeline-core").Item} */
 const minute = (id, label, iso, endIso) => ({
   id,
   label,
@@ -102,6 +104,7 @@ function formatTick(tick, timeZone) {
   return y <= 0 ? `${String(1 - y)} BC` : `AD ${String(y)}`;
 }
 
+/** @type {Record<string, [number, number]>} */
 const views = {
   all: [year(-3300), year(2050)],
   antiquity: [year(-900), year(600)],

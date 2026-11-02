@@ -38,6 +38,7 @@ const languages = {
   },
 };
 
+/** @returns {import("@temporeum/timeline-element").TimelineConfig} */
 function configOf(language) {
   const { locale, calendar, strings, lanes, items } = languages[language];
   return {

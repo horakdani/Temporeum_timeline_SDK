@@ -34,7 +34,9 @@ const STREAMS = [
 ];
 const PEOPLE = ["Ada", "Ben", "Chen", "Dana", "Eli", "Fatima", "Goran", "Hana", "Ivo", "Jun"].map((label) => ({ id: label.toLowerCase(), label }));
 
+/** @type {import("@temporeum/timeline-core").Item<any>[]} */
 const items = [];
+/** @type {import("@temporeum/timeline-core/schedule").Dependency[]} */
 const dependencies = [];
 STREAMS.forEach(([stream, streamLabel, names], s) => {
   for (let i = 0; i < 25; i += 1) {

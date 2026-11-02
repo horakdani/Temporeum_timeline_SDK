@@ -1,0 +1,17 @@
+{
+  "title": "Five thousand years, told: the chronology restyled from outside, with a story and a camera",
+  "height": 920,
+  "allow": ["downloads", "modals"],
+  "layout": "showcase",
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 5 },
+    { "selector": "#timeline svg .tl-era", "min": 2 },
+    { "selector": "#story .tl-story-headline", "min": 1 },
+    { "selector": "#story .tl-story-media img", "min": 1 },
+    { "selector": "#legend .chip", "min": 7 },
+    { "selector": ".edit button", "min": 6 },
+    { "selector": "#marks rect", "min": 61 },
+    { "selector": "#overview .section", "min": 4 },
+    { "selector": "#log[data-items='61'][data-slides='22']", "min": 1 }
+  ]
+}

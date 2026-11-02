@@ -1,6 +1,12 @@
 # Showcase
 
-Four timelines the way an app would use them, each live. The one on the [home page](index.md) is a Gantt chart of 313 tasks; these are the other shapes a timeline takes. Open **The code** under any of them to read and edit it.
+Five timelines the way an app would use them, each live. The [home page](index.md) has a sixth, a chronicle restyled entirely from outside, with a story, a camera and an editable history; these are the other shapes a timeline takes. Open **The code** under any of them to read and edit it.
+
+## A product launch of 313 tasks
+
+::: example showcase-gantt
+
+A product launch of 313 tasks in twelve streams, drawn as a Gantt chart: dependencies, baselines, progress and milestones from the [Gantt plugin](guides/gantt.md), the critical path and the reschedule from [the scheduler](guides/scheduling.md), the team's load from [the resource view](guides/resources.md). Every edit is a command, so Undo is exact. On a phone it turns vertical.
 
 ## A chronology across five thousand years
 

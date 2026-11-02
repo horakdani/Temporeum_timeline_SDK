@@ -9,6 +9,7 @@ const start = Date.UTC(2026, 3, 6);
 const at = (offset) => start + offset * day;
 
 // One task per row: the row is the task's lane.
+/** @type {import("@temporeum/timeline-core").Item[]} */
 const tasks = [
   { id: "spec", label: "Spec", start: at(0), end: at(5), progress: 1, baseline: { start: at(0), end: at(4) } },
   { id: "design", label: "Design", start: at(5), end: at(12), progress: 0.6, baseline: { start: at(4), end: at(10) } },
@@ -20,6 +21,7 @@ const tasks = [
 const items = tasks.map((task) => ({ ...task, laneId: task.id }));
 const lanes = tasks.map((task) => ({ id: task.id, label: task.label }));
 
+/** @type {import("@temporeum/timeline-core/schedule").Dependency[]} */
 const dependencies = [
   { from: "spec", to: "design" },
   { from: "spec", to: "api", type: "SS", lagMs: 2 * day },

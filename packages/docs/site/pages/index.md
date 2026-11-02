@@ -2,9 +2,9 @@
 
 An editable, responsive timeline for the web — from millennia down to seconds, with collision-free lanes, a keyboard equivalent for every gesture, server rendering, and **zero runtime dependencies** in the engine.
 
-::: example showcase-gantt
+::: example showcase-chronicle
 
-A product launch of 313 tasks in twelve streams, drawn as a Gantt chart: dependencies, baselines, progress and milestones from the [Gantt plugin](guides/gantt.md), the critical path and the reschedule from [the scheduler](guides/scheduling.md), the team's load from [the resource view](guides/resources.md). Every edit is a command, so Undo is exact. On a phone it turns vertical. More demos are on the [showcase](showcase.md).
+Five thousand years in one timeline, from the first pharaohs to the Moon landing, zoomable down to the minutes of Apollo 11 — and none of it the library's own look. The colours, the fonts, the overview strip, the bars' content and the story panel are the page's: a theme, `metrics`, `slots`, `className`s and a little CSS ([theming](guides/theming.md)). Twenty-one moments are a [story](guides/storytelling.md) told by a camera that flies the view; press **Play the tour**. Switch on **Rewrite history** and the same timeline is editable: drag an event, resize an era, take it back with **Undo** — every edit is a command with an exact inverse ([editing](guides/editing.md)). The overview strip is a lens you can pull on every edge to zoom across and down the lanes, the mouse wheel zooms around the pointer, **PNG** saves the view as it is, **PDF** and **Print** take the whole chronicle on paper ([export](guides/export.md)). It works with the keyboard alone, and on a phone. The code is under the demo; more demos — a Gantt chart of 313 tasks among them — are on the [showcase](showcase.md).
 
 The smallest timeline is this:
 

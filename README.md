@@ -38,7 +38,7 @@ npm run build -w @temporeum/timeline-docs
 npm run serve -w @temporeum/timeline-docs
 ```
 
-Then open <http://localhost:41737/site/> — the home page's project plan, the [showcase](packages/docs/site/pages/showcase.md), the recipes and the guides, each with its example running.
+Then open <http://localhost:41737/site/> — the home page's chronicle of five thousand years, the [showcase](packages/docs/site/pages/showcase.md), the recipes and the guides, each with its example running.
 
 ## Why another timeline
 

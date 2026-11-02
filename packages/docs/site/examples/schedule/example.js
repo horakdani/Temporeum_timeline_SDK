@@ -15,6 +15,7 @@ const calendar = { timeZone: "Europe/Budapest", exceptions: [{ date: "2026-04-06
 
 // Every task starts on Monday for now; its length is working hours.
 const task = (id, label, hours) => ({ id, label, laneId: id, start: monday, end: addWorkingMs(calendar, monday, hours * hour) });
+/** @type {import("@temporeum/timeline-core").Item[]} */
 let items = [
   task("spec", "Spec", 16),
   task("design", "Design", 24),
@@ -25,6 +26,7 @@ let items = [
 ];
 const lanes = items.map(({ id, label }) => ({ id, label }));
 
+/** @type {import("@temporeum/timeline-core/schedule").Dependency[]} */
 const dependencies = [
   { from: "spec", to: "design" },
   { from: "spec", to: "api", type: "SS", lagMs: 8 * hour },

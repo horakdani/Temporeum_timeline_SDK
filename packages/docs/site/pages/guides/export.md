@@ -20,7 +20,7 @@ import { ganttPlugin } from "@temporeum/timeline-element/gantt";
 registerPlugin(exportPlugin, ganttPlugin);
 ```
 
-The PNG encoder, the PDF writer and the print view are a plugin on their own entry point, `@temporeum/timeline-element/export`: a page that never exports does not download them. `exportSVG()` needs no plugin — a frame is SVG already. Without the plugin, `exportPNG`, `exportPDF` and `print` throw, naming the import that is missing. Registered once, it serves every timeline on the page.
+The PNG encoder, the PDF writer and the print view are a plugin on their own entry point, `@temporeum/timeline-element/export`: a page that never exports does not download them. `exportSVG()` needs no plugin — a frame is SVG already. Without the plugin, `exportPNG`, `exportPDF` and `print` throw, naming the import that is missing. Registered once, it serves every timeline on the page. A page that runs the timeline inside a sandboxed `<iframe>` has to allow what the export does: `allow-downloads` to save a file, `allow-modals` for `print()`.
 
 ## The view: SVG and PNG
 

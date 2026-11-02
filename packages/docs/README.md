@@ -24,7 +24,8 @@ npm run serve -w @temporeum/timeline-docs      # http://127.0.0.1:41737/site/
 - `site/benchmark/results.json` — written by `npm run bench:compare`.
 
 The live examples run in a sandboxed frame (`allow-scripts`, no
-`allow-same-origin`) and import the shipped bundles from `dist/lib` through an
+`allow-same-origin`; an example that saves a file or prints lists
+`"allow": ["downloads", "modals"]` in its `meta.json`) and import the shipped bundles from `dist/lib` through an
 import map, so a host serving the site has to allow cross-origin reads
 (`Access-Control-Allow-Origin: *`; GitHub Pages sends it, `e2e/serve.mjs`
 does too).

@@ -43,7 +43,7 @@ const exports = {
   pdf: () => {
     const pdf = timeline.exportPDF({ size: "a4", orientation: "landscape" });
     const pages = /\/Count (\d+)/.exec(new TextDecoder("latin1").decode(pdf))?.[1];
-    download("plan.pdf", new Blob([pdf], { type: "application/pdf" }));
+    download("plan.pdf", new Blob([pdf.slice()], { type: "application/pdf" }));
     log.textContent = `plan.pdf: ${pages} ${pages === "1" ? "page" : "pages"}, A4 landscape.`;
   },
   print: () => timeline.print({ size: "a4" }),
