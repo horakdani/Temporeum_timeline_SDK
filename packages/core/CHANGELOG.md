@@ -13,7 +13,7 @@ The first release. From here on the package follows [semantic versioning](https:
 - Editing: move, resize, snap, `canMove`, cross-lane moves, multi-select, and reversible commands with an `inverse`.
 - Responsive: orientation, density and detail surface resolved from the container; pointer-aware hit slop.
 - Performance: the scene space — tiles a sixteenth of a viewport, a deep zoom that re-anchors a step at a time, an overscan that grows while the view rests — with culling, node reuse and pooling in `mountScene`, and `createFrameLoop`.
-- Accessibility: a listbox with `aria-activedescendant`, a keyboard twin for every gesture, reduced motion.
+- Accessibility: a listbox with `aria-activedescendant`, a keyboard twin for every gesture, reduced motion. An item's dates are read with their era before year 1 ("15 Mar 44 BC", not "15 Mar 44").
 - Data: `createItemLoader`, windowed and aborting. Clusters at dense zoom, with `clusterZoom`.
 - Server rendering: `mountScene(container, { hydrate: true })` adopts a server-rendered `<svg>`.
 - `VERSION` is `"1.0.0"`.

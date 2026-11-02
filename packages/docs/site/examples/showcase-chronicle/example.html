@@ -143,8 +143,7 @@
   .chip[aria-pressed="true"] i { background: var(--ink); box-shadow: none; }
 
   /* The timeline: a gradient of its region's colour per bar, light on what the story tells. */
-  /* The tools' layer (the tooltip) is placed against the nearest positioned box: make it the timeline's. */
-  #timeline { position: relative; min-height: 0; border-top: 1px solid var(--rule); }
+  #timeline { min-height: 0; border-top: 1px solid var(--rule); }
   #timeline .tl-surface { fill: transparent; }
   #timeline .lane-neareast { --c: var(--c-neareast); }
   #timeline .lane-med { --c: var(--c-med); }

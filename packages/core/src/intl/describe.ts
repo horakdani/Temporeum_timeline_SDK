@@ -12,7 +12,7 @@
  * the view names hundreds of items in a frame.
  */
 
-import { atMidnight, DATE_ONLY, formatterFor } from "../a11y.js";
+import { atMidnight, DATE_ONLY, dateFormatFor } from "../a11y.js";
 import type { Cluster } from "../cluster.js";
 import type { LayoutItem } from "../layout.js";
 import type { RenderHooks } from "../render.js";
@@ -62,7 +62,7 @@ export function describeHooks<T>(options: DescribeOptions): Required<Pick<Render
         item.granularity === undefined
           ? !atMidnight(span.start, timeZone) || (hasEnd && !atMidnight(span.end, timeZone))
           : !DATE_ONLY.has(item.granularity);
-      const format = formatterFor(locale, timeZone, withTime);
+      const format = dateFormatFor(locale, timeZone, withTime);
       const start = format.format(span.start);
       const dates = span.open
         ? say("openRange", { start })
@@ -75,7 +75,7 @@ export function describeHooks<T>(options: DescribeOptions): Required<Pick<Render
     },
     describeCluster(cluster: Cluster<T>): string {
       const withTime = !atMidnight(cluster.start, timeZone) || !atMidnight(cluster.lastStart, timeZone);
-      const format = formatterFor(locale, timeZone, withTime);
+      const format = dateFormatFor(locale, timeZone, withTime);
       const from = format.format(cluster.start);
       const to = format.format(cluster.lastStart);
       const count = cluster.members.length;

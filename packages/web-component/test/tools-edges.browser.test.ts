@@ -462,3 +462,32 @@ describe("the tooltip's timing, and the layer's own keys and presses", () => {
     expect(timeline.getSnapshot().domain).toEqual(before);
   });
 });
+
+describe("a host the page has not positioned", () => {
+  it("is positioned by the timeline, so the tools layer lands on the drawing, and let go of at destroy", async () => {
+    // The plain div of a page: not positioned, a few pixels off its ancestor's corner.
+    const outer = document.createElement("div");
+    outer.style.cssText = "position:relative;padding:40px 30px";
+    const element = document.createElement("div");
+    element.style.cssText = "width:800px;height:300px";
+    outer.append(element);
+    document.body.append(outer);
+    const timeline = createTimeline(element, { items, lanes, domain: [T0, T0 + 4 * DAY + 12 * HOUR], height: 300, timeZone: "UTC", tooltip: true });
+    await vi.waitFor(() => {
+      if (timeline.result === undefined || element.querySelector(".tl-tools") === null) throw new Error("not drawn yet");
+    });
+    expect(getComputedStyle(element).position).toBe("relative");
+    const layer = element.querySelector(".tl-tools")!.getBoundingClientRect();
+    const host = element.getBoundingClientRect();
+    expect([layer.left, layer.top, layer.width, layer.height]).toEqual([host.left, host.top, host.width, host.height]);
+    timeline.destroy();
+    expect(element.style.position).toBe("");
+  });
+
+  it("leaves a host that is positioned alone", async () => {
+    const { element, timeline } = await mount();
+    expect(element.style.position).toBe("relative");
+    timeline.destroy();
+    expect(element.style.position).toBe("relative");
+  });
+});

@@ -249,3 +249,24 @@ describe("accessible names", () => {
     }
   });
 });
+
+describe("accessible names before year 1", () => {
+  // 15 March 44 BC (the Ides), as a proleptic Gregorian instant.
+  const IDES = new Date(Date.UTC(2000, 2, 15)).setUTCFullYear(-43);
+
+  it("say the era, so 44 BC is not read as AD 44", () => {
+    const item: Item = { id: "ides", start: IDES, label: "Caesar", granularity: "day", laneId: "a" };
+    const name = describeSpan(item, { start: IDES, end: IDES, open: false }, "en", "UTC");
+    expect(name).toMatch(/BC/);
+    expect(name).toMatch(/44/);
+  });
+
+  it("give a range its era on the end that needs it, and leave AD dates alone", () => {
+    const adEnd = new Date(0).setUTCFullYear(14, 7, 19);
+    const item: Item = { id: "r", start: IDES, end: adEnd, label: "Principate", granularity: "day", laneId: "a" };
+    const name = describeSpan(item, { start: IDES, end: adEnd, open: false }, "en", "UTC");
+    expect(name).toMatch(/BC .* 14$/);
+    const modern = describeSpan({ id: "m", start: T0, label: "Now", laneId: "a" }, { start: T0, end: T0, open: false }, "en", "UTC");
+    expect(modern).not.toMatch(/BC|AD/);
+  });
+});

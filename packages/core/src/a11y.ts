@@ -53,6 +53,38 @@ export function formatterFor(locale: string, timeZone: string, withTime: boolean
   );
 }
 
+/** The first instant of year 1 AD: before it a year has no meaning without its era. */
+const YEAR_ONE = -62_135_596_800_000;
+
+/** What the accessible names format a date with: `format` of an instant. */
+export interface DateFormat {
+  format(time: number): string;
+}
+
+/**
+ * The accessible names' date format: `formatterFor`'s, and before year 1 the same date with its era — "1 Jan 45 BC", not
+ * "1 Jan 45", which a reader takes for AD. Shared with `/intl`.
+ */
+export function dateFormatFor(locale: string, timeZone: string, withTime: boolean): DateFormat {
+  const key = `${locale}\u0000${timeZone}\u0000${String(withTime)}\u0000era`;
+  let known = eras.get(key);
+  if (known === undefined) {
+    const ad = formatterFor(locale, timeZone, withTime);
+    const bc = new Intl.DateTimeFormat(locale, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      era: "short",
+      ...(withTime ? { hour: "numeric", minute: "2-digit" } : {}),
+      timeZone,
+    });
+    known = { format: (time) => (time < YEAR_ONE ? bc : ad).format(time) };
+    eras.set(key, known);
+  }
+  return known;
+}
+const eras = new Map<string, DateFormat>();
+
 /** Whether an instant is a midnight in a zone. Shared with `/intl`. */
 export function atMidnight(time: number, timeZone: string): boolean {
   // Every new item's accessible name asks this; in UTC it needs no Intl.
@@ -91,7 +123,7 @@ export function describeSpan(
     item.granularity === undefined
       ? !atMidnight(start, timeZone) || (hasEnd && !atMidnight(span.end, timeZone))
       : !DATE_ONLY.has(item.granularity);
-  const formatter = formatterFor(locale, timeZone, withTime);
+  const formatter = dateFormatFor(locale, timeZone, withTime);
   if (span.open) {
     return `${formatter.format(start)} –`;
   }
@@ -183,7 +215,7 @@ export function describeCluster(
   timeZone: string,
 ): string {
   const withTime = !atMidnight(start, timeZone) || !atMidnight(lastStart, timeZone);
-  const formatter = formatterFor(locale, timeZone, withTime);
+  const formatter = dateFormatFor(locale, timeZone, withTime);
   const from = formatter.format(start);
   const to = formatter.format(lastStart);
   const parts = [`${String(count)} items`, from === to ? from : `${from} – ${to}`];

@@ -466,6 +466,11 @@ export function createTimeline<T = unknown>(
   requireKinds(itemsOf(initial));
   const doc = element.ownerDocument;
   const view_ = doc.defaultView;
+  // The layers over the drawing (the tools, the groups) are positioned against the host: a host that is not positioned itself
+  // would hand them to whatever ancestor is, and they would land beside the drawing. The element's own host is positioned already.
+  const ownPosition = element.style.position;
+  const claimedPosition = view_?.getComputedStyle(element).position === "static";
+  if (claimedPosition) element.style.position = "relative";
   let config: TimelineConfig<T> = { ...initial };
   const emitter = new Emitter<TimelineInstanceEventMap<T>>();
   const listeners = new Set<() => void>();
@@ -1074,7 +1079,12 @@ export function createTimeline<T = unknown>(
   }
 
   function defaultTip(item: Item<T>): string {
-    const format = new Intl.DateTimeFormat(config.locale ?? "en", { dateStyle: "medium", timeStyle: "short", timeZone: config.timeZone ?? "UTC" });
+    const locale = config.locale ?? "en";
+    const timeZone = config.timeZone ?? "UTC";
+    const medium = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone });
+    // Before year 1 a date without its era reads as AD.
+    const bc = new Intl.DateTimeFormat(locale, { year: "numeric", month: "short", day: "numeric", era: "short", hour: "numeric", minute: "2-digit", timeZone });
+    const format = { format: (time: number): string => (time < -62_135_596_800_000 ? bc : medium).format(time) };
     const start = toTimeMs(item.start);
     const when =
       item.end === undefined
@@ -1701,6 +1711,7 @@ export function createTimeline<T = unknown>(
       if (wakeUp !== undefined) clearTimeout(wakeUp);
       if (coastTimer !== undefined) clearTimeout(coastTimer);
       if (rollTimer !== undefined) clearInterval(rollTimer);
+      if (claimedPosition) element.style.position = ownPosition;
       toolsLayer?.destroy();
       sizing.destroy();
       binding.destroy();

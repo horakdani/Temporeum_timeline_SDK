@@ -7,6 +7,7 @@ The first release, on 1.0.0 of `@temporeum/timeline-core`. From here on the pack
 ### The timeline
 
 - **`createTimeline(container, config)`**: the live timeline. It measures, draws once per frame in the engine's scene space, and takes pointer, wheel and keyboard input. It also covers editing, async items and clusters, and an external store (`subscribe`, `getSnapshot`) that notifies at most once per frame.
+- **The host:** a container that is not positioned is made `position: relative` while the timeline lives (and let go of at `destroy()`), so the tools and the group layer lie on the drawing and not on whatever ancestor is positioned. The default tooltip reads dates before year 1 with their era.
 - **The instance:**
   - live data: `addItems`, `updateItems`, `removeItems`, `changeItems`;
   - commands: `applyCommand(command)`, undone with `command.inverse`;
