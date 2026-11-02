@@ -28,7 +28,7 @@ function longTimeline(): readonly Item[] {
   const items: Item[] = [];
   for (let index = 0; index < 900; index += 1) {
     const start = T0 + index * 2 * DAY;
-    items.push({ id: `e${String(index)}`, start, end: start + 5 * DAY, label: `Esemény ${String(index)}` });
+    items.push({ id: `e${String(index)}`, start, end: start + 5 * DAY, label: `Event ${String(index)}` });
   }
   return items;
 }
@@ -153,12 +153,19 @@ describe("mountScene", () => {
       expect(differs(mount.root as unknown as FakeElement, result.scene)).toBeUndefined();
     }
     expect(ledger.created).toBe(0);
-    expect(ledger.inserts).toBe(0);
-    expect(ledger.removals).toBe(0);
+    // The axis's context label, once, when the pan back crosses from
+    // January 2025 into December 2024: a text node is known by its text, as
+    // a tick label is, so a new month is the old node let go and a pooled one
+    // put in its place — nothing created. It is in the viewport's pixels;
+    // nothing else of it moves.
+    expect(ledger.inserts).toBe(1);
+    expect(ledger.removals).toBe(1);
     expect(ledger.texts).toBe(0);
-    // Seven layers, three of them moving per frame along with the items and
-    // four with the frame: one transform each, three frames.
-    expect(ledger.attrWrites).toBe(7 * 3);
+    // Seven layers with a transform, three of them moving per frame along
+    // with the items and four with the frame: one transform each, three
+    // frames. The context layer has none; its background is written twice,
+    // wider over the tick label that slides under it two days on, and back.
+    expect(ledger.attrWrites).toBe(7 * 3 + 2);
   });
 
   it("does not even look at children handed back as the same array", () => {
@@ -232,8 +239,8 @@ describe("mountScene", () => {
     const mount = mountScene(container as unknown as Element);
     const item = (id: string, x: number): SceneElement => ({
       tag: "rect",
-      attrs: { "data-tl-id": id, role: "option", "aria-label": `Elem ${id}`, x, width: 10 },
-      children: [{ tag: "title", text: `Elem ${id}` }],
+      attrs: { "data-tl-id": id, role: "option", "aria-label": `Item ${id}`, x, width: 10 },
+      children: [{ tag: "title", text: `Item ${id}` }],
     });
     const tile = (key: string, children: SceneElement[]): SceneElement => ({
       tag: "g",

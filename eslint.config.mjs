@@ -1,6 +1,6 @@
-// Az idővonal-SDK lintje. SZÁNDÉKOSAN csak a packages/ és a scripts/sdk_*.mjs
-// alá néz: a repó többi része nem ennek a kampánynak a hatóköre, és a
-// lintelése hamis pirosat adna a CI-ban.
+// Lint config for the timeline SDK. It DELIBERATELY looks only at packages/
+// and scripts/sdk_*.mjs: the rest of the repo is out of scope, and linting
+// it would give false failures in CI.
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 
@@ -17,15 +17,15 @@ export default [
       "fix/**",
       "qa/**",
       "sdk/reports/**",
-      // A G-SSR smoke munkakönyvtára: telepített keretrendszerek és a
-      // buildjeik kimenete, nem a kampány forrása.
+      // The G-SSR smoke test's working directory: installed frameworks and
+      // their build output, not SDK source.
       "**/.ssr-work/**",
-      // A sablonok es a benchmark munkakonyvtara: telepitett keretrendszerek,
-      // ugyanazert, amiert a .ssr-work.
+      // The templates' and the benchmark's working directories: installed
+      // frameworks, for the same reason as .ssr-work.
       "**/.templates-work/**",
       "**/.bench-work/**",
-      // A svelte-package munkamappaja és a Svelte-hidratálás tesztjének
-      // szerverre fordított komponense: kimenet, nem forrás.
+      // svelte-package's working folder and the server-compiled component of
+      // the Svelte hydration test: output, not source.
       "**/.svelte-kit/**",
       "**/.ssr/**",
     ],
@@ -43,7 +43,7 @@ export default [
         (acc, c) => ({ ...acc, ...(c.rules ?? {}) }),
         {},
       ),
-      // A nulla-függőség és a típusos API a termék lényege, nem stílus.
+      // Zero dependencies and a typed API are the point of the product, not style.
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/consistent-type-imports": "error",
       "no-console": "error",
@@ -51,24 +51,24 @@ export default [
     },
   },
   {
-    // A mag forrása nem nyúlhat a DOM-hoz futásidőben. A típusok rendelkezésre
-    // állnak (lib: DOM), a globálok nem — ez a PLAN.md 2. döntésének statikus
-    // kikényszerítése. A P0 azt várta, hogy a renderelő ezt fel fogja
-    // lazítani; nem kellett. A P3 scene-gráfot ad, a P4 böngésző-kötése
-    // (`src/dom/`) pedig PARAMÉTERBEN kapja az elemet, ezért egyetlen DOM
-    // globálhoz sem nyúl. A lista a kampány végéig érintetlen — ez a
-    // szerveroldali út bizonyítéka, nem jószándék.
+    // The core's source must not touch the DOM at runtime. The types are
+    // available (lib: DOM), the globals are not — this enforces the design
+    // decision statically. It was expected that the renderer would need this
+    // relaxed; it did not. The renderer produces a scene graph, and the browser
+    // binding (`src/dom/`) receives the element as a PARAMETER, so it touches
+    // no DOM global at all. The list stays as it is — it is proof of the
+    // server-side path, not good intentions.
     files: ["packages/core/src/**/*.ts"],
     rules: {
       "no-restricted-globals": [
         "error",
-        { name: "window", message: "A mag DOM-független — a hostra tartozik." },
-        { name: "document", message: "A mag DOM-független — a hostra tartozik." },
-        { name: "navigator", message: "A mag DOM-független — a hostra tartozik." },
-        { name: "localStorage", message: "A könyvtár soha nem ment." },
-        { name: "sessionStorage", message: "A könyvtár soha nem ment." },
-        { name: "fetch", message: "A könyvtár soha nem hálózik — esemény jön ki, a host dönt." },
-        { name: "XMLHttpRequest", message: "A könyvtár soha nem hálózik." },
+        { name: "window", message: "The core is DOM-independent — this belongs to the host." },
+        { name: "document", message: "The core is DOM-independent — this belongs to the host." },
+        { name: "navigator", message: "The core is DOM-independent — this belongs to the host." },
+        { name: "localStorage", message: "The library never persists anything." },
+        { name: "sessionStorage", message: "The library never persists anything." },
+        { name: "fetch", message: "The library never makes network requests — it emits an event, the host decides." },
+        { name: "XMLHttpRequest", message: "The library never makes network requests." },
       ],
     },
   },
@@ -88,8 +88,8 @@ export default [
     rules: { ...js.configs.recommended.rules },
   },
   {
-    // A docs-oldal generatora es a tesztjei: Node-szkriptek, a kampany
-    // tobbi szkriptjenek szabalyaival.
+    // The docs site generator and its tests: Node scripts, with the same
+    // rules as the other scripts.
     files: ["packages/docs/scripts/*.mjs", "packages/docs/test/*.mjs"],
     languageOptions: {
       ecmaVersion: 2023,
@@ -99,7 +99,7 @@ export default [
     rules: { ...js.configs.recommended.rules, eqeqeq: ["error", "always"] },
   },
   {
-    // Az elo peldak futtatoja: bongeszoben fut, a lapon.
+    // The live examples' runner: runs in the browser, on the page.
     files: ["packages/docs/site/assets/*.js"],
     languageOptions: {
       ecmaVersion: 2023,

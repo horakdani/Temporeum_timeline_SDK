@@ -33,10 +33,10 @@ const CASES = 600;
 /** Label texts of deliberately mixed length, including none at all. */
 const TEXTS: readonly string[] = [
   "A",
-  "Rövid",
-  "Közepes hosszú címke",
+  "Short",
+  "Medium-length label",
   "",
-  "Egy igazán hosszú megnevezés, ami biztosan nem fér el",
+  "A really long description that will certainly not fit",
   "iiii",
   "WWWW",
 ];

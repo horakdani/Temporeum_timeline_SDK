@@ -1,18 +1,17 @@
 #!/usr/bin/env node
 /**
- * G-ALL — a teljes keszlet zold, MINDEN csomagban, nem csak a core-ban.
+ * G-ALL — the full suite is green, in EVERY package, not just in core.
  *
- * Miert nem eleg a `npm run test --workspaces --if-present`: az `--if-present`
- * a `test` szkript nelkuli workspace-t CSENDBEN atugorja, es a parancs
- * zolden ter vissza. Egy csomag, amelynek nincs tesztje, igy pont ugy nez ki,
- * mint egy, amelynek minden tesztje atment — a "MINDEN csomagban" allitas a
- * kimenetbol nem bizonyithato. (A P12 elejen a docs-workspace-nek nem volt
- * `test`-je.)
+ * Why `npm run test --workspaces --if-present` is not enough: `--if-present`
+ * SILENTLY skips a workspace without a `test` script, and the command returns
+ * green. A package that has no tests then looks exactly like one whose tests
+ * all passed — the "in EVERY package" claim cannot be proven from the output.
+ * (At one point the docs workspace had no `test` script.)
  *
- * Ez a szkript a gyoker package.json workspace-listajat jarja be: ha egy
- * workspace-nek nincs `test` szkriptje, az BUKAS, nem kihagyas. Utana
- * csomagonkent, sorban futtat (a bongeszos keszletek portjai nem utkoznek),
- * es a vegen csomagonkent kiirja az exit kodot es az idot.
+ * This script walks the workspace list of the root package.json: if a
+ * workspace has no `test` script, that is a FAILURE, not a skip. Then it runs
+ * them package by package, in sequence (so the browser suites' ports do not
+ * clash), and at the end prints the exit code and the time for each package.
  */
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -25,16 +24,16 @@ const workspaces = root.workspaces ?? [];
 const results = [];
 const problems = [];
 
-if (workspaces.length === 0) problems.push("a gyoker package.json nem deklaral workspace-t");
+if (workspaces.length === 0) problems.push("the root package.json declares no workspaces");
 for (const workspace of workspaces) {
   const manifestPath = join(repo, workspace, "package.json");
   if (!existsSync(manifestPath)) {
-    problems.push(`${workspace}: nincs package.json`);
+    problems.push(`${workspace}: no package.json`);
     continue;
   }
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
   if (typeof manifest.scripts?.test !== "string" || manifest.scripts.test.trim() === "") {
-    problems.push(`${manifest.name ?? workspace}: nincs "test" szkript — egy teszt nelkuli csomag nem "zold"`);
+    problems.push(`${manifest.name ?? workspace}: no "test" script — a package without tests is not "green"`);
     continue;
   }
   const started = Date.now();
@@ -43,11 +42,11 @@ for (const workspace of workspaces) {
   results.push({ name: manifest.name, status: run.status ?? 1, seconds: Math.round((Date.now() - started) / 1000) });
 }
 
-process.stdout.write("\nG-ALL — csomagonkent:\n");
-for (const result of results) process.stdout.write(`  ${result.status === 0 ? "ok   " : "BUKAS"}  ${result.name} (exit ${String(result.status)}, ${String(result.seconds)} s)\n`);
-for (const result of results.filter((r) => r.status !== 0)) problems.push(`${result.name}: a teszt ${String(result.status)} koddal lepett ki`);
+process.stdout.write("\nG-ALL — per package:\n");
+for (const result of results) process.stdout.write(`  ${result.status === 0 ? "ok   " : "FAIL "}  ${result.name} (exit ${String(result.status)}, ${String(result.seconds)} s)\n`);
+for (const result of results.filter((r) => r.status !== 0)) problems.push(`${result.name}: the test exited with code ${String(result.status)}`);
 if (problems.length > 0) {
   for (const problem of problems) process.stdout.write(`  ✗ ${problem}\n`);
   process.exit(1);
 }
-process.stdout.write(`\nG-ALL: mind a ${String(results.length)} workspace tesztje lefutott es zold.\n`);
+process.stdout.write(`\nG-ALL: the tests of all ${String(results.length)} workspaces ran and are green.\n`);

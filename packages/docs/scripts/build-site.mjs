@@ -9,7 +9,8 @@
  *   site/assets/             the stylesheet and the playground script
  *   site/benchmark/          results.json, written by the comparison benchmark
  *   site/migration/<lib>.json the migration guides' mapping tables ({{migration:<lib>}})
- *   site/conformance/<name>.json the conformance report's table ({{acr:<name>}})
+ *   site/conformance/<name>.json the conformance report's table ({{acr:<name>}}), and the
+ *                            same report as a VPAT® 2.5 INT ({{vpat:<name> <part>}})
  *   site/benchmark/field/results.json the field benchmark ({{bench:field}}, {{bench:field-method}}, {{bench:field-losses}}, {{bench:field-tradeoff}}; scripts/field-bench.mjs)
  *   site/project.json        the public repository and the docs' address
  *
@@ -328,6 +329,134 @@ export function acrMarkdown(name, docsDir = DOCS_DIR) {
   return `| Criterion | Level | Status | Remarks | Shown by |\n|---|---|---|---|---|\n${rows}`;
 }
 
+// --- the VPAT -----------------------------------------------------------------------
+
+/**
+ * The same report in the layout of the ITI VPAT® 2.5, International Edition
+ * ({{vpat:<name> <part>}}): one block per part of it, read from the same
+ * file as {{acr:<name>}}, so the two cannot say different things.
+ *
+ *   product    name and version, date, description, contact, notes, evaluation methods
+ *   A, AA      the WCAG 2.2 tables, each row with the EN 301 549 and Section 508 clauses it is also
+ *   en301549   EN 301 549's chapters, chapter 9 mapped to the WCAG tables
+ *   section508 the Revised Section 508's chapters, E205 mapped to the WCAG tables
+ */
+const VPAT_PARTS = ["product", "A", "AA", "en301549", "section508"];
+const VPAT_STATUS = {
+  supports: "Supports",
+  "partially-supports": "Partially Supports",
+  "does-not-support": "Does Not Support",
+  "not-applicable": "Not Applicable",
+  "not-evaluated": "Not Evaluated",
+  wcag: "See the WCAG 2.2 tables",
+};
+/**
+ * The A and AA criteria WCAG 2.1 and 2.2 added. EN 301 549 (V3.2.1) takes
+ * WCAG 2.1, so it has no clause for a 2.2 criterion; the Revised Section 508
+ * takes WCAG 2.0, so it has none for either.
+ */
+const WCAG21_ADDED = new Set(["1.3.4", "1.3.5", "1.4.10", "1.4.11", "1.4.12", "1.4.13", "2.1.4", "2.5.1", "2.5.2", "2.5.3", "2.5.4", "4.1.3"]);
+const WCAG22_ADDED = new Set(["2.4.11", "2.5.7", "2.5.8", "3.2.6", "3.3.7", "3.3.8"]);
+
+/** The report, checked for what the VPAT needs beyond the ACR: the version it is about, the date, the chapters. */
+function loadVpat(name, docsDir) {
+  const data = loadConformance(name, docsDir);
+  const at = `site/conformance/${name}.json`;
+  const version = readJson(join(REPO, "packages", "core", "package.json")).version;
+  if (data.version !== version) fail(`${at} reports on version ${String(data.version)}, the core is ${version} — look the report over for this version and change its "version"`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data.date ?? "")) fail(`${at}: "date" is the day the report was made, YYYY-MM-DD`);
+  if (typeof data.description !== "string" || !Array.isArray(data.evaluation) || data.evaluation.length === 0) fail(`${at}: the VPAT needs "description" and "evaluation"`);
+  for (const part of ["en301549", "section508"]) {
+    const rows = data.chapters?.[part];
+    if (!Array.isArray(rows) || rows.length === 0) fail(`${at}: "chapters.${part}" is missing`);
+    for (const row of rows) {
+      if (!(row.status in VPAT_STATUS) || typeof row.remarks !== "string" || row.remarks === "") fail(`${at} chapters.${part} ${String(row.chapter)}: needs a status (${Object.keys(VPAT_STATUS).join(", ")}) and remarks`);
+    }
+  }
+  return data;
+}
+
+/** The clauses of the other two standards that are this criterion, and its status under them. */
+function vpatAlso(row) {
+  const en = WCAG22_ADDED.has(row.id) ? null : `9.${row.id} (Web)`;
+  const section508 = WCAG21_ADDED.has(row.id) || WCAG22_ADDED.has(row.id) ? null : "501 (Web), through E205.4";
+  return { en, section508, earlier: row.earlier };
+}
+
+function vpatAlsoText(row) {
+  const { en, section508 } = vpatAlso(row);
+  if (en === null) return "New in WCAG 2.2: not in EN 301 549 or the Revised Section 508.";
+  return `Also applies to: EN 301 549 ${en}${section508 === null ? "; not the Revised Section 508, which takes WCAG 2.0" : `; Revised Section 508 ${section508}`}.`;
+}
+
+function vpatConformance(row) {
+  const { earlier } = vpatAlso(row);
+  return earlier === undefined
+    ? [`Web: ${VPAT_STATUS[row.status]}`]
+    : [`Web (WCAG 2.2): ${VPAT_STATUS[row.status]}`, `Web (EN 301 549, Section 508): ${VPAT_STATUS[earlier.status]}`];
+}
+
+function vpatHtml(argument, docsDir) {
+  const [name, part] = argument.split(/\s+/);
+  if (!VPAT_PARTS.includes(part)) fail(`{{vpat:${argument}}}: the part is one of ${VPAT_PARTS.join(", ")}`);
+  const data = loadVpat(name, docsDir);
+  const wrap = (table) => `<div class="table-wrap" tabindex="0" role="region" aria-label="Table, scrolls sideways on a narrow screen">${table}</div>`;
+  if (part === "product") {
+    const contact = `${PROJECT.repository}/issues`;
+    const facts = [
+      ["Name of product and version", escapeHtml(`${data.product} ${data.version}`)],
+      ["Report date", escapeHtml(data.date)],
+      ["Product description", renderInline(data.description)],
+      ["Contact information", `<a href="${escapeHtml(contact)}">${escapeHtml(contact)}</a>`],
+      ["Notes", renderInline(data.scope)],
+      ["Evaluation methods used", `<ul>${data.evaluation.map((method) => `<li>${renderInline(method)}</li>`).join("")}</ul>`],
+    ];
+    return wrap(`<table class="vpat-product"><caption>The product and how it was evaluated. Generated from site/conformance/${escapeHtml(name)}.json.</caption><tbody>${facts.map(([key, value]) => `<tr><th scope="row">${key}</th><td>${value}</td></tr>`).join("")}</tbody></table>`);
+  }
+  if (part === "A" || part === "AA") {
+    const body = data.criteria
+      .filter((row) => row.level === part)
+      .map((row) => {
+        const remarks = [row.remarks, row.earlier?.remarks].filter(Boolean).map((text) => renderInline(text)).join(" ");
+        return `<tr class="acr-${row.status}"><th scope="row">${escapeHtml(row.id)} ${escapeHtml(row.name)} (Level ${part})<br><span class="vpat-also">${escapeHtml(vpatAlsoText(row))}</span></th><td>${vpatConformance(row).map(escapeHtml).join("<br>")}</td><td>${remarks}</td></tr>`;
+      })
+      .join("");
+    return wrap(`<table class="vpat"><caption>${part === "A" ? "Table 1" : "Table 2"}: Success Criteria, Level ${part}. Generated from site/conformance/${escapeHtml(name)}.json, as is the conformance report.</caption><thead><tr><th scope="col">Criteria</th><th scope="col">Conformance Level</th><th scope="col">Remarks and Explanations</th></tr></thead><tbody>${body}</tbody></table>`);
+  }
+  const standard = part === "en301549" ? "EN 301 549" : "Revised Section 508";
+  const body = data.chapters[part]
+    .map((row) => `<tr><th scope="row">${/^\d+$/.test(row.chapter) ? "Chapter " : ""}${escapeHtml(row.chapter)}: ${escapeHtml(row.title)}</th><td>${escapeHtml(VPAT_STATUS[row.status])}</td><td>${renderInline(row.remarks)}</td></tr>`)
+    .join("");
+  return wrap(`<table class="vpat-chapters"><caption>${standard}, chapter by chapter. Generated from site/conformance/${escapeHtml(name)}.json.</caption><thead><tr><th scope="col">Chapter</th><th scope="col">Conformance Level</th><th scope="col">Remarks and Explanations</th></tr></thead><tbody>${body}</tbody></table>`);
+}
+
+/** The same blocks as Markdown, for llms-full.txt. */
+export function vpatMarkdown(argument, docsDir = DOCS_DIR) {
+  const [name, part] = argument.split(/\s+/);
+  const data = loadVpat(name, docsDir);
+  const cell = (text) => String(text).replace(/\|/g, "\\|").replace(/\n/g, " ");
+  if (part === "product") {
+    return [
+      `- Name of product and version: ${data.product} ${data.version}`,
+      `- Report date: ${data.date}`,
+      `- Product description: ${data.description}`,
+      `- Contact information: ${PROJECT.repository}/issues`,
+      `- Notes: ${data.scope}`,
+      "- Evaluation methods used:",
+      ...data.evaluation.map((method) => `  - ${method}`),
+    ].join("\n");
+  }
+  if (part === "A" || part === "AA") {
+    const rows = data.criteria
+      .filter((row) => row.level === part)
+      .map((row) => `| ${row.id} ${cell(row.name)} (Level ${part}). ${cell(vpatAlsoText(row))} | ${cell(vpatConformance(row).join("; "))} | ${cell([row.remarks, row.earlier?.remarks].filter(Boolean).join(" "))} |`)
+      .join("\n");
+    return `| Criteria | Conformance Level | Remarks and Explanations |\n|---|---|---|\n${rows}`;
+  }
+  const rows = data.chapters[part].map((row) => `| ${cell(row.chapter)}: ${cell(row.title)} | ${VPAT_STATUS[row.status]} | ${cell(row.remarks)} |`).join("\n");
+  return `| Chapter | Conformance Level | Remarks and Explanations |\n|---|---|---|\n${rows}`;
+}
+
 // --- the migration tables ---------------------------------------------------------
 
 const MIGRATION_STATUS = { same: "Same", renamed: "Renamed", different: "Different", missing: "Not yet" };
@@ -419,6 +548,7 @@ function llmsFiles({ docsDir, navSpec, pages, examples }) {
       });
       source = source.replace(/^\{\{migration:([a-z0-9-]+)\}\}\s*$/gm, (_, name) => migrationMarkdown(name, docsDir));
       source = source.replace(/^\{\{acr:([a-z0-9-]+)\}\}\s*$/gm, (_, name) => acrMarkdown(name, docsDir));
+      source = source.replace(/^\{\{vpat:([^}]+)\}\}\s*$/gm, (_, argument) => vpatMarkdown(argument.trim(), docsDir));
       source = source.replace(/^\{\{bench:(field[a-z-]*)\}\}\s*$/gm, (_, block) => fieldMarkdown(block, docsDir));
       source = source.replace(/^\{\{([a-z]+)(?::[^}]*)?\}\}\s*$/gm, (_, slot) => `(The ${slot} table is generated on the page: ${docsUrl}${id}.html)`);
       full.push(`<!-- ${docsUrl}${id}.html -->`, "", source.trim(), "");
@@ -604,6 +734,8 @@ export async function buildSite({ docsDir = DOCS_DIR, outDir = join(DOCS_DIR, "d
         slots.push(migrationHtml(block.argument, docsDir));
       } else if (block.name === "acr") {
         slots.push(acrHtml(block.argument, docsDir));
+      } else if (block.name === "vpat") {
+        slots.push(vpatHtml(block.argument, docsDir));
       } else {
         fail(`site/pages/${page.id}.md:${String(block.line)}: unknown block {{${block.name}}}`);
       }

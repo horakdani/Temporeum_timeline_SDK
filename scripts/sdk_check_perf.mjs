@@ -1,40 +1,41 @@
 #!/usr/bin/env node
 /**
- * G-PERF: bizonyitja, hogy 60 fps tarthato 2000 lathato elemmel a 10 000-bol
- * — MERVE, igazi Chromiumban, 4x CPU-lassitassal —, es hogy a meres a kuszob
- * alatt BUKIK.
+ * G-PERF: proves that 60 fps holds with 2000 visible items out of 10,000 —
+ * MEASURED, in real Chromium, with 4x CPU throttling — and that the
+ * measurement FAILS below the threshold.
  *
- * A meres a sdk_bench.mjs riportja (packages/core/.bench-perf.json). A
- * kuszobok ITT vannak, egy helyen, es a state.json P7-es donteseiben a
- * benchmark megirasa ELOTT rogzitve:
+ * The measurement is the sdk_bench.mjs report (packages/core/.bench-perf.json).
+ * The thresholds are HERE, in one place, and were recorded in the decisions
+ * in state.json BEFORE the benchmark was written:
  *
- *   gesztusonkent a kihagyott vsync-ek aranya <= 5%   (effektiv >= 57 fps)
- *   a leghosszabb kepkocka                    <= 100 ms
- *   a gesztus utani nyugvo kepkocka           <= 100 ms (RAIL)
+ *   share of missed vsyncs per gesture        <= 5%   (effective >= 57 fps)
+ *   the longest frame                         <= 100 ms
+ *   the settled frame after the gesture       <= 100 ms (RAIL)
  *
- * Harom forgatokonyv, mind a harom kotelezo: pasztazas a keretnel, 2x-es
- * csipesz-zoom a keret pontjarol, es pasztazas a 2x-es nezetben, ahol ~1000
- * elemhez ~1000 cimke tartozik. A "2000 lathato elem" olvasata: BARMELY
- * nezet legfeljebb 2000 lathato elemmel — nem csak az, amelyiken a cimkek
- * nem ferenek ki.
+ * Three scenarios, all three required: a pan at the budget, a 2x pinch zoom
+ * from the budget's point, and a pan in the 2x view, where ~1000 items have
+ * ~1000 labels. The reading of "2000 visible items": ANY view with at most
+ * 2000 visible items — not only the one where the labels do not fit.
  *
- * Ervenyessegi feltetelek — ha barmelyik serul, a meres nem bizonyit semmit,
- * es a check BUKIK, akarmilyen szamokat mutat:
+ * Validity conditions — if any is violated, the measurement proves nothing,
+ * and the check FAILS whatever numbers it shows:
  *
- *   - a riport letezik, es FRISS dist-rol szol (forras-lenyomat egyezik);
- *   - a lassitas 4x, es 10 000 elem van az adatban;
- *   - a keretnel a bongeszo szerint 1900-2200 elem TENYLEG a nezetben van;
- *   - a cimkes nezetben legalabb 500 cimke latszik (kulonben nem cimkes);
- *   - a bemenet tenyleg ossze van vonva: tobb esemeny jott, mint rajzolas;
- *   - a NEGATIV KONTROLL (elemter nelkul) a keretnel BUKIK. Ha atmenne, a
- *     meres nem kulonboztetne meg a jot a rossztol — vagy a lassitas nem hat.
+ *   - the report exists, and is about a FRESH dist (source fingerprint matches);
+ *   - the throttling is 4x, and the data holds 10,000 items;
+ *   - at the budget, according to the browser, 1900-2200 items REALLY are in view;
+ *   - in the labelled view at least 500 labels are visible (otherwise it is not labelled);
+ *   - the input really is coalesced: more events arrived than draws;
+ *   - the NEGATIVE CONTROL (without the item space) FAILS at the budget. If
+ *     it passed, the measurement would not tell good from bad — or the
+ *     throttling has no effect.
  *
- * `node scripts/sdk_check_perf.mjs public` — G-PERF-PUBLIC (P13): UGYANEZEK a
- * kuszobok es feltetelek a publikus ut riportjara (packages/docs/
- * .bench-public.json, a bench-public.html lapon: createTimeline a shippelt
- * element-bundle-bol). Ott meg ket feltetel: a riport tenyleg a publikus
- * merese (kind), es a "space" futas tenyleg elemterben rajzolt, az "exact"
- * nem — kulonben a konfiguracio alapja helyett mast mernenk.
+ * `node scripts/sdk_check_perf.mjs public` — G-PERF-PUBLIC: the SAME
+ * thresholds and conditions on the public path's report (packages/docs/
+ * .bench-public.json, on the bench-public.html page: createTimeline from the
+ * shipped element bundle). Two more conditions there: the report really is
+ * the public measurement (kind), and the "space" run really drew in the item
+ * space and the "exact" one did not — otherwise we would be measuring
+ * something other than the configuration's default.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -60,46 +61,46 @@ function verdict(run) {
   const reasons = [];
   if (!(run.missedVsyncShare <= MAX_MISSED_SHARE)) {
     reasons.push(
-      `kihagyott vsync ${(run.missedVsyncShare * 100).toFixed(1)}% > ${String(MAX_MISSED_SHARE * 100)}% (${run.effectiveFps.toFixed(1)} fps)`,
+      `missed vsyncs ${(run.missedVsyncShare * 100).toFixed(1)}% > ${String(MAX_MISSED_SHARE * 100)}% (${run.effectiveFps.toFixed(1)} fps)`,
     );
   }
   if (!(run.longestFrameMs <= MAX_LONGEST_FRAME_MS)) {
-    reasons.push(`leghosszabb kepkocka ${run.longestFrameMs.toFixed(0)} ms > ${String(MAX_LONGEST_FRAME_MS)} ms`);
+    reasons.push(`longest frame ${run.longestFrameMs.toFixed(0)} ms > ${String(MAX_LONGEST_FRAME_MS)} ms`);
   }
   if (!(run.settleMs <= MAX_SETTLE_MS)) {
-    reasons.push(`nyugvo kepkocka ${run.settleMs.toFixed(0)} ms > ${String(MAX_SETTLE_MS)} ms`);
+    reasons.push(`settled frame ${run.settleMs.toFixed(0)} ms > ${String(MAX_SETTLE_MS)} ms`);
   }
   return reasons;
 }
 
 if (!existsSync(reportFile)) {
-  failures.push(`nincs meresi riport (${reportFile}) — a meres NEM futott le, ezert BUKAS`);
+  failures.push(`no measurement report (${reportFile}) — the measurement did NOT run, so this is a FAILURE`);
 } else {
   const report = JSON.parse(readFileSync(reportFile, "utf8"));
-  // --- ervenyesseg --------------------------------------------------------
+  // --- validity -----------------------------------------------------------
   if (report.kind !== (PUBLIC ? "public" : "perf")) {
-    failures.push(`a riport egy masik meres riportja (${String(report.kind)}) — nem ezt az utat meri`);
+    failures.push(`the report belongs to another measurement (${String(report.kind)}) — it does not measure this path`);
   }
   if (PUBLIC) {
     for (const run of Array.isArray(report.runs) ? report.runs : []) {
       if (run.sceneSpace !== (run.mode === "space")) {
         failures.push(
-          `${String(run.mode)} ${String(run.name)}: a createTimeline ${run.sceneSpace ? "elemterben" : "elemter nelkul"} rajzolt — ` +
-            "nem az, amit a forgatokonyv mer",
+          `${String(run.mode)} ${String(run.name)}: createTimeline drew ${run.sceneSpace ? "in the item space" : "without the item space"} — ` +
+            "not what the scenario measures",
         );
       }
     }
   }
   if (report.throttle !== 4) {
-    failures.push(`a lassitas ${String(report.throttle)}x, nem a rogzitett 4x`);
+    failures.push(`the throttling is ${String(report.throttle)}x, not the fixed 4x`);
   }
   const stale = (report.builds ?? []).filter((source) => source !== report.expectedSource);
   if ((report.builds ?? []).length === 0 || stale.length > 0) {
     failures.push(
-      "a bongeszo NEM a friss dist-et futtatta (a dist/build.json lenyomata elter a forrasetol) — regi kod merese",
+      "the browser did NOT run the fresh dist (the dist/build.json fingerprint differs from the source's) — this measures old code",
     );
   } else {
-    notes.push(`friss dist: ${String(report.expectedSource).slice(0, 12)}…`);
+    notes.push(`fresh dist: ${String(report.expectedSource).slice(0, 12)}…`);
   }
   const runs = Array.isArray(report.runs) ? report.runs : [];
   const find = (mode, name) => runs.find((run) => run.mode === mode && run.name === name);
@@ -107,39 +108,39 @@ if (!existsSync(reportFile)) {
   for (const name of REQUIRED) {
     const run = find("space", name);
     if (run === undefined) {
-      failures.push(`hianyzik a forgatokonyv: ${name} — a nem futtathato meres BUKAS`);
+      failures.push(`scenario missing: ${name} — a measurement that cannot run is a FAILURE`);
       continue;
     }
     if (run.totalItems !== 10_000) {
-      failures.push(`${name}: ${String(run.totalItems)} elem az adatban, nem 10 000`);
+      failures.push(`${name}: ${String(run.totalItems)} items in the data, not 10,000`);
     }
     const visible = run.before?.visibleItems;
     if (name === "pan-labelled") {
       if (!(visible <= BUDGET_VISIBLE[1])) {
-        failures.push(`${name}: ${String(visible)} lathato elem — a keret folott, nem ervenyes`);
+        failures.push(`${name}: ${String(visible)} visible items — over the budget, not valid`);
       }
       if (!(run.before?.visibleLabels >= MIN_LABELS_IN_LABELLED_VIEW)) {
         failures.push(
-          `${name}: csak ${String(run.before?.visibleLabels)} cimke latszik — ez nem a cimkes nezet, a meres ervenytelen`,
+          `${name}: only ${String(run.before?.visibleLabels)} labels are visible — this is not the labelled view, the measurement is invalid`,
         );
       }
     } else if (!(visible >= BUDGET_VISIBLE[0] && visible <= BUDGET_VISIBLE[1])) {
       failures.push(
-        `${name}: a bongeszo szerint ${String(visible)} elem lathato, nem ${String(BUDGET_VISIBLE[0])}-${String(BUDGET_VISIBLE[1])}`,
+        `${name}: according to the browser ${String(visible)} items are visible, not ${String(BUDGET_VISIBLE[0])}-${String(BUDGET_VISIBLE[1])}`,
       );
     }
     if (!(run.inputEvents > run.draws)) {
       failures.push(
-        `${name}: ${String(run.inputEvents)} esemeny es ${String(run.draws)} rajzolas — a bemenet nincs osszevonva kepkockankent`,
+        `${name}: ${String(run.inputEvents)} events and ${String(run.draws)} draws — the input is not coalesced per frame`,
       );
     }
-    // --- az itelet ---------------------------------------------------------
+    // --- the verdict -------------------------------------------------------
     const reasons = verdict(run);
     const line =
-      `${name}: ${String(visible)} elem, ${String(run.before?.visibleLabels)} cimke — ` +
-      `${(run.missedVsyncShare * 100).toFixed(1)}% kihagyott vsync, ${run.effectiveFps.toFixed(1)} fps, ` +
-      `leghosszabb ${run.longestFrameMs.toFixed(0)} ms, nyugvo ${run.settleMs.toFixed(0)} ms, ` +
-      `ujrahorgonyzas ${String(run.reanchors ?? "-")}`;
+      `${name}: ${String(visible)} items, ${String(run.before?.visibleLabels)} labels — ` +
+      `${(run.missedVsyncShare * 100).toFixed(1)}% missed vsyncs, ${run.effectiveFps.toFixed(1)} fps, ` +
+      `longest ${run.longestFrameMs.toFixed(0)} ms, settled ${run.settleMs.toFixed(0)} ms, ` +
+      `re-anchors ${String(run.reanchors ?? "-")}`;
     if (reasons.length > 0) {
       failures.push(`${line} — ${reasons.join("; ")}`);
     } else {
@@ -147,33 +148,33 @@ if (!existsSync(reportFile)) {
     }
   }
 
-  // --- tajekoztatas, itelet nelkul ----------------------------------------
-  const INFORMATIVE = { "zoom-deep": "4x-es csipesz", "pan-long": "hosszu pasztazas (4 x 1200 px)" };
+  // --- for information, without a verdict --------------------------------
+  const INFORMATIVE = { "zoom-deep": "4x pinch", "pan-long": "long pan (4 x 1200 px)" };
   for (const [name, title] of Object.entries(INFORMATIVE)) {
     for (const mode of ["space", "exact"]) {
       const run = find(mode, name);
       if (run !== undefined) {
         notes.push(
-          `tajekoztato, nem kapu — ${mode === "space" ? "terrel" : "ter nelkul"} ${title}: ` +
-            `${(run.missedVsyncShare * 100).toFixed(1)}% kihagyott vsync, leghosszabb ${run.longestFrameMs.toFixed(0)} ms, ` +
-            `nyugvo ${run.settleMs.toFixed(0)} ms, ujrahorgonyzas ${String(run.reanchors ?? "-")}`,
+          `informative, not gated — ${mode === "space" ? "with space" : "without space"} ${title}: ` +
+            `${(run.missedVsyncShare * 100).toFixed(1)}% missed vsyncs, longest ${run.longestFrameMs.toFixed(0)} ms, ` +
+            `settled ${run.settleMs.toFixed(0)} ms, re-anchors ${String(run.reanchors ?? "-")}`,
         );
       }
     }
   }
 
-  // --- a negativ kontroll -------------------------------------------------
+  // --- the negative control ----------------------------------------------
   const control = find("exact", "pan");
   if (control === undefined) {
-    failures.push("hianyzik a negativ kontroll (elemter nelkuli pasztazas) — a meres erzekenysege bizonyitatlan");
+    failures.push("the negative control is missing (a pan without the item space) — the measurement's sensitivity is unproven");
   } else if (verdict(control).length === 0) {
     failures.push(
-      `a negativ kontroll ATMENT (${(control.missedVsyncShare * 100).toFixed(1)}% kihagyas elemter nelkul) — ` +
-        "a meres nem kulonbozteti meg a jot a rossztol, vagy a lassitas nem hat",
+      `the negative control PASSED (${(control.missedVsyncShare * 100).toFixed(1)}% missed without the item space) — ` +
+        "the measurement does not tell good from bad, or the throttling has no effect",
     );
   } else {
     notes.push(
-      `negativ kontroll bukik, ahogy kell: elemter nelkul ${(control.missedVsyncShare * 100).toFixed(1)}% kihagyas`,
+      `the negative control fails, as it should: ${(control.missedVsyncShare * 100).toFixed(1)}% missed without the item space`,
     );
   }
 }
@@ -182,10 +183,10 @@ for (const note of notes) {
   console.log(`  ok    ${note}`);
 }
 for (const failure of failures) {
-  console.log(`  BUKAS ${failure}`);
+  console.log(`  FAIL  ${failure}`);
 }
 if (failures.length > 0) {
-  console.log(`${GATE}: BUKOTT (${String(failures.length)} hiba)`);
+  console.log(`${GATE}: FAILED (${String(failures.length)} failure(s))`);
   process.exit(1);
 }
-console.log(`${GATE}: atment`);
+console.log(`${GATE}: passed`);

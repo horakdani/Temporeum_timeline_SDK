@@ -1,48 +1,51 @@
 #!/usr/bin/env node
 /**
- * G-MEMORY: bizonyitja, hogy hosszu pasztazas utan a csomopontszam nem no
- * monoton — vagyis hogy a pool TENYLEG ujrahasznosit, es nem csak letezik.
+ * G-MEMORY: proves that after a long pan the node count does not grow
+ * monotonically — that is, that the pool REALLY recycles, and does not merely
+ * exist.
  *
- * A meres a sdk_bench.mjs riportja (packages/core/.bench-memory.json): 24
- * huzas igazi Chromiumban, az adat ~4 nezetnyi szelessegen at, huzasonkent a
- * foltozo szamlaloival ES a bongeszo sajat szamlaloival (CDP Performance
- * "Nodes", szemetgyujtes utan). Ket fuggetlen forras, mert a foltozo
- * szamlaloja a foltozo allitasa onmagarol — a CDP nem az.
+ * The measurement is the sdk_bench.mjs report (packages/core/.bench-memory.json):
+ * 24 drags in real Chromium, across ~4 views' width of data, with the
+ * patcher's counters AND the browser's own counters per drag (CDP Performance
+ * "Nodes", after garbage collection). Two independent sources, because the
+ * patcher's counter is the patcher's claim about itself — CDP is not.
  *
- * Kriteriumok:
+ * Criteria:
  *
- *  1. A pool melegedese utan (a pasztazas masodik fele) gyakorlatilag nem
- *     jon letre uj csomopont: a novekmeny <= az elo DOM 0.5%-a — plusz
- *     annyi, amennyivel az elo cimke-csomopontok szama a masodik felben
- *     nott. (P14: a csempe-hataron atlogo cimke azota nem esik el, es a
- *     pasztazas az adat ritka vegen 0-rol 48 cimkere er. Azt a pool nem
- *     adhatja vissza: addig egyetlen cimke sem volt elengedve, egy rect-et
- *     pedig nem lehet szovegge tenni. A kriterium eddig minden letrehozast
- *     a poolnak rott fel, a novo elo halmazet is.)
- *  2. Az elo DOM es a CDP Nodes nem no a tavolsaggal: az utolso harmad
- *     maximuma <= az elso harmad maximuma x 1.05 (DOM) / x 1.10 (CDP, mert
- *     a poolban levo, lecsatolt csomopontokat is szamolja) — a cimkek
- *     csomopontjai nelkul (P17). A nezet tartalma, nem a pool: az adat ritka
- *     vegen az "auto" roviditas 0-rol ~400 cimkere er, cimkenkent ket elem
- *     (foreignObject + HTML-sor) es egy szovegcsomopont. Az 1. kriterium a
- *     cimkek NOVEKEDESET mar a P14 ota levonja; a 2. eddig nem, es cimkenkent
- *     egy csomoponttal szamolt.
- *  3. A pool a masodik felben legalabb annyit adott ki ujra (x 0.9), amennyit
- *     a pool nelkuli kontroll ugyanott letrehozott — vagyis ami a kontrollnak
- *     uj csomopont, az itt a poolbol jon. (A P7 elso valtozata itt az
- *     osszesitett "ujrahasznositas > letrehozas" aranyt kerte, ami a kezdeti
- *     felepitest is a letrehozas oldalra tette: igazsaga a meres hosszan es
- *     az elo halmaz meretén mulott, nem a poolon. A rajzolt tartomany
- *     haromszorosara nott, es a kriterium bukott, mikozben a masodik felben
- *     0 uj csomopont jott letre, es a pool pontosan annyit adott ki ujra,
- *     amennyit a kontroll letrehozott.)
- *  4. NEGATIV KONTROLL: ugyanez pool nelkul (poolLimit: 0) a masodik felben
- *     folyamatosan hoz letre csomopontot (>= az elo DOM 25%-a). Ha nem, a
- *     meres nem latja a pool hatasat, es az 1. kriterium semmit nem bizonyit.
+ *  1. Once the pool is warm (the second half of the pan) practically no new
+ *     node is created: the increase is <= 0.5% of the live DOM — plus as
+ *     much as the number of live label nodes grew in the second half.
+ *     (A label straddling a tile boundary is no longer dropped, so the pan
+ *     goes from 0 to 48 labels at the sparse end of the data. The pool
+ *     cannot give those back: until then no label had been released, and a
+ *     rect cannot be turned into text. The criterion used to charge every
+ *     creation to the pool, including that of the growing live set.)
+ *  2. The live DOM and the CDP Nodes do not grow with distance: the maximum
+ *     of the last third <= the maximum of the first third x 1.05 (DOM) /
+ *     x 1.10 (CDP, because it also counts detached nodes held in the pool) —
+ *     without the label nodes. That is the view's content, not the pool: at
+ *     the sparse end of the data "auto" truncation goes from 0 to ~400
+ *     labels, two elements per label (foreignObject + HTML row) and one text
+ *     node. Criterion 1 already subtracts the GROWTH of labels; criterion 2
+ *     used not to, and counted one node per label.
+ *  3. In the second half the pool handed out at least as many reused nodes
+ *     (x 0.9) as the control without a pool created at the same point — that
+ *     is, what is a new node for the control comes from the pool here. (The
+ *     first version of this criterion asked for an aggregate "reuse >
+ *     creation" ratio, which put the initial build on the creation side too:
+ *     whether it held depended on the length of the measurement and the size
+ *     of the live set, not on the pool. The drawn range grew threefold, and
+ *     the criterion failed, while in the second half 0 new nodes were
+ *     created and the pool handed out exactly as many as the control
+ *     created.)
+ *  4. NEGATIVE CONTROL: the same without a pool (poolLimit: 0) keeps creating
+ *     nodes in the second half (>= 25% of the live DOM). If not, the
+ *     measurement cannot see the pool's effect, and criterion 1 proves
+ *     nothing.
  *
- * Ervenyesseg: friss dist (forras-lenyomat), legalabb 20 minta, es minden
- * mintaban >= 1800 lathato elem — egy pasztazas, ami ures teruletre fut,
- * trivialisan "nem noveli" a csomopontszamot.
+ * Validity: a fresh dist (source fingerprint), at least 20 samples, and
+ * >= 1800 visible items in every sample — a pan that runs into an empty area
+ * trivially "does not grow" the node count.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -78,12 +81,12 @@ function lateCreation(samples) {
 }
 
 if (!existsSync(reportFile)) {
-  failures.push(`nincs meresi riport (${reportFile}) — a meres NEM futott le, ezert BUKAS`);
+  failures.push(`no measurement report (${reportFile}) — the measurement did NOT run, so this is a FAILURE`);
 } else {
   const report = JSON.parse(readFileSync(reportFile, "utf8"));
   const stale = (report.builds ?? []).filter((source) => source !== report.expectedSource);
   if ((report.builds ?? []).length === 0 || stale.length > 0) {
-    failures.push("a bongeszo NEM a friss dist-et futtatta — regi kod merese");
+    failures.push("the browser did NOT run the fresh dist — this measures old code");
   }
   const runs = Array.isArray(report.runs) ? report.runs : [];
   const pooled = runs.find((run) => run.poolLimit === null);
@@ -91,20 +94,20 @@ if (!existsSync(reportFile)) {
 
   for (const [name, run] of [
     ["pool", pooled],
-    ["kontroll", control],
+    ["control", control],
   ]) {
     if (run === undefined) {
-      failures.push(`hianyzik a ${name} futas — a nem futtathato meres BUKAS`);
+      failures.push(`the ${name} run is missing — a measurement that cannot run is a FAILURE`);
       continue;
     }
     const samples = run.samples ?? [];
     if (samples.length < MIN_SAMPLES) {
-      failures.push(`${name}: ${String(samples.length)} minta, legalabb ${String(MIN_SAMPLES)} kell`);
+      failures.push(`${name}: ${String(samples.length)} samples, at least ${String(MIN_SAMPLES)} are required`);
     }
     const thin = samples.filter((sample) => !(sample.visibleItems >= MIN_VISIBLE));
     if (thin.length > 0) {
       failures.push(
-        `${name}: ${String(thin.length)} mintaban ${String(MIN_VISIBLE)}-nel kevesebb elem latszik — a pasztazas kifutott az adatbol, a meres ervenytelen`,
+        `${name}: ${String(thin.length)} samples show fewer than ${String(MIN_VISIBLE)} items — the pan ran out of data, the measurement is invalid`,
       );
     }
   }
@@ -114,47 +117,47 @@ if (!existsSync(reportFile)) {
     const third = Math.floor(samples.length / 3);
     const late = lateCreation(samples);
     const lateLine =
-      `a masodik felben ${String(late.created)} uj csomopont (${String(late.live)} elo mellett, ` +
-      `a cimke-csomopontok ${String(late.labelGrowth)}-vel nottek)`;
+      `${String(late.created)} new nodes in the second half (with ${String(late.live)} live, ` +
+      `label nodes grew by ${String(late.labelGrowth)})`;
     if (!late.labelsKnown) {
-      failures.push("pool: a mintak nem mondjak meg az elo cimke-csomopontokat (labelNodes) — a nem merheto BUKAS");
+      failures.push("pool: the samples do not report the live label nodes (labelNodes) — what cannot be measured is a FAILURE");
     } else if (late.created > late.live * MAX_LATE_CREATION_SHARE + late.labelGrowth) {
-      failures.push(`pool: ${lateLine} — a pool nem hasznosit ujra`);
+      failures.push(`pool: ${lateLine} — the pool does not recycle`);
     } else {
       notes.push(`pool: ${lateLine}`);
     }
     if (!samples.every((sample) => Number.isInteger(sample.labelNodes) && Number.isInteger(sample.labelTree))) {
-      failures.push("pool: a mintak nem mondjak meg a cimkek csomopontjait (labelNodes, labelTree) — a nem merheto BUKAS");
+      failures.push("pool: the samples do not report the label nodes (labelNodes, labelTree) — what cannot be measured is a FAILURE");
     }
     const domEarly = max(samples.slice(0, third).map((sample) => sample.domNodes - sample.labelNodes));
     const domLate = max(samples.slice(-third).map((sample) => sample.domNodes - sample.labelNodes));
     if (domLate > domEarly * MAX_DOM_GROWTH) {
-      failures.push(`pool: az elo DOM (cimkek nelkul) ${String(domEarly)} -> ${String(domLate)} — no a tavolsaggal`);
+      failures.push(`pool: the live DOM (without labels) ${String(domEarly)} -> ${String(domLate)} — it grows with distance`);
     } else {
-      notes.push(`pool: elo DOM (cimkek nelkul) elso harmad max ${String(domEarly)}, utolso harmad max ${String(domLate)}`);
+      notes.push(`pool: live DOM (without labels) first third max ${String(domEarly)}, last third max ${String(domLate)}`);
     }
     const cdpEarly = max(samples.slice(0, third).map((sample) => sample.cdpNodes - sample.labelTree));
     const cdpLate = max(samples.slice(-third).map((sample) => sample.cdpNodes - sample.labelTree));
     if (!(cdpLate <= cdpEarly * MAX_CDP_GROWTH)) {
-      failures.push(`pool: a CDP Nodes (cimkek nelkul) ${String(cdpEarly)} -> ${String(cdpLate)} — a bongeszo szerint no`);
+      failures.push(`pool: CDP Nodes (without labels) ${String(cdpEarly)} -> ${String(cdpLate)} — it grows according to the browser`);
     } else {
-      notes.push(`pool: CDP Nodes (GC utan, cimkek nelkul) ${String(cdpEarly)} -> ${String(cdpLate)}`);
+      notes.push(`pool: CDP Nodes (after GC, without labels) ${String(cdpEarly)} -> ${String(cdpLate)}`);
     }
     const last = samples[samples.length - 1];
     if (control !== undefined && (control.samples ?? []).length >= MIN_SAMPLES) {
       const controlLate = lateCreation(control.samples);
       const reuseLine =
-        `a masodik felben ${String(late.reused)} ujrahasznositas, a kontroll ugyanott ` +
-        `${String(controlLate.created)} csomopontot hozott letre`;
+        `${String(late.reused)} reuses in the second half, while the control created ` +
+        `${String(controlLate.created)} nodes at the same point`;
       if (!(late.reused >= controlLate.created * MIN_REUSE_OF_CONTROL_CREATION)) {
-        failures.push(`pool: ${reuseLine} — a pool nem adja, amit a kontrollnak letre kell hoznia`);
+        failures.push(`pool: ${reuseLine} — the pool does not supply what the control has to create`);
       } else {
         notes.push(`pool: ${reuseLine}`);
       }
     }
-    notes.push(`pool: ${String(last.reused)} ujrahasznositas, ${String(last.created)} letrehozas osszesen (csak riport)`);
+    notes.push(`pool: ${String(last.reused)} reuses, ${String(last.created)} creations in total (report only)`);
     notes.push(
-      `JS heap (GC utan, csak riport): ${(samples[0].jsHeapUsed / 1e6).toFixed(1)} -> ${(last.jsHeapUsed / 1e6).toFixed(1)} MB`,
+      `JS heap (after GC, report only): ${(samples[0].jsHeapUsed / 1e6).toFixed(1)} -> ${(last.jsHeapUsed / 1e6).toFixed(1)} MB`,
     );
   }
 
@@ -162,10 +165,10 @@ if (!existsSync(reportFile)) {
     const late = lateCreation(control.samples);
     if (late.created < late.live * MIN_CONTROL_CREATION_SHARE) {
       failures.push(
-        `a negativ kontroll pool nelkul is csak ${String(late.created)} csomopontot hozott letre — a meres nem latja a pool hatasat`,
+        `the negative control created only ${String(late.created)} nodes even without a pool — the measurement cannot see the pool's effect`,
       );
     } else {
-      notes.push(`negativ kontroll: pool nelkul a masodik felben ${String(late.created)} uj csomopont, ahogy kell`);
+      notes.push(`negative control: ${String(late.created)} new nodes in the second half without a pool, as it should be`);
     }
   }
 }
@@ -174,10 +177,10 @@ for (const note of notes) {
   console.log(`  ok    ${note}`);
 }
 for (const failure of failures) {
-  console.log(`  BUKAS ${failure}`);
+  console.log(`  FAIL  ${failure}`);
 }
 if (failures.length > 0) {
-  console.log(`G-MEMORY: BUKOTT (${String(failures.length)} hiba)`);
+  console.log(`G-MEMORY: FAILED (${String(failures.length)} failure(s))`);
   process.exit(1);
 }
-console.log("G-MEMORY: atment");
+console.log("G-MEMORY: passed");

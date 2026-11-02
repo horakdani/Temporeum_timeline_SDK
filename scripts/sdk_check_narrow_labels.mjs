@@ -1,26 +1,26 @@
 #!/usr/bin/env node
 /**
- * G-NARROW-LABELS: bizonyitja, hogy minden elem, amelynel a roviditett
- * felirat (legalabb 3 karakter es ellipszis) az elem lathato reszeben vagy az
- * utana kovetkezo szabad helyen elfer, kap cimket — generalt, suru adaton,
- * mindket orientacioban, a pontos kepkockan ES a nyugalmi elemterben; a
- * latszo cimkek nem fednek at, egyik sem kerul masik elemre, a szoveg az elem
- * sajat szovege (egeszben vagy az eleje ellipszissel), es a teljes szoveg az
- * elem akadalymentes neveben van.
+ * G-NARROW-LABELS: proves that every item whose truncated label (at least 3
+ * characters and an ellipsis) fits in the item's visible part or in the free
+ * space after it gets a label — on generated, dense data, in both
+ * orientations, in the exact frame AND in the resting item space; the
+ * visible labels do not overlap, none lands on another item, the text is the
+ * item's own text (whole, or its start with an ellipsis), and the full text
+ * is in the item's accessible name.
  *
- * Az "elfer" orakulum a layoutbol szamol, nem az elhelyezesbol (a tesztfajl
- * fejkommentje reszletesen).
+ * The "fits" oracle computes from the layout, not from the placement (the
+ * test file's header comment has the details).
  *
- * Ket fuggetlen ellenorzes:
+ * Two independent checks:
  *
- *  1. A PROPERTY: a riportban a "narrow items get a label" zold, seeddel,
- *     legalabb MIN_CASES esettel. A riport hianya BUKAS: a csomagparancs
- *     elotte torli, tehat a jelenlete azt jelenti, hogy MOST futott.
- *  2. A KONTROLL: ugyanazok az esetek a P15-os strategiaval (labelOverflow:
- *     "drop") az esetek TOBBSEGEBEN legalabb egy olyan elemet cimke nelkul
- *     hagynak, amelynek az orakulum szerint jar — kulonben az adat tul ritka,
- *     es a property a rovidites nelkul is atmenne. Es az esetekben osszesen
- *     legalabb MIN_REQUIRED ilyen elem van.
+ *  1. THE PROPERTY: in the report "narrow items get a label" is green, with a
+ *     seed, and at least MIN_CASES cases. A missing report is a FAILURE: the
+ *     package command deletes it first, so its presence means it ran NOW.
+ *  2. THE CONTROL: the same cases with the earlier strategy (labelOverflow:
+ *     "drop") leave, in the MAJORITY of cases, at least one item without a
+ *     label that the oracle says is entitled to one — otherwise the data is
+ *     too sparse, and the property would pass without truncation too. And
+ *     across the cases there are at least MIN_REQUIRED such items in total.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -38,13 +38,13 @@ const failures = [];
 const notes = [];
 const read = (file) => {
   if (!existsSync(file)) {
-    failures.push(`hianyzik: ${file} — a keszlet NEM futott le, ezert BUKAS`);
+    failures.push(`missing: ${file} — the suite did NOT run, so this is a FAILURE`);
     return undefined;
   }
   try {
     return JSON.parse(readFileSync(file, "utf8"));
   } catch (error) {
-    failures.push(`olvashatatlan: ${file}: ${String(error)}`);
+    failures.push(`unreadable: ${file}: ${String(error)}`);
     return undefined;
   }
 };
@@ -53,38 +53,38 @@ const report = read(reportFile);
 if (report !== undefined) {
   const entry = Array.isArray(report) ? report.find((candidate) => candidate?.name === PROPERTY) : undefined;
   if (entry === undefined) {
-    failures.push(`a property hianyzik a riportbol: "${PROPERTY}"`);
+    failures.push(`the property is missing from the report: "${PROPERTY}"`);
   } else {
-    if (entry.passed !== true) failures.push(`bukott: ${PROPERTY} — ${JSON.stringify(entry.counterexample ?? null)}`);
+    if (entry.passed !== true) failures.push(`failed: ${PROPERTY} — ${JSON.stringify(entry.counterexample ?? null)}`);
     if (!Number.isInteger(entry.cases) || entry.cases < MIN_CASES) {
-      failures.push(`${PROPERTY}: ${String(entry.cases)} eset, de legalabb ${String(MIN_CASES)} kell`);
+      failures.push(`${PROPERTY}: ${String(entry.cases)} cases, but at least ${String(MIN_CASES)} are required`);
     }
-    if (!Number.isFinite(entry.seed)) failures.push(`${PROPERTY}: nincs seed`);
-    if (entry.passed === true) notes.push(`${PROPERTY}: ${String(entry.cases)} eset, seed ${String(entry.seed)}`);
+    if (!Number.isFinite(entry.seed)) failures.push(`${PROPERTY}: no seed`);
+    if (entry.passed === true) notes.push(`${PROPERTY}: ${String(entry.cases)} cases, seed ${String(entry.seed)}`);
   }
 }
 
 const control = read(controlFile);
 if (control !== undefined) {
   if (!(control.cases >= MIN_CASES)) {
-    failures.push(`a kontroll csak ${String(control.cases)} esetet futott, legalabb ${String(MIN_CASES)} kell`);
+    failures.push(`the control ran only ${String(control.cases)} cases, at least ${String(MIN_CASES)} are required`);
   }
   if (!(control.required >= MIN_REQUIRED)) {
-    failures.push(`az esetekben csak ${String(control.required)} cimkere jogosult elem van, legalabb ${String(MIN_REQUIRED)} kell`);
+    failures.push(`the cases hold only ${String(control.required)} items entitled to a label, at least ${String(MIN_REQUIRED)} are required`);
   }
   if (!(control.casesMissedByDrop > control.cases / 2)) {
     failures.push(
-      `a kontroll NEM bukik az esetek tobbsegeben: a P15-os strategia csak ${String(control.casesMissedByDrop)} / ${String(control.cases)} esetben hagy cimkere jogosult elemet cimke nelkul`,
+      `the control does NOT fail in the majority of cases: the drop strategy leaves an item entitled to a label without one in only ${String(control.casesMissedByDrop)} / ${String(control.cases)} cases`,
     );
   } else {
     notes.push(
-      `kontroll: a P15-os strategia (drop) ${String(control.casesMissedByDrop)} / ${String(control.cases)} esetben hagy cimkere jogosult elemet cimke nelkul ` +
-        `(${String(control.missedByDrop)} / ${String(control.required)} elem); a roviditett cimkek szama ${String(control.shortened)}`,
+      `control: the drop strategy leaves an item entitled to a label without one in ${String(control.casesMissedByDrop)} / ${String(control.cases)} cases ` +
+        `(${String(control.missedByDrop)} / ${String(control.required)} items); truncated labels: ${String(control.shortened)}`,
     );
   }
 }
 
 for (const note of notes) console.log(`  ok    ${note}`);
-for (const failure of failures) console.log(`  BUKAS ${failure}`);
-console.log(failures.length === 0 ? "G-NARROW-LABELS: atment" : "G-NARROW-LABELS: BUKOTT");
+for (const failure of failures) console.log(`  FAIL  ${failure}`);
+console.log(failures.length === 0 ? "G-NARROW-LABELS: passed" : "G-NARROW-LABELS: FAILED");
 process.exit(failures.length === 0 ? 0 : 1);

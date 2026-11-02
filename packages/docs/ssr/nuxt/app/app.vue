@@ -1,8 +1,8 @@
 <script setup>
-// A Nuxt szerverén (Nitro, Node) a Vue-adapter maga rajzol: a komponens a
-// Vue SSR-kontextusában a renderTimelineSvg rajzát írja a markupba, a
-// kliensen pedig a példány hidratálással átveszi — kliens-plugin és
-// isCustomElement nélkül (P23).
+// On Nuxt's server (Nitro, Node) the Vue adapter draws by itself: in Vue's
+// SSR context the component writes renderTimelineSvg's drawing into the
+// markup, and on the client the instance takes it over by hydration — with
+// no client plugin and no isCustomElement.
 import { Timeline, useTimelineState } from "@temporeum/timeline-vue";
 import { shallowRef } from "vue";
 
@@ -12,7 +12,7 @@ const timeline = shallowRef(null);
 const selected = useTimelineState(timeline, (snapshot) => snapshot.selectedIds);
 const onReady = (instance) => {
   timeline.value = instance;
-  // A teszt innen tudja, hogy a kliens átvette a rajzot.
+  // This is how the test knows the client has taken over the drawing.
   window.__tl = instance;
 };
 </script>

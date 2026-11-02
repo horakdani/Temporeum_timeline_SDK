@@ -175,7 +175,7 @@ for (const width of matrix.widths) {
             id: `far${String(index)}`,
             start: at("2030-01-01T00:00:00Z") + index * 86_400_000,
             end: at("2030-01-02T00:00:00Z") + index * 86_400_000,
-            label: `Távoli ${String(index)}`,
+            label: `Far ${String(index)}`,
             laneId: scenario.lanes[index % scenario.lanes.length]?.id ?? "",
           }));
           const crowded = renderTimeline({

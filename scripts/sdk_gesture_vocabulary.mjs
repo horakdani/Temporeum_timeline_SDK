@@ -1,21 +1,21 @@
 /**
- * A gesztusok szokincse — a bemeneti gep SAJAT tipusaibol levezetve.
+ * The gesture vocabulary — derived from the input machine's OWN types.
  *
- * Ket kapu osztozik rajta: a G-NO-GESTURE-ONLY (statikus) es a G-KEYBOARD
- * (futasideju). Mindketto ugyanazt a kerdest teszi fel — "van-e olyan
- * kepesseg, amit csak gesztussal lehet elerni?" —, es a kerdes csak akkor
- * becsuletes, ha a kepessegek listaja NEM kezzel irt lista. Egy kezzel irt
- * lista pont annyit er, amennyit a szerzoje eszrevett: ha holnap a gep egy
- * uj szerkesztesi modot kap (mondjuk "duplicate"), a lista nem tud rola, es
- * a kapu zolden atengedi.
+ * Two checks share it: G-NO-GESTURE-ONLY (static) and G-KEYBOARD (runtime).
+ * Both ask the same question — "is there a capability that can only be
+ * reached with a gesture?" —, and the question is only honest if the list of
+ * capabilities is NOT a hand-written list. A hand-written list is worth
+ * exactly as much as its author noticed: if tomorrow the machine gets a new
+ * edit mode (say "duplicate"), the list does not know about it, and the
+ * check lets it through green.
  *
- * Ezert a lista a TypeScript tipusellenorzobol jon: az `InputEffect` unio
- * minden tagja, az `InputViewportReason` es az `EditMode` minden literalja,
- * a `ViewportEffect` es a `TapEffect` minden mezoje, es a szerkesztesi meg a
- * bemeneti kapcsolok. Mindegyiket OSZTALYOZNI kell az alabbi tablakban:
- * kepesseg (kell hozza billentyu), jelzes (nem kepesseg, csak ertesites),
- * vagy a billentyuzet sajat effektje. Az ismeretlen tag BUKAS — igy egy uj
- * gesztus-kepesseg nem tud csendben beszivarogni.
+ * So the list comes from the TypeScript type checker: every member of the
+ * `InputEffect` union, every literal of `InputViewportReason` and `EditMode`,
+ * every field of `ViewportEffect` and `TapEffect`, and the editing and input
+ * switches. Each of them must be CLASSIFIED in the tables below: capability
+ * (needs a key), signal (not a capability, only a notification), or the
+ * keyboard's own effect. An unknown member is a FAILURE — so a new gesture
+ * capability cannot slip in silently.
  */
 
 import { dirname, join, resolve } from "node:path";
@@ -29,7 +29,7 @@ export const INPUT_FILE = join(CORE, "src", "input.ts");
 export const KEYBOARD_FILE = join(CORE, "src", "keyboard.ts");
 export const ATTACH_FILE = join(CORE, "src", "dom", "attach.ts");
 
-/** Az `InputEffect` tagjai: mi micsoda. */
+/** The members of `InputEffect`: what each one is. */
 export const EFFECT_CLASSES = {
   viewport: "capability",
   tap: "capability",
@@ -46,7 +46,7 @@ export const EFFECT_CLASSES = {
   jumpRequest: "keyboard",
 };
 
-/** A `ViewportEffect` mezoi. */
+/** The fields of `ViewportEffect`. */
 export const VIEWPORT_FIELDS = {
   type: "discriminant",
   domain: "via-reason",
@@ -55,16 +55,16 @@ export const VIEWPORT_FIELDS = {
   atLimit: "signal",
 };
 
-/** Az `InputViewportReason` literaljai. */
+/** The literals of `InputViewportReason`. */
 export const REASON_CAPABILITIES = {
   pan: ["view.pan.later", "view.pan.earlier"],
   zoom: ["view.zoom.in", "view.zoom.out"],
 };
 
 /**
- * A `TapEffect` mezoi. Egy koppintas a hosztnak kijeloles (talalt elem) vagy
- * elengedes (semmi); a dupla koppintas befele, a ket ujjas kifele zoomol; es
- * barmelyik elem elerheto vele, amit a szem lat.
+ * The fields of `TapEffect`. To the host a tap is a selection (an item was
+ * hit) or a deselection (nothing); a double tap zooms in, a two-finger tap
+ * zooms out; and any item the eye can see can be reached with it.
  */
 export const TAP_FIELDS = {
   type: "discriminant",
@@ -76,34 +76,34 @@ export const TAP_FIELDS = {
   durationMs: "signal",
 };
 
-/** Az `EditMode` literaljai. */
+/** The literals of `EditMode`. */
 export const MODE_CAPABILITIES = {
   move: ["edit.move.later", "edit.move.earlier"],
   "resize-start": ["edit.resize-start.later", "edit.resize-start.earlier"],
   "resize-end": ["edit.resize-end.later", "edit.resize-end.earlier"],
 };
 
-/** Az `EditingInputOptions` boolean kapcsoloi. */
+/** The boolean switches of `EditingInputOptions`. */
 export const EDITING_SWITCHES = {
   enabled: "rule.disabled",
   crossLane: ["edit.lane.next", "edit.lane.previous"],
   multiSelect: ["edit.selection"],
 };
 
-/** Az `InputOptions` boolean kapcsoloi. */
+/** The boolean switches of `InputOptions`. */
 export const INPUT_SWITCHES = {
   pan: "rule.disabled",
   zoom: "rule.disabled",
 };
 
-/** A szabalyok, amiknek mindket uton allniuk kell. */
+/** The rules that must hold on both paths. */
 export const RULES = ["rule.veto", "rule.locked", "rule.disabled"];
 
 /**
- * Kepesseg -> a billentyus akcio, ami eleri, es amit az akcio agaban HIVNI
- * kell: a gesztus sajat ikre (ugyanaz a kod, nem masolat). A `context` a
- * teljes agat tartalmazo fuggvenyben kell, hogy alljon (a kijeloles
- * szabalya minden mozgato agra ervenyes, ezert az ag elott all).
+ * Capability -> the key action that reaches it, and what the action's branch
+ * MUST CALL: the gesture's own twin (the same code, not a copy). The
+ * `context` must appear in the function containing the whole branch (the
+ * selection rule applies to every moving branch, so it comes before the branch).
  */
 export const KEY_ROUTES = {
   "view.pan.later": { actions: ["panLater"], calls: ["panDomainBy("] },
@@ -151,14 +151,14 @@ function declarationOf(sources, name) {
     visit(source);
     if (found !== undefined) return found;
   }
-  throw new Error(`nincs ilyen tipus a magban: ${name}`);
+  throw new Error(`no such type in the core: ${name}`);
 }
 
 /**
- * A szokincs, a tipusellenorzobol.
+ * The vocabulary, from the type checker.
  *
- * Visszaad: a nyers tagokat (amit a tipusok mondanak), az osztalyozas
- * hibait (ismeretlen tag), es a levezetett kepessegek listajat.
+ * Returns: the raw members (what the types say), the classification errors
+ * (unknown members), and the list of derived capabilities.
  */
 export function gestureVocabulary() {
   const built = program();
@@ -179,7 +179,7 @@ export function gestureVocabulary() {
       .map((symbol) => symbol.getName());
 
   const effectType = typeOf("InputEffect");
-  // A tag `type` mezoje maga is lehet unio (`gestureStart | gestureEnd`).
+  // A member's `type` field can itself be a union (`gestureStart | gestureEnd`).
   const effectTypes = (effectType.isUnion() ? effectType.types : [effectType]).flatMap((member) => {
     const property = member.getProperty("type");
     return property === undefined ? [undefined] : literalsOf(checker.getTypeOfSymbol(property));
@@ -199,64 +199,64 @@ export function gestureVocabulary() {
   const classify = (kind, members, table) => {
     for (const member of members) {
       if (member === undefined || !(member in table)) {
-        problems.push(`osztalyozatlan ${kind}: ${String(member)} — gesztus-kepesseg vagy jelzes? Dontsd el a sdk_gesture_vocabulary.mjs-ben`);
+        problems.push(`unclassified ${kind}: ${String(member)} — gesture capability or signal? Decide in sdk_gesture_vocabulary.mjs`);
         continue;
       }
       const value = table[member];
       if (Array.isArray(value)) for (const capability of value) capabilities.add(capability);
     }
   };
-  classify("effekt-tipus", raw.effectTypes, EFFECT_CLASSES);
-  classify("viewport-mezo", raw.viewportFields, VIEWPORT_FIELDS);
-  classify("viewport-ok", raw.reasons, REASON_CAPABILITIES);
-  classify("tap-mezo", raw.tapFields, TAP_FIELDS);
-  classify("szerkesztesi mod", raw.modes, MODE_CAPABILITIES);
-  classify("szerkesztesi kapcsolo", raw.editingSwitches, EDITING_SWITCHES);
-  classify("bemeneti kapcsolo", raw.inputSwitches, INPUT_SWITCHES);
-  // A tabla nem tarthat olyat, amit a tipusok mar nem ismernek: egy elavult
-  // sor elfedne, hogy a szokincs megvaltozott.
+  classify("effect type", raw.effectTypes, EFFECT_CLASSES);
+  classify("viewport field", raw.viewportFields, VIEWPORT_FIELDS);
+  classify("viewport reason", raw.reasons, REASON_CAPABILITIES);
+  classify("tap field", raw.tapFields, TAP_FIELDS);
+  classify("edit mode", raw.modes, MODE_CAPABILITIES);
+  classify("editing switch", raw.editingSwitches, EDITING_SWITCHES);
+  classify("input switch", raw.inputSwitches, INPUT_SWITCHES);
+  // The table must not hold anything the types no longer know: a stale row
+  // would hide that the vocabulary has changed.
   const stale = (kind, members, table) => {
     for (const key of Object.keys(table)) {
-      if (!members.includes(key)) problems.push(`elavult ${kind} a tablaban: ${key} — a tipusok mar nem ismerik`);
+      if (!members.includes(key)) problems.push(`stale ${kind} in the table: ${key} — the types no longer know it`);
     }
   };
-  stale("effekt-tipus", raw.effectTypes, EFFECT_CLASSES);
-  stale("viewport-mezo", raw.viewportFields, VIEWPORT_FIELDS);
-  stale("viewport-ok", raw.reasons, REASON_CAPABILITIES);
-  stale("tap-mezo", raw.tapFields, TAP_FIELDS);
-  stale("szerkesztesi mod", raw.modes, MODE_CAPABILITIES);
-  stale("szerkesztesi kapcsolo", raw.editingSwitches, EDITING_SWITCHES);
-  stale("bemeneti kapcsolo", raw.inputSwitches, INPUT_SWITCHES);
+  stale("effect type", raw.effectTypes, EFFECT_CLASSES);
+  stale("viewport field", raw.viewportFields, VIEWPORT_FIELDS);
+  stale("viewport reason", raw.reasons, REASON_CAPABILITIES);
+  stale("tap field", raw.tapFields, TAP_FIELDS);
+  stale("edit mode", raw.modes, MODE_CAPABILITIES);
+  stale("editing switch", raw.editingSwitches, EDITING_SWITCHES);
+  stale("input switch", raw.inputSwitches, INPUT_SWITCHES);
   for (const capability of capabilities) {
-    if (!(capability in KEY_ROUTES)) problems.push(`nincs billentyus utvonal ehhez a kepesseghez: ${capability}`);
+    if (!(capability in KEY_ROUTES)) problems.push(`no keyboard route for this capability: ${capability}`);
   }
   return { raw, problems, capabilities: [...capabilities].sort(), rules: RULES };
 }
 
-// --- P19: a belepesi pontok kepessegei ----------------------------------------
+// --- the entry points' capabilities ----------------------------------------
 //
-// A csoportok es az elemek hozzaadasa/torlese nem a bemeneti gepben el (annak
-// belepesi pontja megtelt, P19 nyito 1), hanem a /groups es az /items
-// belepesi pontban, es a createTimeline koti be oket. A szokincs itt is a
-// tipusokbol jon: a GroupKeyAction es az ItemKeyAction minden tagja
-// osztalyozva van, es minden kepessegnek van gesztus- ES billentyuoldali utja
-// a web-component forrasaban, ugyanabba a kozos fuggvenybe futva.
+// Groups and adding/removing items do not live in the input machine (its
+// entry point was full), but in the /groups and /items entry points, and
+// createTimeline wires them in. Here too the vocabulary comes from the
+// types: every member of GroupKeyAction and ItemKeyAction is classified, and
+// every capability has a gesture-side AND a keyboard-side path in the
+// web-component source, both running into the same shared function.
 
 export const ENTRY_FILES = {
   groups: join(CORE, "src", "groups", "index.ts"),
   items: join(CORE, "src", "items", "index.ts"),
   timeline: join(repoRoot, "packages", "web-component", "src", "timeline.ts"),
   layer: join(repoRoot, "packages", "web-component", "src", "groups.ts"),
-  // P20: a Gantt billentyui a /gantt pontban, a tablazat a web-componentben.
+  // The Gantt keys are in the /gantt entry point, the grid in the web-component.
   gantt: join(CORE, "src", "gantt", "index.ts"),
   grid: join(repoRoot, "packages", "web-component", "src", "task-grid.ts"),
-  // P22: a varolista (az utemezetlen feladatok) a web-componentben.
+  // The backlog (the unscheduled tasks) is in the web-component.
   backlog: join(repoRoot, "packages", "web-component", "src", "backlog.ts"),
-  // P24: az ido-eszkozok retege (idovonalak, attekinto sav, tartomany, tooltip).
+  // The time tools layer (time bars, overview strip, range, tooltip).
   tools: join(repoRoot, "packages", "web-component", "src", "tools.ts"),
 };
 
-/** Billentyu-akcio -> kepesseg. `null`: csak a fa bejarasa — a mutatonak nincs ilyen gesztusa (a fejlecre kattintas a fokuszt is odateszi). */
+/** Key action -> capability. `null`: only tree navigation — the pointer has no such gesture (clicking a header moves the focus there too). */
 export const ENTRY_KEY_ACTIONS = {
   GroupKeyAction: {
     next: null,
@@ -270,20 +270,20 @@ export const ENTRY_KEY_ACTIONS = {
     moveLater: "group.reorder",
   },
   ItemKeyAction: { add: "item.add", remove: "item.remove" },
-  // P20. A fuggoseg kovetese csak billentyu: a nyil nem fog mutatot, mindent,
-  // amit mond, a ket elem neve mond el.
+  // Following a dependency is keyboard-only: the arrow does not catch the
+  // pointer; everything it says is said by the names of the two items.
   DependencyKeyAction: { predecessor: null, successor: null },
-  // A tablazat bejarasa: a gorgo a tablazaton a peldany scrollLanes-et hivja,
-  // ami a gep sajat keresztiranyu pasztazasa — annak billentyus ikre a gep
-  // szokincseben van. A sor megnyitasa (kattintas = Enter) uj kepesseg.
+  // Grid navigation: the wheel on the grid calls the instance's scrollLanes,
+  // which is the machine's own cross-axis pan — its keyboard twin is in the
+  // machine's vocabulary. Opening a row (click = Enter) is a new capability.
   GridKeyAction: { next: null, previous: null, first: null, last: null, pageDown: null, pageUp: null, open: "grid.open" },
 };
 
 /**
- * Kepesseg -> hol a gesztus utja, hol a billentyue (a `file` forrasaban), es
- * a kozos fuggveny, amit MINDKETTO hiv. A behuzas billentyus ikre nem
- * billentyu-akcio, hanem a peldany `dropItem` hivasa, amit a host a sajat
- * listajanak billentyujere kot.
+ * Capability -> where the gesture's path is, where the key's (in the source
+ * of `file`), and the shared function that BOTH call. The keyboard twin of
+ * dropping is not a key action but a call to the instance's `dropItem`,
+ * which the host binds to a key of its own list.
  */
 export const ENTRY_ROUTES = {
   "group.toggle": { file: "layer", gesture: ["host.toggle(id, row.expanded)"], key: ["host.toggle(step.toggle.id"], shared: "host.toggle(" },
@@ -292,22 +292,22 @@ export const ENTRY_ROUTES = {
   "item.remove": { file: "timeline", gesture: ['closest("[data-tl-remove]")'], key: ['action === "remove"'], shared: "commitRemove(" },
   "item.drop": { file: "timeline", gesture: ["commitAdd(itemFromDrop(items, payload, target))"], key: ["dropItem(payload)"], shared: "commitAdd(" },
   "grid.open": { file: "grid", gesture: ["open(index)"], key: ["open(focusedIndex)"], shared: "open(" },
-  // P22: a varolista sora huzassal (egy mutatos ut egerre, tollra, ujjra) es
-  // Enterrel/Szokozzel kerul a vaszonra; mindketto ugyanabbol a payloadOf-bol
-  // tesz le, es a peldanyban ugyanabba a commitAdd-ba fut (azt a G-BACKLOG
-  // meroje olvassa a timeline.ts-bol).
+  // A backlog row gets onto the canvas by dragging (one pointer path for
+  // mouse, pen and finger) and by Enter/Space; both drop from the same
+  // payloadOf, and in the instance both run into the same commitAdd (the
+  // G-BACKLOG check reads that from timeline.ts).
   "backlog.place": { file: "backlog", gesture: ["timeline.dropItemAt(payloadOf(task)"], key: ["timeline.dropItem(payloadOf(task))"], shared: "payloadOf(task)" },
-  // P24: az ido-eszkozok. Minden gesztus es a billentyuje ugyanabba a gazda-
-  // fuggvenybe fut (host.moveBar, host.setDomain, commitRange); a tooltip a
-  // mutato alatti elemre (hitAt) es a billentyu fokuszara (focused) ugyanazzal
-  // a showTip-pel jelenik meg.
+  // The time tools. Every gesture and its key run into the same host
+  // function (host.moveBar, host.setDomain, commitRange); the tooltip appears
+  // with the same showTip for the item under the pointer (hitAt) and for the
+  // keyboard focus (focused).
   "timebar.move": { file: "tools", gesture: ["dragTimeBarTime("], key: ["timeBarKeyTime("], shared: "host.moveBar(" },
   "minimap.move": { file: "tools", gesture: ["minimapDragDomain("], key: ["minimapKeyDomain("], shared: "host.setDomain(" },
   "range.select": { file: "tools", gesture: ["rangeFromDrag("], key: ["rangeKeyStep("], shared: "commitRange(" },
   "item.tooltip": { file: "tools", gesture: ["host.hitAt("], key: ["host.focused()"], shared: "showTip(" },
 };
 
-/** A P19 szokincse a tipusokbol: a kepessegek, es az osztalyozas hibai. */
+/** The entry points' vocabulary from the types: the capabilities, and the classification errors. */
 export function entryVocabulary() {
   const configPath = join(CORE, "tsconfig.json");
   const config = ts.readConfigFile(configPath, ts.sys.readFile);
@@ -322,22 +322,22 @@ export function entryVocabulary() {
     const type = checker.getTypeAtLocation(declaration.name);
     const members = (type.isUnion() ? type.types : [type]).map((member) => member.value);
     for (const member of members) {
-      if (!(member in table)) problems.push(`osztalyozatlan ${typeName}: ${String(member)} — dontsd el a sdk_gesture_vocabulary.mjs-ben`);
+      if (!(member in table)) problems.push(`unclassified ${typeName}: ${String(member)} — decide in sdk_gesture_vocabulary.mjs`);
       else if (table[member] !== null) capabilities.add(table[member]);
     }
     for (const key of Object.keys(table)) {
-      if (!members.includes(key)) problems.push(`elavult ${typeName} a tablaban: ${key}`);
+      if (!members.includes(key)) problems.push(`stale ${typeName} in the table: ${key}`);
     }
   }
   for (const capability of capabilities) {
-    if (!(capability in ENTRY_ROUTES)) problems.push(`nincs utvonal-leiras ehhez a P19-kepesseghez: ${capability}`);
+    if (!(capability in ENTRY_ROUTES)) problems.push(`no route description for this entry-point capability: ${capability}`);
   }
-  // A behuzasnak nincs billentyu-akcioja, a dropItem az ikre — de kepesseg.
+  // Dropping has no key action, dropItem is its twin — but it is a capability.
   capabilities.add("item.drop");
-  // A varolista behuzasa sem billentyu-akcio: a sajat listabox Enterje.
+  // Placing from the backlog is not a key action either: it is its own listbox's Enter.
   capabilities.add("backlog.place");
-  // P24: az ido-eszkozok billentyui a sajat vezerlojukon elnek (a csuszka
-  // nyilai, az r a tartomanyhoz), nem a gep billentyu-akcioi kozott.
+  // The time tools' keys live on their own controls (the slider's arrows,
+  // r for the range), not among the machine's key actions.
   for (const capability of ["timebar.move", "minimap.move", "range.select", "item.tooltip"]) capabilities.add(capability);
   return { problems, capabilities: [...capabilities].sort() };
 }

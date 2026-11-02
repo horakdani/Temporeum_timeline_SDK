@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * G-TYPES második fele — bizonyítja, hogy a PUBLIKUS API-ban nincs `any`.
+ * The second half of G-TYPES — proves that there is no `any` in the PUBLIC API.
  *
- * A `tsc --noEmit` a strict módot ellenőrzi, de egy `any` a publikus
- * felületen attól még átmehet (pl. következtetésből vagy egy harmadik fél
- * típusából szivárog be). Az eslint `no-explicit-any` a kiírt `any`-t fogja
- * meg, a kikövetkeztetettet nem. Ez a szkript a VÉGEREDMÉNYT nézi: kiíratja a
- * .d.ts-eket egy ideiglenes könyvtárba, és abban keres `any`-t.
+ * `tsc --noEmit` checks strict mode, but an `any` can still get through on the
+ * public surface (e.g. it leaks in through inference or from a third party's
+ * types). eslint's `no-explicit-any` catches a written `any`, not an inferred
+ * one. This script looks at the END RESULT: it emits the .d.ts files into a
+ * temporary directory and searches them for `any`.
  *
- * Miért fontos: a típusígéret a termék része. Egy `any` a publikus felületen
- * azt jelenti, hogy a felhasználó pont ott nem kap autocomplete-et, ahol a
- * könyvtár a legtöbbet ígéri.
+ * Why it matters: the type promise is part of the product. An `any` on the
+ * public surface means the user gets no autocomplete exactly where the
+ * library promises the most.
  */
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -35,7 +35,7 @@ function walk(dir) {
   return out;
 }
 
-/** A megjegyzéseket kiszedi, hogy a magyarázó szöveg ne adjon hamis találatot. */
+/** Strips the comments, so that explanatory text does not give a false hit. */
 function stripComments(source) {
   return source
     .replace(/\/\*[\s\S]*?\*\//g, "")
@@ -46,8 +46,8 @@ try {
   execFileSync(
     process.execPath,
     [
-      // A typescript hoistolódhat a gyökérbe vagy a csomagba; feloldatjuk,
-      // nem tippelünk útvonalat.
+      // typescript may be hoisted to the root or sit in the package; we resolve
+      // it rather than guess a path.
       createRequire(join(packageDir, "package.json")).resolve(
         "typescript/bin/tsc",
       ),
@@ -64,7 +64,7 @@ try {
   const declarations = walk(outDir);
   if (declarations.length === 0) {
     console.error(
-      "HIBA: egyetlen .d.ts sem keletkezett — az ellenőrzés nem futott le, tehát BUKÁS.",
+      "ERROR: not a single .d.ts was produced — the check did not run, so this is a FAILURE.",
     );
     process.exit(1);
   }
@@ -80,14 +80,14 @@ try {
   }
 
   if (hits.length > 0) {
-    console.error(`\nHIBA: ${hits.length} \`any\` a publikus típusfelületen:`);
+    console.error(`\nERROR: ${hits.length} \`any\` on the public type surface:`);
     for (const hit of hits) console.error(`  ${hit}`);
-    console.error("\nG-TYPES BUKOTT.");
+    console.error("\nG-TYPES FAILED.");
     process.exit(1);
   }
 
   console.log(
-    `  ok   ${declarations.length} .d.ts fájl, 0 \`any\` a publikus felületen`,
+    `  ok   ${declarations.length} .d.ts files, 0 \`any\` on the public surface`,
   );
 } finally {
   rmSync(outDir, { recursive: true, force: true });

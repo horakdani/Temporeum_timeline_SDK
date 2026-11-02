@@ -1,21 +1,21 @@
 #!/usr/bin/env node
 /**
- * G-BACKLOG: egy utemezetlen feladat gesztussal es billentyuvel is a vaszonra
- * kerul, ugyanazzal a paranccsal.
+ * G-BACKLOG: an unscheduled task reaches the canvas by gesture and by
+ * keyboard alike, with the same command.
  *
- * Futasidoben (a magban): a gesztus celpontja (az elengedes alatti ido es
- * sav, a terhelesi sav az eroforrasat jelenti) es a billentyu celpontja (a
- * nezet kozepe a fokuszalt elem savjaban) ugyanazt az egy add parancsot adja,
- * a feladat sajat id-javal, mezoivel es hosszaval; ahol a gesztus a
- * billentyu helyen enged el, a ket parancs betu szerint azonos (same-command);
- * a feladat a parancsra lekerul a listarol, az inverzre a pontos elemekkel
- * visszakerul (back-on-undo).
+ * At runtime (in the core): the gesture's target (the time and lane under the
+ * release, where a load lane stands for its resource) and the keyboard's
+ * target (the middle of the view, in the focused item's lane) yield the same
+ * single add command, with the task's own id, fields and duration; where the
+ * gesture releases at the keyboard's spot, the two commands are identical to
+ * the letter (same-command); the command takes the task off the list, and the
+ * inverse puts it back with the exact items (back-on-undo).
  *
- * Statikusan (az elem forrasabol): a mountBacklog mutatos huzasa a
- * timeline.dropItemAt-et, a billentyuje a timeline.dropItem-et hivja; a
- * peldany dropItemAt-je, dropItem-je es a HTML-ejtes mind ugyanabba az egy
- * commitAdd-ba fut, ami az /items addCommand-jat hivja. Igy a ket ut
- * parancsa nem csak a tesztben azonos, hanem a kodban is egy helyen keszul.
+ * Statically (from the element's source): mountBacklog's pointer drag calls
+ * timeline.dropItemAt, its keyboard calls timeline.dropItem; the instance's
+ * dropItemAt, dropItem and the HTML drop all run into the same single
+ * commitAdd, which calls the /items addCommand. So the two paths' command is
+ * not only identical in the test, it is also built in one place in the code.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -26,15 +26,15 @@ import { checkReport, codeOf, finish } from "./sdk_suite_report.mjs";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const failures = checkReport({
   file: join(root, "packages", "core", ".backlog-report.json"),
-  label: "varolista",
+  label: "backlog",
   minTests: 2,
   claims: ["same-command", "back-on-undo"],
 });
 
 /**
- * Egy fuggveny vagy metodus torzse: a nev utani elso sorvegi `{`-tol a
- * parjaig. Sorvegi, mert egy parameter tipus-literalja (`{ readonly x }`)
- * is `{`-vel kezdodik, de nem a sor vegen.
+ * The body of a function or method: from the first line-ending `{` after the
+ * name to its match. Line-ending, because a parameter's type literal
+ * (`{ readonly x }`) also starts with `{`, but not at the end of a line.
  */
 function bodyOf(code, head) {
   const at = code.indexOf(head);
@@ -56,21 +56,21 @@ const backlog = codeOf(readFileSync(join(element, "backlog.ts"), "utf8"));
 const timeline = codeOf(readFileSync(join(element, "timeline.ts"), "utf8"));
 
 const expectations = [
-  [backlog, "function endDrag(", "timeline.dropItemAt(", "a varolista mutatos huzasa nem a timeline.dropItemAt-tel tesz le"],
-  [backlog, "function onKey(", "timeline.dropItem(", "a varolista billentyuje nem a timeline.dropItem-mel tesz le"],
-  [timeline, "dropItemAt(payload, at)", "dropAt(", "a peldany dropItemAt-je nem a kozos dropAt-on at tesz le"],
-  [timeline, "function dropAt(", "commitAdd(", "a dropAt nem a commitAdd-ba fut"],
-  [timeline, "dropItem(payload)", "commitAdd(", "a peldany dropItem-je nem a commitAdd-ba fut"],
-  [timeline, "function onDrop(", "dropAt(", "a HTML-ejtes nem a kozos dropAt-on at tesz le"],
-  [timeline, "function commitAdd(", "addCommand(", "a commitAdd nem az /items addCommand-javal kesziti a parancsot"],
+  [backlog, "function endDrag(", "timeline.dropItemAt(", "the backlog's pointer drag does not drop through timeline.dropItemAt"],
+  [backlog, "function onKey(", "timeline.dropItem(", "the backlog's keyboard does not drop through timeline.dropItem"],
+  [timeline, "dropItemAt(payload, at)", "dropAt(", "the instance's dropItemAt does not drop through the shared dropAt"],
+  [timeline, "function dropAt(", "commitAdd(", "dropAt does not run into commitAdd"],
+  [timeline, "dropItem(payload)", "commitAdd(", "the instance's dropItem does not run into commitAdd"],
+  [timeline, "function onDrop(", "dropAt(", "the HTML drop does not drop through the shared dropAt"],
+  [timeline, "function commitAdd(", "addCommand(", "commitAdd does not build the command with the /items addCommand"],
 ];
 for (const [code, head, call, message] of expectations) {
   const body = bodyOf(code, head);
-  if (body === undefined) failures.push(`nincs ${head} a forrasban`);
+  if (body === undefined) failures.push(`no ${head} in the source`);
   else if (!body.includes(call)) failures.push(message);
 }
-// A varolista nem kesziti maga a parancsot: egy masodik ut eltérhetne.
+// The backlog does not build the command itself: a second path could diverge.
 for (const needle of ["addCommand(", "createCommand(", "applyItemPatches("]) {
-  if (backlog.includes(needle)) failures.push(`a varolista maga kesziti a parancsot (${needle})`);
+  if (backlog.includes(needle)) failures.push(`the backlog builds the command itself (${needle})`);
 }
 finish("G-BACKLOG", failures);

@@ -5,13 +5,13 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 
 /**
- * G-DROP, igazi böngészőben: egy külső elem a mutató alatti időpontra és
- * sávra kerül — valódi HTML5 drag-and-drop, a shippelt bundle-ökkel —, és a
- * billentyűs ikre (Enter a forráson → `dropItem`) a fókuszált sávra, a nézet
- * közepére teszi ugyanazt.
+ * G-DROP, in a real browser: an external element lands at the time and in
+ * the lane under the pointer — real HTML5 drag-and-drop, with the shipped
+ * bundles — and its keyboard twin (Enter on the source → `dropItem`) puts
+ * the same into the focused lane, in the middle of the view.
  *
- * Az eredmény a `.drop-browser-log.json`-be kerül; a sdk_check_drop.mjs
- * abból ítél, nem a tesztek címéből.
+ * The result goes to `.drop-browser-log.json`; sdk_check_drop.mjs judges
+ * from that, not from the test titles.
  */
 
 const here = dirname(fileURLToPath(import.meta.url));

@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * G-PERF-GANTT merese: 10 000 feladat es 10 000 fuggoseg a publikus uton
- * (packages/docs/bench/gantt.html, a kiadott dist), pasztazas es gorgos
- * zoom, 4x CPU-lassitassal, friss lapokon — es ugyanez nyil-culling nelkul
- * (`?cull=0`), a negativ kontrollnak.
+ * The G-PERF-GANTT measurement: 10 000 tasks and 10 000 dependencies on the
+ * public path (packages/docs/bench/gantt.html, the shipped dist), pan and
+ * wheel zoom, with 4x CPU throttling, on fresh pages — and the same without
+ * arrow culling (`?cull=0`), as the negative control.
  *
- * A pasztazas es a zoom ugyanaz a mozdulat, mint a vis-osszevetes merese
- * (sdk_bench_field.mjs): 24 huzas a tengelyen, illetve Control + 8 lepes be
- * es 8 ki 50 ms-onkent. Az itelet a sdk_check_perf_gantt.mjs-e.
+ * The pan and the zoom are the same gestures as in the vis comparison
+ * measurement (sdk_bench_field.mjs): 24 drags on the axis, and Control + 8
+ * notches in and 8 out every 50 ms. The verdict is sdk_check_perf_gantt.mjs's.
  */
 
 /* global fetch, setTimeout, window */
@@ -64,13 +64,13 @@ const server = createServer((request, response) => {
   response.writeHead(404).end();
 });
 await new Promise((done, fail) => {
-  server.once("error", (error) => fail(error.code === "EADDRINUSE" ? new Error(`a ${String(PORT)} port foglalt — idegen lapot nem merunk`) : error));
+  server.once("error", (error) => fail(error.code === "EADDRINUSE" ? new Error(`port ${String(PORT)} is taken — we do not measure someone else's page`) : error));
   server.listen(PORT, "127.0.0.1", done);
 });
 const marker = await (await fetch(`${BASE}/bench/gantt.html`)).text();
 if (!marker.includes('data-bench-gantt="temporeum"')) {
   server.close();
-  throw new Error("a porton nem a Gantt-meres lapja valaszol");
+  throw new Error("something other than the Gantt benchmark page answers on the port");
 }
 
 function frameStats(deltas) {
@@ -92,9 +92,9 @@ async function openPage(browser, cull) {
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: THROTTLE });
   await page.goto(`${BASE}/bench/gantt.html${cull ? "" : "?cull=0"}`);
   await page.waitForFunction(() => window.benchGantt !== undefined, undefined, { timeout: 120_000 });
-  if ((await page.evaluate(() => window.benchGantt.marker)) !== "temporeum-bench-gantt") throw new Error("nem a meres lapja");
+  if ((await page.evaluate(() => window.benchGantt.marker)) !== "temporeum-bench-gantt") throw new Error("not the benchmark page");
   await page.evaluate(() => window.benchGantt.ready);
-  if (errors.length > 0) throw new Error(`lap-hiba: ${errors.join("; ")}`);
+  if (errors.length > 0) throw new Error(`page error: ${errors.join("; ")}`);
   return { context, page };
 }
 
@@ -183,9 +183,9 @@ try {
       const zoom = await zoomRun(browser, cull);
       report.runs[name].zoom.push(zoom);
       console.log(
-        `${name} #${String(rep + 1)}: nyil-csomopont ${String(pan.counts.arrows)}` +
-          ` | pasztazas ${(pan.missedShare * 100).toFixed(1)}% leghosszabb ${pan.longestFrameMs.toFixed(0)} ms` +
-          ` | zoom ${(zoom.missedShare * 100).toFixed(1)}% leghosszabb ${zoom.longestFrameMs.toFixed(0)} ms (csucs ${zoom.peakFactor.toFixed(2)}x)`,
+        `${name} #${String(rep + 1)}: arrow nodes ${String(pan.counts.arrows)}` +
+          ` | pan ${(pan.missedShare * 100).toFixed(1)}% longest ${pan.longestFrameMs.toFixed(0)} ms` +
+          ` | zoom ${(zoom.missedShare * 100).toFixed(1)}% longest ${zoom.longestFrameMs.toFixed(0)} ms (peak ${zoom.peakFactor.toFixed(2)}x)`,
       );
     }
   }
@@ -198,4 +198,4 @@ const git = spawnSync("git", ["rev-parse", "--short", "HEAD"], { cwd: repoRoot, 
 report.commit = git.status === 0 ? git.stdout.trim() : null;
 const out = join(docsDir, ".bench-gantt.json");
 writeFileSync(out, `${JSON.stringify(report, null, 2)}\n`);
-console.log(`riport: ${out}`);
+console.log(`report: ${out}`);

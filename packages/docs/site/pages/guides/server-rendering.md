@@ -18,7 +18,7 @@ The string is a `<temporeum-timeline>` with the drawing in a declarative shadow 
 
 ## Frameworks
 
-Each of these is built and run against the packed packages on every check — Next, Nuxt and Astro as [templates](../frameworks.md) too — and all five are checked for hydration on every gate run: the drawing is in the raw HTML, the client keeps the server's nodes, and a click selects.
+Each of these is built and run against the packed packages on every check — Next, Nuxt and Astro as [templates](../frameworks.md) too — and all five are checked for hydration in CI (`npm run test:ssr -w @temporeum/timeline-docs`): the drawing is in the raw HTML, the client keeps the server's nodes, and a click selects.
 
 **Next (App Router).** `<Timeline>` from `@temporeum/timeline-react` server-renders and hydrates; its bundle starts with `"use client"`. Render it from a server component, and pass functions from a client component:
 

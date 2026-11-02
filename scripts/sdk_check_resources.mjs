@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * G-RESOURCES: generalt hozzarendeleseken a kihasznaltsag minden idoresben
- * a hozzarendelesek osszege, a tulfoglalas pontosan ott jelolt, ahol a
- * kapacitas felett van, es az athuzas visszafordithato parancs.
+ * G-RESOURCES: on generated assignments, utilisation in every time slot is
+ * the sum of the assignments, overallocation is marked exactly where it is
+ * over capacity, and dragging an item across is an undoable command.
  *
- * Futasidoben harom allitas (load-sum, overload-exact, reassign): a terhelest
- * egy, az elemekbol egyenesen kiolvasott referencia-osszeg ellen; a jeloleseket
- * (sav, piros oszlop, tulfoglalt elem) a referencia ellen, nem a soepres ellen;
- * az atrendelest a valodi bemeneti geppel, huzassal barmely sorra (a terhelesi
- * sav az eroforrasat jelenti) es Alt+nyillal. Statikusan: a /resources a
- * sajat belepesi pontjan van, es egyetlen masik belepesi pont kodjat sem
- * hozza — csak az alapbol importal.
+ * Three runtime claims (load-sum, overload-exact, reassign): the load is
+ * checked against a reference sum read straight from the items; the markings
+ * (lane, red column, overallocated item) against the reference, not against
+ * the sweep; reassignment through the real input machine, by dragging onto
+ * any row (the load lane stands for its resource) and with Alt+arrow.
+ * Statically: /resources lives on its own entry point and pulls in no other
+ * entry point's code — it imports only from the base.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -22,19 +22,19 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const core = join(root, "packages", "core");
 const failures = checkReport({
   file: join(core, ".resources-report.json"),
-  label: "eroforrasok",
+  label: "resources",
   minTests: 9,
   claims: ["load-sum", "overload-exact", "reassign"],
 });
 
 const entries = JSON.parse(readFileSync(join(core, "entries.json"), "utf8")).entries;
 if (!entries.some((entry) => entry.name === "resources" && entry.input === "src/resources/index.ts")) {
-  failures.push("a resources belepesi pont hianyzik az entries.json-bol");
+  failures.push("the resources entry point is missing from entries.json");
 }
 const source = codeOf(readFileSync(join(core, "src", "resources", "index.ts"), "utf8"));
 for (const match of source.matchAll(/from\s+"([^"]+)"/g)) {
   const target = match[1];
-  // Csak az alap: ../a11y.js, ../render.js ... — egy masik belepesi pont (../gantt/, ../items/ ...) kodja nem.
-  if (!/^\.\.\/[a-z0-9-]+\.js$/.test(target)) failures.push(`a /resources nem az alapbol importal: ${target}`);
+  // Only the base: ../a11y.js, ../render.js ... — not another entry point's code (../gantt/, ../items/ ...).
+  if (!/^\.\.\/[a-z0-9-]+\.js$/.test(target)) failures.push(`/resources imports from outside the base: ${target}`);
 }
 finish("G-RESOURCES", failures);

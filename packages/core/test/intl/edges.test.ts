@@ -102,3 +102,24 @@ describe("words at the edges", () => {
     expect(rect).toBe(scene.children[2]);
   });
 });
+
+describe("the axis's context label, in a locale and a calendar", () => {
+  const at = Date.UTC(2026, 0, 5, 13, 45, 7);
+  const context = (locale: string, calendar: string | undefined, granularity: Tick["granularity"]): string =>
+    calendarTickLabel(locale, calendar)({ time: at, granularity, major: true, context: true }, "UTC");
+
+  it("names the coarser unit each granularity leaves out", () => {
+    expect(context("en-GB", "gregory", "day")).toBe("January 2026");
+    expect(context("en-GB", "gregory", "month")).toBe("2026");
+    expect(context("en-GB", "gregory", "hour")).toBe("5 Jan 2026");
+    expect(context("en-GB", "gregory", "minute")).toBe("5 Jan 2026");
+    expect(context("en-GB", "gregory", "second")).toMatch(/^5 Jan 2026,? 13:45$/);
+    expect(context("en-GB", "gregory", "millisecond")).toBe("13:45:07");
+    expect(context("en-GB", "gregory", "year")).toBe("");
+  });
+
+  it("is the calendar's own month", () => {
+    expect(context("en", "hebrew", "day")).toMatch(/Tevet 5786/);
+    expect(context("de", undefined, "day")).toBe("Januar 2026");
+  });
+});

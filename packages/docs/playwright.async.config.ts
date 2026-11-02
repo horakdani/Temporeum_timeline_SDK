@@ -1,12 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * G-ASYNC böngészős fele: gyors zoom egy igazi böngészőben, valódi
- * időzítőkkel és valódi DOM-mal.
+ * The browser half of G-ASYNC: a fast zoom in a real browser, with real
+ * timers and a real DOM.
  *
- * Saját port (a P4 tanulsága: egy idegen lapon futó készlet rosszabb, mint a
- * hiányzó). Asztali Chromium: a gyors zoom itt Ctrl+görgő — ugyanaz az út,
- * amit egy trackpad-csipesz ad.
+ * Its own port (a suite running on a foreign page is worse than a missing
+ * one). Desktop Chromium: the fast zoom here is Ctrl+wheel — the same path
+ * a trackpad pinch takes.
  */
 const PORT = Number(process.env.TL_ASYNC_PORT ?? 41743);
 

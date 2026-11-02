@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.0.0 — not yet published
+## 1.0.0 — Unreleased
 
-The first release, on 1.0.0 of `@temporeum/timeline-element`. From here on the package follows [semantic versioning](https://github.com/horakdani/temporeum-timeline/blob/main/packages/docs/site/pages/stability.md).
+The first release, on 1.0.0 of `@temporeum/timeline-element`. From here on the package follows [semantic versioning](https://github.com/horakdani/Temporeum_timeline_SDK/blob/main/packages/docs/site/pages/stability.md).
 
 - `<tl-timeline>` (standalone, `OnPush`, zoneless) and `timelineState`: the whole `TimelineConfig` as `[config]`, every instance event as an output (`TIMELINE_EVENTS` of the element), `(ready)` for the instance.
 - Server-rendered with `@angular/ssr` and hydrated with `provideClientHydration()` without a second drawing.

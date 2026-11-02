@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="hu">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Idővonal SDK — bemenet és szerkesztés</title>
+    <title>Timeline SDK — input and editing</title>
     <style>
       body {
         margin: 0;
@@ -21,9 +21,9 @@
         font-size: 12px;
         color: #445;
       }
-      /* A lap szándékosan hosszabb a képernyőnél. Ez nem dekoráció: a
-         touch-action állítását csak így lehet megmérni — ha a widget
-         elengedi a gesztust, a lap elgörren a húzás alatt. */
+      /* The page is deliberately taller than the screen. This is not
+         decoration: it is the only way to measure the touch-action claim — if
+         the widget lets go of the gesture, the page scrolls during the drag. */
       #keys {
         margin: 0;
         padding: 0 0.6rem 0.4rem;
@@ -46,31 +46,31 @@
   <body>
     <div id="frame"></div>
     <div id="bar">
-      <button id="undo" type="button" disabled>Visszavonás</button>
-      <label><input id="multi" type="checkbox" /> Többes kijelölés</label>
+      <button id="undo" type="button" disabled>Undo</button>
+      <label><input id="multi" type="checkbox" /> Multiple selection</label>
       <span
-        >A „Fagyasztás” le van zárva. Egyik elem sem kezdődhet a projekt indulása előtt — ez a
-        hoszt szabálya, nem a könyvtáré.</span
+        >“Freeze” is locked. No item may start before the project starts — that is the host's
+        rule, not the library's.</span
       >
     </div>
-    <!-- A billentyűzet felfedezhető legyen: aki nem lát kurzort, annak is. -->
+    <!-- The keyboard should be discoverable, for those who cannot see a cursor too. -->
     <p id="keys">
-      Billentyűzet: <kbd>Tab</kbd> az idővonalra, <kbd>←</kbd> <kbd>→</kbd> bejárás,
-      <kbd>↑</kbd> <kbd>↓</kbd> szomszéd sor, <kbd>Enter</kbd> kijelölés, <kbd>Alt</kbd>+nyíl
-      mozgatás, <kbd>Shift</kbd>+nyíl a vége, <kbd>Shift</kbd>+<kbd>Alt</kbd>+nyíl az eleje,
-      <kbd>PgUp</kbd> <kbd>PgDn</kbd> lapozás, <kbd>+</kbd> <kbd>−</kbd> nagyítás, <kbd>g</kbd>
-      ugrás dátumra, <kbd>Esc</kbd> elengedés.
+      Keyboard: <kbd>Tab</kbd> onto the timeline, <kbd>←</kbd> <kbd>→</kbd> traverse,
+      <kbd>↑</kbd> <kbd>↓</kbd> neighbouring row, <kbd>Enter</kbd> select, <kbd>Alt</kbd>+arrow
+      move, <kbd>Shift</kbd>+arrow the end, <kbd>Shift</kbd>+<kbd>Alt</kbd>+arrow the start,
+      <kbd>PgUp</kbd> <kbd>PgDn</kbd> page, <kbd>+</kbd> <kbd>−</kbd> zoom, <kbd>g</kbd>
+      jump to date, <kbd>Esc</kbd> release.
     </p>
     <dialog id="jump" aria-labelledby="jump-title">
       <form method="dialog">
-        <h2 id="jump-title" style="font-size: 14px; margin: 0 0 0.5rem">Ugrás dátumra</h2>
-        <label>Dátum <input id="jump-date" type="date" required /></label>
-        <button value="go">Ugrás</button>
-        <button value="cancel" formnovalidate>Mégse</button>
+        <h2 id="jump-title" style="font-size: 14px; margin: 0 0 0.5rem">Jump to date</h2>
+        <label>Date <input id="jump-date" type="date" required /></label>
+        <button value="go">Go</button>
+        <button value="cancel" formnovalidate>Cancel</button>
       </form>
     </dialog>
     <pre id="state" style="font-size: 11px"></pre>
-    <div id="below">A lap hosszabb a képernyőnél, hogy a lapgörgetés mérhető legyen.</div>
+    <div id="below">The page is taller than the screen so that page scrolling can be measured.</div>
 
     <script type="module">
       import {
@@ -87,23 +87,23 @@
       const DAY = 86_400_000;
       const START = Date.UTC(2026, 0, 1);
       let items = [
-        { id: "a", start: START, end: START + 4 * DAY, label: "Tervezés", laneId: "l1" },
-        { id: "b", start: START + 3 * DAY, end: START + 9 * DAY, label: "Építés", laneId: "l1" },
-        { id: "c", start: START + 10 * DAY, label: "Mérföldkő", laneId: "l2" },
-        { id: "d", start: START + 12 * DAY, end: START + 26 * DAY, label: "Átadás", laneId: "l2" },
-        // Le van zárva: egy kijelölés része lehet, de soha nem mozdul.
+        { id: "a", start: START, end: START + 4 * DAY, label: "Planning", laneId: "l1" },
+        { id: "b", start: START + 3 * DAY, end: START + 9 * DAY, label: "Build", laneId: "l1" },
+        { id: "c", start: START + 10 * DAY, label: "Milestone", laneId: "l2" },
+        { id: "d", start: START + 12 * DAY, end: START + 26 * DAY, label: "Handover", laneId: "l2" },
+        // Locked: it can be part of a selection, but it never moves.
         {
           id: "e",
           start: START + 20 * DAY,
           end: START + 24 * DAY,
-          label: "Fagyasztás",
+          label: "Freeze",
           laneId: "l1",
           movable: false,
         },
       ];
       const lanes = [
-        { id: "l1", label: "Munka" },
-        { id: "l2", label: "Szállítás" },
+        { id: "l1", label: "Work" },
+        { id: "l2", label: "Delivery" },
       ];
 
       const frame = document.querySelector("#frame");
@@ -117,20 +117,20 @@
       const touchAction = params.get("touchAction") === "cooperative" ? "cooperative" : "own";
       const height = Number(params.get("height") ?? 260);
       const density = "comfortable";
-      // A találati doboznak ugyanazt a számot kell használnia, amivel a
-      // renderelő rajzol: a tengely-sáv a kereszttengely első szelete, és
-      // nélküle minden találat annyival el van csúszva.
+      // The hit box must use the same number the renderer draws with: the
+      // axis band is the first slice of the cross axis, and without it every
+      // hit is off by that much.
       const metrics = densityMetrics(density, orientation);
 
       let domain = [START, START + 30 * DAY];
       let selectedIds = [];
       const gestures = [];
       const edits = [];
-      /** A gép által elvett billentyűk akciói, sorban — a teszt ebből olvas. */
+      /** The actions of the keys the machine took, in order — the test reads from this. */
       const keys = [];
       let views = 0;
       const undoStack = [];
-      /** Az elemek a szerkesztés előtt — egy megszakadt gesztus ide áll vissza. */
+      /** The items before the edit — an interrupted gesture returns here. */
       let beforeEdit = items;
       let lastResult;
 
@@ -142,36 +142,36 @@
         mainSize: mainSizeOf(),
         crossSize: crossSizeOf(),
         orientation,
-        // Ugyanaz a beállítás, mint a stíluslapé: a touch-action csak az
-        // érintést szabályozza, a görgőt a gépnek kell elengednie.
+        // The same setting as the stylesheet's: touch-action only governs
+        // touch, the wheel has to be released by the machine.
         touchAction,
         editing: {
           enabled: true,
-          // Egérrel azonnal, ujjal tartásra. Egy gép, két kéz.
+          // Immediately with a mouse, on hold with a finger. One machine, two hands.
           moveTrigger: "auto",
           snapMs: DAY,
           multiSelect: true,
           crossLane: true,
-          // A hoszt szabálya: semmi nem kezdődhet az indulás előtt. A
-          // könyvtár nem tud a projektről, csak megkérdezi.
+          // The host's rule: nothing may start before the start. The
+          // library knows nothing about the project, it only asks.
           canMove: (item, next) => next.start === undefined || next.start >= START,
         },
-        // A reduced-motion-t a /dom kötés állítja a böngésző beállításából.
+        // reduced-motion is set by the /dom binding from the browser's setting.
       });
 
       /**
-       * A találati tábla a KÉPKOCKA nézete, nem a gyorsítótára.
+       * The hit table is a view of the FRAME, not a cache of it.
        *
-       * Ezért minden rajzolás után újra kell adni a gépnek: az elem elmozdult,
-       * a sávok átrendeződtek, a sávgörgetés elment. Egy egyszer beadott
-       * találati tábla pontosan addig jó, amíg semmi nem változik.
+       * So it has to be handed to the machine again after every draw: the item
+       * moved, the lanes were rearranged, the lane scroll moved. A hit table
+       * handed over once is good for exactly as long as nothing changes.
        */
       function refreshHitTester(result) {
-        // Nulla pixeles konténer: a renderelő erre üres képkockát ad (ez a P3
-        // tanulsága), a találati tábla viszont időskálát kér, és az joggal
-        // utasítja vissza a nulla szélességet. Nincs mit eltalálni, tehát a
-        // gép se kapjon táblát — ez szemmel nézve derült ki, a Playwright
-        // alatt a konténer már mért volt.
+        // A zero-pixel container: the renderer gives an empty frame for it (a
+        // lesson learned early), but the hit table asks for a time scale, which
+        // rightly rejects a zero width. There is nothing to hit, so the machine
+        // gets no table either — this was found by eye; under Playwright the
+        // container had already been measured.
         if (mainSizeOf() <= 0) {
           machine.setEditing({ hitTest: undefined, lookup: undefined, laneAt: undefined });
           return undefined;
@@ -187,7 +187,7 @@
           lookup: tester.lookup,
           laneAt: tester.laneAt,
         });
-        // A billentyűzet sorrendje ugyanabból a képkockából, mint a találat.
+        // The keyboard order comes from the same frame as the hit test.
         machine.setKeyboard({ navigator: createNavigator(result.layout, { crossInset: metrics.axisSize }) });
         return tester;
       }
@@ -207,16 +207,16 @@
           selectedIds,
           focusedId: machine.focusedId,
           multiSelect: multiBox.checked,
-          locale: "hu",
-          ariaLabel: "Projekt idővonal",
+          locale: "en-GB",
+          ariaLabel: "Project timeline",
           instanceId: "demo",
-          // A sávgörgetés ugyanaz a szám, amit a találati tábla kap: ami
-          // kirajzolódik, azt lehet eltalálni.
+          // The lane scroll is the same number the hit table gets: what is
+          // drawn is what can be hit.
           crossOffset: machine.crossOffset,
         });
         lastResult = result;
-        // A foltozó megtartja a csomópontokat, és csak azt írja, ami változott
-        // (P7). Egy innerHTML minden rajzolásnál eldobná és újraépítené őket.
+        // The patcher keeps the nodes and writes only what changed. An
+        // innerHTML would throw them away and rebuild them on every draw.
         mount.update(result.scene);
         frame.querySelector("svg").setAttribute("data-testid", "timeline");
         tester = refreshHitTester(result);
@@ -244,11 +244,11 @@
           null,
           1,
         );
-        // A teszt ezen keresztül kérdez: egy helyen van az igazság.
+        // The test asks through this: the truth is in one place.
         window.tl = { domain, machine, gestures, edits, keys, items, result, undo, boxOf, handleOf };
       }
 
-      /** Egy elem közepe képernyő-pixelben, hogy a teszt oda tudjon érni. */
+      /** An item's centre in screen pixels, so the test can reach it. */
       function boxOf(id, fraction = 0.5) {
         const placed = lastResult.layout.items.find((candidate) => candidate.item.id === id);
         if (placed === undefined || mainSizeOf() <= 0) {
@@ -263,7 +263,7 @@
         return orientation === "horizontal" ? { x: main, y: cross } : { x: cross, y: main };
       }
 
-      /** A záró fogantyú: az elem utolsó néhány pixele. */
+      /** The end handle: the item's last few pixels. */
       function handleOf(id) {
         const placed = lastResult.layout.items.find((candidate) => candidate.item.id === id);
         if (placed === undefined || mainSizeOf() <= 0) {
@@ -281,7 +281,7 @@
         if (command === undefined) {
           return false;
         }
-        // A command inverze EGY leírás: ugyanaz az alkalmazás, visszafelé.
+        // A command's inverse is ONE description: the same application, in reverse.
         items = applyPatches(items, command.inverse.after);
         edits.push("undo");
         draw();
@@ -291,12 +291,12 @@
       undoButton.addEventListener("click", () => {
         undo();
       });
-      // A többes kijelölés a képkocka szemantikája is: aria-multiselectable.
+      // Multiple selection is part of the frame's semantics too: aria-multiselectable.
       multiBox.addEventListener("change", () => {
         draw();
       });
 
-      /** Kijelölés egy elemre vagy semmire — a koppintás és az Enter közös útja. */
+      /** Select one item or nothing — the shared path of a tap and Enter. */
       function select(id) {
         if (id === null) {
           selectedIds = [];
@@ -310,15 +310,15 @@
         machine.setSelection(selectedIds);
       }
 
-      // A dátumbekérő a HOSZT felülete: a mag csak annyit mond, hogy a
-      // felhasználó ugrani akar (jumpRequest), és a goTo-val válaszolunk.
+      // The date prompt is the HOST's UI: the core only says that the user
+      // wants to jump (jumpRequest), and we answer with goTo.
       const jumpDialog = document.querySelector("#jump");
       const jumpDate = document.querySelector("#jump-date");
       jumpDialog.addEventListener("close", () => {
         if (jumpDialog.returnValue === "go" && jumpDate.value !== "") {
           onEffects(machine.goTo(Date.parse(`${jumpDate.value}T00:00:00Z`), performance.now()));
         }
-        // A fókusz oda tér vissza, ahonnan a kérés jött.
+        // Focus returns to where the request came from.
         frame.querySelector("svg").focus();
       });
 
@@ -326,28 +326,28 @@
         for (const effect of effects) {
           if (effect.type === "viewport") {
             domain = effect.domain;
-            // Hány képkockában jött meg a nézetváltás: az átmenet több, a
-            // reduced-motion egy.
+            // In how many frames the view change arrived: a transition is
+            // several, reduced-motion is one.
             views += 1;
           } else if (effect.type === "gestureStart" || effect.type === "gestureEnd") {
-            // A `cancelled` jelzés is bekerül: a böngészőtől érkező
-            // pointercancel az egyetlen dolog, amit szintetikus
-            // szekvenciával nem lehet bizonyítani.
+            // The `cancelled` flag goes in too: a pointercancel from the
+            // browser is the one thing a synthetic sequence cannot
+            // prove.
             gestures.push(`${effect.type}:${effect.kind}${effect.cancelled ? ":cancelled" : ""}`);
           } else if (effect.type === "tap") {
             gestures.push(`tap:${String(effect.pointerCount)}x${String(effect.tapCount)}`);
             if (effect.tapCount === 1 && effect.pointerCount === 1) {
-              // A kijelölés a hoszt dolga: a gép csak annyit tud, mit visz
-              // magával a következő húzás.
+              // Selection is the host's business: the machine only knows what
+              // the next drag takes with it.
               const hit = tester?.hitTest({ main: effect.main, cross: effect.cross });
               select(hit?.item.id ?? null);
-              // A billentyűzet onnan folytatja, ahová a koppintás tette.
+              // The keyboard continues from where the tap put it.
               machine.setFocus(hit?.item.id ?? null);
             }
           } else if (effect.type === "key") {
             keys.push(effect.action);
           } else if (effect.type === "activate") {
-            // Az Enter a koppintás ikre, az Esc az üres koppintásé.
+            // Enter is the twin of a tap, Esc of an empty tap.
             select(effect.id);
           } else if (effect.type === "jumpRequest") {
             jumpDate.value = new Date(domain[0] + (domain[1] - domain[0]) / 2).toISOString().slice(0, 10);
@@ -356,10 +356,10 @@
             beforeEdit = items;
             edits.push(`editStart:${effect.mode}:${effect.trigger}`);
           } else if (effect.type === "editMove") {
-            // A patch-ek ABSZOLÚT értékek a megfogás pillanatának állapotából,
-            // nem elmozdulások — ezért ugyanannak a húzásnak bármelyik
-            // ajánlatát bármikor rá lehet alkalmazni. Ez az, ami miatt a
-            // `vetoed` visszajelzés, nem külön ág: az alkalmazás ugyanaz.
+            // The patches are ABSOLUTE values from the state at the moment of
+            // the grab, not offsets — so any proposal of the same drag can be
+            // applied at any time. That is why `vetoed` is feedback, not a
+            // separate branch: the application is the same.
             items = applyPatches(items, effect.patches);
             if (effect.vetoed) {
               edits.push("vetoed");
@@ -379,15 +379,15 @@
       }
 
       draw();
-      // A kötés a STABIL konténerre megy, nem az újrarajzolt SVG-re. Ha
-      // minden képkockán újrakötnénk, a `destroy()` közben elengedné a
-      // gesztust: a húzás az első mozgás után megállna.
+      // The binding goes on the STABLE container, not on the redrawn SVG. If
+      // we rebound on every frame, `destroy()` would let go of the gesture
+      // in between: the drag would stop after the first move.
       attachInput(frame, { machine, onEffects: onEffects });
 
-      // A KONTÉNERT figyeljük, nem az ablakot. Az első rajzolás pillanatában
-      // a konténer még 0 pixel széles lehet (ez hozta ki a mag hibáját:
-      // kivételt dobott 0-ra); a ResizeObserver akkor szól, amikor tényleg
-      // van mit mérni — és ez a helyes host-minta amúgy is.
+      // We observe the CONTAINER, not the window. At the moment of the first
+      // draw the container may still be 0 pixels wide (that is what exposed the
+      // core's bug: it threw on 0); the ResizeObserver speaks up when there is
+      // really something to measure — and that is the right host pattern anyway.
       new ResizeObserver(() => {
         const measured = frame.clientWidth;
         if (measured <= 0) {

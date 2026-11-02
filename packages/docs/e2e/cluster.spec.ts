@@ -7,18 +7,18 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 /**
- * G-CLUSTER, igazi böngészőben: a jelölők darabszámainak összege MINDIG
- * egyenlő a látható elemek számával — az élő DOM-ból olvasva.
+ * G-CLUSTER, in a real browser: the sum of the markers' counts ALWAYS
+ * equals the number of visible items — read from the live DOM.
  *
- * A lap (public/cluster.html) a shippelt bundle-lel rajzol, a P7 óta használt
- * patchelő mounttal. Minden lépés után a lap `measure()`-e az élő DOM
- * elemeit és jelölőit veti össze azzal a képkockával, amit ugyanez a
- * renderelő fürtözés nélkül rajzolna (fixture: a mag mérőjének böngészős
- * párja). A lépések valódi bemenetek: Ctrl+görgő, egérhúzás, koppintás
- * (Pixel 7 emuláció, touch-esemény), kattintás, billentyű.
+ * The page (public/cluster.html) draws with the shipped bundle, through the
+ * patching mount. After every step the page's `measure()` compares the live
+ * DOM's items and markers with the frame the same renderer would draw
+ * without clustering (fixture: the browser counterpart of the core's
+ * meter). The steps are real input: Ctrl+wheel, mouse drag, tap (Pixel 7
+ * emulation, touch events), click, keys.
  *
- * Az összesítés a `.cluster-browser-log.json`-be kerül; a
- * sdk_check_cluster.mjs abból ítél, nem a tesztek címéből.
+ * The summary goes to `.cluster-browser-log.json`;
+ * sdk_check_cluster.mjs judges from that, not from the test titles.
  */
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -94,11 +94,11 @@ function expectClean(measured: Measured, where: string): void {
   expect(measured.sum, where).toBe(measured.visible + measured.extras);
 }
 
-test.describe("fürtözés igazi böngészőben", () => {
-  test("[claim:browser-conservation] @desktop görgős zoom és húzás után minden lépésben az összeg a látható elemek száma", async ({ page }) => {
+test.describe("clustering in a real browser", () => {
+  test("[claim:browser-conservation] @desktop after wheel zoom and drag, at every step the sum is the number of visible items", async ({ page }) => {
     await openPage(page);
     const box = await page.locator("#frame svg").boundingBox();
-    if (box === null) throw new Error("nincs vászon");
+    if (box === null) throw new Error("no canvas");
     let seed = 41;
     const random = (): number => {
       seed = (seed * 1103515245 + 12345) % 2147483648;
@@ -139,7 +139,7 @@ test.describe("fürtözés igazi böngészőben", () => {
     expect(totals.withMarkers).toBeGreaterThan(totals.steps / 3);
   });
 
-  test("[claim:browser-tap-zoom] @touch koppintásra a fürt az ujj alatt nyílik, amíg a tagja önmaga nem lesz", async ({ page }) => {
+  test("[claim:browser-tap-zoom] @touch a tapped cluster opens under the finger, until its member stands on its own", async ({ page }) => {
     await openPage(page);
     const target = await busiestMember(page);
     expect(target).not.toBe("");
@@ -167,11 +167,11 @@ test.describe("fürtözés igazi böngészőben", () => {
     expect(taps.length).toBeGreaterThanOrEqual(1);
   });
 
-  test("[claim:browser-click] @desktop egérkattintásra ugyanúgy nyílik", async ({ page }) => {
+  test("[claim:browser-click] @desktop a mouse click opens it the same way", async ({ page }) => {
     await openPage(page);
     const target = await busiestMember(page);
     const marker = await markerHolding(page, target);
-    if (marker === undefined) throw new Error("nincs jelölő");
+    if (marker === undefined) throw new Error("no marker");
     const before = await spanOf(page);
     await page.mouse.click(marker.x, marker.y);
     await page.waitForTimeout(100);
@@ -181,7 +181,7 @@ test.describe("fürtözés igazi böngészőben", () => {
     record("click", { id: marker.id });
   });
 
-  test("[claim:browser-keyboard] @desktop billentyűvel a fürt egy megálló, és az Enter ugyanúgy nyitja", async ({ page }) => {
+  test("[claim:browser-keyboard] @desktop by keyboard a cluster is one stop, and Enter opens it the same way", async ({ page }) => {
     await openPage(page);
     await page.locator("#frame svg").focus();
     let active: string | null = null;
@@ -194,8 +194,8 @@ test.describe("fürtözés igazi böngészőben", () => {
     const option = page.locator(`[id="${String(active)}"]`);
     await expect(option).toHaveAttribute("role", "option");
     const label = await option.getAttribute("aria-label");
-    // The host names its clusters in its own language (`describeCluster`).
-    expect(label).toMatch(/^\d+ elem, /);
+    // The host names its clusters in its own words (`describeCluster`): "events", not the default "items".
+    expect(label).toMatch(/^\d+ events, /);
     const before = await spanOf(page);
     await page.keyboard.press("Enter");
     await page.waitForTimeout(100);
@@ -206,7 +206,7 @@ test.describe("fürtözés igazi böngészőben", () => {
     record("keyboard", { active, label });
   });
 
-  test("[claim:browser-negative-control] @desktop NEGATÍV KONTROLL: egy elemet elejtő lapon a mérő talál", async ({ page }) => {
+  test("[claim:browser-negative-control] @desktop NEGATIVE CONTROL: on a page that drops an item the meter finds it", async ({ page }) => {
     await page.goto("/cluster.html?lossy=1");
     await expect(page.locator(".tl-layer--items [data-tl-cluster]").first()).toBeAttached();
     const measured = await measure(page);
@@ -214,7 +214,7 @@ test.describe("fürtözés igazi böngészőben", () => {
     expect(measured.problems.some((problem) => problem.endsWith("shown 0 times"))).toBe(true);
   });
 
-  test("[claim:browser-axe] @desktop axe: a fürtös lapon 0 sértés, WCAG 2.2 AA", async ({ page }) => {
+  test("[claim:browser-axe] @desktop axe: 0 violations on the clustered page, WCAG 2.2 AA", async ({ page }) => {
     await openPage(page);
     await page.locator("#frame svg").focus();
     await page.keyboard.press("ArrowRight");

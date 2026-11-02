@@ -6,12 +6,12 @@
   "author": "Daniel Horak",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/horakdani/temporeum-timeline.git",
+    "url": "git+https://github.com/horakdani/Temporeum_timeline_SDK.git",
     "directory": "packages/web-component"
   },
-  "homepage": "https://github.com/horakdani/temporeum-timeline#readme",
+  "homepage": "https://github.com/horakdani/Temporeum_timeline_SDK#readme",
   "bugs": {
-    "url": "https://github.com/horakdani/temporeum-timeline/issues"
+    "url": "https://github.com/horakdani/Temporeum_timeline_SDK/issues"
   },
   "keywords": [
     "timeline",

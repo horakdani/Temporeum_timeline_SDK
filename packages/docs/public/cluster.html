@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="hu">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Idővonal SDK — fürtözés sűrű zoomon</title>
+    <title>Timeline SDK — clustering at dense zoom</title>
     <style>
       body {
         margin: 0;
@@ -27,14 +27,14 @@
   </head>
   <body>
     <main>
-      <h1 style="margin: 0; padding: 0.4rem 0.6rem; font-size: 14px">Kiadások, riasztások, mentések — három év</h1>
-      <div id="frame"></div>
+      <h1 style="margin: 0; padding: 0.4rem 0.6rem; font-size: 14px">Releases, alerts, backups — three years</h1>
+      <div id="frame" lang="en-GB"></div>
       <p id="bar" aria-live="polite"></p>
-      <ul id="members" aria-label="A fürt elemei"></ul>
+      <ul id="members" aria-label="Cluster members"></ul>
       <p style="margin: 0; padding: 0 0.6rem; font-size: 12px; color: #445">
-        Ahol az elemek túl sűrűn vannak ahhoz, hogy egyenként lássuk őket, egy jelölő áll a helyükön a
-        darabszámukkal. Koppintás vagy Enter rázoomol, amíg szét nem válnak; a zoom határán a lista
-        mutatja őket.
+        Where items are too dense to be seen one by one, a marker with their count stands in their
+        place. A tap or Enter zooms in until they separate; at the zoom limit the list shows
+        them.
       </p>
     </main>
 
@@ -56,17 +56,20 @@
       const START = Date.UTC(2023, 0, 1);
       let seed = Number(params.get("seed") ?? 11);
       const random = () => {
-        // mulberry32: ugyanaz a mag, ugyanaz az adat.
+        // mulberry32: the same seed, the same data.
         seed = (seed + 0x6d2b79f5) >>> 0;
         let t = seed;
         t = Math.imul(t ^ (t >>> 15), t | 1);
         t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       };
-      const KINDS = ["Kiadás", "Riasztás", "Mentés", "Telepítés"];
+      // The page plays a host that names its clusters in its own words
+      // (`describeCluster` below, with the "en-GB" locale): "events", not the
+      // library's default "items". The frame carries lang="en-GB".
+      const KINDS = ["Release", "Alert", "Backup", "Deployment"];
       const items = [];
-      // Sűrű sorozatok — egy incidens riasztásai, egy kiadási hét — és köztük
-      // ritka, hosszú munkák.
+      // Dense bursts — an incident's alerts, a release week — and sparse, long
+      // jobs between them.
       for (let burst = 0; burst < 90; burst += 1) {
         const centre = START + Math.floor(random() * 3 * 365) * DAY;
         const count = 3 + Math.floor(random() * 40);
@@ -85,12 +88,12 @@
       }
       for (let k = 0; k < 40; k += 1) {
         const start = START + Math.floor(random() * 3 * 365) * DAY;
-        items.push({ id: `w${k}`, start, end: start + Math.floor((5 + random() * 60) * DAY), label: "Projekt", laneId: `l${k % 3}` });
+        items.push({ id: `w${k}`, start, end: start + Math.floor((5 + random() * 60) * DAY), label: "Project", laneId: `l${k % 3}` });
       }
       const lanes = [
-        { id: "l0", label: "Éles" },
-        { id: "l1", label: "Teszt" },
-        { id: "l2", label: "Fejlesztői" },
+        { id: "l0", label: "Production" },
+        { id: "l1", label: "Staging" },
+        { id: "l2", label: "Development" },
       ];
 
       const frame = document.querySelector("#frame");
@@ -118,19 +121,19 @@
         limits,
       });
 
-      const dateFormat = new Intl.DateTimeFormat("hu", { dateStyle: "medium", timeZone: "UTC" });
+      const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: "UTC" });
       const laneLabels = new Map(lanes.map((lane) => [lane.id, lane.label]));
       function describeCluster(cluster) {
         const from = dateFormat.format(cluster.start);
         const to = dateFormat.format(cluster.lastStart);
-        return `${cluster.members.length} elem, ${from === to ? from : `${from} – ${to}`}, ${laneLabels.get(cluster.laneId)}`;
+        return `${cluster.members.length} events, ${from === to ? from : `${from} – ${to}`}, ${laneLabels.get(cluster.laneId)}`;
       }
 
       /**
-       * NEGATÍV KONTROLL (`?lossy=1`): a lap minden képkockából elhagy egy
-       * magában álló elemet, mielőtt a DOM-ba kerül. Csak azért van, hogy a
-       * teszt bizonyítsa: a mérő az élő DOM-ot nézi, és egy elveszett elemet
-       * észrevesz — különben a nulla semmit nem jelentene.
+       * NEGATIVE CONTROL (`?lossy=1`): the page drops one standalone item from
+       * every frame before it reaches the DOM. It exists only so the test can
+       * prove that the detector looks at the live DOM and notices a lost item
+       * — otherwise a zero would mean nothing.
        */
       const lossy = params.get("lossy") === "1";
       function withoutOneItem(scene) {
@@ -159,15 +162,15 @@
           height,
           orientation,
           density,
-          locale: "hu",
-          ariaLabel: "Események idővonala",
+          locale: "en-GB",
+          ariaLabel: "Event timeline",
           instanceId: "cl",
           focusedId: machine.focusedId,
           selectedIds: selected,
           crossOffset: machine.crossOffset,
           cluster: true,
-          // A fürt neve a hoszt nyelvén: a könyvtár alapértelmezése angol
-          // ("23 items, …"), mint az `ariaLabel`-é.
+          // The cluster name in the host's own words: the library's default is
+          // "23 items, …".
           hooks: { describeCluster },
         });
         mount.update(lossy ? withoutOneItem(result.scene) : result.scene);
@@ -175,10 +178,10 @@
         machine.setKeyboard({
           navigator: createNavigator(result.layout, { crossInset: metrics.axisSize, clustering: result.clustering }),
         });
-        bar.textContent = `${result.visibleCount} elem látszik, ${result.clusters.length} fürtben vagy egyenként`;
+        bar.textContent = `${result.visibleCount} items visible, in ${result.clusters.length} clusters or one by one`;
       }
 
-      /** A host válasza egy fürtre: rázoomol; a zoom határán kinyitja a listát. */
+      /** The host's response to a cluster: it zooms in; at the zoom limit it opens the list. */
       function open(cluster, anchor) {
         const scale = createTimeScale(domain, sizes().mainSize);
         const zoom = clusterZoom(cluster, scale, anchor === undefined ? {} : { anchor });
@@ -237,8 +240,8 @@
       attachInput(frame, { machine, onEffects: handle });
 
       /**
-       * A teszt ítélete: az ÉLŐ DOM elemei és jelölői, összevetve azzal a
-       * képkockával, amit ugyanez a renderelő fürtözés nélkül rajzolna.
+       * The test's verdict: the LIVE DOM's items and markers, compared with the
+       * frame the same renderer would draw without clustering.
        */
       function measure() {
         const { width, height } = sizes();

@@ -1,28 +1,29 @@
 #!/usr/bin/env node
 /**
- * G-HITSLOP: bizonyitja, hogy erdes pointerrel a 2 px-es elem is
- * eltalalhato — es hogy ez a POINTER erdeme, nem egy mindenkinek kiosztott
- * nagy zonae.
+ * G-HITSLOP: proves that with a coarse pointer even a 2 px item can be
+ * hit — and that this is down to the POINTER, not a large zone handed out
+ * to everyone.
  *
- * Miert nem eleg egy "a 2 px-es elem eltalalhato" teszt: egy vegtelen
- * raharas is atengedne. Az az idovonal, ahol minden nyomas megfog valamit,
- * pontosan olyan hasznalhatatlan, mint az, ahol semmit. Ezert a kapu
- * PAROKAT ker: minden "eler" allitas mellett egy "nem er el" allitast.
+ * Why a "the 2 px item can be hit" test is not enough: an infinite slop
+ * would pass it too. A timeline where every press catches something is
+ * exactly as unusable as one where nothing does. So the check asks for
+ * PAIRS: next to every "reaches" claim there is a "does not reach" claim.
  *
- * Harom fuggetlen ellenorzes:
+ * Three independent checks:
  *
- *  1. FUTASIDEJU — a keszlet: a vitest JSON-riportjaban minden kotelezo
- *     allitasnak zolden kell lennie, MINDKET orientacioban. A raharas
- *     (main, cross) terben keszul; ha csak vizszintesen igaz, akkor a
- *     fuggoleges idovonalon egy ujj a szomszed sort fogja meg. A riport
- *     hianya BUKAS.
- *  2. STATIKUS — a csovezetek: a bemeneti gep a pointer tipusat ATADJA a
- *     talalati tablanak. Enelkul a zona a fuggvenyben letezik, a gesztusban
- *     nem — es a kapu egy olyan kepesseget bizonyitana, amit egy ujj soha
- *     nem kap meg.
- *  3. STATIKUS — egy szam, egy hely: a 4 / 12 / 24 a responsive.ts-ben van
- *     definialva, es a talalati tabla onnan kerdezi. Ez a P4 touchAction-
- *     hibajanak tanulsaga: ugyanaz a szam ket helyen = az egyik elcsuszik.
+ *  1. RUNTIME — the suite: in the vitest JSON report every required claim
+ *     must be green, in BOTH orientations. The slop is built in
+ *     (main, cross) space; if it only holds horizontally, a finger on a
+ *     vertical timeline catches the neighbouring row. A missing report is
+ *     a FAILURE.
+ *  2. STATIC — the pipeline: the input machine PASSES the pointer type to
+ *     the hit tester. Without that, the zone exists in the function but not
+ *     in the gesture — and the check would prove a capability a finger
+ *     never gets.
+ *  3. STATIC — one number, one place: 4 / 12 / 24 are defined in
+ *     responsive.ts, and the hit tester asks for them there. This is the
+ *     lesson of an earlier touchAction bug: the same number in two places
+ *     means one of them drifts.
  */
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -38,19 +39,19 @@ const testerFile = join(srcDir, "editing.ts");
 const responsiveFile = join(srcDir, "responsive.ts");
 
 const MIN_TESTS = 20;
-/** A proof allitasai, parban: amit eler, es amit NEM. */
+/** The proof's claims, in pairs: what it reaches, and what it does NOT. */
 const REQUIRED_CLAIMS = [
-  // eler
+  // reaches
   "a finger reaches a 2 px item it misses by 10 px along time",
   "a finger reaches a 2 px item it misses by 10 px across the lanes",
   "a finger long press picks up the 2 px item",
   "dense raises even a mouse's target to 24 px",
-  // nem er el
+  // does not reach
   "a mouse does not reach the same item from 10 px",
   "a mouse press at the same pixel picks up nothing",
   "without a pointer type the geometry is exact",
   "without a pointer type even dense stays exact",
-  // nem lop
+  // does not steal
   "an exact hit wins over a slop hit on a neighbour",
   "in the gap between two items the nearest one wins",
   "a slop hit is the body, never a handle",
@@ -63,20 +64,20 @@ const notes = [];
 const codeOf = (source) =>
   source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
-// --- 1. FUTASIDEJU ------------------------------------------------------------
+// --- 1. RUNTIME ---------------------------------------------------------------
 
 if (!existsSync(reportFile)) {
-  failures.push(`nincs vitest-riport (${reportFile}) — a talalati zona keszlete NEM futott le, ezert BUKAS`);
+  failures.push(`no vitest report (${reportFile}) — the hit zone suite did NOT run, so this is a FAILURE`);
 } else {
   const report = JSON.parse(readFileSync(reportFile, "utf8"));
   const files = Array.isArray(report.testResults) ? report.testResults : [];
   const tests = files.flatMap((file) => file.assertionResults ?? []);
   if (tests.length < MIN_TESTS) {
-    failures.push(`${String(tests.length)} teszt futott, de legalabb ${String(MIN_TESTS)} kell`);
+    failures.push(`${String(tests.length)} tests ran, but at least ${String(MIN_TESTS)} are required`);
   }
   for (const test of tests) {
     if (test.status !== "passed") {
-      failures.push(`nem zold teszt: ${String(test.fullName)} (${String(test.status)})`);
+      failures.push(`test not green: ${String(test.fullName)} (${String(test.status)})`);
     }
   }
   for (const claim of REQUIRED_CLAIMS) {
@@ -88,36 +89,36 @@ if (!existsSync(reportFile)) {
           String(test.fullName).includes(claim),
       );
       if (!found) {
-        failures.push(`nincs zold teszt ${orientation} orientacioban erre: "${claim}"`);
+        failures.push(`no green ${orientation} test for: "${claim}"`);
       }
     }
   }
   if (failures.length === 0) {
     notes.push(
-      `${String(tests.length)} teszt zold; ${String(REQUIRED_CLAIMS.length)} allitas x 2 orientacio, eler/nem er el parban`,
+      `${String(tests.length)} tests green; ${String(REQUIRED_CLAIMS.length)} claims x 2 orientations, in reaches/does-not-reach pairs`,
     );
   }
 }
 
-// --- 2. STATIKUS: a csovezetek -----------------------------------------------
+// --- 2. STATIC: the pipeline -------------------------------------------------
 
 const machine = existsSync(machineFile) ? codeOf(readFileSync(machineFile, "utf8")) : "";
 if (machine === "") {
-  failures.push(`nincs bemeneti gep: ${machineFile}`);
+  failures.push(`no input machine: ${machineFile}`);
 } else if (!/hitTest\(\s*\{[^}]*\}\s*,\s*pointer\.pointerType\s*\)/.test(machine)) {
   failures.push(
-    "a bemeneti gep nem adja at a pointer tipusat a talalati tablanak — a zona a gesztusban nem letezik",
+    "the input machine does not pass the pointer type to the hit tester — the zone does not exist in the gesture",
   );
 } else {
-  notes.push("a gep a lenyomas pointer-tipusat adja a talalati tablanak");
+  notes.push("the machine passes the press's pointer type to the hit tester");
 }
 
-// --- 3. STATIKUS: egy szam, egy hely -----------------------------------------
+// --- 3. STATIC: one number, one place ----------------------------------------
 
 const responsive = existsSync(responsiveFile) ? codeOf(readFileSync(responsiveFile, "utf8")) : "";
 const tester = existsSync(testerFile) ? codeOf(readFileSync(testerFile, "utf8")) : "";
 if (responsive === "") {
-  failures.push(`nincs responsive.ts: ${responsiveFile}`);
+  failures.push(`no responsive.ts: ${responsiveFile}`);
 } else {
   for (const [name, value] of [
     ["HIT_SLOP_FINE", 4],
@@ -125,7 +126,7 @@ if (responsive === "") {
     ["DENSE_MIN_TARGET", 24],
   ]) {
     if (!new RegExp(`export const ${name} = ${String(value)};`).test(responsive)) {
-      failures.push(`a responsive.ts nem definialja: ${name} = ${String(value)}`);
+      failures.push(`responsive.ts does not define: ${name} = ${String(value)}`);
     }
     const elsewhere = readdirSync(srcDir, { recursive: true })
       .filter((name_) => String(name_).endsWith(".ts") && String(name_) !== "responsive.ts")
@@ -133,21 +134,21 @@ if (responsive === "") {
         new RegExp(`const ${name}\\b`).test(readFileSync(join(srcDir, String(file)), "utf8")),
       );
     if (elsewhere.length > 0) {
-      failures.push(`a ${name} masodik helyen is definialva van: ${elsewhere.join(", ")}`);
+      failures.push(`${name} is also defined in a second place: ${elsewhere.join(", ")}`);
     }
   }
 }
 if (tester === "") {
-  failures.push(`nincs talalati tabla: ${testerFile}`);
+  failures.push(`no hit tester: ${testerFile}`);
 } else if (
   !/import\s*\{[^}]*\bhitSlopFor\b[^}]*\bslopForExtent\b[^}]*\}\s*from\s*"\.\/responsive\.js"/.test(tester)
 ) {
-  failures.push("a talalati tabla nem a responsive.ts-tol kerdezi a zonat");
+  failures.push("the hit tester does not get the zone from responsive.ts");
 } else {
-  notes.push("a 4 / 12 / 24 egy helyen van, es a talalati tabla onnan kerdezi");
+  notes.push("4 / 12 / 24 live in one place, and the hit tester asks for them there");
 }
 
-// --- Eredmeny ----------------------------------------------------------------
+// --- Result ------------------------------------------------------------------
 
 for (const note of notes) {
   console.log(`  ok   ${note}`);
@@ -155,9 +156,9 @@ for (const note of notes) {
 if (failures.length > 0) {
   console.error("");
   for (const failure of failures) {
-    console.error(`  HIBA ${failure}`);
+    console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-HITSLOP BUKOTT: ${String(failures.length)} hiba.`);
+  console.error(`\nG-HITSLOP FAILED: ${String(failures.length)} failure(s).`);
   process.exit(1);
 }
-console.log("\nG-HITSLOP atment: erdes pointerrel a 2 px-es elem is eltalalhato, egerrel nem lop.");
+console.log("\nG-HITSLOP passed: with a coarse pointer even a 2 px item can be hit, and a mouse does not steal.");

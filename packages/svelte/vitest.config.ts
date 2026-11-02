@@ -57,15 +57,15 @@ const ssr: BrowserCommand<[props: Record<string, unknown>]> = async (_context, p
 };
 
 /**
- * Két készlet, két környezet — mert a csomag két dolgot ígér.
+ * Two suites, two environments — because the package makes two promises.
  *
- * - `node`: a szerveroldal. Itt NINCS window és document; ha egy modul
- *   importkor a DOM-hoz nyúlna, ez a készlet nem is töltene be.
- * - `browser`: a komponens igazi Chromiumban (Playwright), igazi Svelte-tel:
- *   mount, hydrate a szerver kimenetén (amit egy Node-oldali parancs
- *   renderel), és CDP-n át küldött egér- és billentyű-bemenet.
+ * - `node`: the server side. There is NO window or document here; if a module
+ *   reached for the DOM on import, this suite would not even load.
+ * - `browser`: the component in a real Chromium (Playwright), with real Svelte:
+ *   mount, hydrate on the server output (rendered by a Node-side command), and
+ *   mouse and keyboard input sent over CDP.
  *
- * A lefedettség a kettő uniója, fájlonként 90%-os küszöbbel, mint a magban.
+ * Coverage is the union of the two, with a 90% threshold per file, as in the core.
  */
 export default defineConfig({
   plugins: [svelte()],

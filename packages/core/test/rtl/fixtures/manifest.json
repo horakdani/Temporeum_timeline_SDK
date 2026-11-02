@@ -1,56 +1,56 @@
 {
-  "note": "A G-RTL vizualis provenanciaja: a G-VISUAL matrixa tukrozve. A scenario, a matrix es minden fixture sha256-ja.",
+  "note": "G-RTL's visual provenance: the G-VISUAL matrix, mirrored. The sha256 of the scenario, the matrix and every fixture.",
   "core": "1.0.0",
-  "scenarioSha256": "4f4072c87bdcc2d9c9a36e3a9dab5d53d3799d111529cdace802e1118d71741d",
-  "matrixSha256": "62ccae1ab76e3b50ef80eb4a910b4b85a74d849fdc8275c9b5acde03d19d9802",
+  "scenarioSha256": "4b0d628b793c6e22c090b5785b85ebb83c18636f14e4bc605c502ef1f9ef80fc",
+  "matrixSha256": "0bf6cde62825378334fe1b6eb39752a050d417211fc3efb9be3d60ab15409a58",
   "cases": [
     {
       "name": "360-horizontal-light-rtl",
-      "sha256": "f3660ad425a7faad075d14fbf96602a64acae8383b1b6b7be27a29c860a1b362"
+      "sha256": "7fb6d3126726ec4498232394f4b5a81e51b847f15f46edc9474af058e0fa505f"
     },
     {
       "name": "360-horizontal-dark-rtl",
-      "sha256": "d78a234bbc044d4d097775abfbed3ff83120d518b23169a592b733ad03366a39"
+      "sha256": "a6bcb0730b92b0efcca9d5ca585fe65964f6e524e56d0ee6484b837c89f25406"
     },
     {
       "name": "360-vertical-light-rtl",
-      "sha256": "0b1363f7cc9674e19a2b0c6aea220b09d0531571e2c7845bdd9535f1bf7fb3d1"
+      "sha256": "ac7e97010b73b1b8876d6c52eed417038dfb4c151c88e3aef125014309d6c306"
     },
     {
       "name": "360-vertical-dark-rtl",
-      "sha256": "d6e49703adc155a4efc3b5487ad295319e4d4e6d3fe66e6128cfbd37d7acd914"
+      "sha256": "c245e3de8a6a121506cb8fd0f29d96b8cb092dd116d59aa56362be358aa89263"
     },
     {
       "name": "768-horizontal-light-rtl",
-      "sha256": "19b4e4bdeba0fd8586329802ea3a1eb05d4c48fc1e31745ff3ef7d9db00f1b35"
+      "sha256": "c7e0b985baa139cf26cca91439fc22bedfaa0ff08edde3897e029557d7a0d0fa"
     },
     {
       "name": "768-horizontal-dark-rtl",
-      "sha256": "0cafcc697856ee3a421d7be5615c437f5fe38dd61caa2319c86afcbc59bc1c36"
+      "sha256": "e9e9c322232d7af632b31b94e958182eef25490b1eec870991486a02c287b3d1"
     },
     {
       "name": "768-vertical-light-rtl",
-      "sha256": "68879806082903783f038829ca4a4cd03676399a4bf78d3345ac546ef7ed110e"
+      "sha256": "99d04a3adf1cb5503c4e756cd4faaa16d83f5d4827a7ed28060228f055c48fd1"
     },
     {
       "name": "768-vertical-dark-rtl",
-      "sha256": "a6f84504bfb2b80554ee96fd992eb995e7bd1fac877c18e27d27650b8a487385"
+      "sha256": "bc1f55d88d2451d97414becddbe2d3f2521aa7d40123ff39a28f1f90b0e35fba"
     },
     {
       "name": "1440-horizontal-light-rtl",
-      "sha256": "1658b4b7c71cd31836044a0253da5d4561733230cc0bea5a83a9bd63152da824"
+      "sha256": "3529f83dd12b11b0c4a9f431bf9229d04bd344a36c5da6fb95ab00a8670114d3"
     },
     {
       "name": "1440-horizontal-dark-rtl",
-      "sha256": "ef825e766bc6a956048b4f7c5e70f27a8837584e58bafb963161cef2ed623fb3"
+      "sha256": "aeaa029cdc6e98f972736ceac7fc5176e4329e6f26e4323225630d09f7fccac8"
     },
     {
       "name": "1440-vertical-light-rtl",
-      "sha256": "853e04c81b5bdcaf0eca91a26fe7ba14c3534fc8d8c15420842fb04b73aa0f4c"
+      "sha256": "a51707c2b85c19ee48b713b8bf5ff0b00c0940dd9fd4dfcf21ac4422f969f3db"
     },
     {
       "name": "1440-vertical-dark-rtl",
-      "sha256": "6b8cb380d0c601d2cccb22afc914478460e342cf866a453932d87693b4a25de3"
+      "sha256": "ec81d35e9fc7593da251945652e75134ecc64fb4a2118fca6df582dd7b8bfe85"
     }
   ]
 }

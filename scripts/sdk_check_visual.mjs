@@ -1,22 +1,22 @@
 #!/usr/bin/env node
 /**
- * A G-VISUAL kapu masodik fele: bizonyitja, hogy a vizualis MATRIX tenyleg
- * vegigfutott.
+ * The second half of the G-VISUAL check: proves that the visual MATRIX
+ * really ran to the end.
  *
- * A fixture-osszehasonlitas (sdk_visual_snapshots.mjs --check) azt mondja meg,
- * hogy a kirajzolt frame nem valtozott. Ez a szkript azt, hogy a mertek
- * EGESZE lefutott: minden szelessegen, mindket orientacioban, mindket
- * temaban. A kettot szandekosan nem egy szkript mondja: egy tesztfajl, ami
- * csendben kihagy egy orientaciot, a fixture-oldalon nem latszik.
+ * The fixture comparison (sdk_visual_snapshots.mjs --check) says that the
+ * drawn frame did not change. This script says that the WHOLE of the
+ * measurement ran: at every width, in both orientations, in both themes. The
+ * two are deliberately not told by one script: a test file that silently
+ * skips an orientation does not show on the fixture side.
  *
- * Ket fuggetlen ellenorzes:
+ * Two independent checks:
  *
- *  1. FUTASIDEJU: a vitest JSON-riportjaban minden matrix-esethez le kellett
- *     futnia legalabb MIN_PER_CASE tesztnek, mindnek zolden. A riport hianya
- *     BUKAS, nem kihagyas.
- *  2. STATIKUS: a tesztfajl a matrixot a megosztott matrix.json-bol es a MAG
- *     listaibol (ORIENTATIONS, THEMES) veszi, nem sajat masolatbol; es a
- *     fixture-konyvtar pontosan a vart fajlokat tartalmazza.
+ *  1. RUNTIME: in the vitest JSON report at least MIN_PER_CASE tests must
+ *     have run for every matrix case, all passing. A missing report FAILS;
+ *     it is not skipped.
+ *  2. STATIC: the test file takes the matrix from the shared matrix.json and
+ *     from the CORE's lists (ORIENTATIONS, THEMES), not from its own copy;
+ *     and the fixture directory holds exactly the expected files.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -51,14 +51,14 @@ for (const width of matrix.widths) {
 }
 
 if (matrix.widths.length < 3) {
-  failures.push(`${String(matrix.widths.length)} szelesseg a matrixban, de legalabb 3 kell`);
+  failures.push(`${String(matrix.widths.length)} widths in the matrix, but at least 3 are required`);
 }
 
-// --- 1. FUTASIDEJU -----------------------------------------------------------
+// --- 1. RUNTIME --------------------------------------------------------------
 
 if (!existsSync(reportFile)) {
   failures.push(
-    `nincs vitest-riport (${reportFile}) — a vizualis matrix NEM futott le, ezert BUKAS`,
+    `no vitest report (${reportFile}) — the visual matrix did NOT run, so this FAILS`,
   );
 } else {
   const report = JSON.parse(readFileSync(reportFile, "utf8"));
@@ -66,11 +66,11 @@ if (!existsSync(reportFile)) {
   const tests = files.flatMap((file) => file.assertionResults ?? []);
 
   if (tests.length === 0) {
-    failures.push("a vizualis riport egyetlen tesztet sem tartalmaz");
+    failures.push("the visual report contains no tests");
   }
   for (const test of tests) {
     if (test.status !== "passed") {
-      failures.push(`nem zold vizualis teszt: ${String(test.fullName)} (${String(test.status)})`);
+      failures.push(`visual test not passing: ${String(test.fullName)} (${String(test.status)})`);
     }
   }
 
@@ -79,8 +79,8 @@ if (!existsSync(reportFile)) {
     const ran = tests.filter((test) => String(test.fullName).startsWith(entry.prefix));
     if (ran.length < MIN_PER_CASE) {
       failures.push(
-        `${entry.prefix}: ${String(ran.length)} teszt futott, de legalabb ` +
-          `${String(MIN_PER_CASE)} kell — egy kihagyott matrix-eset nem bizonyit semmit`,
+        `${entry.prefix}: ${String(ran.length)} tests ran, but at least ` +
+          `${String(MIN_PER_CASE)} are required — a skipped matrix case proves nothing`,
       );
     }
     for (const test of ran) {
@@ -93,24 +93,24 @@ if (!existsSync(reportFile)) {
 
   for (const density of core.DENSITIES) {
     if (!densitiesSeen.has(density)) {
-      failures.push(`a(z) "${density}" suruseg egyetlen matrix-esetben sem szerepelt`);
+      failures.push(`the "${density}" density appeared in no matrix case`);
     }
   }
 
   if (failures.length === 0) {
     notes.push(
-      `${String(tests.length)} vizualis teszt, ${String(cases.length)} matrix-eset ` +
-        `(${String(matrix.widths.length)} szelesseg x ${String(core.ORIENTATIONS.length)} orientacio x ` +
-        `${String(core.THEMES.length)} tema), mind zold`,
+      `${String(tests.length)} visual tests, ${String(cases.length)} matrix cases ` +
+        `(${String(matrix.widths.length)} widths x ${String(core.ORIENTATIONS.length)} orientations x ` +
+        `${String(core.THEMES.length)} themes), all passing`,
     );
-    notes.push(`mind a ${String(core.DENSITIES.length)} suruseg szerepel a matrixban`);
+    notes.push(`all ${String(core.DENSITIES.length)} densities appear in the matrix`);
   }
 }
 
-// --- 2. STATIKUS -------------------------------------------------------------
+// --- 2. STATIC ---------------------------------------------------------------
 
 if (!existsSync(testFile)) {
-  failures.push(`nincs vizualis tesztfajl: ${testFile}`);
+  failures.push(`no visual test file: ${testFile}`);
 } else {
   const source = readFileSync(testFile, "utf8");
   const usesCoreLists =
@@ -120,52 +120,52 @@ if (!existsSync(testFile)) {
     /from "\.\.\/\.\.\/src\/theme\.js"/.test(source);
   if (!usesCoreLists) {
     failures.push(
-      "a vizualis tesztfajl nem a mag ORIENTATIONS/THEMES listaibol epiti a matrixot — " +
-        "egy helyi lista pont azt engedne meg, hogy egy orientacio csendben kimaradjon",
+      "the visual test file does not build the matrix from the core's ORIENTATIONS/THEMES lists — " +
+        "a local list would allow exactly that an orientation is silently left out",
     );
   } else {
-    notes.push("a matrix a mag ORIENTATIONS/THEMES listain all, nem helyi masolaton");
+    notes.push("the matrix rests on the core's ORIENTATIONS/THEMES lists, not on a local copy");
   }
   if (!/matrix\.json/.test(source)) {
-    failures.push("a vizualis tesztfajl nem a megosztott matrix.json-bol olvassa a szelessegeket");
+    failures.push("the visual test file does not read the widths from the shared matrix.json");
   }
   if (/\[\s*"horizontal"\s*,\s*"vertical"\s*\]/.test(source)) {
-    failures.push("a vizualis tesztfajl sajat orientacio-listat tartalmaz");
+    failures.push("the visual test file contains its own orientation list");
   }
 }
 
 if (!existsSync(fixturesDir)) {
-  failures.push(`nincs fixture-konyvtar: ${fixturesDir}`);
+  failures.push(`no fixture directory: ${fixturesDir}`);
 } else {
   const onDisk = readdirSync(fixturesDir);
   const expected = new Set([...cases.map((entry) => `${entry.name}.svg`), "manifest.json"]);
   for (const name of onDisk) {
     if (!expected.has(name)) {
-      failures.push(`varatlan fajl a fixture-konyvtarban: ${name}`);
+      failures.push(`unexpected file in the fixture directory: ${name}`);
     }
   }
   for (const name of expected) {
     const path = join(fixturesDir, name);
     if (!existsSync(path)) {
-      failures.push(`hianyzo fixture: ${name}`);
+      failures.push(`missing fixture: ${name}`);
       continue;
     }
     if (name.endsWith(".svg")) {
       const text = readFileSync(path, "utf8");
       if (!text.startsWith("<svg")) {
-        failures.push(`${name}: nem SVG-vel kezdodik`);
+        failures.push(`${name}: does not start with SVG`);
       }
       if (statSync(path).size < 1000) {
-        failures.push(`${name}: ures vagy csonka fixture (${String(statSync(path).size)} bajt)`);
+        failures.push(`${name}: empty or truncated fixture (${String(statSync(path).size)} bytes)`);
       }
     }
   }
   if (failures.length === 0) {
-    notes.push(`${String(cases.length)} fixture + manifest a helyen, mind ervenyes SVG`);
+    notes.push(`${String(cases.length)} fixtures + manifest in place, all valid SVG`);
   }
 }
 
-// --- Eredmeny ----------------------------------------------------------------
+// --- Result -------------------------------------------------------------------
 
 for (const note of notes) {
   console.log(`  ok   ${note}`);
@@ -174,12 +174,12 @@ for (const note of notes) {
 if (failures.length > 0) {
   console.error("");
   for (const failure of failures) {
-    console.error(`  HIBA ${failure}`);
+    console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-VISUAL BUKOTT: ${String(failures.length)} hiba.`);
+  console.error(`\nG-VISUAL FAILED: ${String(failures.length)} failure(s).`);
   process.exit(1);
 }
 
 console.log(
-  "\nG-VISUAL atment: a frame valtozatlan 3 szelessegen x 2 orientacion x 2 temaban.",
+  "\nG-VISUAL passed: the frame is unchanged at 3 widths x 2 orientations x 2 themes.",
 );

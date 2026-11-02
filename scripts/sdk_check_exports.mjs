@@ -1,43 +1,44 @@
 #!/usr/bin/env node
 /**
- * G-EXPORTS — az exports map ESM-re, CJS-re és UMD-re helyes.
+ * G-EXPORTS — the exports map is correct for ESM, CJS and UMD.
  *
- * Ez a legtöbb könyvtár néma hibája: a saját tesztjei a forrásból futnak,
- * a fogyasztó viszont a CSOMAGOT kapja, és ha a kettő elválik, azt csak egy
- * idegen projekt látja. Ezért ez a check nem a workspace-t nézi, hanem azt,
- * ami kiadásra kerülne: `npm pack` → tarball → telepítés egy üres
- * fogyasztó-projektbe, és onnan:
+ * This is the silent bug of most libraries: their own tests run from the
+ * source, but the consumer gets the PACKAGE, and if the two drift apart,
+ * only a foreign project sees it. So this check does not look at the
+ * workspace, but at what would be published: `npm pack` → tarball → install
+ * into an empty consumer project, and from there:
  *
- *  1. A manifeszt: minden belépési pont (exports minden feltétele, main,
- *     module, types, unpkg, typesVersions) a tarballban van, és a
- *     sideEffects nem hazudik.
- *  2. Az arethetypeswrong a tarballon: node10, node16-CJS, node16-ESM,
- *     bundler — egyetlen jelzett probléma is bukás. (A P11 nyitásakor a mag
- *     mindkét belépési pontján „Masquerading as ESM” volt, és a /dom
- *     node10-ben nem talált típust: két néma hiba, amit semmi más nem
- *     mutatott meg.)
- *  3. Futásidő Node-ban: minden alútvonal `import()`-tal ÉS `require()`-rel
- *     betölt, és a két export-halmaz azonos.
- *  4. UMD: a mag két UMD-je és az elem önálló UMD-je egy csupasz vm-
- *     kontextusban (nincs window, nincs document) betölt, a globálisan
- *     kitett nevek az ESM-éi; az elemé egy registryt is kap, és regisztrál.
- *  5. TypeScript-fogyasztó négy feloldással (node10, node16 CJS-ből és
- *     ESM-ből, bundler): ugyanaz a forrás típushiba nélkül fordul.
- *  6. A React-bundle-ök első utasítása a "use client".
+ *  1. The manifest: every entry point (every exports condition, main,
+ *     module, types, unpkg, typesVersions) is in the tarball, and
+ *     sideEffects does not lie.
+ *  2. arethetypeswrong on the tarball: node10, node16-CJS, node16-ESM,
+ *     bundler — a single reported problem is a failure. (Before this check
+ *     existed, both entry points of the core were "Masquerading as ESM", and
+ *     /dom found no types in node10: two silent bugs that nothing else
+ *     showed.)
+ *  3. Runtime in Node: every subpath loads with `import()` AND `require()`,
+ *     and the two export sets are identical.
+ *  4. UMD: the core's two UMDs and the element's standalone UMD load in a
+ *     bare vm context (no window, no document), the globally exposed names
+ *     are the ESM's; the element's also gets a registry, and registers.
+ *  5. A TypeScript consumer with four resolutions (node10, node16 from CJS
+ *     and from ESM, bundler): the same source compiles without type errors.
+ *  6. The first statement of the React bundles is "use client".
  *
- * A P23 óta hat csomag: a Vue-adapter ESM-et és CJS-t ad, mint a React; a
- * Svelte- és az Angular-adapter CSAK ESM-et (a .svelte forrást és a részleges
- * Angular-deklarációkat a fogyasztó fordítója dolgozza fel, és mindkét
- * ökoszisztéma ESM-only). Ezeknél a manifeszt az import/default ágon kér
- * types-t, az attw `esm-only` profillal fut (a node10 és a node16-CJS nem
- * cél), a Node-próba nem tölti be őket (a keretrendszer buildje teszi, G-SSR
- * és G-TEMPLATES), a TypeScript-fogyasztó pedig a két ESM-feloldásban kéri.
- *  7. NEGATÍV KONTROLL: a mag a P11 előtti exports-térképével (egy types
- *     mindkét ágra) ugyanezen a mérőn BUKIK. Ha nem bukna, a mérő nem tudna
- *     különbséget tenni, és a zöldje semmit nem jelentene.
+ * There are six packages: the Vue adapter ships ESM and CJS, like React; the
+ * Svelte and Angular adapters ship ONLY ESM (the consumer's compiler
+ * processes the .svelte source and the partial Angular declarations, and
+ * both ecosystems are ESM-only). For these the manifest asks for types on
+ * the import/default branch, attw runs with the `esm-only` profile (node10
+ * and node16-CJS are not targets), the Node probe does not load them (the
+ * framework's build does, G-SSR and G-TEMPLATES), and the TypeScript consumer
+ * asks for them in the two ESM resolutions.
+ *  7. NEGATIVE CONTROL: the core with its earlier exports map (one types for
+ *     both branches) FAILS on this same checker. If it did not fail, the
+ *     checker could not tell the difference, and its pass would mean nothing.
  *
- * A check hálózatot kér, ha az npm-gyorsítótárban nincs meg a React; ha nem
- * tud telepíteni, az BUKÁS, nem kihagyás.
+ * The check needs the network if React is not in the npm cache; if it cannot
+ * install, that is a FAILURE, not a skip.
  */
 import { execFileSync } from "node:child_process";
 import { closeSync, cpSync, existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -70,20 +71,20 @@ const work = mkdtempSync(join(tmpdir(), "tl-exports-"));
 const packs = join(work, "packs");
 mkdirSync(packs);
 
-// --- build és pack ---------------------------------------------------------
+// --- build and pack --------------------------------------------------------
 const packed = new Map();
 for (const pkg of PACKAGES) {
   try {
     run("npm", ["run", "--silent", "build", "-w", pkg.name], { cwd: repo });
   } catch (error) {
-    fail(`${pkg.name}: a build bukott — ${String(error.stderr ?? error.message).slice(0, 400)}`);
+    fail(`${pkg.name}: the build failed — ${String(error.stderr ?? error.message).slice(0, 400)}`);
     continue;
   }
   const [info] = JSON.parse(run("npm", ["pack", "--json", "--pack-destination", packs], { cwd: join(repo, pkg.dir) }));
   packed.set(pkg.name, { ...pkg, tarball: join(packs, info.filename), files: new Set(info.files.map((file) => file.path)) });
 }
 
-// --- 1. a manifeszt --------------------------------------------------------
+// --- 1. the manifest -------------------------------------------------------
 function targetsOf(value, into = []) {
   if (typeof value === "string") into.push(value);
   else if (value !== null && typeof value === "object") for (const each of Object.values(value)) targetsOf(each, into);
@@ -99,32 +100,32 @@ for (const pkg of packed.values()) {
   for (const target of targets) {
     const path = target.replace(/^\.\//, "");
     if (path === "package.json") continue;
-    if (!pkg.files.has(path)) fail(`${pkg.name}: a(z) ${target} belépési pont nincs a tarballban`);
+    if (!pkg.files.has(path)) fail(`${pkg.name}: the ${target} entry point is not in the tarball`);
   }
   for (const [subpath, conditions] of Object.entries(manifest.exports ?? {})) {
     if (typeof conditions === "string") continue;
     if (pkg.esmOnly) {
-      // Csak ESM: egy types a feltételek élén, és se require, se CJS-fájl.
-      if (Object.keys(conditions)[0] !== "types") fail(`${pkg.name}: ${subpath} első feltétele nem a types`);
-      if ("require" in conditions) fail(`${pkg.name}: ${subpath} require-ágat ad, pedig ESM-only`);
-      if (targetsOf(conditions).some((target) => target.endsWith(".cjs"))) fail(`${pkg.name}: ${subpath} CJS-fájlra mutat, pedig ESM-only`);
+      // ESM only: a types at the head of the conditions, and neither require nor a CJS file.
+      if (Object.keys(conditions)[0] !== "types") fail(`${pkg.name}: the first condition of ${subpath} is not types`);
+      if ("require" in conditions) fail(`${pkg.name}: ${subpath} has a require branch, yet it is ESM-only`);
+      if (targetsOf(conditions).some((target) => target.endsWith(".cjs"))) fail(`${pkg.name}: ${subpath} points to a CJS file, yet it is ESM-only`);
       continue;
     }
     for (const side of ["import", "require"]) {
-      if (conditions[side]?.types === undefined) fail(`${pkg.name}: ${subpath} ${side} ágának nincs saját types-a`);
+      if (conditions[side]?.types === undefined) fail(`${pkg.name}: the ${side} branch of ${subpath} has no types of its own`);
     }
     if (conditions.require?.types !== undefined && !conditions.require.types.endsWith(".d.cts")) {
-      fail(`${pkg.name}: ${subpath} require-típusa nem .d.cts (${conditions.require.types}) — CJS-ből ESM-típus`);
+      fail(`${pkg.name}: the require types of ${subpath} are not .d.cts (${conditions.require.types}) — ESM types from CJS`);
     }
   }
   if (Array.isArray(manifest.sideEffects)) {
     for (const file of manifest.sideEffects) {
-      if (!pkg.files.has(file.replace(/^\.\//, ""))) fail(`${pkg.name}: sideEffects egy nem szállított fájlt nevez meg: ${file}`);
+      if (!pkg.files.has(file.replace(/^\.\//, ""))) fail(`${pkg.name}: sideEffects names a file that is not shipped: ${file}`);
     }
   } else if (manifest.sideEffects !== false) {
-    fail(`${pkg.name}: a sideEffects nincs kimondva`);
+    fail(`${pkg.name}: sideEffects is not declared`);
   }
-  notes.push(`${pkg.name}: ${String(targets.length)} belépési pont, mind a tarballban (${String(pkg.files.size)} fájl)`);
+  notes.push(`${pkg.name}: ${String(targets.length)} entry points, all in the tarball (${String(pkg.files.size)} files)`);
 }
 
 // --- 2. arethetypeswrong ---------------------------------------------------
@@ -156,14 +157,14 @@ const PROFILE_IGNORES = { strict: [], node16: ["node10"], "esm-only": ["node10",
 for (const pkg of packed.values()) {
   try {
     const found = attwProblems(pkg.tarball, false, pkg.esmOnly ? "esm-only" : undefined);
-    if (found.length > 0) fail(`${pkg.name}: attw ${String(found.length)} problémát talált: ${found.map((each) => `${each.kind} (${each.entrypoint ?? ""} ${each.resolutionKind ?? ""})`).join("; ")}`);
-    else notes.push(`${pkg.name}: attw — ${pkg.esmOnly ? "node16 ESM, bundler (esm-only profil)" : "node10, node16 CJS/ESM, bundler"}: 0 probléma`);
+    if (found.length > 0) fail(`${pkg.name}: attw found ${String(found.length)} problems: ${found.map((each) => `${each.kind} (${each.entrypoint ?? ""} ${each.resolutionKind ?? ""})`).join("; ")}`);
+    else notes.push(`${pkg.name}: attw — ${pkg.esmOnly ? "node16 ESM, bundler (esm-only profile)" : "node10, node16 CJS/ESM, bundler"}: 0 problems`);
   } catch (error) {
-    fail(`${pkg.name}: az attw nem futott le — ${String(error.message).slice(0, 300)}`);
+    fail(`${pkg.name}: attw did not run — ${String(error.message).slice(0, 300)}`);
   }
 }
 
-// --- telepítés egy idegen projektbe -----------------------------------------
+// --- install into a foreign project ----------------------------------------
 const consumer = join(work, "consumer");
 mkdirSync(consumer);
 writeFileSync(join(consumer, "package.json"), JSON.stringify({ name: "tl-consumer", private: true, type: "module" }, null, 2));
@@ -180,7 +181,7 @@ try {
       `react@${REACT_VERSION}`,
       `react-dom@${REACT_VERSION}`,
       "@types/react@19",
-      // A P23 adapterei: a keretrendszerük a típusaikhoz, és a Vue a Node-próbához.
+      // The framework adapters: their framework for their types, and Vue for the Node probe.
       `vue@${versionOf("packages/vue", "vue")}`,
       `svelte@${versionOf("packages/svelte", "svelte")}`,
       `@angular/core@${versionOf("packages/angular", "@angular/core")}`,
@@ -190,16 +191,16 @@ try {
     { cwd: consumer },
   );
 } catch (error) {
-  fail(`a tarballok nem telepíthetők egy üres projektbe — ${String(error.stderr ?? error.message).slice(0, 400)}`);
+  fail(`the tarballs cannot be installed into an empty project — ${String(error.stderr ?? error.message).slice(0, 400)}`);
 }
 
-// --- 3. ESM és CJS Node-ban --------------------------------------------------
-// A mag alútvonalai az entries.json-ból jönnek (P16): egy új belépési pont
-// magától bekerül, egy kézi lista nem látná.
+// --- 3. ESM and CJS in Node -------------------------------------------------
+// The core's subpaths come from entries.json: a new entry point is picked up
+// automatically, a hand-written list would not see it.
 const CORE_ENTRIES = JSON.parse(readFileSync(join(repo, "packages/core/entries.json"), "utf8")).entries;
 const coreSpec = (entry) => (entry.name === "index" ? "@temporeum/timeline-core" : `@temporeum/timeline-core/${entry.name}`);
-// Az elem alútvonalai a package.json exports-ából (P30): egy új plugin pontja
-// magától bekerül, mint a magé az entries.json-ból.
+// The element's subpaths come from the package.json exports: a new plugin's
+// entry point is picked up automatically, like the core's from entries.json.
 const ELEMENT_SUBPATHS = Object.keys(JSON.parse(readFileSync(join(repo, "packages/web-component/package.json"), "utf8")).exports)
   .filter((key) => key !== "./package.json")
   .map((key) => (key === "." ? "@temporeum/timeline-element" : `@temporeum/timeline-element/${key.slice(2)}`));
@@ -224,16 +225,16 @@ process.stdout.write(JSON.stringify(out));`,
     const result = JSON.parse(run(process.execPath, [probe], { cwd: consumer }));
     for (const [spec, { esm, cjs }] of Object.entries(result)) {
       esmKeys.set(spec, esm);
-      if (JSON.stringify(esm) !== JSON.stringify(cjs)) fail(`${spec}: az ESM és a CJS más neveket exportál (ESM: ${esm.length}, CJS: ${cjs.length})`);
-      if (esm.length === 0 && !spec.endsWith("/define")) fail(`${spec}: üres export`);
+      if (JSON.stringify(esm) !== JSON.stringify(cjs)) fail(`${spec}: ESM and CJS export different names (ESM: ${esm.length}, CJS: ${cjs.length})`);
+      if (esm.length === 0 && !spec.endsWith("/define")) fail(`${spec}: empty export`);
     }
-    notes.push(`Node: ${String(SUBPATHS.length)} alútvonal import()-tal és require()-rel, azonos export-halmazzal, DOM-globál nélkül`);
+    notes.push(`Node: ${String(SUBPATHS.length)} subpaths with import() and require(), with identical export sets, without DOM globals`);
   } catch (error) {
-    fail(`a Node-os betöltés bukott — ${String(error.stderr ?? error.message).slice(0, 600)}`);
+    fail(`loading in Node failed — ${String(error.stderr ?? error.message).slice(0, 600)}`);
   }
 }
 
-// --- 4. UMD egy csupasz kontextusban ---------------------------------------
+// --- 4. UMD in a bare context ----------------------------------------------
 function loadUmd(file, globals = {}) {
   const sandbox = { ...globals };
   sandbox.globalThis = sandbox;
@@ -245,41 +246,41 @@ function loadUmd(file, globals = {}) {
 const installed = (name, file) => join(consumer, "node_modules", name, file);
 if (esmKeys.size > 0) {
   try {
-    // A mag minden belépési pontjának UMD-je, az entries.json szerint.
+    // The UMD of every core entry point, per entries.json.
     let coreKeys = [];
     for (const entry of CORE_ENTRIES) {
       const umd = loadUmd(installed("@temporeum/timeline-core", `dist/${entry.name}.umd.js`));
       const keys = Object.keys(umd[entry.umd] ?? {}).sort();
       if (entry.name === "index") coreKeys = keys;
-      if (JSON.stringify(keys) !== JSON.stringify(esmKeys.get(coreSpec(entry)))) fail(`core ${entry.name} UMD: a ${entry.umd} globál nevei nem az ESM-éi (${String(keys.length)})`);
+      if (JSON.stringify(keys) !== JSON.stringify(esmKeys.get(coreSpec(entry)))) fail(`core ${entry.name} UMD: the names of the ${entry.umd} global are not the ESM's (${String(keys.length)})`);
     }
-    // Az elem UMD-je önálló: a mag benne van, és betöltéskor regisztrál.
+    // The element's UMD is standalone: the core is inside it, and it registers on load.
     const bare = loadUmd(installed("@temporeum/timeline-element", "dist/timeline-element.umd.js"));
     const elementKeys = Object.keys(bare.TemporeumTimelineElement ?? {}).sort();
     const expected = esmKeys.get("@temporeum/timeline-element");
-    if (!expected.every((key) => elementKeys.includes(key))) fail("element UMD: hiányzik az ESM egy neve a TemporeumTimelineElement globálról");
+    if (!expected.every((key) => elementKeys.includes(key))) fail("element UMD: a name of the ESM is missing from the TemporeumTimelineElement global");
     const defined = new Map();
     class FakeElement {}
     loadUmd(installed("@temporeum/timeline-element", "dist/timeline-element.umd.js"), {
       HTMLElement: FakeElement,
       customElements: { get: (name) => defined.get(name), getName: () => null, define: (name, constructor) => defined.set(name, constructor) },
     });
-    if (!defined.has("temporeum-timeline")) fail("element UMD: betöltéskor nem regisztrálta a <temporeum-timeline>-t");
-    // Egy valódi import- vagy require-utasítás, nem a doc-kommentek példái és nem egy hibaüzenet szövege
-    // (az elem a P29 óta a hiányzó plugin importját a TypeError-ban nevezi meg).
+    if (!defined.has("temporeum-timeline")) fail("element UMD: it did not register <temporeum-timeline> on load");
+    // A real import or require statement, not the examples in doc comments and not the text of an error
+    // message (since the plugins were split, the element names the missing plugin's import in the TypeError).
     const external = (text) => {
       const code = text.replace(/\/\*[\s\S]*?\*\//g, "");
       return /\brequire\(/.test(code) || /^\s*(?:import|export)\b[^\n;]*\bfrom\s*["']@temporeum/m.test(code) || /\bimport\(\s*["']@temporeum/.test(code);
     };
-    if (!external('/** a */\nimport { a } from "@temporeum/timeline-core";') || !external('var c = require("x");') || external('/**\n *     import { a } from "@temporeum/timeline-element";\n */\nthrow new TypeError(`import { x } from "@temporeum/timeline-element/x"`);')) fail("element UMD: a külső-modul mérő a saját kontrollján hibázik");
-    if (external(readFileSync(installed("@temporeum/timeline-element", "dist/timeline-element.umd.js"), "utf8"))) fail("element UMD: külső modulra hivatkozik — nem önálló");
-    notes.push(`UMD: core (${String(coreKeys.length)} név), ${CORE_ENTRIES.filter((e) => e.name !== "index").map((e) => e.name).join(", ")}, element (önálló, regisztrál) — window és document nélkül`);
+    if (!external('/** a */\nimport { a } from "@temporeum/timeline-core";') || !external('var c = require("x");') || external('/**\n *     import { a } from "@temporeum/timeline-element";\n */\nthrow new TypeError(`import { x } from "@temporeum/timeline-element/x"`);')) fail("element UMD: the external-module checker gets its own control wrong");
+    if (external(readFileSync(installed("@temporeum/timeline-element", "dist/timeline-element.umd.js"), "utf8"))) fail("element UMD: it refers to an external module — it is not standalone");
+    notes.push(`UMD: core (${String(coreKeys.length)} names), ${CORE_ENTRIES.filter((e) => e.name !== "index").map((e) => e.name).join(", ")}, element (standalone, registers) — without window and document`);
   } catch (error) {
-    fail(`az UMD-betöltés bukott — ${String(error.message).slice(0, 400)}`);
+    fail(`loading the UMD failed — ${String(error.message).slice(0, 400)}`);
   }
 }
 
-// --- 5. TypeScript-fogyasztó négy feloldással --------------------------------
+// --- 5. TypeScript consumer with four resolutions ----------------------------
 const tsc = join(repo, "node_modules/typescript/bin/tsc");
 const SOURCE = `import { renderTimeline, type Item } from "@temporeum/timeline-core";
 import { mountScene, type SceneMount } from "@temporeum/timeline-core/dom";
@@ -297,7 +298,7 @@ export const unused = mountScene;
 import { Timeline as VueTimeline, useTimelineState as useVueState } from "@temporeum/timeline-vue";
 export const vue = [VueTimeline, useVueState] as const;
 `;
-/** Csak az ESM-feloldásokban (node16-esm, bundler): a két ESM-only adapter. */
+/** Only in the ESM resolutions (node16-esm, bundler): the two ESM-only adapters. */
 const ESM_ONLY_SOURCE = `import { Timeline as SvelteTimeline, timelineState, type Readable } from "@temporeum/timeline-svelte";
 import { TimelineComponent as AngularTimeline, timelineState as timelineSignal } from "@temporeum/timeline-angular";
 export const svelte: [typeof SvelteTimeline, typeof timelineState] = [SvelteTimeline, timelineState];
@@ -330,24 +331,24 @@ function typecheck(root, setup) {
 if (esmKeys.size > 0) {
   for (const setup of SETUPS) {
     const error = typecheck(consumer, setup);
-    if (error !== undefined) fail(`TypeScript ${setup.name}: a fogyasztó nem fordul — ${error}`);
+    if (error !== undefined) fail(`TypeScript ${setup.name}: the consumer does not compile — ${error}`);
   }
-  if (problems.length === 0) notes.push(`TypeScript: ${SETUPS.map((setup) => setup.name).join(", ")} — a fogyasztó típushiba nélkül fordul (skipLibCheck: false)`);
+  if (problems.length === 0) notes.push(`TypeScript: ${SETUPS.map((setup) => setup.name).join(", ")} — the consumer compiles without type errors (skipLibCheck: false)`);
 }
 
 // --- 6. "use client" -------------------------------------------------------
 for (const file of ["dist/index.mjs", "dist/index.cjs"]) {
   const path = installed("@temporeum/timeline-react", file);
   if (!existsSync(path)) continue;
-  if (!readFileSync(path, "utf8").startsWith('"use client";')) fail(`react ${file}: az első utasítás nem a "use client"`);
+  if (!readFileSync(path, "utf8").startsWith('"use client";')) fail(`react ${file}: the first statement is not "use client"`);
 }
 
-// --- 7. negatív kontroll ---------------------------------------------------
+// --- 7. negative control ---------------------------------------------------
 {
   const control = join(work, "control-core");
   cpSync(join(repo, "packages/core"), control, { recursive: true, filter: (path) => !path.includes("node_modules") && !path.includes("coverage") });
   const manifest = JSON.parse(readFileSync(join(control, "package.json"), "utf8"));
-  // A P11 előtti alak: egy types mindkét ágra, typesVersions nélkül.
+  // The earlier shape: one types for both branches, without typesVersions.
   manifest.types = "./dist/index.d.ts";
   manifest.exports = {
     ".": { types: "./dist/index.d.ts", import: "./dist/index.mjs", require: "./dist/index.cjs", default: "./dist/index.mjs" },
@@ -359,10 +360,10 @@ for (const file of ["dist/index.mjs", "dist/index.cjs"]) {
   writeFileSync(join(control, "package.json"), JSON.stringify(manifest, null, 2));
   try {
     const found = attwProblems(control, true);
-    if (found.length === 0) fail("NEGATÍV KONTROLL: a P11 előtti exports-térképen az attw nem talált hibát — a mérő vak");
-    else notes.push(`negatív kontroll: a P11 előtti exports-térkép ${String(found.length)} problémával bukik (${[...new Set(found.map((each) => each.kind))].join(", ")})`);
+    if (found.length === 0) fail("NEGATIVE CONTROL: attw found no problem in the earlier exports map — the checker is blind");
+    else notes.push(`negative control: the earlier exports map fails with ${String(found.length)} problems (${[...new Set(found.map((each) => each.kind))].join(", ")})`);
   } catch (error) {
-    fail(`NEGATÍV KONTROLL: nem futott le — ${String(error.message).slice(0, 300)}`);
+    fail(`NEGATIVE CONTROL: did not run — ${String(error.message).slice(0, 300)}`);
   }
 }
 
@@ -370,8 +371,8 @@ rmSync(work, { recursive: true, force: true });
 
 for (const note of notes) process.stdout.write(`  ok  ${note}\n`);
 if (problems.length > 0) {
-  process.stdout.write(`\nG-EXPORTS: ${String(problems.length)} probléma\n`);
-  for (const problem of problems) process.stdout.write(`  BUKÁS  ${problem}\n`);
+  process.stdout.write(`\nG-EXPORTS: ${String(problems.length)} problems\n`);
+  for (const problem of problems) process.stdout.write(`  FAIL  ${problem}\n`);
   process.exit(1);
 }
-process.stdout.write(`\nG-EXPORTS: az exports map ESM-re, CJS-re és UMD-re helyes, ${String(packed.size)} csomagban.\n`);
+process.stdout.write(`\nG-EXPORTS: the exports map is correct for ESM, CJS and UMD, in ${String(packed.size)} packages.\n`);

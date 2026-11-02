@@ -155,13 +155,13 @@ describe("the now line", () => {
   it("puts the label after the line, and before it at the right edge", () => {
     const ctx = context(domain);
     const middle = renderDecoration(
-      { kind: "now", time: Date.UTC(2025, 2, 6), label: "most" },
+      { kind: "now", time: Date.UTC(2025, 2, 6), label: "now" },
       ctx,
     );
     expect(middle).toHaveLength(2);
     expect(number(middle[1]?.attrs?.x)).toBeGreaterThan(number(middle[0]?.attrs?.x1));
     const edge = renderDecoration(
-      { kind: "now", time: Date.UTC(2025, 2, 10, 23), label: "most" },
+      { kind: "now", time: Date.UTC(2025, 2, 10, 23), label: "now" },
       ctx,
     );
     expect(number(edge[1]?.attrs?.x)).toBeLessThan(number(edge[0]?.attrs?.x1));
@@ -170,7 +170,7 @@ describe("the now line", () => {
   it("gives the label up when the viewport is too narrow for it", () => {
     const ctx = context(domain, { mainSize: 30 });
     const nodes = renderDecoration(
-      { kind: "now", time: Date.UTC(2025, 2, 6), label: "egy hosszú felirat" },
+      { kind: "now", time: Date.UTC(2025, 2, 6), label: "a long caption" },
       ctx,
     );
     expect(nodes).toHaveLength(1);
@@ -215,19 +215,19 @@ describe("eras", () => {
         id: "e",
         start: Date.UTC(2025, 2, 2),
         end: Date.UTC(2025, 2, 8),
-        label: "Első szakasz",
+        label: "First phase",
       },
       ctx,
     );
     expect(wide).toHaveLength(2);
-    expect(wide[1]?.text).toBe("Első szakasz");
+    expect(wide[1]?.text).toBe("First phase");
     const narrow = renderDecoration(
       {
         kind: "era",
         id: "e",
         start: Date.UTC(2025, 2, 2),
         end: Date.UTC(2025, 2, 2, 2),
-        label: "Első szakasz",
+        label: "First phase",
       },
       ctx,
     );
@@ -266,11 +266,11 @@ describe("markers", () => {
 
   it("labels the marker when there is room beside it", () => {
     const nodes = renderDecoration(
-      { kind: "marker", id: "m", time: at, label: "kiadás" },
+      { kind: "marker", id: "m", time: at, label: "release" },
       context(domain),
     );
     expect(nodes).toHaveLength(2);
-    expect(nodes[1]?.text).toBe("kiadás");
+    expect(nodes[1]?.text).toBe("release");
   });
 });
 

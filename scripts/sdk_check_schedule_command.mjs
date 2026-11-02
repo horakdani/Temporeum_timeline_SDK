@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * G-SCHEDULE-CMD: az automatikus utemezes egyetlen parancs, az inverze a
- * pontos kiindulast adja vissza, es a mag utemezes kozben semmit nem ment.
+ * G-SCHEDULE-CMD: auto-scheduling is a single command, its inverse restores
+ * the exact starting point, and the core saves nothing while scheduling.
  *
- * Futasidoben: egy 'schedule' parancs, csak a mozgatott feladatokra, pontos
- * inverz sorozatban is, es befagyasztott bemenet mellett, csapdaba tett
- * halozat, tarolo es idozito mellett semmi nem nyul ki. Statikusan: a
- * /schedule forrasaban nincs I/O, tarolo, idozito vagy DOM-hivas, es a
- * parancs a mag createCommand-jabol jon (az inverz-szerzodes ott van).
+ * At runtime: one 'schedule' command, covering only the moved tasks, with an
+ * exact inverse in a sequence too, and with frozen input and trapped
+ * network, storage and timers nothing reaches out. Statically: the
+ * /schedule source has no I/O, storage, timer or DOM calls, and the command
+ * comes from the core's createCommand (where the inverse contract lives).
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -19,7 +19,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dir = join(root, "packages", "core", "src", "schedule");
 const failures = checkReport({
   file: join(root, "packages", "core", ".schedule-command-report.json"),
-  label: "utemezo-parancs",
+  label: "schedule-command",
   minTests: 3,
   claims: ["one-command", "inverse-exact", "no-save"],
 });
@@ -29,7 +29,7 @@ let code = "";
 for (const file of readdirSync(dir).filter((name) => name.endsWith(".ts"))) {
   const text = codeOf(readFileSync(join(dir, file), "utf8"));
   code += text;
-  for (const needle of FORBIDDEN) if (text.includes(needle)) failures.push(`a /schedule (${file}) kinyul: ${needle}`);
+  for (const needle of FORBIDDEN) if (text.includes(needle)) failures.push(`/schedule (${file}) reaches out: ${needle}`);
 }
-if (!code.includes('createCommand("schedule"')) failures.push("a scheduleCommand nem a mag createCommand-javal kesziti a 'schedule' parancsot");
+if (!code.includes('createCommand("schedule"')) failures.push("scheduleCommand does not build the 'schedule' command with the core's createCommand");
 finish("G-SCHEDULE-CMD", failures);

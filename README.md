@@ -7,14 +7,18 @@ npm install @temporeum/timeline-element
 ```
 
 ```js
-import { createTimeline } from "@temporeum/timeline-element";
+import { createTimeline, registerPlugin } from "@temporeum/timeline-element";
+import { groupsPlugin } from "@temporeum/timeline-element/groups";
+
+// Named rows are a plugin: a page that does not use them does not download them.
+registerPlugin(groupsPlugin);
 
 const timeline = createTimeline(document.querySelector("#timeline"), {
   items: [
     { id: "design", start: new Date("2026-03-02"), end: new Date("2026-03-09"), label: "Design", laneId: "work" },
     { id: "launch", start: new Date("2026-03-27"), end: new Date("2026-04-03"), label: "Launch", laneId: "ship" },
   ],
-  lanes: [
+  groups: [
     { id: "work", label: "Work" },
     { id: "ship", label: "Shipping" },
   ],
@@ -47,7 +51,7 @@ Read-only timeline widgets already exist. This one is built to have five propert
 - **Editable.** You can drag and resize items. Each edit comes out as a command, and the command's `inverse` undoes it.
 - **Genuinely responsive.** On a narrow screen the timeline turns vertical. That layout comes from the same code as the horizontal desktop one: the container's width decides, not a separate build.
 - **Accessible.** Every gesture has a keyboard equivalent, and screen readers see the timeline as a listbox. The docs site and the demo pages are checked against WCAG 2.2 AA with axe, with 0 violations.
-- **Light.** The engine does its own scale and tick maths and depends on nothing. A plain timeline's page loads 50.5 kB of JavaScript minified and gzipped, a Gantt chart's 58.3 kB; vis-timeline's standalone build is 155.8 kB. What a page does not use is a plugin it never downloads.
+- **Light.** The engine does its own scale and tick maths and depends on nothing. A plain timeline's page loads 52.5 kB of JavaScript minified and gzipped, a Gantt chart's 60.4 kB; vis-timeline's standalone build is 155.8 kB. What a page does not use is a plugin it never downloads.
 - **Typed.** The public surface has no `any`, and CI enforces it.
 
 ## How it compares
@@ -56,10 +60,10 @@ The [benchmark](packages/docs/site/pages/benchmark.md) runs this library and vis
 
 | | Temporeum | vis-timeline |
 |---|---|---|
-| First render | 0.68 s | 3.55 s |
+| First render | 0.69 s | 3.53 s |
 | Missed frames while panning | 0.3% | 58% |
 | Missed frames while zooming (ctrl + wheel) | 0% | 63% |
-| JavaScript heap after load | 6.6 MB | 37.5 MB |
+| JavaScript heap after load | 6.6 MB | 37.6 MB |
 
 The benchmark page also lists where we lose. At this density (about 2 000 items across 1 440 px) Temporeum draws no item text, while vis-timeline draws labels on fewer, larger items. Up to about 1 000 items per screen width, labels that don't fit are shortened with an ellipsis instead of being dropped.
 

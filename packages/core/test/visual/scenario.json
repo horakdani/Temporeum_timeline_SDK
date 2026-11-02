@@ -1,35 +1,35 @@
 {
-  "note": "A vizuális fixture adata. Szándékosan tele van a kényes esetekkel: átfedés, nyitott intervallum, magas sáv, nap-granularitású pillanat, igazi pillanat, a domainen kívüli elem (cullingra), részben kilátszó elem, rögzített sáv, üres sáv, hosszú és üres címke. A domain átmegy a 2025-03-30-i budapesti óraátállításon, tehát a naptármatek is a képen van.",
+  "note": "The visual fixtures' data. Deliberately full of the awkward cases: overlap, an open interval, a tall lane, a day-granularity instant, a true instant, an item outside the domain (for culling), a partly visible item, a pinned lane, an empty lane, a long label and an empty one. The domain crosses the Budapest daylight-saving change of 2025-03-30, so the calendar maths is in the picture too.",
   "timeZone": "Europe/Budapest",
   "domain": ["2025-03-24T00:00:00+01:00", "2025-04-07T00:00:00+02:00"],
-  "ariaLabel": "Projekt idővonal",
+  "ariaLabel": "Project timeline",
   "now": "2025-03-30T12:00:00+02:00",
   "selectedIds": ["kutatas"],
   "lanes": [
-    { "id": "mert", "label": "Mérföldkövek", "pinned": true },
-    { "id": "terv", "label": "Tervezés" },
-    { "id": "epit", "label": "Építés" },
-    { "id": "ures", "label": "Üres sáv" }
+    { "id": "milestones", "label": "Milestones", "pinned": true },
+    { "id": "plan", "label": "Planning" },
+    { "id": "build", "label": "Building" },
+    { "id": "empty", "label": "Empty lane" }
   ],
   "items": [
-    { "id": "elozmeny", "start": "2025-03-10T00:00:00+01:00", "end": "2025-03-26T00:00:00+01:00", "label": "Előzmény, részben kilátszó", "laneId": "terv" },
-    { "id": "kutatas", "start": "2025-03-25T00:00:00+01:00", "end": "2025-03-31T00:00:00+02:00", "label": "Kutatás", "laneId": "terv" },
-    { "id": "interjuk", "start": "2025-03-27T00:00:00+01:00", "end": "2025-03-29T00:00:00+01:00", "label": "Interjúk", "laneId": "terv" },
-    { "id": "dontes", "start": "2025-03-30T00:00:00+01:00", "granularity": "day", "label": "Döntés napja", "laneId": "terv" },
-    { "id": "nevtelen", "start": "2025-04-02T00:00:00+02:00", "end": "2025-04-04T00:00:00+02:00", "laneId": "terv" },
-    { "id": "szakasz", "start": "2025-03-24T00:00:00+01:00", "end": "2025-04-02T00:00:00+02:00", "label": "Első szakasz", "laneId": "epit", "sublaneSpan": 2 },
-    { "id": "fejlesztes", "start": "2025-03-28T00:00:00+01:00", "open": true, "label": "Fejlesztés, nyitott", "laneId": "epit" },
-    { "id": "javitas", "start": "2025-04-01T00:00:00+02:00", "end": "2025-04-03T00:00:00+02:00", "label": "Javítás", "laneId": "epit" },
-    { "id": "pillanat", "start": "2025-03-31T09:30:00+02:00", "label": "Pillanat", "laneId": "mert" },
-    { "id": "kiadas", "start": "2025-04-05T00:00:00+02:00", "granularity": "day", "label": "Kiadás", "laneId": "mert" },
-    { "id": "roviden", "start": "2025-03-26T00:00:00+01:00", "end": "2025-03-26T06:00:00+01:00", "label": "Egy nagyon hosszú megnevezés, ami biztosan nem fér el", "laneId": "mert" },
-    { "id": "kesobb", "start": "2025-05-01T00:00:00+02:00", "end": "2025-05-10T00:00:00+02:00", "label": "A domainen kívül", "laneId": "epit" }
+    { "id": "earlier", "start": "2025-03-10T00:00:00+01:00", "end": "2025-03-26T00:00:00+01:00", "label": "Earlier, partly visible", "laneId": "plan" },
+    { "id": "research", "start": "2025-03-25T00:00:00+01:00", "end": "2025-03-31T00:00:00+02:00", "label": "Research", "laneId": "plan" },
+    { "id": "interviews", "start": "2025-03-27T00:00:00+01:00", "end": "2025-03-29T00:00:00+01:00", "label": "Interviews", "laneId": "plan" },
+    { "id": "decision", "start": "2025-03-30T00:00:00+01:00", "granularity": "day", "label": "Decision day", "laneId": "plan" },
+    { "id": "nevtelen", "start": "2025-04-02T00:00:00+02:00", "end": "2025-04-04T00:00:00+02:00", "laneId": "plan" },
+    { "id": "phase", "start": "2025-03-24T00:00:00+01:00", "end": "2025-04-02T00:00:00+02:00", "label": "First phase", "laneId": "build", "sublaneSpan": 2 },
+    { "id": "development", "start": "2025-03-28T00:00:00+01:00", "open": true, "label": "Development, open", "laneId": "build" },
+    { "id": "fixes", "start": "2025-04-01T00:00:00+02:00", "end": "2025-04-03T00:00:00+02:00", "label": "Fixes", "laneId": "build" },
+    { "id": "instant", "start": "2025-03-31T09:30:00+02:00", "label": "Instant", "laneId": "milestones" },
+    { "id": "release", "start": "2025-04-05T00:00:00+02:00", "granularity": "day", "label": "Release", "laneId": "milestones" },
+    { "id": "brief", "start": "2025-03-26T00:00:00+01:00", "end": "2025-03-26T06:00:00+01:00", "label": "A very long name that is certain not to fit in", "laneId": "milestones" },
+    { "id": "later", "start": "2025-05-01T00:00:00+02:00", "end": "2025-05-10T00:00:00+02:00", "label": "Outside the domain", "laneId": "build" }
   ],
   "decorations": [
     { "kind": "banding" },
-    { "kind": "era", "id": "q1", "start": "2025-03-24T00:00:00+01:00", "end": "2025-03-31T00:00:00+02:00", "label": "Q1 vége" },
-    { "kind": "now", "time": "2025-03-30T12:00:00+02:00", "label": "most" },
-    { "kind": "marker", "id": "atallas", "time": "2025-03-30T02:00:00+01:00", "label": "óraátállítás", "shape": "triangle" },
-    { "kind": "marker", "id": "demo", "time": "2025-04-04T00:00:00+02:00", "label": "demó", "shape": "circle" }
+    { "kind": "era", "id": "q1", "start": "2025-03-24T00:00:00+01:00", "end": "2025-03-31T00:00:00+02:00", "label": "End of Q1" },
+    { "kind": "now", "time": "2025-03-30T12:00:00+02:00", "label": "now" },
+    { "kind": "marker", "id": "dst", "time": "2025-03-30T02:00:00+01:00", "label": "clock change", "shape": "triangle" },
+    { "kind": "marker", "id": "demo", "time": "2025-04-04T00:00:00+02:00", "label": "demo", "shape": "circle" }
   ]
 }

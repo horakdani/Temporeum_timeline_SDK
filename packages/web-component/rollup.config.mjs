@@ -1,15 +1,17 @@
-// Két build. Az ESM/CJS a magot KÜLSŐNEK hagyja: egy bundleres
-// alkalmazásban egy példányban van jelen, akárhány csomag kéri. A UMD a
-// `<script>`-tagé, ott nincs, aki feloldja az importot — abba a mag is
-// belefordul, és betöltéskor regisztrálja az elemet.
+// Two builds. ESM/CJS leave the core EXTERNAL: in a bundled application it
+// is present once, however many packages ask for it. The UMD is for the
+// `<script>` tag, where nothing resolves the import — the core is compiled
+// into it too, and it registers the element on load.
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 
 import typescript from "@rollup/plugin-typescript";
 
-// Egy közös darab, az elem alapja (element.shared): a pluginok és a naptár
-// saját fájljai onnan importálnak, nem egy-egy szétforgácsolt darabból — egy
-// oldal annyi kérést kap, mint a pluginok előtt.
+import { minifyUmd } from "../core/scripts/minify-umd.mjs";
+
+// One shared chunk, the element's base (element.shared): the plugins' and the
+// calendar's own files import from there, not from a scatter of small chunks —
+// a page makes as many requests as it did before the plugins were split out.
 const OWN = /\/src\/(gantt|resources|export|tools|groups|items|intl|story|calendar|calendar-view|task-grid|backlog|define|index)\.ts$/;
 const manualChunks = (id) => (/\/src\/[^/]+\.ts$/.test(id) && !OWN.test(id) ? "element" : undefined);
 
@@ -25,8 +27,8 @@ const ts = () =>
 
 export default [
   {
-    // Egy buildben, hogy a define a közös modult importálja, ne a saját
-    // másolatát: két külön osztály két különböző `instanceof`-ot adna.
+    // In one build, so that define imports the shared module rather than a
+    // copy of its own: two separate classes would give two different `instanceof`s.
     input: {
       index: "src/index.ts",
       define: "src/define.ts",
@@ -49,15 +51,15 @@ export default [
   },
   {
     input: "src/umd.ts",
-    output: { file: "dist/timeline-element.umd.js", format: "umd", name: "TemporeumTimelineElement", sourcemap: true, exports: "named", banner },
+    output: { file: "dist/timeline-element.umd.js", format: "umd", name: "TemporeumTimelineElement", sourcemap: false, exports: "named", banner, plugins: [minifyUmd()] },
     plugins: [
       {
-        // A mag a buildelt ESM-jéből fordul bele, nem a forrásából: ugyanaz
-        // a kód, amit a mag maga szállít.
+        // The core is compiled in from its built ESM, not from its source: the
+        // same code the core itself ships.
         name: "core-from-dist",
         resolveId(id) {
           if (id === "@temporeum/timeline-core") return join(core, "dist/index.mjs");
-          // Minden alútvonal (/dom, /groups, /items) a saját buildelt fájlja.
+          // Every subpath (/dom, /groups, /items) is its own built file.
           if (id.startsWith("@temporeum/timeline-core/")) return join(core, `dist/${id.slice("@temporeum/timeline-core/".length)}.mjs`);
           return null;
         },

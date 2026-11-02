@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * G-NODOM: a mag DOM nelkul is mukodik — a LEFORDITOTT csomagon bizonyitva.
+ * G-NODOM: the core works without a DOM — proven on the BUILT package.
  *
- * A vitest `node` environmentje a forrast futtatja; ez a szkript a shippelt
- * bundle-t. A ketto nem ugyanaz az allitas: a szerveroldali ut azon all vagy
- * bukik, hogy a kozzetett csomag toltodik-e be egy csupasz Node-ban.
+ * Vitest's `node` environment runs the source; this script runs the shipped
+ * bundle. The two are not the same claim: the server-side path stands or
+ * falls on whether the published package loads in a bare Node.
  *
- * Ezert elobb epit (hogy ne egy elavult dist-et mersunk), aztan kulon
- * processzben lefuttatja a probat.
+ * So it builds first (so that we do not measure a stale dist), then runs the
+ * probe in a separate process.
  */
 
 import { execFileSync } from "node:child_process";
@@ -19,12 +19,12 @@ const packageDir = join(repoRoot, "packages", "core");
 const probe = join(repoRoot, "scripts", "sdk_nodom_probe.mjs");
 
 try {
-  // Friss dist: egy elavult bundle-on mert "zold" pont az a fajta csend,
-  // amitol a kapu ertelmet veszti.
+  // A fresh dist: a "green" measured on a stale bundle is exactly the kind
+  // of silence that makes the check meaningless.
   execFileSync("npm", ["run", "--silent", "build"], { cwd: packageDir, stdio: "inherit" });
 } catch {
-  console.error("  HIBA a csomag nem epult fel — a szerveroldali proba nem futtathato");
-  console.error("\nG-NODOM BUKOTT: build nelkul nincs mit megmerni.");
+  console.error("  FAIL the package did not build — the server-side probe cannot run");
+  console.error("\nG-NODOM FAILED: without a build there is nothing to measure.");
   process.exit(1);
 }
 
@@ -34,4 +34,4 @@ try {
   process.exit(1);
 }
 
-console.log("\nG-NODOM atment: a lefordított ESM és CJS csomag elaknásított DOM-globálokkal is lefut.");
+console.log("\nG-NODOM passed: the built ESM and CJS packages run even with booby-trapped DOM globals.");

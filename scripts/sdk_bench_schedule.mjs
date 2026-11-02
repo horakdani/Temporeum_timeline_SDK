@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 /**
- * G-SCHEDULE-PERF: 10 000 feladat es 20 000 fuggoseg utemezese Node-ban a
- * kerete alatt van.
+ * G-SCHEDULE-PERF: scheduling 10 000 tasks and 20 000 dependencies in Node
+ * stays within its budget.
  *
- * A kiadott ESM-et meri (dist/schedule.mjs, a csomagparancs elotte epit),
- * egy budapesti munkanaptarral, unnepnapokkal es a nyari idoszamitas
- * valtasaval, mind a negy fuggosegtipussal, kesleltetessel es megkotesekkel.
- * Minden futas friss naptar-objektumot kap, igy a naptar forditasa is a
- * mert idoben van. Het futas medianja a keret ala kell essen.
+ * It measures the shipped ESM (dist/schedule.mjs; the package command builds
+ * it first), with a Budapest work calendar, public holidays and a daylight
+ * saving time change, all four dependency types, lags and constraints.
+ * Every run gets a fresh calendar object, so compiling the calendar is part
+ * of the measured time too. The median of seven runs must be within budget.
  *
- * A mert futas nem ures: az eredmenyben minden fuggoseg tart (munkaidoben,
- * az utod naptaraban), kor nincs, es a feladatok tobbsege mozog — egy
- * keret, amit egy semmit nem csinalo utemezo tartana, nem bizonyit semmit.
+ * The measured run is not empty: in the result every dependency holds (in
+ * working time, in the successor's calendar), there are no cycles, and most
+ * tasks move — a budget that a scheduler doing nothing would meet proves
+ * nothing.
  */
 import { existsSync } from "node:fs";
 import { performance } from "node:perf_hooks";
@@ -28,7 +29,7 @@ const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 
 if (!existsSync(dist)) {
-  console.error(`G-SCHEDULE-PERF: nincs ${dist} — a build nem futott, ezert BUKAS`);
+  console.error(`G-SCHEDULE-PERF: no ${dist} — the build did not run, so FAIL`);
   process.exit(1);
 }
 const { scheduleTasks, workTime } = await import(pathToFileURL(dist).href);
@@ -73,7 +74,7 @@ times.sort((a, b) => a - b);
 const median = times[Math.floor(RUNS / 2)];
 
 const failures = [];
-if (result.cycles.length > 0) failures.push(`a mert projektben kor van (${result.cycles.length})`);
+if (result.cycles.length > 0) failures.push(`the measured project has cycles (${result.cycles.length})`);
 const time = workTime(calendar);
 let broken = 0;
 for (const dependency of dependencies) {
@@ -83,16 +84,16 @@ for (const dependency of dependencies) {
   const toEdge = dependency.type[1] === "S" ? to.start : (to.end ?? to.start);
   if (time.work(toEdge) < time.work(fromEdge) + dependency.lagMs) broken += 1;
 }
-if (broken > 0) failures.push(`${broken} fuggoseg nem tart a mert eredmenyben`);
+if (broken > 0) failures.push(`${broken} dependencies do not hold in the measured result`);
 const moved = [...result.tasks.values()].filter((task) => task.moved).length;
-if (moved < TASKS / 2) failures.push(`csak ${moved} feladat mozdult — a mert futas majdnem ures`);
+if (moved < TASKS / 2) failures.push(`only ${moved} tasks moved — the measured run is almost empty`);
 
-console.log(`  ${TASKS} feladat, ${DEPENDENCIES} fuggoseg, budapesti munkanaptar: median ${median.toFixed(1)} ms (futasok: ${times.map((t) => t.toFixed(1)).join(" ")} ms), keret ${BUDGET_MS} ms`);
-console.log(`  mozdult ${moved}, kritikus ${result.critical.length}, konfliktus ${result.conflicts.length}, megtort fuggoseg ${broken}`);
-if (!(median <= BUDGET_MS)) failures.push(`a median ${median.toFixed(1)} ms, a keret ${BUDGET_MS} ms`);
+console.log(`  ${TASKS} tasks, ${DEPENDENCIES} dependencies, Budapest work calendar: median ${median.toFixed(1)} ms (runs: ${times.map((t) => t.toFixed(1)).join(" ")} ms), budget ${BUDGET_MS} ms`);
+console.log(`  moved ${moved}, critical ${result.critical.length}, conflicts ${result.conflicts.length}, broken dependencies ${broken}`);
+if (!(median <= BUDGET_MS)) failures.push(`the median is ${median.toFixed(1)} ms, the budget ${BUDGET_MS} ms`);
 if (failures.length > 0) {
-  console.error("G-SCHEDULE-PERF: BUKOTT");
+  console.error("G-SCHEDULE-PERF: FAILED");
   for (const failure of failures) console.error(`  x ${failure}`);
   process.exit(1);
 }
-console.log("G-SCHEDULE-PERF: a keret alatt.");
+console.log("G-SCHEDULE-PERF: within budget.");

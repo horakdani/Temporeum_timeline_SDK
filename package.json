@@ -1,5 +1,5 @@
 {
-  "name": "temporeum-timeline",
+  "name": "temporeum-timeline-sdk",
   "version": "0.0.0",
   "private": true,
   "description": "An editable, accessible, responsive timeline for the web — zero runtime dependencies.",
@@ -7,11 +7,11 @@
   "author": "Daniel Horak",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/horakdani/temporeum-timeline.git"
+    "url": "git+https://github.com/horakdani/Temporeum_timeline_SDK.git"
   },
-  "homepage": "https://github.com/horakdani/temporeum-timeline#readme",
+  "homepage": "https://github.com/horakdani/Temporeum_timeline_SDK#readme",
   "bugs": {
-    "url": "https://github.com/horakdani/temporeum-timeline/issues"
+    "url": "https://github.com/horakdani/Temporeum_timeline_SDK/issues"
   },
   "type": "module",
   "engines": {
@@ -39,7 +39,11 @@
     "@arethetypeswrong/cli": "^0.18.5",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.13.0",
+    "rolldown": "1.2.15",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.0"
+  },
+  "overrides": {
+    "minimatch": "^11.0.4"
   }
 }

@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 /**
- * G-RRULE: az RFC 5545 peldai es egy fuggetlen referencia-implementacioval
- * eloallitott tesztvektorok kimenete pontosan egyezik, a nyari idoszamitas
- * valtasain at is.
+ * G-RRULE: the output matches the RFC 5545 examples and test vectors
+ * produced by an independent reference implementation exactly, across
+ * daylight-saving transitions too.
  *
- * A vitest-riportbol: minden allitasnak van zold tesztje, es az RFC mind a
- * 42 peldaja kulon tesztkent zold. A vektorfajlbol: a dateutil irta (a
- * generator a scripts/sdk_rrule_vectors.py), legalabb 800 eset, es legalabb
- * 100 atlep egy oraatallitast — kulonben a "valtasain at is" nem allitas.
- * Statikusan: az RRULE a /calendar sajat kodja, nem fuggoseg.
+ * From the vitest report: every claim has a passing test, and each of the
+ * RFC's 42 examples passes as a test of its own. From the vector file: it was
+ * written by dateutil (the generator is scripts/sdk_rrule_vectors.py), it
+ * holds at least 800 cases, and at least 100 cross a clock change — otherwise
+ * "across transitions too" is not a claim. Statically: RRULE is /calendar's
+ * own code, not a dependency.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -29,21 +30,21 @@ const notes = [];
 try {
   const report = JSON.parse(readFileSync(reportFile, "utf8"));
   const examples = (report.testResults ?? []).flatMap((file) => file.assertionResults ?? []).filter((test) => test.status === "passed" && String(test.title).includes("[claim:rfc-examples]"));
-  if (examples.length < 43) failures.push(`csak ${String(examples.length)} zold [claim:rfc-examples] teszt (a 42 pelda es a teljesseg kell)`);
+  if (examples.length < 43) failures.push(`only ${String(examples.length)} passing [claim:rfc-examples] tests (the 42 examples plus the completeness test are required)`);
 } catch {
-  // A riport hianyat a checkReport mar bukasnak vette.
+  // checkReport has already counted the missing report as a failure.
 }
 
 const examples = JSON.parse(readFileSync(join(core, "test", "rrule", "rfc5545-examples.json"), "utf8")).examples;
-if (examples.length !== 42) failures.push(`az RFC 5545 3.8.5.3 peldaibol ${String(examples.length)} van a fixture-ben, 42 kell`);
+if (examples.length !== 42) failures.push(`the fixture holds ${String(examples.length)} of the RFC 5545 3.8.5.3 examples, 42 are required`);
 const vectors = JSON.parse(readFileSync(join(core, "test", "rrule", "vectors.json"), "utf8"));
-if (vectors.generator !== "python-dateutil") failures.push(`a vektorokat nem a dateutil irta: ${String(vectors.generator)}`);
-if ((vectors.cases ?? []).length < 800) failures.push(`csak ${String(vectors.cases?.length)} vektor, legalabb 800 kell`);
-if ((vectors.crossingClockChange ?? 0) < 100) failures.push(`csak ${String(vectors.crossingClockChange)} vektor lep at oraatallitast, legalabb 100 kell`);
-notes.push(`${String(vectors.cases?.length)} dateutil-vektor (${String(vectors.dateutil)}), ${String(vectors.crossingClockChange)} oraatallitason at; kihagyva: ${JSON.stringify(vectors.skipped)}`);
+if (vectors.generator !== "python-dateutil") failures.push(`the vectors were not written by dateutil: ${String(vectors.generator)}`);
+if ((vectors.cases ?? []).length < 800) failures.push(`only ${String(vectors.cases?.length)} vectors, at least 800 are required`);
+if ((vectors.crossingClockChange ?? 0) < 100) failures.push(`only ${String(vectors.crossingClockChange)} vectors cross a clock change, at least 100 are required`);
+notes.push(`${String(vectors.cases?.length)} dateutil vectors (${String(vectors.dateutil)}), ${String(vectors.crossingClockChange)} across a clock change; skipped: ${JSON.stringify(vectors.skipped)}`);
 
 const source = codeOf(readFileSync(join(core, "src", "calendar", "rrule.ts"), "utf8"));
 for (const line of source.split("\n").filter((each) => /^\s*import /.test(each))) {
-  if (!/from "\.\.?\//.test(line)) failures.push(`az RRULE nem sajat kodbol importal: ${line.trim()}`);
+  if (!/from "\.\.?\//.test(line)) failures.push(`RRULE imports from outside its own code: ${line.trim()}`);
 }
 finish("G-RRULE", failures, notes);

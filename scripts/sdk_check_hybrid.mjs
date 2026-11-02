@@ -1,29 +1,29 @@
 #!/usr/bin/env node
 /**
- * G-HYBRID: bizonyitja, hogy UGYANABBAN a munkamenetben, UGYANAZON a
- * gep-peldanyon egerrel azonnal indul a huzas, ujjal pedig long-press kell.
+ * G-HYBRID: proves that in the SAME session, on the SAME machine instance,
+ * a drag starts at once with a mouse, while a finger needs a long press.
  *
- * Miert ez a kapu: egy erintokijelzos laptop egy gep ket kezzel, es a
- * hasznalo kozben valt. Egy fel masodpercig tartott eger elromlottnak
- * erzodik, egy kontaktusra huzo ujjtol pedig a lista gorgethetetlen. A
- * konnyu hiba nem az, hogy valamelyik nem mukodik, hanem hogy a gep BELERAGAD
- * abba a kezbe, amelyik utoljara hozzaert.
+ * Why this check: a touchscreen laptop is one machine with two hands, and
+ * the user switches between them. A mouse that has to be held for half a
+ * second feels broken, and a finger that drags on contact makes the list
+ * unscrollable. The easy bug is not that one of them does not work, but
+ * that the machine GETS STUCK in whichever hand touched it last.
  *
- * Harom fuggetlen ellenorzes:
+ * Three independent checks:
  *
- *  1. FUTASIDEJU — a keszlet: a vitest JSON-riportjaban minden kotelezo
- *     allitasnak lennie kell, es mindnek zolden. A riport hianya BUKAS.
- *  2. FUTASIDEJU — a nyom: a teszt nem a cimevel bizonyit, hanem egy
- *     nyomvonallal, amit a GEP allitott elo. Innen derul ki, hogy egyetlen
- *     peldany volt, hogy az eger-huzas ora nelkul indult, hogy az ujjhoz
- *     kellett egy felebresztes, es hogy UTANA az eger megint azonnali —
- *     tehat nincs beragadas. Egy teszt cime elcsuszhat a viselkedestol; ez
- *     nem, mert a viselkedes irta.
- *  3. STATIKUS — a csovezetek: a mag tovabbra sem lat orat es nem hasznal
- *     idozitot (ezert reprodukalhato egy szekvencia a long press utan is), a
- *     kesleltetes a MAGBAN van definialva, es a bongeszo-kotes NEM tudja,
- *     mennyi egy long press — ez a P4 touchAction-hibajanak tanulsaga, ahol
- *     ugyanazt a szamot ket helyen kellett beallitani.
+ *  1. RUNTIME — the suite: every required claim must be in the vitest JSON
+ *     report, and all of them green. A missing report is a FAILURE.
+ *  2. RUNTIME — the trace: the test does not prove by its title but by a
+ *     trace the MACHINE produced. It shows that there was a single
+ *     instance, that the mouse drag started without a clock, that the
+ *     finger needed a wake-up, and that AFTERWARDS the mouse is immediate
+ *     again — so nothing is stuck. A test title can drift from the
+ *     behaviour; this cannot, because the behaviour wrote it.
+ *  3. STATIC — the pipeline: the core still sees no clock and uses no timer
+ *     (so a sequence stays reproducible after a long press too), the delay
+ *     is defined in the CORE, and the browser binding does NOT know how
+ *     long a long press is — the lesson of an earlier touchAction bug,
+ *     where the same number had to be set in two places.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -39,7 +39,7 @@ const reportFile = join(corePackage, ".hybrid-report.json");
 const traceFile = join(corePackage, ".hybrid-trace.json");
 
 const MIN_TESTS = 6;
-/** A kapu proof-ja ezeket allitja; mindegyikhez kell egy zold teszt. */
+/** The check's proof claims these; each needs a green test. */
 const REQUIRED_CLAIMS = [
   "same session",
   "resize handle without the hold",
@@ -48,7 +48,7 @@ const REQUIRED_CLAIMS = [
   "late move",
   "pen",
 ];
-/** Ha ezek barmelyike bekerul a magba, egy szekvencia nem reprodukalhato. */
+/** If any of these gets into the core, a sequence is not reproducible. */
 const FORBIDDEN_IN_MACHINE = [
   "Date.now",
   "performance.now",
@@ -61,15 +61,15 @@ const FORBIDDEN_IN_MACHINE = [
 const failures = [];
 const notes = [];
 
-/** Kommentek nelkuli kod: egy tilalom nem a magyarazaton bukhat el. */
+/** Code without comments: a ban must not fail on the explanation. */
 const codeOf = (source) =>
   source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
-// --- 1. FUTASIDEJU: a keszlet ------------------------------------------------
+// --- 1. RUNTIME: the suite ---------------------------------------------------
 
 if (!existsSync(reportFile)) {
   failures.push(
-    `nincs vitest-riport (${reportFile}) — a hibrid-keszlet NEM futott le, ezert BUKAS`,
+    `no vitest report (${reportFile}) — the hybrid suite did NOT run, so this is a FAILURE`,
   );
 } else {
   const report = JSON.parse(readFileSync(reportFile, "utf8"));
@@ -77,105 +77,105 @@ if (!existsSync(reportFile)) {
   const tests = files.flatMap((file) => file.assertionResults ?? []);
   if (tests.length < MIN_TESTS) {
     failures.push(
-      `${String(tests.length)} hibrid-teszt futott, de legalabb ${String(MIN_TESTS)} kell`,
+      `${String(tests.length)} hybrid tests ran, but at least ${String(MIN_TESTS)} are required`,
     );
   }
   for (const test of tests) {
     if (test.status !== "passed") {
-      failures.push(`nem zold hibrid-teszt: ${String(test.fullName)} (${String(test.status)})`);
+      failures.push(`hybrid test not green: ${String(test.fullName)} (${String(test.status)})`);
     }
   }
   const names = tests.map((test) => String(test.fullName).toLowerCase());
   for (const claim of REQUIRED_CLAIMS) {
     if (!names.some((name) => name.includes(claim.toLowerCase()))) {
-      failures.push(`a kapu allit valamit, amit senki nem mer: "${claim}"`);
+      failures.push(`the check claims something nobody measures: "${claim}"`);
     }
   }
   if (failures.length === 0) {
     notes.push(
-      `${String(tests.length)} hibrid-teszt, mind zold, es mind a ` +
-        `${String(REQUIRED_CLAIMS.length)} kotelezo allitasra van teszt`,
+      `${String(tests.length)} hybrid tests, all green, and each of the ` +
+        `${String(REQUIRED_CLAIMS.length)} required claims has a test`,
     );
   }
 }
 
-// --- 2. FUTASIDEJU: a nyom ---------------------------------------------------
+// --- 2. RUNTIME: the trace ---------------------------------------------------
 
 if (!existsSync(traceFile)) {
   failures.push(
-    `nincs gep-nyomvonal (${traceFile}) — a "ugyanabban a munkamenetben" allitas igy ` +
-      "csak egy teszt cime, nem megfigyeles",
+    `no machine trace (${traceFile}) — without it the "same session" claim is ` +
+      "only a test title, not an observation",
   );
 } else {
   let trace;
   try {
     trace = JSON.parse(readFileSync(traceFile, "utf8"));
   } catch (error) {
-    failures.push(`a nyomvonal olvashatatlan: ${String(error)}`);
+    failures.push(`the trace is unreadable: ${String(error)}`);
   }
   if (trace !== undefined) {
     if (trace.machinesInSession !== 1) {
       failures.push(
-        `${String(trace.machinesInSession)} gep-peldany a munkamenetben, de pontosan 1 kell — ` +
-          "ket kulonbozo objektum kulonbozo viselkedese nem allit semmit a valtasrol",
+        `${String(trace.machinesInSession)} machine instances in the session, but exactly 1 is required — ` +
+          "two different objects behaving differently says nothing about switching",
       );
     }
     const events = Array.isArray(trace.events) ? trace.events : [];
     if (events.length !== 3) {
       failures.push(
-        `${String(events.length)} lepes a nyomvonalban, de 3 kell: eger, ujj, majd ismet eger`,
+        `${String(events.length)} steps in the trace, but 3 are required: mouse, finger, then mouse again`,
       );
     } else {
       const [first, second, third] = events;
       const immediate = (event, label) => {
         if (event.pointerType !== "mouse") {
-          failures.push(`${label}: ${String(event.pointerType)} pointer, de egeret vartunk`);
+          failures.push(`${label}: ${String(event.pointerType)} pointer, but a mouse was expected`);
         }
         if (event.trigger !== "pointer") {
           failures.push(
-            `${label}: a huzast "${String(event.trigger)}" inditotta, nem a pointer — ` +
-              "egy egerrel tartani kell a gombot, ami elromlottnak erzodik",
+            `${label}: the drag was started by "${String(event.trigger)}", not the pointer — ` +
+              "the mouse button has to be held, which feels broken",
           );
         }
         if (event.elapsed !== false || event.scheduled !== null) {
           failures.push(
-            `${label}: az eger-huzashoz ora kellett (scheduled=${String(event.scheduled)}, ` +
+            `${label}: the mouse drag needed a clock (scheduled=${String(event.scheduled)}, ` +
               `elapsed=${String(event.elapsed)})`,
           );
         }
       };
-      immediate(first, "1. lepes (eger)");
+      immediate(first, "step 1 (mouse)");
       if (second.pointerType !== "touch") {
-        failures.push(`2. lepes: ${String(second.pointerType)} pointer, de ujjat vartunk`);
+        failures.push(`step 2: ${String(second.pointerType)} pointer, but a finger was expected`);
       }
       if (second.trigger !== "long-press") {
         failures.push(
-          `2. lepes: a huzast "${String(second.trigger)}" inditotta, nem a long press — ` +
-            "egy kontaktusra huzo ujjtol a lista gorgethetetlen",
+          `step 2: the drag was started by "${String(second.trigger)}", not the long press — ` +
+            "a finger that drags on contact makes the list unscrollable",
         );
       }
       if (second.elapsed !== true || !Number.isFinite(second.scheduled)) {
         failures.push(
-          "2. lepes: az ujjhoz nem kellett felebresztes — tehat nem volt tartas, " +
-            `vagy a gep nem kert orat (scheduled=${String(second.scheduled)})`,
+          "step 2: the finger needed no wake-up — so there was no hold, " +
+            `or the machine did not ask for a clock (scheduled=${String(second.scheduled)})`,
         );
       }
-      // Ez a kapu lenyege: a HARMADIK lepes.
-      immediate(third, "3. lepes (eger az ujj utan) — a gep beragadt");
+      // This is the point of the check: the THIRD step.
+      immediate(third, "step 3 (mouse after the finger) — the machine got stuck");
     }
     if (failures.length === 0) {
       notes.push(
-        "egyetlen gep-peldany nyomvonala: eger azonnal, ujj tartasra, majd az eger " +
-          "ismet azonnal — nincs beragadas",
+        "trace of a single machine instance: mouse at once, finger on hold, then the mouse " +
+          "at once again — nothing gets stuck",
       );
     }
   }
 }
 
-// --- 3. STATIKUS: a mertek es a csovezetek -----------------------------------
+// --- 3. STATIC: the measurement and the pipeline -----------------------------
 
 if (!existsSync(testFile)) {
-  failures.push(`nincs hibrid-tesztfajl: ${testFile}`);
+  failures.push(`no hybrid test file: ${testFile}`);
 } else {
   const source = readFileSync(testFile, "utf8");
   if (
@@ -183,91 +183,91 @@ if (!existsSync(testFile)) {
       source,
     )
   ) {
-    failures.push("a hibrid-teszt nem a mag createInputMachine exportjat hajtja");
+    failures.push("the hybrid test does not drive the core's createInputMachine export");
   }
   for (const kind of ['"mouse"', '"touch"', '"pen"']) {
     if (!source.includes(kind)) {
-      failures.push(`a hibrid-teszt nem hasznal ${kind} pointert — a valtas mindharomrol szol`);
+      failures.push(`the hybrid test uses no ${kind} pointer — switching is about all three`);
     }
   }
   if (!/\.elapse\(/.test(source)) {
     failures.push(
-      "a hibrid-teszt nem hivja az elapse-t — akkor nem a gep orajat hajtja, hanem varakozik, " +
-        "es egy ido-alapu teszt, ami tenyleg var, flaky",
+      "the hybrid test does not call elapse — then it does not drive the machine's clock but waits, " +
+        "and a time-based test that really waits is flaky",
     );
   }
   if (!/moveTrigger:\s*"auto"/.test(source)) {
     failures.push(
-      'a hibrid-teszt nem a "auto" feloldast meri — a kezzel beallitott mod nem bizonyit ' +
-        "semmit a valtasrol",
+      'the hybrid test does not measure the "auto" resolution — a mode set by hand proves ' +
+        "nothing about switching",
     );
   }
   if (failures.length === 0) {
-    notes.push('a mertek a valodi gepet hajtja "auto" modban, mindharom pointer-tipussal');
+    notes.push('the measurement drives the real machine in "auto" mode, with all three pointer types');
   }
 }
 
 const machine = existsSync(machineFile) ? readFileSync(machineFile, "utf8") : "";
 if (machine === "") {
-  failures.push(`nincs bemeneti csovezetek: ${machineFile}`);
+  failures.push(`no input pipeline: ${machineFile}`);
 } else {
   const code = codeOf(machine);
   for (const forbidden of FORBIDDEN_IN_MACHINE) {
     if (code.includes(forbidden)) {
       failures.push(
-        `a bemeneti csovezetek ${forbidden}-t hasznal — a long press utan is az a lenyeg, ` +
-          "hogy a gep ne lassa az orat, kulonben egy szekvencia nem reprodukalhato",
+        `the input pipeline uses ${forbidden} — even with long press the point is ` +
+          "that the machine never sees the clock, otherwise a sequence is not reproducible",
       );
     }
   }
   if (!/DEFAULT_LONG_PRESS_MS\s*=\s*\d+/.test(code)) {
     failures.push(
-      "a magban nincs long-press kesleltetes definialva — akkor valaki mas dont rola, " +
-        "es a kuszob nem a gepe",
+      "no long-press delay is defined in the core — then someone else decides it, " +
+        "and the threshold is not the machine's",
     );
   }
   if (!/type:\s*"schedule"/.test(code)) {
     failures.push(
-      "a gep nem kuld schedule effektet — akkor nem KERI a felebresztest, hanem valahol " +
-        "var ra, es az mar ora",
+      "the machine sends no schedule effect — then it does not ASK for the wake-up but waits " +
+        "for it somewhere, and that is already a clock",
     );
   }
 }
 
 const binding = existsSync(bindingFile) ? readFileSync(bindingFile, "utf8") : "";
 if (binding === "") {
-  failures.push(`nincs bongeszo-kotes: ${bindingFile}`);
+  failures.push(`no browser binding: ${bindingFile}`);
 } else {
   const code = codeOf(binding);
   const timers = (code.match(/setTimeout\(/g) ?? []).length;
   if (timers !== 1) {
     failures.push(
-      `${String(timers)} setTimeout a kotesben, de pontosan 1 kell — egy a long presshez, ` +
-        "es semmi tobb, kulonben megint ket helyen all az idozites",
+      `${String(timers)} setTimeout calls in the binding, but exactly 1 is required — one for the long press, ` +
+        "and nothing more, otherwise the timing lives in two places again",
     );
   }
   for (const leak of ["longPressMs", "LONG_PRESS", "DEFAULT_LONG_PRESS_MS"]) {
     if (code.includes(leak)) {
       failures.push(
-        `a bongeszo-kotes ismeri a(z) ${leak}-t — a kesleltetes igy ket helyen van ` +
-          "definialva, ami pontosan a P4 touchAction-hibaja",
+        `the browser binding knows ${leak} — so the delay is defined in two ` +
+          "places, which is exactly the earlier touchAction bug",
       );
     }
   }
   if (!/machine\.elapse\(/.test(code)) {
     failures.push(
-      "a kotes nem hivja a machine.elapse-t — akkor a felebresztes nem er vissza a gephez",
+      "the binding does not call machine.elapse — then the wake-up never reaches the machine",
     );
   }
   if (failures.length === 0) {
     notes.push(
-      "a mag ora- es idozitomentes, a kesleltetes a magban all, es a kotes egyetlen " +
-        "idozitot futtat anelkul, hogy tudna, mennyi egy long press",
+      "the core is free of clocks and timers, the delay lives in the core, and the binding runs a single " +
+        "timer without knowing how long a long press is",
     );
   }
 }
 
-// --- Eredmeny ----------------------------------------------------------------
+// --- Result ------------------------------------------------------------------
 
 for (const note of notes) {
   console.log(`  ok   ${note}`);
@@ -276,13 +276,13 @@ for (const note of notes) {
 if (failures.length > 0) {
   console.error("");
   for (const failure of failures) {
-    console.error(`  HIBA ${failure}`);
+    console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-HYBRID BUKOTT: ${String(failures.length)} hiba.`);
+  console.error(`\nG-HYBRID FAILED: ${String(failures.length)} failure(s).`);
   process.exit(1);
 }
 
 console.log(
-  "\nG-HYBRID atment: egy gepen, egy munkamenetben az eger azonnal huz, az ujj tartasra, " +
-    "es az eger utana is azonnal.",
+  "\nG-HYBRID passed: on one machine, in one session, the mouse drags at once, the finger on hold, " +
+    "and the mouse at once again afterwards.",
 );

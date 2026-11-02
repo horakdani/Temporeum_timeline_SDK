@@ -22,15 +22,15 @@ const DAY = 86_400_000;
 const T0 = Date.UTC(2026, 0, 1);
 
 const items: Item[] = [
-  { id: "a", start: T0, end: T0 + 4 * DAY, label: "Tervezés & <építés>", laneId: "l1" },
-  { id: "b", start: T0 + 3 * DAY, end: T0 + 9 * DAY, label: "Építés \"élesben\"", laneId: "l1" },
-  { id: "c", start: T0 + 10 * DAY, label: "Mérföldkő", laneId: "l2" },
+  { id: "a", start: T0, end: T0 + 4 * DAY, label: "Planning & <building>", laneId: "l1" },
+  { id: "b", start: T0 + 3 * DAY, end: T0 + 9 * DAY, label: "Building \"live\"", laneId: "l1" },
+  { id: "c", start: T0 + 10 * DAY, label: "Milestone", laneId: "l2" },
 ];
 const frame = (overrides: Partial<RenderOptions> = {}): RenderOptions => ({
   items,
   lanes: [
-    { id: "l1", label: "Munka" },
-    { id: "l2", label: "Szállítás" },
+    { id: "l1", label: "Work" },
+    { id: "l2", label: "Shipping" },
   ],
   domain: [T0, T0 + 20 * DAY],
   width: 800,

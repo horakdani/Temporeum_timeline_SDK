@@ -145,7 +145,7 @@ function check(generated: GeneratedCase<Step>): string | undefined {
         renderDetail: (context) => ({
           tag: "rect",
           attrs: { class: "detail", "data-tl-id": context.placed.item.id, x: context.box.main },
-          children: [{ tag: "title", text: `részlet ${context.placed.item.id}` }],
+          children: [{ tag: "title", text: `detail ${context.placed.item.id}` }],
         }),
       },
       ...(space === undefined ? {} : { space }),

@@ -1,10 +1,10 @@
-// A build ujjlenyomata: a dist/build.json a FORRAS lenyomatat hordozza.
+// The build's fingerprint: dist/build.json carries the hash of the SOURCE.
 //
-// Miert: a bongeszos kapuk (G-E2E-TOUCH, G-RESPONSIVE, G-PERF, G-MEMORY) a
-// buildelt dist-et futtatjak. Ha a build nemán elbukna es a regi dist maradna,
-// a keszlet zolden hazudhatna — a regi kodrol. A merö szkript a lapon at
-// kiolvassa ezt a fajlt, ujraszamolja a lenyomatot a forrasbol, es ha a ketto
-// elter, a meres BUKAS. (Ajanlasok, 8. szakasz; kapu-allando-checkek 6.2.)
+// Why: the browser checks (G-E2E-TOUCH, G-RESPONSIVE, G-PERF, G-MEMORY) run
+// the built dist. If the build failed silently and the old dist stayed, the
+// suite could report green falsely — about the old code. The measuring script
+// reads this file through the page, recomputes the hash from the source, and
+// if the two differ, the measurement FAILS.
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
@@ -22,9 +22,9 @@ function files(dir) {
 }
 
 /**
- * A forras lenyomata: minden src/ alatti fajl utja es tartalma, rendezve. A
- * csomag alapbol a core; a P13 ota az element is ezt hasznalja (a
- * G-PERF-PUBLIC a shippelt element-bundle-t meri).
+ * The source hash: the path and content of every file under src/, sorted.
+ * The package defaults to the core; the element uses it too (the
+ * G-PERF-PUBLIC check measures the shipped element bundle).
  */
 export function sourceHash(packageDir = coreDir) {
   const hash = createHash("sha256");

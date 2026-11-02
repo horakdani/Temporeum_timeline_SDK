@@ -1,11 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * P19 böngészős fele: a G-DROP (külső elem behúzása és billentyűs ikre) és
- * a G-TEMPLATE valódi Chromium-futása (a szkript TÉNYLEG lefutna, ha a
- * sablon átengedné — és a negatív kontrollban le is fut).
+ * The browser half of G-DROP (dragging in an external element, and its
+ * keyboard twin) and G-TEMPLATE, in a real Chromium (the script WOULD run if
+ * the template let it through — and in the negative control it does run).
  *
- * Saját port, mint minden e2e-készletnél (a P4 tanulsága).
+ * Its own port, as for every e2e suite.
  */
 const PORT = Number(process.env.TL_P19_PORT ?? 41751);
 

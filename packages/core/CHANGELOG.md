@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.0.0 — not yet published
+## 1.0.0 — Unreleased
 
-The first release. From here on the package follows [semantic versioning](https://github.com/horakdani/temporeum-timeline/blob/main/packages/docs/site/pages/stability.md): nothing public is removed before 2.0.
+The first release. From here on the package follows [semantic versioning](https://github.com/horakdani/Temporeum_timeline_SDK/blob/main/packages/docs/site/pages/stability.md): nothing public is removed before 2.0.
 
 ### The engine (`@temporeum/timeline-core`)
 
@@ -13,7 +13,8 @@ The first release. From here on the package follows [semantic versioning](https:
 - Editing: move, resize, snap, `canMove`, cross-lane moves, multi-select, and reversible commands with an `inverse`.
 - Responsive: orientation, density and detail surface resolved from the container; pointer-aware hit slop.
 - Performance: the scene space — tiles a sixteenth of a viewport, a deep zoom that re-anchors a step at a time, an overscan that grows while the view rests — with culling, node reuse and pooling in `mountScene`, and `createFrameLoop`.
-- Accessibility: a listbox with `aria-activedescendant`, a keyboard twin for every gesture, reduced motion. An item's dates are read with their era before year 1 ("15 Mar 44 BC", not "15 Mar 44").
+- The axis's context label: the month a view of days is in (the year of a view of months, the day of a view of hours), held at the start of the axis over a surface the ticks slide under — `formatTick` writes it too, with `tick.context` set; `axisContext: false` turns it off.
+- Accessibility: a listbox with `aria-activedescendant`, a keyboard twin for every gesture, reduced motion. The timeline's focus ring is drawn inside its box, so a parent with `overflow: hidden` cannot cut it. In forced colours (Windows High Contrast) every token is a system colour, the plugins' shapes included, and what is selected or focused is the highlight, drawn wider. An item's dates are read with their era before year 1 ("15 Mar 44 BC", not "15 Mar 44").
 - Data: `createItemLoader`, windowed and aborting. Clusters at dense zoom, with `clusterZoom`.
 - Server rendering: `mountScene(container, { hydrate: true })` adopts a server-rendered `<svg>`.
 - `VERSION` is `"1.0.0"`.
@@ -52,5 +53,5 @@ The engine keeps a budget of 31 kB minified and gzipped. Everything else is on a
 
 ### Packaging
 
-- ESM, CommonJS and UMD builds; code shared between entry points ships once (`dist/chunks/`). CommonJS types (`.d.cts`) and `typesVersions` for `moduleResolution: "node10"`.
+- ESM, CommonJS and UMD builds — the UMD files, for a `<script>` tag, minified; code shared between entry points ships once (`dist/chunks/`). CommonJS types (`.d.cts`) and `typesVersions` for `moduleResolution: "node10"`.
 - Zero runtime dependencies. MIT, published with npm provenance.

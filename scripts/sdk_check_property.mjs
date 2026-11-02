@@ -1,21 +1,20 @@
 #!/usr/bin/env node
 /**
- * G-PROP: bizonyitja, hogy a property-alapu teszt tenylegesen generalt
- * bemeneten futott, es hogy az atfedes-invariansot a mag sajat exportalt
- * ellenorzojevel vizsgalta.
+ * G-PROP: proves that the property-based test really ran on generated
+ * input, and that it checked the overlap invariant with the core's own
+ * exported checker.
  *
- * Ket fuggetlen ellenorzes:
+ * Two independent checks:
  *
- *  1. FUTASIDEJU: a property-riportbol minden property-nek zoldnek kell
- *     lennie, nevvel es seeddel, es legalabb MIN_CASES esettel. Egy
- *     property-teszt, ami nulla esetet futtatott, zold pipat ad es semmit nem
- *     bizonyit — pontosan ez a csend a gate ertelme ellen.
- *  2. STATIKUS: a property-fajl a mag `findSublaneOverlap` exportjat hasznalja,
- *     nem helyi masolatot. Egy sajat, parhuzamos atfedes-ellenorzo ugyanazt a
- *     hibat tartalmazhatja, mint a pakolo, es akkor a property onmagat
- *     igazolja.
+ *  1. RUNTIME: in the property report every property must be green, with a
+ *     name and a seed, and at least MIN_CASES cases. A property test that ran
+ *     zero cases gives a green tick and proves nothing — exactly the kind of
+ *     silence that defeats the point of the gate.
+ *  2. STATIC: the property file uses the core's `findSublaneOverlap` export,
+ *     not a local copy. A separate, parallel overlap checker could contain
+ *     the same bug as the packer, and then the property vouches for itself.
  *
- * A riport hianya BUKAS, nem kihagyas.
+ * A missing report is a FAILURE, not a skip.
  */
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -26,7 +25,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const corePackage = join(repoRoot, "packages", "core");
 const propertyDir = join(corePackage, "test", "property");
 
-/** A tesztfajlhoz tartozo riport utja: egy fajl, egy riport. */
+/** The path of a test file's report: one file, one report. */
 const reportFor = (testFile) =>
   join(corePackage, `.property-report-${testFile.replace(/\.test\.ts$/, "")}.json`);
 
@@ -38,7 +37,7 @@ const failures = [];
 const notes = [];
 
 if (!existsSync(propertyDir)) {
-  failures.push(`nincs property-teszt konyvtar: ${propertyDir}`);
+  failures.push(`no property test directory: ${propertyDir}`);
 }
 
 const propertyFiles = existsSync(propertyDir)
@@ -46,18 +45,18 @@ const propertyFiles = existsSync(propertyDir)
   : [];
 
 if (propertyFiles.length === 0) {
-  failures.push("a test/property/ alatt nincs tesztfajl — nincs mit bizonyitani");
+  failures.push("there is no test file under test/property/ — nothing to prove");
 } else {
-  notes.push(`${propertyFiles.length} property-tesztfajl: ${propertyFiles.join(", ")}`);
+  notes.push(`${propertyFiles.length} property test files: ${propertyFiles.join(", ")}`);
 }
 
-// --- 1. FUTASIDEJU -----------------------------------------------------------
+// --- 1. RUNTIME --------------------------------------------------------------
 
-// MINDEN property-tesztfajlnak sajat riportja van, es mindegyiknek meg kell
-// lennie. Egy kozos riportfajlra iro masodik fajl feluliria az elsot, es a
-// kapu kevesebb property-t lat, mint amennyi lefutott — pontosan ez tortent,
-// amikor a P3-ban a masodik property-fajl bekerult. Egy riport, aminek nincs
-// tesztfajlja, elavult: nem bizonyit semmit, de ugyanolyan jol olvashato.
+// EVERY property test file has its own report, and each one must be there.
+// A second file writing to a shared report file overwrites the first, and the
+// check sees fewer properties than actually ran — exactly what happened when
+// the second property file was added. A report without a test file is
+// stale: it proves nothing, but reads just as well.
 const report = [];
 const orphanReports = readdirSync(corePackage).filter(
   (name) =>
@@ -67,20 +66,20 @@ const orphanReports = readdirSync(corePackage).filter(
 );
 for (const orphan of orphanReports) {
   failures.push(
-    `elavult property-riport: ${orphan} — nincs hozza tesztfajl, tehat nem bizonyit semmit`,
+    `stale property report: ${orphan} — it has no test file, so it proves nothing`,
   );
 }
 for (const testFile of propertyFiles) {
   const path = reportFor(testFile);
   if (!existsSync(path)) {
     failures.push(
-      `nincs property-riport (${path}) a ${testFile}-hez — a property-teszt NEM futott le, ezert BUKAS`,
+      `no property report (${path}) for ${testFile} — the property test did NOT run, so this is a FAILURE`,
     );
     continue;
   }
   const parsed = JSON.parse(readFileSync(path, "utf8"));
   if (!Array.isArray(parsed) || parsed.length === 0) {
-    failures.push(`${testFile}: a property-riport ures`);
+    failures.push(`${testFile}: the property report is empty`);
     continue;
   }
   report.push(...parsed);
@@ -90,39 +89,39 @@ if (report.length > 0) {
   {
     if (report.length < MIN_PROPERTIES) {
       failures.push(
-        `${String(report.length)} property futott, de legalabb ${String(MIN_PROPERTIES)} kell`,
+        `${String(report.length)} properties ran, but at least ${String(MIN_PROPERTIES)} are required`,
       );
     }
     for (const entry of report) {
-      const name = String(entry?.name ?? "(nevtelen)");
+      const name = String(entry?.name ?? "(unnamed)");
       if (entry?.passed !== true) {
         failures.push(
-          `bukott property: ${name} — ${JSON.stringify(entry?.counterexample ?? null)}`,
+          `failed property: ${name} — ${JSON.stringify(entry?.counterexample ?? null)}`,
         );
       }
       if (!Number.isInteger(entry?.cases) || entry.cases < MIN_CASES) {
         failures.push(
-          `${name}: ${String(entry?.cases)} eset, de legalabb ${String(MIN_CASES)} kell`,
+          `${name}: ${String(entry?.cases)} cases, but at least ${String(MIN_CASES)} are required`,
         );
       }
       if (!Number.isFinite(entry?.seed)) {
-        failures.push(`${name}: nincs seed, tehat egy bukas nem reprodukalhato`);
+        failures.push(`${name}: no seed, so a failure is not reproducible`);
       }
     }
     if (!report.some((entry) => entry?.name === REQUIRED_PROPERTY)) {
-      failures.push(`a kotelezo property hianyzik: "${REQUIRED_PROPERTY}"`);
+      failures.push(`required property missing: "${REQUIRED_PROPERTY}"`);
     }
     if (failures.length === 0) {
       const total = report.reduce((sum, entry) => sum + entry.cases, 0);
       notes.push(
-        `${String(report.length)} property, ${String(total)} generalt eset, mind zold: ` +
+        `${String(report.length)} properties, ${String(total)} generated cases, all green: ` +
           report.map((entry) => `${entry.name} (${String(entry.cases)})`).join(", "),
       );
     }
   }
 }
 
-// --- 2. STATIKUS -------------------------------------------------------------
+// --- 2. STATIC ---------------------------------------------------------------
 
 const usesCoreChecker = propertyFiles.some((name) => {
   const source = readFileSync(join(propertyDir, name), "utf8");
@@ -135,14 +134,14 @@ const usesCoreChecker = propertyFiles.some((name) => {
 
 if (!usesCoreChecker) {
   failures.push(
-    "egyetlen property-fajl sem hasznalja a mag findSublaneOverlap exportjat — " +
-      "egy helyi masolat ugyanazt a hibat tartalmazhatja, mint a pakolo",
+    "no property file uses the core's findSublaneOverlap export — " +
+      "a local copy could contain the same bug as the packer",
   );
 } else {
-  notes.push("az atfedes-invariansot a mag sajat exportalt ellenorzoje vizsgalja");
+  notes.push("the overlap invariant is checked by the core's own exported checker");
 }
 
-// --- Eredmeny ----------------------------------------------------------------
+// --- Result ------------------------------------------------------------------
 
 for (const note of notes) {
   console.log(`  ok   ${note}`);
@@ -151,10 +150,10 @@ for (const note of notes) {
 if (failures.length > 0) {
   console.error("");
   for (const failure of failures) {
-    console.error(`  HIBA ${failure}`);
+    console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-PROP BUKOTT: ${String(failures.length)} hiba.`);
+  console.error(`\nG-PROP FAILED: ${String(failures.length)} failure(s).`);
   process.exit(1);
 }
 
-console.log("\nG-PROP atment: generalt bemenetre SOHA nincs atfedes ugyanabban a sorban.");
+console.log("\nG-PROP passed: on generated input there is NEVER an overlap in the same row.");

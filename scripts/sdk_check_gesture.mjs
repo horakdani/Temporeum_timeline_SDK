@@ -1,23 +1,24 @@
 #!/usr/bin/env node
 /**
- * G-GESTURE: bizonyitja, hogy a gesztus-keszlet tenyleg lefutott, es hogy
- * amit mer, az a VALODI csovezetek.
+ * G-GESTURE: proves that the gesture suite really ran, and that what it
+ * measures is the REAL pipeline.
  *
- * A kapu `proof` mezoje negy dolgot allit: pan, pinch, pointercancel, es ujj
- * felemelese pinch kozben. Egy tesztfajl, amibol az egyik csendben kimarad,
- * zold pipat ad — a vitest nem tudja, hogy valamit meg kellett volna merni.
+ * The check's `proof` field claims four things: pan, pinch, pointercancel,
+ * and lifting a finger during a pinch. A test file that quietly leaves one of
+ * them out gives a green tick — vitest does not know something should have
+ * been measured.
  *
- * Harom fuggetlen ellenorzes:
+ * Three independent checks:
  *
- *  1. FUTASIDEJU: a vitest JSON-riportjaban minden kotelezo allitasnak lennie
- *     kell, es mindnek zolden. A riport hianya BUKAS, nem kihagyas.
- *  2. STATIKUS — a mertek: a tesztfajl a mag `createInputMachine` exportjat
- *     hajtja, mind a negy pointer-fazist feladja neki, legalabb harom
- *     pointert hasznal, es a horgonyzast a mag sajat `createTimeScale`-javal
- *     meri, nem helyi kepletbol.
- *  3. STATIKUS — a csovezetek: az `input.ts` nem lat orat es nem hasznal
- *     idozitot (ettol reprodukalhato egy szekvencia), a `dom/attach.ts` pedig
- *     nem ertelmez gesztust (ettol EGY csovezetek van, nem ketto).
+ *  1. RUNTIME: every required claim must be in the vitest JSON report, and
+ *     every one must pass. A missing report is a FAILURE, not a skip.
+ *  2. STATIC — the measurement: the test file drives the core's
+ *     `createInputMachine` export, feeds it all four pointer phases, uses at
+ *     least three pointers, and measures the anchoring with the core's own
+ *     `createTimeScale`, not with a local formula.
+ *  3. STATIC — the pipeline: `input.ts` sees no clock and uses no timer
+ *     (that is what makes a sequence reproducible), and `dom/attach.ts` does
+ *     not interpret gestures (that is what makes ONE pipeline, not two).
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -32,7 +33,7 @@ const bindingFile = join(corePackage, "src", "dom", "attach.ts");
 const reportFile = join(corePackage, ".gesture-report.json");
 
 const MIN_TESTS = 10;
-/** A kapu proof-ja ezeket allitja; mindegyikhez kell egy zold teszt. */
+/** The check's proof claims these; each one needs a passing test. */
 const REQUIRED_CLAIMS = [
   "one pointer",
   "two pointers",
@@ -44,7 +45,7 @@ const REQUIRED_CLAIMS = [
   "wheel",
   "both orientations",
 ];
-/** Ha ezek barmelyike bekerul a magba, egy szekvencia nem reprodukalhato. */
+/** If any of these gets into the core, a sequence is not reproducible. */
 const FORBIDDEN_IN_MACHINE = [
   "Date.now",
   "performance.now",
@@ -53,17 +54,17 @@ const FORBIDDEN_IN_MACHINE = [
   "requestAnimationFrame",
   "new Date(",
 ];
-/** Ha ezek barmelyike bekerul a kotesbe, ket helyen ertelmezunk gesztust. */
+/** If any of these gets into the binding, gestures are interpreted in two places. */
 const FORBIDDEN_IN_BINDING = ["zoomDomainAt", "panDomainBy", "clampDomain", "createTimeScale"];
 
 const failures = [];
 const notes = [];
 
-// --- 1. FUTASIDEJU -----------------------------------------------------------
+// --- 1. RUNTIME ---------------------------------------------------------------
 
 if (!existsSync(reportFile)) {
   failures.push(
-    `nincs vitest-riport (${reportFile}) — a gesztus-keszlet NEM futott le, ezert BUKAS`,
+    `no vitest report (${reportFile}) — the gesture suite did NOT run, so this is a FAILURE`,
   );
 } else {
   const report = JSON.parse(readFileSync(reportFile, "utf8"));
@@ -71,93 +72,93 @@ if (!existsSync(reportFile)) {
   const tests = files.flatMap((file) => file.assertionResults ?? []);
   if (tests.length < MIN_TESTS) {
     failures.push(
-      `${String(tests.length)} gesztus-teszt futott, de legalabb ${String(MIN_TESTS)} kell`,
+      `${String(tests.length)} gesture tests ran, but at least ${String(MIN_TESTS)} are required`,
     );
   }
   for (const test of tests) {
     if (test.status !== "passed") {
-      failures.push(`nem zold gesztus-teszt: ${String(test.fullName)} (${String(test.status)})`);
+      failures.push(`failing gesture test: ${String(test.fullName)} (${String(test.status)})`);
     }
   }
   const names = tests.map((test) => String(test.fullName).toLowerCase());
   for (const claim of REQUIRED_CLAIMS) {
     const covered = names.some((name) => name.includes(claim.toLowerCase()));
     if (!covered) {
-      failures.push(`a kapu allit valamit, amit senki nem mer: "${claim}"`);
+      failures.push(`the check claims something nobody measures: "${claim}"`);
     }
   }
   if (failures.length === 0) {
     notes.push(
-      `${String(tests.length)} gesztus-teszt, mind zold, es mind a ` +
-        `${String(REQUIRED_CLAIMS.length)} kotelezo allitasra van teszt`,
+      `${String(tests.length)} gesture tests, all passing, and every one of the ` +
+        `${String(REQUIRED_CLAIMS.length)} required claims has a test`,
     );
   }
 }
 
-// --- 2. STATIKUS: a mertek ---------------------------------------------------
+// --- 2. STATIC: the measurement ----------------------------------------------
 
 if (!existsSync(testFile)) {
-  failures.push(`nincs gesztus-tesztfajl: ${testFile}`);
+  failures.push(`no gesture test file: ${testFile}`);
 } else {
   const source = readFileSync(testFile, "utf8");
   if (!/import\s*\{[^}]*\bcreateInputMachine\b[^}]*\}\s*from\s*"\.\.\/\.\.\/src\/input\.js"/.test(source)) {
-    failures.push("a gesztus-teszt nem a mag createInputMachine exportjat hajtja");
+    failures.push("the gesture test does not drive the core's createInputMachine export");
   }
   for (const phase of ["down", "move", "up", "cancel"]) {
     if (!source.includes(`"${phase}"`)) {
-      failures.push(`a gesztus-teszt nem adja fel a ${phase} fazist — a sor nem teljes`);
+      failures.push(`the gesture test does not feed the ${phase} phase — the sequence is incomplete`);
     }
   }
   const pointerIds = new Set([...source.matchAll(/at\(\s*(\d+)\s*,/g)].map((m) => m[1]));
   if (pointerIds.size < 3) {
     failures.push(
-      `${String(pointerIds.size)} pointer-azonosito a tesztben, de a harmadik ujj viselkedese is allitas`,
+      `${String(pointerIds.size)} pointer ids in the test, but the third finger's behaviour is a claim too`,
     );
   }
   if (!/createTimeScale/.test(source)) {
     failures.push(
-      "a horgonyzast nem a mag createTimeScale-javal meri — egy helyi keplet ugyanazt a hibat tartalmazhatja",
+      "it does not measure the anchoring with the core's createTimeScale — a local formula could contain the same bug",
     );
   }
   if (failures.length === 0) {
     notes.push(
-      `a mertek a valodi csovezeteket hajtja: mind a 4 pointer-fazis, ${String(pointerIds.size)} pointer, a mag skalajaval merve`,
+      `the measurement drives the real pipeline: all 4 pointer phases, ${String(pointerIds.size)} pointers, measured with the core's scale`,
     );
   }
 }
 
-// --- 3. STATIKUS: a csovezetek -----------------------------------------------
+// --- 3. STATIC: the pipeline --------------------------------------------------
 
 const machine = existsSync(machineFile) ? readFileSync(machineFile, "utf8") : "";
 if (machine === "") {
-  failures.push(`nincs bemeneti csovezetek: ${machineFile}`);
+  failures.push(`no input pipeline: ${machineFile}`);
 }
 for (const forbidden of FORBIDDEN_IN_MACHINE) {
-  // A kommentek nem szamitanak: csak a kodot nezzuk.
+  // Comments do not count: we only look at the code.
   const code = machine.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
   if (code.includes(forbidden)) {
     failures.push(
-      `a bemeneti csovezetek ${forbidden}-t hasznal — egy szekvencia igy nem reprodukalhato, es a gesztus-teszt flaky lesz`,
+      `the input pipeline uses ${forbidden} — then a sequence is not reproducible, and the gesture test becomes flaky`,
     );
   }
 }
 
 const binding = existsSync(bindingFile) ? readFileSync(bindingFile, "utf8") : "";
 if (binding === "") {
-  failures.push(`nincs bongeszo-kotes: ${bindingFile}`);
+  failures.push(`no browser binding: ${bindingFile}`);
 }
 for (const forbidden of FORBIDDEN_IN_BINDING) {
   if (binding.includes(forbidden)) {
     failures.push(
-      `a bongeszo-kotes ${forbidden}-t hasznal — a gesztus ertelmezese ketfele kerul, es EGY csovezetek volt a lenyeg`,
+      `the browser binding uses ${forbidden} — gesture interpretation splits in two, and ONE pipeline was the point`,
     );
   }
 }
 if (machine !== "" && binding !== "" && failures.length === 0) {
-  notes.push("a mag ora- es idozitomentes, a kotes pedig nem ertelmez gesztust");
+  notes.push("the core is free of clocks and timers, and the binding does not interpret gestures");
 }
 
-// --- Eredmeny ----------------------------------------------------------------
+// --- Result ------------------------------------------------------------------
 
 for (const note of notes) {
   console.log(`  ok   ${note}`);
@@ -166,10 +167,10 @@ for (const note of notes) {
 if (failures.length > 0) {
   console.error("");
   for (const failure of failures) {
-    console.error(`  HIBA ${failure}`);
+    console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-GESTURE BUKOTT: ${String(failures.length)} hiba.`);
+  console.error(`\nG-GESTURE FAILED: ${String(failures.length)} problems.`);
   process.exit(1);
 }
 
-console.log("\nG-GESTURE atment: szintetikus pointer-szekvenciak hajtjak az EGYETLEN csovezeteket.");
+console.log("\nG-GESTURE passed: synthetic pointer sequences drive the SINGLE pipeline.");

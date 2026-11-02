@@ -1,9 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * G-SSR böngészős fele. A szervereket a scripts/sdk_check_ssr.mjs indítja
- * (Next, Nuxt, Astro, SvelteKit, Angular, mind a csomagolt tarballokkal), és a címüket a
- * TL_SSR_TARGETS-ben adja át; ez a konfiguráció csak a mérést futtatja.
+ * The browser half of G-SSR. The servers are started by scripts/sdk_check_ssr.mjs
+ * (Next, Nuxt, Astro, SvelteKit, Angular, all with the packed tarballs), which passes
+ * their addresses in TL_SSR_TARGETS; this config only runs the measurement.
  */
 export default defineConfig({
   testDir: "./e2e",

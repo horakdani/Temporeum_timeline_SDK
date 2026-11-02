@@ -1,140 +1,140 @@
 {
-  "note": "A G-VISUAL provenanciája. A scenario és a fixture-ök sha256-ja; elavult fixture vagy kézi szerkesztés itt látszik.",
-  "core": "1.0.0-rc.4",
-  "scenarioSha256": "4f4072c87bdcc2d9c9a36e3a9dab5d53d3799d111529cdace802e1118d71741d",
-  "matrixSha256": "62ccae1ab76e3b50ef80eb4a910b4b85a74d849fdc8275c9b5acde03d19d9802",
+  "note": "G-VISUAL's provenance. The sha256 of the scenario and of the fixtures; a stale fixture or a hand edit shows up here.",
+  "core": "1.0.0",
+  "scenarioSha256": "4b0d628b793c6e22c090b5785b85ebb83c18636f14e4bc605c502ef1f9ef80fc",
+  "matrixSha256": "0bf6cde62825378334fe1b6eb39752a050d417211fc3efb9be3d60ab15409a58",
   "cases": [
     {
       "name": "360-horizontal-light",
-      "nodes": 67,
+      "nodes": 70,
       "items": 11,
       "rows": 8,
       "labelsKept": 9,
       "labelsDropped": 1,
       "ticks": 3,
-      "bytes": 12553,
-      "sha256": "df77a853a89d7c02ebe133cbfe86670fe154bde819ecc3e60691e522e597ef4c"
+      "bytes": 13785,
+      "sha256": "7d5c8f036e6e03ecc2cd443145efded88af872fab4d270f097c0572eb2225c16"
     },
     {
       "name": "360-horizontal-dark",
-      "nodes": 67,
+      "nodes": 70,
       "items": 11,
       "rows": 8,
       "labelsKept": 9,
       "labelsDropped": 1,
       "ticks": 3,
-      "bytes": 12500,
-      "sha256": "7f859599847009cc61916cedcdda7332f9accd03c293e6b8a14ebf6c7224ff02"
+      "bytes": 13725,
+      "sha256": "e7f4431eb39a7a9aaf9cf69eb10c9a8b5fe942d48d70e5cbe79217b847eeb472"
     },
     {
       "name": "360-vertical-light",
-      "nodes": 61,
+      "nodes": 64,
       "items": 9,
       "rows": 8,
       "labelsKept": 8,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 11607,
-      "sha256": "97008c104eeddf8215af6b0831be2831c5ff4b3622c6e601360bb6b0996b34cb"
+      "bytes": 12830,
+      "sha256": "9dba966e5993c652ed22e086ea8cc6413e604000c67dfc1a98d90ba535d7d419"
     },
     {
       "name": "360-vertical-dark",
-      "nodes": 61,
+      "nodes": 64,
       "items": 9,
       "rows": 8,
       "labelsKept": 8,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 11556,
-      "sha256": "ab9572fc46618455e19ffd6fd36586a8a7cf032e962aa0c0df2b9c1d88ee0070"
+      "bytes": 12772,
+      "sha256": "49228ff4e979576778ed464d7760aedee1211ebcb95397072e1bd3a499f606f0"
     },
     {
       "name": "768-horizontal-light",
-      "nodes": 69,
+      "nodes": 72,
       "items": 11,
       "rows": 8,
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 12805,
-      "sha256": "3a81902f34efc110b95ce93ee1cf448495f031b81b46d6dd8d30271b0d0de128"
+      "bytes": 14038,
+      "sha256": "5afb6bb40f43264b2fe6f579f18e95f5d06d1797d4aab75db5f6f01205d81f64"
     },
     {
       "name": "768-horizontal-dark",
-      "nodes": 69,
+      "nodes": 72,
       "items": 11,
       "rows": 8,
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 12752,
-      "sha256": "d9ab9b85c8590a98d0ece072a1dcb2c38b655c928b7235061f0c4226d7dc6c7a"
+      "bytes": 13978,
+      "sha256": "69cb70da520ccddbab085af7d40c7586ad6f274762dae4ba295a8602cf4a323c"
     },
     {
       "name": "768-vertical-light",
-      "nodes": 67,
+      "nodes": 70,
       "items": 11,
       "rows": 8,
       "labelsKept": 9,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 12557,
-      "sha256": "e2b6a69d23aad61a7a7cfc6f4336a5e7c1bca35685fc2b157aae92a08f644720"
+      "bytes": 13779,
+      "sha256": "06cd148e72cc13c8d082dd332fe105318a86863efb5b9d24351c178989efa1b3"
     },
     {
       "name": "768-vertical-dark",
-      "nodes": 67,
+      "nodes": 70,
       "items": 11,
       "rows": 8,
       "labelsKept": 9,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 12504,
-      "sha256": "45b2232d05b47607345da25a3f95957d99d3bcd341f7f98a0254a21964a7445e"
+      "bytes": 13719,
+      "sha256": "a495e8c281a8ac0f8af3a6256e15addc173cfe408725e1cf4fac42fd27d2b323"
     },
     {
       "name": "1440-horizontal-light",
-      "nodes": 99,
+      "nodes": 102,
       "items": 11,
       "rows": 8,
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 15,
-      "bytes": 15546,
-      "sha256": "17f41d1d4852953798064fb5cdad856aac5d54b1d70564317b02d7e4323d8157"
+      "bytes": 16776,
+      "sha256": "e7e5499461443bbac0194c6c688371158e69c6b76ed130559d0f8a83a3144907"
     },
     {
       "name": "1440-horizontal-dark",
-      "nodes": 99,
+      "nodes": 102,
       "items": 11,
       "rows": 8,
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 15,
-      "bytes": 15493,
-      "sha256": "366e2a26202f563f39ab52ad1e7d16338a731b177c59d156c9556e70246a8bae"
+      "bytes": 16716,
+      "sha256": "af4772c446f06dbd6d0bdc19b9e162b8786fdda1280a32303f0526a56ac0c577"
     },
     {
       "name": "1440-vertical-light",
-      "nodes": 70,
+      "nodes": 73,
       "items": 11,
       "rows": 8,
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 12914,
-      "sha256": "00f35840be5806e0932468c4e4194b50ead0f7df6526f1684f3b838f4f9b0047"
+      "bytes": 14140,
+      "sha256": "ad2e46a2e1d538b8505646de1612bbef886f6a3bb3ebbdfc5e5fb0a767ace6a5"
     },
     {
       "name": "1440-vertical-dark",
-      "nodes": 70,
+      "nodes": 73,
       "items": 11,
       "rows": 8,
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 12861,
-      "sha256": "a8c54fde077d0f2e012dd4bc16a0cfd6aba6c6a59d5f339fc569234461b81ba7"
+      "bytes": 14080,
+      "sha256": "8fac7563b50e0df621018514f2f00d9267a1d2236b3760bc5172638b3b482ffa"
     }
   ]
 }

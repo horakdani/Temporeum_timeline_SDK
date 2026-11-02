@@ -1,26 +1,27 @@
 #!/usr/bin/env node
 /**
- * A nem-alap belépési pontok méretkerete: határköltség.
+ * The size budget of the non-base entry points: marginal cost.
  *
- * Az alap belépési pont (`index`) kerete önálló mérés, azt a size-limit
- * kényszeríti ki (a package.json "size-limit" mezője, az entries.json-ból
- * generálva). Egy másik belépési pont (/dom, és később /gantt, /schedule…)
- * viszont az alap nélkül nem használható: a magot onnan importálja. Az ára
- * tehát az, amennyivel TÖBBET tölt le az, aki az alap mellé ezt is behúzza:
+ * The base entry point's (`index`) budget is a standalone measurement,
+ * enforced by size-limit (the "size-limit" field of package.json, generated
+ * from entries.json). Another entry point (/dom, /gantt, /schedule…), however,
+ * cannot be used without the base: it imports the core from there. So its
+ * price is how much MORE someone downloads who pulls it in next to the base:
  *
- *     határköltség = méret(alap + pont) − méret(alap)
+ *     marginal cost = size(base + entry) − size(base)
  *
- * mindkét tag `import *`-gal, ugyanazzal a mérővel: rolldown-bundle a kiadott
- * ESM-ből, minify, gzip 9. Az önálló méretet is kiírja tájékoztatásul.
+ * both terms with `import *`, with the same meter: a rolldown bundle of the
+ * shipped ESM, minify, gzip 9. It prints the standalone size too, for information.
  *
- * Miért nem az önálló méret (a P16 keret-döntése, sdk/state.json): a /dom
- * kódja a darabolt buildben bájtra azonos a korábbival (9712 B minify), csak a
- * függvények sorrendje más, és ettől a gzip 41 B-tal nagyobb — az önálló
- * mérés a sorrendet mérte, nem a kódot. Egy /gantt önálló mérése pedig a mag
- * felét is tartalmazná, és semmit nem mondana arról, mit ad hozzá a Gantt.
+ * Why not the standalone size (a budget decision recorded in sdk/state.json):
+ * in the chunked build the /dom code is byte-identical to the earlier one
+ * (9712 B minified), only the order of the functions differs, and that makes
+ * the gzip 41 B larger — the standalone measurement measured the order, not
+ * the code. And a standalone measurement of /gantt would include half the
+ * core, and say nothing about what the Gantt adds.
  *
- * Használat: `node ../../scripts/sdk_size.mjs` (a `npm run size` része), a
- * buildelt dist-en. Bármelyik keret túllépése exit 1.
+ * Usage: `node ../../scripts/sdk_size.mjs` (part of `npm run size`), on the
+ * built dist. Exceeding any budget exits 1.
  */
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -30,11 +31,11 @@ import { CORE_DIR, readEntries } from "./sdk_entries.mjs";
 
 const VIRTUAL = "\0sdk-size-entry";
 
-/** Az `names` belépési pontok együttes `import *`-os ára, minify + gzip 9. */
+/** The combined `import *` cost of the `names` entry points, minify + gzip 9. */
 export async function measure(coreDir, names) {
   const files = names.map((name) => join(coreDir, "dist", `${name}.mjs`));
   for (const file of files) {
-    if (!existsSync(file)) throw new Error(`nincs buildelt belépési pont: ${file} — futtasd előbb a buildet`);
+    if (!existsSync(file)) throw new Error(`no built entry point: ${file} — run the build first`);
   }
   const source = files.map((file, i) => `import * as m${String(i)} from ${JSON.stringify(file)};`).join("\n") + `\nglobalThis.__sdkSize = [${files.map((_, i) => `m${String(i)}`).join(", ")}];\n`;
   const bundle = await rolldown({
@@ -62,7 +63,7 @@ const isMain = process.argv[1] !== undefined && process.argv[1].endsWith("sdk_si
 if (isMain) {
   const entries = readEntries();
   const base = await measure(CORE_DIR, ["index"]);
-  console.log(`  alap      index  ${String(base).padStart(6)} B  (a kerete a size-limit-ben: ${entries.find((e) => e.name === "index").limit})`);
+  console.log(`  base      index  ${String(base).padStart(6)} B  (its budget is in size-limit: ${entries.find((e) => e.name === "index").limit})`);
   const problems = [];
   for (const entry of entries.filter((e) => e.name !== "index")) {
     const together = await measure(CORE_DIR, ["index", entry.name]);
@@ -70,12 +71,12 @@ if (isMain) {
     const marginal = together - base;
     const limit = parseLimit(entry.limit);
     const ok = marginal <= limit;
-    console.log(`  ${ok ? "ok  " : "HIBA"}      ${entry.name.padEnd(6)} ${String(marginal).padStart(6)} B határköltség / ${entry.limit} keret  (önállóan ${String(alone)} B, az alappal együtt ${String(together)} B)`);
-    if (!ok) problems.push(`${entry.name}: határköltség ${String(marginal)} B > ${entry.limit}`);
+    console.log(`  ${ok ? "ok  " : "FAIL"}      ${entry.name.padEnd(6)} ${String(marginal).padStart(6)} B marginal cost / ${entry.limit} budget  (alone ${String(alone)} B, together with the base ${String(together)} B)`);
+    if (!ok) problems.push(`${entry.name}: marginal cost ${String(marginal)} B > ${entry.limit}`);
   }
   if (problems.length > 0) {
-    console.error(`\nMéretkeret túllépve: ${problems.join("; ")}`);
+    console.error(`\nSize budget exceeded: ${problems.join("; ")}`);
     process.exit(1);
   }
-  console.log("\nsdk_size: minden nem-alap belépési pont a határköltség-keretén belül.");
+  console.log("\nsdk_size: every non-base entry point is within its marginal-cost budget.");
 }

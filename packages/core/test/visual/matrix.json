@@ -1,5 +1,5 @@
 {
-  "note": "A vizuális mátrix EGYETLEN forrása. A .mjs generátor és a vitest-tesztek is innen olvassák a szélességeket; az orientációk és a témák a magból jönnek (ORIENTATIONS, THEMES), nem innen.",
+  "note": "The one source of the visual matrix. The .mjs generator and the vitest tests both read the widths from here; the orientations and the themes come from the core (ORIENTATIONS, THEMES), not from here.",
   "widths": [360, 768, 1440],
   "height": 480,
   "densityForWidth": {

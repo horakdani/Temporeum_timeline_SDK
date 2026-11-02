@@ -1,6 +1,6 @@
 <script>
-  // A SvelteKit szerverén a Svelte-adapter maga rajzol ({@html}); a kliens
-  // hidratáláskor a szerver csomópontjait veszi át, és a példány azokat (P23).
+  // On SvelteKit's server the Svelte adapter draws by itself ({@html}); on
+  // hydration the client takes over the server's nodes, and the instance takes those.
   import { Timeline, timelineState } from "@temporeum/timeline-svelte";
 
   import { config, WIDTH } from "../../shared/data.mjs";
@@ -8,7 +8,7 @@
   let timeline = $state(null);
   const selected = $derived(timelineState(timeline, (snapshot) => snapshot.selectedIds));
   $effect(() => {
-    // A teszt innen tudja, hogy a kliens átvette a rajzot.
+    // This is how the test knows the client has taken over the drawing.
     if (timeline !== null) window.__tl = timeline;
   });
 </script>

@@ -1,31 +1,31 @@
 #!/usr/bin/env node
 /**
- * G-E2E-TOUCH: bizonyitja, hogy a bongeszos keszlet tenyleg lefutott —
- * valodi erintessel, eszkoz-emulacioval, es a SHIPPELT csomagon.
+ * G-E2E-TOUCH: proves that the browser suite really ran — with real touch,
+ * device emulation, and on the SHIPPED package.
  *
- * Ez a kapu a legkonnyebben hazudik magarol. Harom modon:
+ * This check lies about itself most easily. In three ways:
  *
- *  1. egyetlen teszt sem fut le, es a "0 passed" is 0-s exit (a Playwright
- *     `--pass-with-no-tests` nelkul ugyan bukik, de egy ures fajl mellett a
- *     keszlet csendben elsorvad);
- *  2. a tesztek lefutnak, de asztali bongeszoben, erintes nelkul — es akkor
- *     pont azt nem mertuk, amiert a kapu letezik;
- *  3. a lap a FORRAST tolti be, nem a dist-et, es akkor a bundle hibai
- *     lathatatlanok maradnak (ez a P2 tanulsaga, kulon kapuval).
+ *  1. not a single test runs, and "0 passed" is exit 0 too (Playwright does
+ *     fail without `--pass-with-no-tests`, but next to an empty file the
+ *     suite quietly withers away);
+ *  2. the tests run, but in a desktop browser, without touch — and then we
+ *     did not measure exactly what the check exists for;
+ *  3. the page loads the SOURCE, not dist, and then the bundle's bugs stay
+ *     invisible (a lesson learned the hard way, with a check of its own).
  *
- * Ezert: a riportbol minden kotelezo allitasnak zolden kell lennie, a projekt
- * eszkoz-emulaciot hasznal (erintessel), es a kiszolgalt `/core/` a dist.
+ * So: every required claim must pass in the report, the project uses device
+ * emulation (with touch), and the `/core/` served is dist.
  *
- * NEGYEDIK mod, amit ez a kapu a P5-ig NEM vett eszre, es ez a sajat hibaja
- * volt: a P4 `proof` mezoje azt allitotta, hogy "valodi tap/drag/long-press",
- * a kotelezo allitasok kozt viszont long-press nem szerepelt — tehat a kapu
- * zolden atengedett egy keszletet, ami a sajat igeretenek egyharmadat meg sem
- * merte. Egy kapu, aminek a claim-listaja szukebb, mint a proof-ja, pont
- * annyit er, amennyi a listan van. A lista most a P5 szerkesztesi allitasait
- * is tartalmazza, es a statikus fel megkoveteli azt a ket dolgot, amit egy
- * cim nem tud elarulni: hogy a tartas VALODI oraval tortenik (ettol
- * bizonyit barmit a kotes idozitoje), es hogy ugyanaz a lap egerrel is meg
- * van hajtva (ettol lesz a hibrid eszkoz allitasa merve, nem allitva).
+ * A FOURTH way, which this check once did NOT notice, and it was its own
+ * fault: its `proof` field claimed "real tap/drag/long-press", but long-press
+ * was not among the required claims — so the check passed a suite that did
+ * not even measure a third of its own promise. A check whose claim list is
+ * narrower than its proof is worth exactly what is on the list. The list now
+ * holds the editing claims too, and the static half requires the two things
+ * a title cannot reveal: that the hold happens with a REAL clock (that is
+ * what makes the binding's timer prove anything), and that the same page is
+ * driven with a mouse too (that is what makes the hybrid-device claim
+ * measured, not merely stated).
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -42,36 +42,36 @@ const specFile = join(docsPackage, "e2e", "touch.spec.ts");
 
 const MIN_TESTS = 15;
 /**
- * A kapu proof-ja. Mindegyikhez kell zold teszt.
+ * The check's proof. Each one needs a passing test.
  *
- * Az elso hat a P4-e (gesztusok), a tobbi a P5-e (szerkesztes). A
- * "hosszú nyomás" azert all itt kulon, mert a P4 proof-ja mar allitotta, a
- * lista viszont nem kerte — es akkor senki nem merte.
+ * The first six are the gestures, the rest are editing. The long-press
+ * claim is listed on its own because the proof already claimed it, but the
+ * list did not ask for it — and then nobody measured it.
  */
 const REQUIRED_CLAIMS = [
-  "pásztáz",
+  "pans",
   "touch-action",
-  "ELVESZI a gesztust",
+  "TAKES the gesture",
   "pinch",
-  "dupla koppintás",
-  "két ujjas koppintás",
-  "hosszú nyomás",
-  "tartás NÉLKÜL",
-  "az egér ugyanezen a lapon azonnal húz",
-  "fogantyú",
-  "hoszt szabálya",
-  "lezárt elem",
-  "visszavonás",
-  "koppintás kijelöl",
+  "double tap",
+  "two-finger tap",
+  "long press",
+  "WITHOUT a hold",
+  "the mouse on the same page drags at once",
+  "handle",
+  "host's rule",
+  "locked item",
+  "undo",
+  "tap selects",
 ];
 
 const failures = [];
 const notes = [];
 
-// --- 1. FUTASIDEJU -----------------------------------------------------------
+// --- 1. RUNTIME ---------------------------------------------------------------
 
 if (!existsSync(reportFile)) {
-  failures.push(`nincs e2e-riport (${reportFile}) — a bongeszos keszlet NEM futott le, ezert BUKAS`);
+  failures.push(`no e2e report (${reportFile}) — the browser suite did NOT run, so this is a FAILURE`);
 } else {
   const report = JSON.parse(readFileSync(reportFile, "utf8"));
   const stats = report.stats ?? {};
@@ -89,107 +89,107 @@ if (!existsSync(reportFile)) {
   }
 
   if (specs.length < MIN_TESTS) {
-    failures.push(`${String(specs.length)} e2e teszt futott, de legalabb ${String(MIN_TESTS)} kell`);
+    failures.push(`${String(specs.length)} e2e tests ran, but at least ${String(MIN_TESTS)} are required`);
   }
   if (Number(stats.unexpected ?? 0) > 0) {
-    failures.push(`${String(stats.unexpected)} bukott e2e teszt`);
+    failures.push(`${String(stats.unexpected)} failed e2e tests`);
   }
   if (Number(stats.flaky ?? 0) > 0) {
     failures.push(
-      `${String(stats.flaky)} flaky e2e teszt — egy bizonytalan bizonyitek nem bizonyitek`,
+      `${String(stats.flaky)} flaky e2e tests — an uncertain proof is no proof`,
     );
   }
   if (Number(stats.skipped ?? 0) > 0) {
-    failures.push(`${String(stats.skipped)} kihagyott e2e teszt — a kihagyas BUKAS, nem semleges`);
+    failures.push(`${String(stats.skipped)} skipped e2e tests — a skip is a FAILURE, not neutral`);
   }
   for (const spec of specs) {
     for (const test of spec.tests ?? []) {
       if (test.status !== "expected") {
-        failures.push(`nem zold e2e teszt: ${String(spec.title)} (${String(test.status)})`);
+        failures.push(`failing e2e test: ${String(spec.title)} (${String(test.status)})`);
       }
     }
   }
   const titles = specs.map((spec) => String(spec.title).toLowerCase());
   for (const claim of REQUIRED_CLAIMS) {
     if (!titles.some((title) => title.includes(claim.toLowerCase()))) {
-      failures.push(`a kapu allit valamit, amit senki nem mer a bongeszoben: "${claim}"`);
+      failures.push(`the check claims something nobody measures in the browser: "${claim}"`);
     }
   }
   const projects = report.config?.projects ?? [];
   if (projects.length === 0) {
-    failures.push("a riport egyetlen projektet sem nevez meg — nem tudjuk, min futott");
+    failures.push("the report names no project — we do not know what it ran on");
   }
   for (const project of projects) {
     if (Number(project.retries ?? 0) > 0) {
       failures.push(
-        `a ${String(project.name)} projekt ujraprobal (${String(project.retries)}) — az elrejti a flaky gesztust`,
+        `the ${String(project.name)} project retries (${String(project.retries)}) — that hides a flaky gesture`,
       );
     }
   }
   if (failures.length === 0) {
     notes.push(
-      `${String(specs.length)} bongeszos teszt, mind zold, ${String(projects.length)} eszkozon: ` +
+      `${String(specs.length)} browser tests, all passing, on ${String(projects.length)} devices: ` +
         projects.map((project) => project.name).join(", "),
     );
   }
 }
 
-// --- 2. STATIKUS: valodi eszkoz, valodi csomag -------------------------------
+// --- 2. STATIC: real device, real package --------------------------------------
 
 const config = existsSync(configFile) ? readFileSync(configFile, "utf8") : "";
 if (config === "") {
-  failures.push(`nincs playwright konfig: ${configFile}`);
+  failures.push(`no Playwright config: ${configFile}`);
 } else {
   if (!/devices\[/.test(config)) {
     failures.push(
-      "a konfig nem hasznal eszkoz-emulaciot (`devices[...]`) — asztali bongeszoben nincs erintes",
+      "the config does not use device emulation (`devices[...]`) — a desktop browser has no touch",
     );
   }
   if (!/retries:\s*0/.test(config)) {
-    failures.push("a konfig nem zarja ki az ujraprobalast");
+    failures.push("the config does not rule out retries");
   }
 }
 
 const spec = existsSync(specFile) ? readFileSync(specFile, "utf8") : "";
 if (spec === "") {
-  failures.push(`nincs bongeszos keszlet: ${specFile}`);
+  failures.push(`no browser suite: ${specFile}`);
 } else {
   if (!/waitForTimeout\(/.test(spec)) {
     failures.push(
-      "a keszlet sehol nem var valodi orat — a hosszu nyomast csak igy lehet megmerni, " +
-        "es a kotes idozitojerol enelkul semmit nem allitottunk",
+      "the suite never waits on a real clock — that is the only way to measure a long press, " +
+        "and without it we have claimed nothing about the binding's timer",
     );
   }
   if (!/page\.mouse\./.test(spec)) {
     failures.push(
-      "a keszlet nem hajtja meg a lapot egerrel — egy erintokijelzos eszkozon is van eger, " +
-        "es eppen az a kerdes, hogy a ketto nem mossa ossze egymast",
+      "the suite does not drive the page with a mouse — a touchscreen device has a mouse too, " +
+        "and the question is exactly whether the two get mixed up",
     );
   }
   if (failures.length === 0) {
-    notes.push("a tartas valodi oraval megy, es ugyanaz a lap egerrel is meg van hajtva");
+    notes.push("the hold runs on a real clock, and the same page is driven with a mouse too");
   }
 }
 
 const page = existsSync(pageFile) ? readFileSync(pageFile, "utf8") : "";
 if (page === "") {
-  failures.push(`nincs demo lap: ${pageFile}`);
+  failures.push(`no demo page: ${pageFile}`);
 } else if (!/from\s*"\/core\/index\.mjs"/.test(page) || !/from\s*"\/core\/dom\.mjs"/.test(page)) {
-  failures.push("a demo lap nem a `/core/` ala kiszolgalt csomagbol importal");
+  failures.push("the demo page does not import from the package served under `/core/`");
 }
 
 const server = existsSync(serverFile) ? readFileSync(serverFile, "utf8") : "";
 if (server === "") {
-  failures.push(`nincs statikus szerver: ${serverFile}`);
+  failures.push(`no static server: ${serverFile}`);
 } else if (!/"core",\s*"dist"/.test(server)) {
   failures.push(
-    "a szerver nem a dist-et szolgalja ki a `/core/` ala — a bongeszoben a SHIPPELT csomagnak kell futnia",
+    "the server does not serve dist under `/core/` — the SHIPPED package must run in the browser",
   );
 } else {
-  notes.push("a bongeszo a shippelt dist-et futtatja, nem a forrast");
+  notes.push("the browser runs the shipped dist, not the source");
 }
 
-// --- Eredmeny ----------------------------------------------------------------
+// --- Result ------------------------------------------------------------------
 
 for (const note of notes) {
   console.log(`  ok   ${note}`);
@@ -198,10 +198,10 @@ for (const note of notes) {
 if (failures.length > 0) {
   console.error("");
   for (const failure of failures) {
-    console.error(`  HIBA ${failure}`);
+    console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-E2E-TOUCH BUKOTT: ${String(failures.length)} hiba.`);
+  console.error(`\nG-E2E-TOUCH FAILED: ${String(failures.length)} problems.`);
   process.exit(1);
 }
 
-console.log("\nG-E2E-TOUCH atment: valodi tap, huzas es pinch egy emulalt erintokijelzon.");
+console.log("\nG-E2E-TOUCH passed: real tap, drag and pinch on an emulated touchscreen.");

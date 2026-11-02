@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * G-TOOLTIP: a tooltip egerrel, fokusszal es hosszu nyomassal is megjelenik,
- * Esc-re eltunik (a fokusz es a kijeloles nem valtozik), es a mutato
- * viheto ra — WCAG 1.4.13: elvetheto, viheto ra, tartos.
+ * G-TOOLTIP: the tooltip appears on mouse hover, on focus and on long press,
+ * disappears on Esc (focus and selection do not change), and the pointer can
+ * be moved onto it — WCAG 1.4.13: dismissible, hoverable, persistent.
  *
- * Ket forras: a Playwright JSON-riportja (minden allitas-teszt lefutott es
- * zold), es a lap naploja (.tooltip-browser-log.json), amit a bongeszobol
- * olvasott adat irt. Egy hianyzo forras BUKAS, nem kihagyas.
+ * Two sources: the Playwright JSON report (every claim test ran and passed),
+ * and the page's log (.tooltip-browser-log.json), written from data read in
+ * the browser. A missing source FAILS; it is not skipped.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -22,7 +22,7 @@ const CLAIMS = ["hover", "hoverable", "persistent", "focus", "dismiss", "long-pr
 
 const reportFile = join(docs, ".e2e-tooltip-report.json");
 if (!existsSync(reportFile)) {
-  failures.push(`nincs Playwright-riport (${reportFile}) — a tooltip-keszlet NEM futott, ezert BUKAS`);
+  failures.push(`no Playwright report (${reportFile}) — the tooltip suite did NOT run, so this FAILS`);
 } else {
   const report = JSON.parse(readFileSync(reportFile, "utf8"));
   const specs = [];
@@ -31,31 +31,31 @@ if (!existsSync(reportFile)) {
     for (const child of suite.suites ?? []) walk(child);
   };
   for (const suite of report.suites ?? []) walk(suite);
-  if (specs.length < 4) failures.push(`${String(specs.length)} tooltip-teszt futott, 4 kell`);
+  if (specs.length < 4) failures.push(`${String(specs.length)} tooltip tests ran, 4 are required`);
   const green = [];
   for (const spec of specs) {
     const results = (spec.tests ?? []).flatMap((test) => test.results ?? []);
-    if (results.length === 0 || results.some((result) => result.status !== "passed")) failures.push(`nem zold: ${String(spec.title)}`);
+    if (results.length === 0 || results.some((result) => result.status !== "passed")) failures.push(`not passing: ${String(spec.title)}`);
     else green.push(String(spec.title));
   }
   for (const claim of CLAIMS) {
-    if (!green.some((title) => title.includes(`[claim:${claim}]`))) failures.push(`a(z) [claim:${claim}] allitasnak nincs zold tesztje`);
+    if (!green.some((title) => title.includes(`[claim:${claim}]`))) failures.push(`the [claim:${claim}] claim has no passing test`);
   }
 }
 
 const logFile = join(docs, ".tooltip-browser-log.json");
 if (!existsSync(logFile)) {
-  failures.push(`nincs bongeszo-naplo (${logFile})`);
+  failures.push(`no browser log (${logFile})`);
 } else {
   const log = JSON.parse(readFileSync(logFile, "utf8"));
-  if (log.hover?.shown !== true) failures.push("egerre nem jelent meg");
-  if (log.focus?.shown !== true) failures.push("fokuszra nem jelent meg");
-  if (log.longPress?.shown !== true) failures.push("hosszu nyomasra nem jelent meg");
-  if (log.dismiss?.hidden !== true) failures.push("Esc-re nem tunt el");
-  if (log.dismiss?.focusKept !== true) failures.push("az Esc elvitte a fokuszt");
-  if (log.dismiss?.selectionKept !== true) failures.push("az Esc megvaltoztatta a kijelolest");
-  if (log.hoverable?.stayedOnTooltip !== true) failures.push("a mutato nem viheto ra: eltunt, amikor rament");
-  if (!(Number(log.hoverable?.heldMs) >= 1000)) failures.push("a tartossag nincs merve (legalabb 1 s a tooltipen)");
-  notes.push(`eger: ${JSON.stringify(log.hover?.text ?? "")}; fokusz: ${String(log.focus?.focused)}; hosszu nyomas: ${JSON.stringify(log.longPress?.text ?? "")}`);
+  if (log.hover?.shown !== true) failures.push("did not appear on mouse hover");
+  if (log.focus?.shown !== true) failures.push("did not appear on focus");
+  if (log.longPress?.shown !== true) failures.push("did not appear on long press");
+  if (log.dismiss?.hidden !== true) failures.push("did not disappear on Esc");
+  if (log.dismiss?.focusKept !== true) failures.push("Esc moved the focus");
+  if (log.dismiss?.selectionKept !== true) failures.push("Esc changed the selection");
+  if (log.hoverable?.stayedOnTooltip !== true) failures.push("the pointer cannot be moved onto it: it disappeared when the pointer reached it");
+  if (!(Number(log.hoverable?.heldMs) >= 1000)) failures.push("persistence is not measured (at least 1 s on the tooltip)");
+  notes.push(`hover: ${JSON.stringify(log.hover?.text ?? "")}; focus: ${String(log.focus?.focused)}; long press: ${JSON.stringify(log.longPress?.text ?? "")}`);
 }
 finish("G-TOOLTIP", failures, notes);

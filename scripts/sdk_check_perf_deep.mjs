@@ -1,43 +1,46 @@
 #!/usr/bin/env node
 /**
- * G-PERF-DEEP (P14): bizonyitja, hogy a 4x-es csipes (zoom-deep: 100 px-rol
- * 400 px-re es vissza, ket masodperc) is tartja a G-PERF kuszobeit — a mag
- * utjan (bench.html) ES a publikus uton (bench-public.html, createTimeline
- * a shippelt bundle-bol) —, es hogy a meres ket negativ kontrollon BUKIK.
+ * G-PERF-DEEP: proves that the 4x pinch (zoom-deep: from 100 px to 400 px
+ * and back, two seconds) also holds the G-PERF thresholds — on the core path
+ * (bench.html) AND on the public path (bench-public.html, createTimeline
+ * from the shipped bundle) — and that the measurement FAILS on two negative
+ * controls.
  *
- * A kuszobok ugyanazok, mint a sdk_check_perf.mjs-ben (P7-ben rogzitve):
+ * The thresholds are the same as in sdk_check_perf.mjs (recorded up front):
  *
- *   kihagyott vsync-ek aranya <= 5%, leghosszabb kepkocka <= 100 ms,
- *   a gesztus utani nyugvo kepkocka <= 100 ms
+ *   share of missed vsyncs <= 5%, longest frame <= 100 ms,
+ *   the settled frame after the gesture <= 100 ms
  *
- * A P13 vegen ez a forgatokonyv csak tajekoztato volt: 9-11% kihagyas, hat
- * ujrahorgonyzassal. A P14 lepcsos, fokozatos ujrahorgonyzasa ota kapu.
+ * This scenario used to be informative only: 9-11% missed, with six
+ * re-anchors. Since re-anchoring became stepped and gradual, it is gated.
  *
- * Ervenyesseg — ha barmelyik serul, a check BUKIK:
+ * Validity — if any of these is violated, the check FAILS:
  *
- *   - a riport letezik, a `deep` merese, 4x lassitassal, 10 000 elemmel;
- *   - mindket lap FRISS dist-rol futott (a mag lapja a mag, a publikus a mag
- *     ES az element forras-lenyomataval);
- *   - a gesztus elejen 1900-2200 elem TENYLEG a nezetben van;
- *   - a bemenet ossze van vonva (tobb esemeny, mint rajzolas);
- *   - a publikus "space" futas tenyleg elemterben rajzolt, az "exact" nem;
- *   - a mag lapjan a "space" futas lepcsokkel ment, a "flat" nelkuluk.
+ *   - the report exists, is the `deep` measurement, with 4x throttling, 10,000 items;
+ *   - both pages ran from a FRESH dist (the core page with the core's, the
+ *     public page with the core's AND the element's source fingerprint);
+ *   - at the start of the gesture 1900-2200 items REALLY are in view;
+ *   - the input is coalesced (more events than draws);
+ *   - the public "space" run really drew in the item space, the "exact" one did not;
+ *   - on the core page the "space" run went with steps, the "flat" one without.
  *
- * Negativ kontrollok:
+ * Negative controls:
  *
- *   - elemter nelkul (exact) mindket uton BUKNIA kell — kulonben a meres nem
- *     kulonbozteti meg a jot a rossztol, vagy a lassitas nem hat;
- *   - a mag lapjan lepcsok nelkul (flat: minden ujrahorgonyzas egy
- *     kepkockaban) MERHETOEN ROSSZABB a lepcsos utnal: vagy bukik, vagy
- *     legalabb 1 szazalekponttal tobb vsync-et hagy ki — kulonben a lepcsos
- *     ujrahorgonyzas nem szamit, es a kapu nem rola szol.
+ *   - without the item space (exact) it must FAIL on both paths — otherwise
+ *     the measurement does not tell good from bad, or the throttling has no
+ *     effect;
+ *   - on the core page, without steps (flat: every re-anchor in one frame)
+ *     it is MEASURABLY WORSE than the stepped path: it either fails, or
+ *     misses at least 1 percentage point more vsyncs — otherwise stepped
+ *     re-anchoring does not matter, and the check is not about it.
  *
- * A flat kontroll a P17-ig a kuszobon bukott. A P17-ben a DOM-folto
- * karcsusitasa (csomopontonkent egy attributum-hivatkozas ket Map helyett)
- * a teljes ujrahorgonyzast is olcsobba tette: a flat ut 2,4-3,2%-on a kuszob
- * ALATT maradt, mikozben a lepcsos 0,0% volt. A kuszob-bukas feltevese
- * ezzel megdolt — egy JAVITAS buktatta volna a kaput —, ezert a kontroll
- * azt allitja, amit tenyleg bizonyitani kell: a lepcsok merhetoen jobbak.
+ * The flat control used to fail on the threshold. Then slimming the DOM
+ * patcher (one attribute reference per node instead of two Maps) made full
+ * re-anchoring cheaper too: the flat path stayed BELOW the threshold at
+ * 2.4-3.2%, while the stepped one was at 0.0%. That disproved the
+ * threshold-failure assumption — an IMPROVEMENT would have failed the
+ * check — so the control claims what really has to be proven: the steps
+ * are measurably better.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -51,7 +54,7 @@ const MAX_MISSED_SHARE = 0.05;
 const MAX_LONGEST_FRAME_MS = 100;
 const MAX_SETTLE_MS = 100;
 const BUDGET_VISIBLE = [1900, 2200];
-/** Ennyivel tobb kihagyott vsync kell a flat kontrollon, mint a lepcsos uton. */
+/** The flat control must miss this many more vsyncs than the stepped path. */
 const MIN_FLAT_PENALTY = 0.01;
 
 const failures = [];
@@ -60,37 +63,37 @@ const notes = [];
 function verdict(run) {
   const reasons = [];
   if (!(run.missedVsyncShare <= MAX_MISSED_SHARE)) {
-    reasons.push(`kihagyott vsync ${(run.missedVsyncShare * 100).toFixed(1)}% > ${String(MAX_MISSED_SHARE * 100)}%`);
+    reasons.push(`missed vsyncs ${(run.missedVsyncShare * 100).toFixed(1)}% > ${String(MAX_MISSED_SHARE * 100)}%`);
   }
   if (!(run.longestFrameMs <= MAX_LONGEST_FRAME_MS)) {
-    reasons.push(`leghosszabb kepkocka ${run.longestFrameMs.toFixed(0)} ms > ${String(MAX_LONGEST_FRAME_MS)} ms`);
+    reasons.push(`longest frame ${run.longestFrameMs.toFixed(0)} ms > ${String(MAX_LONGEST_FRAME_MS)} ms`);
   }
   if (!(run.settleMs <= MAX_SETTLE_MS)) {
-    reasons.push(`nyugvo kepkocka ${run.settleMs.toFixed(0)} ms > ${String(MAX_SETTLE_MS)} ms`);
+    reasons.push(`settled frame ${run.settleMs.toFixed(0)} ms > ${String(MAX_SETTLE_MS)} ms`);
   }
   return reasons;
 }
 
 const describe = (run) =>
-  `${(run.missedVsyncShare * 100).toFixed(1)}% kihagyott vsync, leghosszabb ${run.longestFrameMs.toFixed(0)} ms, ` +
-  `nyugvo ${run.settleMs.toFixed(0)} ms, ujrahorgonyzas ${String(run.reanchors ?? "-")}`;
+  `${(run.missedVsyncShare * 100).toFixed(1)}% missed vsyncs, longest ${run.longestFrameMs.toFixed(0)} ms, ` +
+  `settled ${run.settleMs.toFixed(0)} ms, re-anchors ${String(run.reanchors ?? "-")}`;
 
 if (!existsSync(reportFile)) {
-  failures.push(`nincs meresi riport (${reportFile}) — a meres NEM futott le, ezert BUKAS`);
+  failures.push(`no measurement report (${reportFile}) — the measurement did NOT run, so this is a FAILURE`);
 } else {
   const report = JSON.parse(readFileSync(reportFile, "utf8"));
   if (report.kind !== "deep") {
-    failures.push(`a riport egy masik meres riportja (${String(report.kind)})`);
+    failures.push(`the report belongs to another measurement (${String(report.kind)})`);
   }
   if (report.throttle !== 4) {
-    failures.push(`a lassitas ${String(report.throttle)}x, nem a rogzitett 4x`);
+    failures.push(`the throttling is ${String(report.throttle)}x, not the fixed 4x`);
   }
   const builds = Array.isArray(report.builds) ? report.builds : [];
   const stale = builds.filter((build) => build.actual !== build.expected);
   if (builds.length === 0 || stale.length > 0) {
-    failures.push(`a bongeszo NEM a friss dist-et futtatta (${stale.map((build) => build.path).join(", ")}) — regi kod merese`);
+    failures.push(`the browser did NOT run the fresh dist (${stale.map((build) => build.path).join(", ")}) — this measures old code`);
   } else {
-    notes.push(`friss dist mindket lapon (${String(builds.length)} megnyitas)`);
+    notes.push(`fresh dist on both pages (${String(builds.length)} page loads)`);
   }
   const runs = Array.isArray(report.runs) ? report.runs : [];
   const find = (path, mode) => runs.find((run) => run.path === path && run.mode === mode && run.name === "zoom-deep");
@@ -101,27 +104,27 @@ if (!existsSync(reportFile)) {
   ]) {
     const run = find(path, mode);
     if (run === undefined) {
-      failures.push(`hianyzik: ${path} ${mode} zoom-deep — a nem futtathato meres BUKAS`);
+      failures.push(`missing: ${path} ${mode} zoom-deep — a measurement that cannot run is a FAILURE`);
       continue;
     }
     if (run.totalItems !== 10_000) {
-      failures.push(`${path}: ${String(run.totalItems)} elem az adatban, nem 10 000`);
+      failures.push(`${path}: ${String(run.totalItems)} items in the data, not 10,000`);
     }
     const visible = run.before?.visibleItems;
     if (!(visible >= BUDGET_VISIBLE[0] && visible <= BUDGET_VISIBLE[1])) {
-      failures.push(`${path}: a bongeszo szerint ${String(visible)} elem lathato, nem ${String(BUDGET_VISIBLE[0])}-${String(BUDGET_VISIBLE[1])}`);
+      failures.push(`${path}: according to the browser ${String(visible)} items are visible, not ${String(BUDGET_VISIBLE[0])}-${String(BUDGET_VISIBLE[1])}`);
     }
     if (!(run.inputEvents > run.draws)) {
-      failures.push(`${path}: ${String(run.inputEvents)} esemeny es ${String(run.draws)} rajzolas — a bemenet nincs osszevonva`);
+      failures.push(`${path}: ${String(run.inputEvents)} events and ${String(run.draws)} draws — the input is not coalesced`);
     }
     if (path === "public" && run.sceneSpace !== true) {
-      failures.push("public space: a createTimeline nem elemterben rajzolt — nem a konfiguracio alapjat mertuk");
+      failures.push("public space: createTimeline did not draw in the item space — we did not measure the configuration's default");
     }
     if (path === "core" && run.levels !== true) {
-      failures.push("core space: a mag lapja lepcsok nelkul futott — nem az ajanlott utat mertuk");
+      failures.push("core space: the core page ran without steps — we did not measure the recommended path");
     }
     const reasons = verdict(run);
-    const line = `${path === "core" ? "mag utja" : "publikus ut"}: ${String(visible)} elem — ${describe(run)}`;
+    const line = `${path === "core" ? "core path" : "public path"}: ${String(visible)} items — ${describe(run)}`;
     if (reasons.length > 0) {
       failures.push(`${line} — ${reasons.join("; ")}`);
     } else {
@@ -130,38 +133,38 @@ if (!existsSync(reportFile)) {
   }
 
   for (const [path, mode, what] of [
-    ["core", "exact", "mag, elemter nelkul"],
-    ["public", "exact", "publikus, elemter nelkul"],
-    ["core", "flat", "mag, lepcsok nelkul"],
+    ["core", "exact", "core, without the item space"],
+    ["public", "exact", "public, without the item space"],
+    ["core", "flat", "core, without steps"],
   ]) {
     const run = find(path, mode);
     if (run === undefined) {
-      failures.push(`hianyzik a negativ kontroll: ${what} — a nem futtathato kontroll BUKAS`);
+      failures.push(`negative control missing: ${what} — a control that cannot run is a FAILURE`);
       continue;
     }
     if (path === "public" && run.sceneSpace !== false) {
-      failures.push("public exact: a kontroll elemterben rajzolt — nem kontroll");
+      failures.push("public exact: the control drew in the item space — not a control");
     }
     if (path === "core" && mode === "flat" && run.levels !== false) {
-      failures.push("core flat: a kontroll lepcsokkel futott — nem kontroll");
+      failures.push("core flat: the control ran with steps — not a control");
     }
     if (verdict(run).length > 0) {
-      notes.push(`negativ kontroll bukik, ahogy kell — ${what}: ${describe(run)}`);
+      notes.push(`the negative control fails, as it should — ${what}: ${describe(run)}`);
       continue;
     }
     const levelled = mode === "flat" ? find("core", "space") : undefined;
     if (levelled !== undefined && run.missedVsyncShare - levelled.missedVsyncShare >= MIN_FLAT_PENALTY) {
       notes.push(
-        `negativ kontroll merhetoen rosszabb, ahogy kell — ${what}: ${describe(run)}; ` +
-          `a lepcsos ut ${(levelled.missedVsyncShare * 100).toFixed(1)}%`,
+        `the negative control is measurably worse, as it should be — ${what}: ${describe(run)}; ` +
+          `the stepped path ${(levelled.missedVsyncShare * 100).toFixed(1)}%`,
       );
     } else {
-      failures.push(`a negativ kontroll (${what}) NEM bukik${mode === "flat" ? ", es nem is merhetoen rosszabb" : ""}: ${describe(run)} — a meres nem kulonbozteti meg, amit allit`);
+      failures.push(`the negative control (${what}) does NOT fail${mode === "flat" ? ", nor is it measurably worse" : ""}: ${describe(run)} — the measurement does not distinguish what it claims`);
     }
   }
 }
 
 for (const note of notes) console.log(`  ok    ${note}`);
-for (const failure of failures) console.log(`  BUKAS ${failure}`);
-console.log(failures.length === 0 ? "G-PERF-DEEP: atment" : `G-PERF-DEEP: BUKOTT (${String(failures.length)} hiba)`);
+for (const failure of failures) console.log(`  FAIL  ${failure}`);
+console.log(failures.length === 0 ? "G-PERF-DEEP: passed" : `G-PERF-DEEP: FAILED (${String(failures.length)} failure(s))`);
 process.exit(failures.length === 0 ? 0 : 1);

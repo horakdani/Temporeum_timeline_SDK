@@ -2,10 +2,10 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "target": "ES2022",
-    // A DOM itt CSAK típus: nulla bájt a kimenetben. A "nincs DOM a magban"
-    // igeret FUTASIDEJU, es ket helyen van kikenyszeritve: az eslint
-    // no-restricted-globals a packages/core/src alatt, es a vitest `node`
-    // environmentje, amiben nincs se window, se document.
+    // The DOM here is ONLY types: zero bytes in the output. The "no DOM in the
+    // core" promise is about RUNTIME, and it is enforced in two places: eslint
+    // no-restricted-globals under packages/core/src, and vitest's `node`
+    // environment, which has neither window nor document.
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",

@@ -204,7 +204,7 @@ describeBothOrientations("scene space", (orientation) => {
   const msPerPx = (30 * DAY) / mainSize;
 
   /** A layer's nodes, with the tile groups of a frame in a space opened up. */
-  /** A label's text: on the node itself for an SVG `<text>`, on its one HTML line in a `foreignObject` (P17). */
+  /** A label's text: on the node itself for an SVG `<text>`, on its one HTML line in a `foreignObject`. */
   const textOf = (node: SceneElement): string | undefined => node.text ?? node.children?.[0]?.text;
 
   function leaves(layer: SceneElement): SceneElement[] {
@@ -392,7 +392,7 @@ describeBothOrientations("scene space", (orientation) => {
     for (const name of ["background", "axis", "lanes", "items", "foreground", "overlay"]) {
       expect(layerOf(second.scene, name).children).toBe(layerOf(first.scene, name).children);
     }
-    // The labels too, tile by tile: since P17 a gesture's frame adds the
+    // The labels too, tile by tile: a gesture's frame adds the
     // labels the edges cut off in a group of their own, which moves with the
     // view — the tiles' labels are the very same nodes.
     const tilesOf = (scene: SceneElement): SceneElement[] =>
@@ -448,7 +448,7 @@ describeBothOrientations("scene space", (orientation) => {
   // Until 1.0.0-rc.4 only at rest: during a gesture the label stayed where
   // the item starts, off-screen, and came back when the gesture ended.
   it("pins the label of an item the near edge cuts off, at rest and during a gesture alike", () => {
-    const long: Item = { id: "long", start: domain[0] - 5 * DAY, end: domain[0] + 12 * DAY, label: "Hosszú" };
+    const long: Item = { id: "long", start: domain[0] - 5 * DAY, end: domain[0] + 12 * DAY, label: "Lengthy" };
     const options: RenderOptions = { domain, width: WIDTH, height: HEIGHT, orientation, items: [long] };
     const resting = grown();
     /** The label nodes with that text, where they land on the screen — through any group's own transform. */
@@ -460,11 +460,11 @@ describeBothOrientations("scene space", (orientation) => {
         if (node.attrs?.class === "tl-edge-labels") {
           const group = mainTransform(node, orientation);
           for (const child of node.children ?? []) {
-            if (textOf(child) === "Hosszú") {
+            if (textOf(child) === "Lengthy") {
               found.push(k * (group.k * num(child.attrs?.[mainKey]) + group.t) + t);
             }
           }
-        } else if (textOf(node) === "Hosszú") {
+        } else if (textOf(node) === "Lengthy") {
           found.push(k * num(node.attrs?.[mainKey]) + t);
         }
       }
@@ -487,17 +487,17 @@ describeBothOrientations("scene space", (orientation) => {
   it("does not pin a label whose own is still partly on screen", () => {
     // Starts a sliver before the edge: its own label, drawn where it starts,
     // reaches into view. A pin there would put the same text twice.
-    const near: Item = { id: "near", start: domain[0] - DAY / 4, end: domain[0] + 12 * DAY, label: "Közeli" };
+    const near: Item = { id: "near", start: domain[0] - DAY / 4, end: domain[0] + 12 * DAY, label: "Nearby" };
     const options: RenderOptions = { domain, width: WIDTH, height: HEIGHT, orientation, items: [near] };
     const scene = renderTimeline({ ...options, space: grown() }).scene;
-    const texts = leaves(layerOf(scene, "labels")).filter((node) => textOf(node) === "Közeli");
+    const texts = leaves(layerOf(scene, "labels")).filter((node) => textOf(node) === "Nearby");
     expect(texts).toHaveLength(1);
   });
 
   it("keeps the label after an item that ends near its tile's end, during a gesture too", () => {
     // A short item ending a few pixels before the first tile's end: its label
-    // does not fit inside, so it goes after — across the tile edge. Before
-    // P14 a tile gave that label up; an exact frame keeps it.
+    // does not fit inside, so it goes after — across the tile edge. A tile
+    // used to give that label up; an exact frame keeps it.
     const tile = mainSize / 4;
     const msPerPx = (domain[1] - domain[0]) / mainSize;
     const short: Item = {
@@ -559,7 +559,7 @@ describeBothOrientations("scene space", (orientation) => {
 
   it("draws a frame at rest the same, whether its labels came from the last frame's cache or not", () => {
     // The rest labels are cached per items array, keyed by what decides them
-    // (P15: by the items and the tile labels' boxes, no longer by entry). A
+    // (by the items and the tile labels' boxes, no longer by entry). A
     // fresh copy of the array is a cold cache: every frame must match one.
     const { items: original, lanes } = grid();
     // One array throughout, as a host keeps it; below, an item in it is
@@ -589,12 +589,12 @@ describeBothOrientations("scene space", (orientation) => {
     }
     // A label only the frame at rest draws — pinned at the near edge — with
     // another text of the same length: nothing a tile shows changes.
-    const pinned: Item[] = [{ id: "long", start: domain[0] - 5 * DAY, end: domain[0] + 12 * DAY, label: "Hosszú" }];
+    const pinned: Item[] = [{ id: "long", start: domain[0] - 5 * DAY, end: domain[0] + 12 * DAY, label: "Lengthy" }];
     const settled: RenderOptions = { domain, width: WIDTH, height: HEIGHT, orientation, items: pinned, space: grown() };
     expect(warm(settled)).toBe(cold(settled));
-    pinned[0] = { ...(pinned[0] as Item), label: "Rövidé" };
+    pinned[0] = { ...(pinned[0] as Item), label: "Shorter" };
     expect(warm(settled)).toBe(cold(settled));
-    expect(warm(settled)).toContain("Rövidé");
+    expect(warm(settled)).toContain("Shorter");
   });
 
   it("stands the old scale in for a stepped re-anchor, and a pinch back finds its tiles", () => {
@@ -628,7 +628,7 @@ describeBothOrientations("scene space", (orientation) => {
   it("brings a scale it goes back to on screen a budget at a time, while the one it leaves stands in", () => {
     // Its tiles are drawn, but showing them moves every item back in at
     // another scale — what the browser pays for drawing them. A wheel zoom's
-    // last notch out did that in one frame (P15).
+    // last notch out once did that in one frame.
     const { items, lanes } = grid();
     const options: RenderOptions = { ...base, items, lanes };
     const resting = grown();

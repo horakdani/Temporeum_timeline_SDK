@@ -1,23 +1,23 @@
 #!/usr/bin/env node
 /**
- * G-EXAMPLES, harmadik fele: minden keretrendszer-sablon (packages/docs/templates)
- * epul es rajzol — a CSOMAGOLT tarballokkal, ahogy egy felhasznalo kapna.
+ * G-EXAMPLES, third part: every framework template (packages/docs/templates)
+ * builds and draws — with the PACKED tarballs, the way a user would get them.
  *
- * Sablononkent:
- *  1. masolat a .templates-work/<nev> ala (a sablon mappaja tiszta marad);
- *  2. a @temporeum/* fuggosegek helyere a hat `npm pack` tarball kerul
- *     (mind, mert az elem a magot, az adapterek az elemet kerik, es a
- *     verziok nincsenek az npm-en);
- *  3. npm install, npm run build — a sablon SAJAT build-szkriptje;
- *  4. kiszolgalas: a Vite- es az Astro-kimenet statikusan, a Next `next start`,
- *     a Nuxt a Nitro-kimenetbol, sajat porton (foglalt port: BUKAS);
- *  5. igazi Chromium: a lap betolt, konzolhiba es kivetel nelkul, legalabb
- *     harom `option` latszik (az elem shadow rootjaba is belat), es egy
- *     kattintas egy elemre kijeloli (aria-selected="true").
+ * Per template:
+ *  1. a copy under .templates-work/<name> (the template's folder stays clean);
+ *  2. the @temporeum/* dependencies are replaced with the six `npm pack`
+ *     tarballs (all of them, because the element needs the core, the adapters
+ *     need the element, and the versions are not on npm);
+ *  3. npm install, npm run build — the template's OWN build script;
+ *  4. serving: the Vite and Astro output statically, Next with `next start`,
+ *     Nuxt from the Nitro output, on its own port (a port in use: FAIL);
+ *  5. real Chromium: the page loads without console errors or exceptions, at
+ *     least three `option`s are visible (it also looks into the element's
+ *     shadow root), and a click on an item selects it (aria-selected="true").
  *
- * Mindegyik sablonnak at kell mennie; hianyzo, nem futtathato vagy kihagyott
- * sablon BUKAS. A lista a templates/ mappabol jon, nem ebbol a fajlbol: egy
- * uj sablon magatol bekerul.
+ * Every template must pass; a missing, unrunnable or skipped template FAILS.
+ * The list comes from the templates/ folder, not from this file: a new
+ * template is picked up on its own.
  */
 /* global fetch, setTimeout */
 import { execFileSync, spawn } from "node:child_process";
@@ -98,13 +98,13 @@ function servePlan(name, dir) {
   if (existsSync(join(dir, ".next"))) return { kind: "process", command: "npx", args: ["next", "start", "-p", "{port}", "-H", "127.0.0.1"] };
   if (existsSync(join(dir, ".output", "server", "index.mjs"))) return { kind: "process", command: "node", args: [".output/server/index.mjs"], env: { PORT: "{port}", HOST: "127.0.0.1", NITRO_PORT: "{port}", NITRO_HOST: "127.0.0.1" } };
   if (existsSync(join(dir, "dist", "index.html"))) return { kind: "static", root: join(dir, "dist") };
-  return { kind: "none", reason: `${name}: a build utan nincs kiszolgalhato kimenet (.next, .output vagy dist/index.html)` };
+  return { kind: "none", reason: `${name}: no servable output after the build (.next, .output or dist/index.html)` };
 }
 
-// --- a csomagok --------------------------------------------------------------------
+// --- the packages ------------------------------------------------------------------
 const templates = existsSync(templatesDir) ? readdirSync(templatesDir).filter((name) => existsSync(join(templatesDir, name, "package.json"))).sort() : [];
 if (templates.length === 0) {
-  console.error("G-EXAMPLES (sablonok): nincs egyetlen sablon sem — BUKAS");
+  console.error("G-EXAMPLES (templates): there are no templates at all — FAIL");
   process.exit(1);
 }
 mkdirSync(join(work, "packs"), { recursive: true });
@@ -122,7 +122,7 @@ for (const [name, dir] of [
     const [info] = JSON.parse(run("npm", ["pack", "--json", "--pack-destination", join(work, "packs")], { cwd: join(repo, dir) }));
     tarballs[name] = join(work, "packs", info.filename);
   } catch (error) {
-    problems.push(`${name}: build/pack bukott\n${tail(error)}`);
+    problems.push(`${name}: build/pack failed\n${tail(error)}`);
   }
 }
 
@@ -143,10 +143,10 @@ async function probe(url) {
     await page.waitForTimeout(300);
     await options.first().click();
     await page.locator('[role=option][aria-selected="true"]').first().waitFor({ timeout: 5_000 });
-    if (errors.length > 0) return { ok: false, detail: `hiba a lapon:\n    ${errors.join("\n    ")}` };
-    return { ok: true, detail: `${String(count)} option, kattintasra kijelol, konzolhiba nelkul` };
+    if (errors.length > 0) return { ok: false, detail: `errors on the page:\n    ${errors.join("\n    ")}` };
+    return { ok: true, detail: `${String(count)} options, selects on a click, no console errors` };
   } catch (error) {
-    return { ok: false, detail: `a lap nem rajzolt vagy nem jelolt ki: ${error.message.split("\n")[0]}${errors.length > 0 ? `\n    ${errors.join("\n    ")}` : ""}` };
+    return { ok: false, detail: `the page did not draw or did not select: ${error.message.split("\n")[0]}${errors.length > 0 ? `\n    ${errors.join("\n    ")}` : ""}` };
   } finally {
     await page.close();
   }
@@ -159,30 +159,30 @@ for (const [index, name] of templates.entries()) {
   const dir = join(work, name);
   const port = BASE_PORT + index;
   const started = Date.now();
-  // A friss masolat: a sablon forrasa, semmi mas (a node_modules marad, gyorsit).
+  // The fresh copy: the template's source and nothing else (node_modules stays, for speed).
   for (const entry of existsSync(dir) ? readdirSync(dir) : []) if (entry !== "node_modules") rmSync(join(dir, entry), { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   cpSync(join(templatesDir, name), dir, { recursive: true, filter: (source) => !/[/\\](node_modules|dist|\.next|\.nuxt|\.output|\.astro|\.angular|\.svelte-kit)([/\\]|$)/.test(source.slice(templatesDir.length)) });
   const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
   const declared = Object.keys(manifest.dependencies ?? {}).filter((dep) => dep.startsWith("@temporeum/"));
   if (declared.length === 0) {
-    problems.push(`${name}: a sablon egyetlen @temporeum csomagot sem kér — nem a könyvtárat mutatja`);
+    problems.push(`${name}: the template requires no @temporeum package — it does not show the library`);
     continue;
   }
   manifest.dependencies = { ...manifest.dependencies, ...Object.fromEntries(Object.entries(tarballs).map(([pkg, file]) => [pkg, `file:${file}`])) };
   writeFileSync(join(dir, "package.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   try {
     run("npm", ["install", "--no-audit", "--no-fund", "--no-package-lock", "--loglevel=error"], { cwd: dir });
-    // Ugyanaz a verzioszam, mas tartalom: a file: fuggoseget kifejezetten ujratelepitjuk.
+    // Same version number, different content: the file: dependency is reinstalled explicitly.
     run("npm", ["install", "--no-audit", "--no-fund", "--no-package-lock", "--no-save", "--loglevel=error", ...Object.values(tarballs)], { cwd: dir });
   } catch (error) {
-    problems.push(`${name}: a telepites bukott\n${tail(error)}`);
+    problems.push(`${name}: the install failed\n${tail(error)}`);
     continue;
   }
   try {
     run("npm", ["run", "build"], { cwd: dir });
   } catch (error) {
-    problems.push(`${name}: a build bukott\n${tail(error)}`);
+    problems.push(`${name}: the build failed\n${tail(error)}`);
     continue;
   }
   const plan = servePlan(name, dir);
@@ -191,7 +191,7 @@ for (const [index, name] of templates.entries()) {
     continue;
   }
   if (!(await portFree(port))) {
-    problems.push(`${name}: a ${String(port)} port foglalt — idegen szervert mernenk, ezert BUKAS`);
+    problems.push(`${name}: port ${String(port)} is in use — we would be measuring a foreign server, so this FAILS`);
     continue;
   }
   let server;
@@ -210,7 +210,7 @@ for (const [index, name] of templates.entries()) {
   }
   const url = `http://127.0.0.1:${String(port)}/`;
   if (!(await waitFor(url, 30_000))) {
-    problems.push(`${name}: a szerver nem valaszolt 30 s alatt (${url})`);
+    problems.push(`${name}: the server did not respond within 30 s (${url})`);
     server.close();
     continue;
   }
@@ -221,8 +221,8 @@ for (const [index, name] of templates.entries()) {
   else problems.push(`${name}: ${verdict.detail}`);
 }
 
-// NEGATIV KONTROLL: egy lap, amely betolt, de idovonalat nem rajzol, es egy,
-// amely rajzol, de konzolhibat dob. Ha barmelyik atmenne, a mero vak.
+// NEGATIVE CONTROL: a page that loads but draws no timeline, and one that
+// draws but throws a console error. If either passed, the probe is blind.
 if (browser !== undefined) {
   const control = join(work, "control");
   rmSync(control, { recursive: true, force: true });
@@ -238,19 +238,19 @@ if (browser !== undefined) {
     const empty = await probe(`http://127.0.0.1:${String(port)}/`);
     const noisy = await probe(`http://127.0.0.1:${String(port)}/noisy.html`);
     server.close();
-    if (empty.ok) problems.push("NEGATIV KONTROLL: egy idovonal nelkuli lap atment — a mero vak");
-    if (noisy.ok) problems.push("NEGATIV KONTROLL: egy konzolhibat dobo lap atment — a mero nem hallja a hibat");
-    if (!empty.ok && !noisy.ok) notes.push("negativ kontroll: az ures lap es a konzolhibas lap a meron bukik");
+    if (empty.ok) problems.push("NEGATIVE CONTROL: a page without a timeline passed — the probe is blind");
+    if (noisy.ok) problems.push("NEGATIVE CONTROL: a page that throws a console error passed — the probe does not hear the error");
+    if (!empty.ok && !noisy.ok) notes.push("negative control: the empty page and the page with a console error both fail the probe");
   } else {
-    problems.push(`NEGATIV KONTROLL: a ${String(port)} port foglalt — nem futott, ezert BUKAS`);
+    problems.push(`NEGATIVE CONTROL: port ${String(port)} is in use — it did not run, so this FAILS`);
   }
 }
 await browser?.close();
 
 for (const note of notes) console.log(`  ok  ${note}`);
 if (problems.length > 0) {
-  console.error(`\nSablonok: ${String(problems.length)} problema`);
+  console.error(`\nTemplates: ${String(problems.length)} problem(s)`);
   for (const problem of problems) console.error(`  ✗ ${problem}`);
   process.exit(1);
 }
-console.log(`\nSablonok: mind a ${String(templates.length)} epul es rajzol a csomagolt tarballokkal.`);
+console.log(`\nTemplates: all ${String(templates.length)} build and draw with the packed tarballs.`);

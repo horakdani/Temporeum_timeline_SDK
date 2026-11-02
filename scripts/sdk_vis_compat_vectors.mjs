@@ -1,40 +1,41 @@
 #!/usr/bin/env node
 /* global Element, window */
 /**
- * A vis-compat referenciaja (P28): maga a vis-timeline 8.5.6.
+ * The vis-compat reference: vis-timeline 8.5.6 itself.
  *
  *   node scripts/sdk_vis_compat_vectors.mjs
  *     -> packages/core/test/vis-compat/vectors.json
  *
- * A vis-timeline repo v8.5.6-os cimkejenek dokumentacios peldait
- * (examples/timeline/**.html) Chromiumban, Europe/Budapest zonaban futtatja,
- * ahogy vannak, a csomag standalone UMD-jevel. Egy init-szkript a `vis`
- * globalis Timeline-osztalyat egy alosztalyra csereli, amely minden peldanyt
- * es minden setOptions-hivast feljegyez. A lap nyugalma utan peldanyonkent
- * rogziti:
+ * It runs the documentation examples of the vis-timeline repo's v8.5.6 tag
+ * (examples/timeline/**.html) in Chromium, in the Europe/Budapest zone, as
+ * they are, with the package's standalone UMD. An init script replaces the
+ * `vis` global's Timeline class with a subclass that records every instance
+ * and every setOptions call. Once the page settles, it records for each
+ * instance:
  *
- *  - a NYERS bemenetet: az elemek a vis sajat nyers DataSetjebol
- *    (`itemsData.rawDS.get()`, a kesobbi add/update is benne van), a csoportok
- *    a DataView alatti DataSetbol (a `visible: false` csoportok is), a
- *    felhasznalo opcioi (a setOptions-hivasok egymasra fesulve); a Date, a
- *    moment, a DOM-elem es a fuggveny cimkezve;
- *  - amit a vis CSINALT veluk: elemenkent a tipus (az ItemSet.types
- *    osztalyai szerint), a kezdet es a veg (item.data, a vis sajat
- *    konverzioja utan), a csoport (item.parent.groupId; a hatter- es a
- *    csoport nelkuli sav null), es hogy kirajzolhato-e (van szuloje, es az
- *    lathato); a lathato csoportok sorrendje (itemSet.groupIds).
+ *  - the RAW input: the items from vis's own raw DataSet
+ *    (`itemsData.rawDS.get()`, later add/update calls included), the groups
+ *    from the DataSet under the DataView (`visible: false` groups too), the
+ *    user's options (the setOptions calls merged on top of each other); Date,
+ *    moment, DOM elements and functions are tagged;
+ *  - what vis DID with them: per item the type (by the ItemSet.types
+ *    classes), the start and the end (item.data, after vis's own
+ *    conversion), the group (item.parent.groupId; null for the background
+ *    and the ungrouped lane), and whether it can be drawn (it has a parent,
+ *    and that is visible); the order of the visible groups (itemSet.groupIds).
  *
- * Mellette egy SAJAT lap (edge cases) ugyanigy, ugyanazzal a vis-szel: ISO
- * alakok (kiterjesztett, alap, het, ev napja, eltolassal, tort masodperc,
- * 24:00), ASP.NET- es szamjegy-szoveg, RFC 2822, szabad szoveg, ora-
- * atallitas resben es ismetlodo oraban, moment es Date; tipusok, egymasba
- * agyazott es rejtett csoportok, hianyzo csoport, csoport nelkuli hatter.
+ * Next to them, an OWN page (edge cases) is run the same way, with the same
+ * vis: ISO forms (extended, basic, week, day of year, with offset, fractional
+ * seconds, 24:00), ASP.NET and digit strings, RFC 2822, free text, clock
+ * changes in the gap and in the repeated hour, moment and Date; types, nested
+ * and hidden groups, a missing group, a background without a group.
  *
- * Elofeltetel: a vis a packages/docs/.bench-work-ben (a bench:compare
- * telepiti), a peldak a .bench-work/src/vis-timeline alatt (git sparse
- * clone, v8.5.6). Kulso CDN-szkriptek: a moment a helyi peldanyra iranyitva,
- * a tobbi (jQuery, React, Babel) halozatrol; ami nem tolt be, az a pelda
- * kimarad, es a fajl `skipped` listajaba kerul az okaval.
+ * Prerequisites: vis in packages/docs/.bench-work (bench:compare installs
+ * it), the examples under .bench-work/src/vis-timeline (git sparse clone,
+ * v8.5.6). External CDN scripts: moment is redirected to the local copy, the
+ * rest (jQuery, React, Babel) comes from the network; an example whose
+ * scripts do not load is left out, and goes into the file's `skipped` list
+ * with the reason.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -54,11 +55,11 @@ const TIME_ZONE = "Europe/Budapest";
 const MAX_ITEMS = 120;
 
 for (const [path, hint] of [
-  [join(visPackage, "standalone", "umd", "vis-timeline-graph2d.min.js"), "npm run bench:compare -w @temporeum/timeline-docs (telepiti)"],
+  [join(visPackage, "standalone", "umd", "vis-timeline-graph2d.min.js"), "npm run bench:compare -w @temporeum/timeline-docs (installs it)"],
   [examples, "git clone --depth 1 --branch v8.5.6 --filter=blob:none --sparse https://github.com/visjs/vis-timeline.git packages/docs/.bench-work/src/vis-timeline && git -C packages/docs/.bench-work/src/vis-timeline sparse-checkout set examples/timeline"],
 ]) {
   if (!existsSync(path)) {
-    console.error(`hianyzik: ${path}\n  -> ${hint}`);
+    console.error(`missing: ${path}\n  -> ${hint}`);
     process.exit(1);
   }
 }
@@ -102,7 +103,7 @@ new vis.Timeline(document.getElementById("b"), new vis.DataSet(grouped), groups,
 new vis.Timeline(document.getElementById("c"), [{ id: "t1", start: "2026-03-02" }, { id: "t2", start: "2026-03-02", end: "2026-03-04" }], { type: "point", groupOrder: function (a, b) { return b.id - a.id; } });
 </script></body></html>`;
 
-// --- szerver ------------------------------------------------------------------
+// --- server -------------------------------------------------------------------
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json", ".map": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml" };
 const ROOTS = [
   ["/standalone/", join(visPackage, "standalone")],
@@ -130,7 +131,7 @@ const server = createServer((request, response) => {
 await new Promise((done) => server.listen(0, "127.0.0.1", done));
 const base = `http://127.0.0.1:${String(server.address().port)}`;
 
-// --- a lapra injektalt felvevo ----------------------------------------------------
+// --- the recorder injected into the page --------------------------------------------
 const RECORDER = () => {
   const instances = [];
   const options = new WeakMap();
@@ -213,7 +214,7 @@ const RECORDER = () => {
     });
 };
 
-// --- futas ---------------------------------------------------------------------------
+// --- run -----------------------------------------------------------------------------
 const pages = [];
 const walk = (dir) => {
   for (const name of readdirSync(dir).sort()) {
@@ -266,5 +267,5 @@ writeFileSync(
   `${JSON.stringify({ $comment: "scripts/sdk_vis_compat_vectors.mjs — do not edit by hand", visTimeline: visVersion, source: "github.com/visjs/vis-timeline v8.5.6 examples/timeline", timeZone: TIME_ZONE, maxItems: MAX_ITEMS, vectors, skipped }, null, 1)}\n`,
 );
 const items = vectors.reduce((sum, vector) => sum + vector.vis.items.length, 0);
-console.log(`${String(vectors.length)} timeline, ${String(items)} elem, ${String(skipped.length)} kihagyva -> ${relative(repo, out)}`);
-for (const each of skipped) console.log(`  kihagyva: ${each.page} — ${each.reason}`);
+console.log(`${String(vectors.length)} timelines, ${String(items)} items, ${String(skipped.length)} skipped -> ${relative(repo, out)}`);
+for (const each of skipped) console.log(`  skipped: ${each.page} — ${each.reason}`);

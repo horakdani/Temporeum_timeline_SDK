@@ -113,6 +113,13 @@ function cssVarName(token: string): string {
   return `--tl-${token.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`;
 }
 
+/** The tokens in forced colours: system colours only. */
+const FORCED_TOKENS =
+  "--tl-surface:Canvas;--tl-surface-alt:Canvas;--tl-text:CanvasText;--tl-text-muted:CanvasText;" +
+  "--tl-line:GrayText;--tl-line-strong:CanvasText;--tl-item-fill:Canvas;--tl-item-stroke:CanvasText;" +
+  "--tl-item-text:CanvasText;--tl-accent:CanvasText;--tl-now:CanvasText;--tl-era:Canvas;" +
+  "--tl-era-text:CanvasText;--tl-marker:CanvasText;--tl-focus:Highlight";
+
 function tokenBlock(theme: Theme): string {
   return Object.entries(theme.tokens)
     .map(([token, value]) => `${cssVarName(token)}:${value}`)
@@ -210,13 +217,19 @@ export function timelineStyleCss(options: StyleOptions): string {
     `${root} .tl-tick--major{stroke:var(--tl-line-strong)}`,
     `${root} .tl-tick-label{fill:var(--tl-text-muted);font-size:${metrics.tickFontSize}px}`,
     `${root} .tl-tick-label--major{fill:var(--tl-text)}`,
+    `${root} .tl-axis-context{fill:var(--tl-surface)}`,
     `${root} .tl-item{fill:var(--tl-item-fill);stroke:var(--tl-item-stroke);stroke-width:1}`,
     `${root} .tl-item--open{stroke-dasharray:4 3}`,
     `${root} .tl-item--selected{stroke:var(--tl-focus);stroke-width:2}`,
     // An item's label is a line of HTML in a `foreignObject` (P17): it takes
     // `color`, and `fill` still for a host's own `<text>` label.
     `${root} .tl-label{fill:var(--tl-item-text);color:var(--tl-item-text);font-size:${metrics.fontSize}px;pointer-events:none}`,
-    `${root} .tl-label>div{white-space:pre;margin:0;padding:0 0 0 ${String(metrics.labelPadding)}px;line-height:${String(metrics.lineHeight)}px}`,
+    // The box was fitted to the text as measured. A reader's own spacing
+    // (WCAG 1.4.12: wider letters, words and lines, `!important`) widens the
+    // text past it: it is shortened with an ellipsis then, not cut through a
+    // letter, and a taller line stays centred in the box.
+    `${root} .tl-label>div{white-space:pre;margin:0;padding:0 0 0 ${String(metrics.labelPadding)}px;line-height:${String(metrics.lineHeight)}px;` +
+      `height:100%;align-content:unsafe center;overflow:hidden;text-overflow:ellipsis}`,
     `${root} .tl-label--after{fill:var(--tl-text);color:var(--tl-text)}`,
     // A cluster is the accent with its count in the surface colour: a solid
     // badge, unlike any item, and the cursor says what a click does.
@@ -237,7 +250,11 @@ export function timelineStyleCss(options: StyleOptions): string {
     // never reads as the selection; `non-scaling-stroke` keeps it two pixels
     // wide while a gesture stretches the layer it sits in; and it shows only
     // while the timeline has focus, as a focus indicator should.
-    `${root}:focus-visible,${root} :focus-visible{outline:2px solid var(--tl-focus);outline-offset:1px}`,
+    // The timeline's own ring is drawn inside its box: a host that clips
+    // its container (`overflow: hidden`, a card, a scroll panel) would cut
+    // a ring drawn outside it, and a focus indicator that is cut is not one.
+    `${root}:focus-visible{outline:2px solid var(--tl-focus);outline-offset:-2px}`,
+    `${root} :focus-visible{outline:2px solid var(--tl-focus);outline-offset:1px}`,
     `${root} .tl-focus-ring{fill:none;stroke:var(--tl-focus);stroke-width:2;vector-effect:non-scaling-stroke;pointer-events:none}`,
     `${root}:not(:focus) .tl-focus-ring{display:none}`,
     // What is still loading, on the axis. Told apart by shape as well as
@@ -250,6 +267,13 @@ export function timelineStyleCss(options: StyleOptions): string {
     `${root} .tl-loading--failed{stroke:var(--tl-now);stroke-dasharray:2 4;animation:none}`,
     `@keyframes tl-loading{to{stroke-dashoffset:-15}}`,
     `@media (prefers-reduced-motion:reduce){${root} .tl-loading{animation:none}}`,
+    // Forced colours (Windows High Contrast and its kin): the reader's
+    // palette, not the theme's. The browser does not repaint SVG, so the
+    // tokens become system colours — and with them every shape that paints
+    // from a token, the plugins' too. What is selected or focused is the
+    // highlight, and wider as well.
+    `@media (forced-colors:active){${root},${root}:not([data-tl-theme="light"]),${root}[data-tl-theme]{${FORCED_TOKENS}}` +
+      `${root} .tl-item--selected,${root} .tl-cluster--selected,${root} .tl-focus-ring{stroke-width:3}}`,
     // The input layer's half of the stylesheet. Each of these is a default a
     // mobile browser hands you and a gesture-driven widget has to undo: the
     // browser's own pan and double-tap zoom fighting the widget's

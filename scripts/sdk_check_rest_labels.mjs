@@ -1,21 +1,20 @@
 #!/usr/bin/env node
 /**
- * G-REST-LABELS: bizonyitja, hogy nyugalomban az elemterben minden cimke
- * latszik, amit a pontos kepkocka megtart — generalt adaton, mindket
- * orientacioban.
+ * G-REST-LABELS: proves that at rest the item area shows every label the
+ * exact frame keeps — on generated data, in both orientations.
  *
- * Ket fuggetlen ellenorzes:
+ * Two independent checks:
  *
- *  1. A PROPERTY: a riportban a "rest labels match the exact frame" zold,
- *     seeddel, legalabb MIN_CASES esettel. A riport hianya BUKAS: a
- *     csomagparancs elotte torli, tehat a jelenlete azt jelenti, hogy MOST
- *     futott.
- *  2. A KONTROLL: ugyanazokon az eseteken a gesztus alatti kepkocka — ugyanazok
- *     a csempek, a nyugalmi potlas nelkul — legalabb egy esetben elveszit
- *     egy cimket, amit a pontos kepkocka megtart. Ha nem veszitene, a
- *     property a potlas nelkul is atmenne, es semmit nem bizonyitana rola.
- *     Es az esetekben osszesen legalabb MIN_LABELS pontos cimke van: egy
- *     property, ami cimke nelkuli eseteken fut, uresen igaz.
+ *  1. THE PROPERTY: "rest labels match the exact frame" passes in the
+ *     report, with a seed and at least MIN_CASES cases. A missing report
+ *     FAILS: the package command deletes it beforehand, so its presence
+ *     means it ran NOW.
+ *  2. THE CONTROL: on the same cases the frame drawn during a gesture — the
+ *     same tiles, without the at-rest fill-in — loses at least one label
+ *     that the exact frame keeps. If it lost none, the property would pass
+ *     without the fill-in too and would prove nothing about it. And the
+ *     cases hold at least MIN_LABELS exact labels in total: a property that
+ *     runs on cases without labels is vacuously true.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -33,13 +32,13 @@ const failures = [];
 const notes = [];
 const read = (file) => {
   if (!existsSync(file)) {
-    failures.push(`hianyzik: ${file} — a keszlet NEM futott le, ezert BUKAS`);
+    failures.push(`missing: ${file} — the suite did NOT run, so this FAILS`);
     return undefined;
   }
   try {
     return JSON.parse(readFileSync(file, "utf8"));
   } catch (error) {
-    failures.push(`olvashatatlan: ${file}: ${String(error)}`);
+    failures.push(`unreadable: ${file}: ${String(error)}`);
     return undefined;
   }
 };
@@ -48,33 +47,33 @@ const report = read(reportFile);
 if (report !== undefined) {
   const entry = Array.isArray(report) ? report.find((candidate) => candidate?.name === PROPERTY) : undefined;
   if (entry === undefined) {
-    failures.push(`a property hianyzik a riportbol: "${PROPERTY}"`);
+    failures.push(`the property is missing from the report: "${PROPERTY}"`);
   } else {
-    if (entry.passed !== true) failures.push(`bukott: ${PROPERTY} — ${JSON.stringify(entry.counterexample ?? null)}`);
+    if (entry.passed !== true) failures.push(`failed: ${PROPERTY} — ${JSON.stringify(entry.counterexample ?? null)}`);
     if (!Number.isInteger(entry.cases) || entry.cases < MIN_CASES) {
-      failures.push(`${PROPERTY}: ${String(entry.cases)} eset, de legalabb ${String(MIN_CASES)} kell`);
+      failures.push(`${PROPERTY}: ${String(entry.cases)} cases, but at least ${String(MIN_CASES)} are required`);
     }
-    if (!Number.isFinite(entry.seed)) failures.push(`${PROPERTY}: nincs seed`);
-    if (entry.passed === true) notes.push(`${PROPERTY}: ${String(entry.cases)} eset, seed ${String(entry.seed)}`);
+    if (!Number.isFinite(entry.seed)) failures.push(`${PROPERTY}: no seed`);
+    if (entry.passed === true) notes.push(`${PROPERTY}: ${String(entry.cases)} cases, seed ${String(entry.seed)}`);
   }
 }
 
 const control = read(controlFile);
 if (control !== undefined) {
   if (!(control.exactLabels >= MIN_LABELS)) {
-    failures.push(`az esetekben csak ${String(control.exactLabels)} pontos cimke van, legalabb ${String(MIN_LABELS)} kell`);
+    failures.push(`the cases hold only ${String(control.exactLabels)} exact labels, at least ${String(MIN_LABELS)} are required`);
   }
   if (!(control.missedDuringGesture > 0)) {
-    failures.push("a kontroll NEM bukik: a csempek cimkei a potlas nelkul is mindent megmutatnak — a property a potlasrol semmit nem bizonyit");
+    failures.push("the control does NOT fail: the tiles' labels show everything even without the fill-in — the property proves nothing about the fill-in");
   } else {
     notes.push(
-      `kontroll: a gesztus alatti kepkocka ${String(control.missedDuringGesture)} / ${String(control.exactLabels)} pontos cimket nem mutat ` +
-        `(${String(control.casesMissing)} / ${String(control.cases)} esetben) — a nyugalmi potlas nelkul a property bukna`,
+      `control: the frame during a gesture misses ${String(control.missedDuringGesture)} / ${String(control.exactLabels)} exact labels ` +
+        `(in ${String(control.casesMissing)} / ${String(control.cases)} cases) — without the at-rest fill-in the property would fail`,
     );
   }
 }
 
 for (const note of notes) console.log(`  ok    ${note}`);
-for (const failure of failures) console.log(`  BUKAS ${failure}`);
-console.log(failures.length === 0 ? "G-REST-LABELS: atment" : "G-REST-LABELS: BUKOTT");
+for (const failure of failures) console.log(`  FAIL  ${failure}`);
+console.log(failures.length === 0 ? "G-REST-LABELS: passed" : "G-REST-LABELS: FAILED");
 process.exit(failures.length === 0 ? 0 : 1);

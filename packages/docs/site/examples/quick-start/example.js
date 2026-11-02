@@ -1,4 +1,8 @@
-import { createTimeline } from "@temporeum/timeline-element";
+import { createTimeline, registerPlugin } from "@temporeum/timeline-element";
+import { groupsPlugin } from "@temporeum/timeline-element/groups";
+
+// Rows with a visible name are groups, a plugin: registered once, before the first timeline.
+registerPlugin(groupsPlugin);
 
 const items = [
   { id: "design", start: new Date("2026-03-02"), end: new Date("2026-03-09"), label: "Design", laneId: "work" },
@@ -7,7 +11,7 @@ const items = [
   { id: "launch", start: new Date("2026-03-27"), end: new Date("2026-04-03"), label: "Launch", laneId: "ship" },
   { id: "retro", start: new Date("2026-04-06"), label: "Retro", laneId: "work" },
 ];
-const lanes = [
+const groups = [
   { id: "work", label: "Work" },
   { id: "ship", label: "Shipping" },
 ];
@@ -15,7 +19,7 @@ const lanes = [
 const log = document.querySelector("#log");
 const timeline = createTimeline(document.querySelector("#timeline"), {
   items,
-  lanes,
+  groups,
   ariaLabel: "Release plan",
   editing: { enabled: true, snapMs: 86_400_000 },
 });

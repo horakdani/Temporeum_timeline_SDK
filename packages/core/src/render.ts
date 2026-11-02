@@ -86,6 +86,26 @@ function pad(value: number, width: number): string {
  */
 export function defaultTickLabel(tick: Tick, timeZone: string = DEFAULT_TIME_ZONE): string {
   const parts = toCalendarParts(tick.time, timeZone);
+  if (tick.context === true) {
+    // The coarser unit the view is in: what the ticks' own labels leave out.
+    const date = `${pad(parts.year, 4)}-${pad(parts.month, 2)}`;
+    switch (tick.granularity) {
+      case "millisecond":
+        return `${pad(parts.hour, 2)}:${pad(parts.minute, 2)}:${pad(parts.second, 2)}`;
+      case "second":
+        return `${date}-${pad(parts.day, 2)} ${pad(parts.hour, 2)}:${pad(parts.minute, 2)}`;
+      case "minute":
+      case "hour":
+        return `${date}-${pad(parts.day, 2)}`;
+      case "day":
+        return date;
+      case "month":
+        return pad(parts.year, 4);
+      default:
+        // A year's label is already the whole date.
+        return "";
+    }
+  }
   switch (tick.granularity) {
     case "millisecond":
       return tick.major
@@ -260,6 +280,13 @@ export interface RenderOptions<T = unknown> {
   readonly measureText?: MeasureText;
   readonly formatTick?: (tick: Tick, timeZone: string) => string;
   /**
+   * The context label at the start of the axis: the month of a view of days,
+   * the year of a view of months — `formatTick` with a tick whose `context`
+   * is set, so a host's labels are its words here too. On by default; `false`
+   * leaves the axis to its ticks.
+   */
+  readonly axisContext?: boolean;
+  /**
    * The axis's ticks, replacing `generateTicks` — `generateTicks`'s contract.
    * For a calendar of its own: `calendarTicks` in `/intl`. A `hiddenDates`
    * warp's own ticks come after this.
@@ -407,6 +434,7 @@ const LAYER_NAMES = [
   "labels",
   "foreground",
   "overlay",
+  "context",
 ] as const;
 
 function layer(
@@ -2197,6 +2225,70 @@ function cachedRestLabels<T>(
 }
 
 /** Compose one frame. Pure: same input, same bytes. */
+/**
+ * The axis's context label: the coarser unit the view starts in, held at the
+ * start of the axis. Ticks of days say "02 09 16", and a reader needs the
+ * month and the year somewhere on screen — a major tick says it only where a
+ * month starts, and a week's steps may never land on one.
+ *
+ * Drawn in the viewport's pixels, in a layer of its own with no transform:
+ * a pan moves the ticks under it and rewrites nothing here until the text
+ * changes. Its background is the surface, so a tick label sliding under it
+ * goes out of sight instead of being drawn over. One `formatTick` call a
+ * frame, with the view's start.
+ */
+function axisContextNodes<T>(
+  options: RenderOptions<T>,
+  context: DrawContext<T>,
+  scale: TimeScale,
+  ticks: readonly Tick[],
+  start: number,
+): SceneElement[] {
+  const granularity = ticks[0]?.granularity;
+  if (options.axisContext === false || granularity === undefined) {
+    return [];
+  }
+  const { metrics, projector, timeZone } = context;
+  const formatTick = options.formatTick ?? defaultTickLabel;
+  const measure = labelSpace(metrics, options.measureText ?? estimateTextWidth, metrics.tickFontSize);
+  const labelOf = (time: number): string => formatTick({ time, granularity, major: true, context: true }, timeZone);
+  let text = labelOf(start);
+  let need = measure(text);
+  // A view that starts just before a unit begins — a day before the month
+  // whose first tick is right there — says that unit: the sliver before it
+  // is under the label anyway.
+  const first = ticks.find((tick) => tick.time >= start);
+  if (first !== undefined && scale.toMain(first.time) < need.main) {
+    const next = labelOf(first.time);
+    if (next !== text) {
+      text = next;
+      need = measure(text);
+    }
+  }
+  if (text === "" || need.cross > metrics.axisSize || need.main > context.mainSize / 2) {
+    return [];
+  }
+  // The background reaches past every tick label that starts under it, so
+  // none is left cut in half at its edge.
+  let end = need.main;
+  for (const tick of ticks) {
+    const main = scale.toMain(tick.time);
+    if (main >= end) {
+      if (main > 0) {
+        break;
+      }
+      continue;
+    }
+    if (main >= 0) {
+      end = Math.max(end, main + measure(formatTick(tick, timeZone)).main);
+    }
+  }
+  return [
+    { tag: "rect", attrs: { class: "tl-axis-context", ...rectAttrs({ main: 0, mainSize: end, cross: 0, crossSize: metrics.axisSize }, projector) } },
+    textNode({ main: 0, mainSize: need.main, cross: 0, crossSize: metrics.axisSize }, text, projector, "tl-tick-label tl-tick-label--major tl-tick-label--context", metrics.labelPadding),
+  ];
+}
+
 export function renderTimeline<T = unknown>(options: RenderOptions<T>): RenderResult<T> {
   const orientation: Orientation = options.orientation ?? "horizontal";
   const density: Density = options.density ?? "comfortable";
@@ -2437,6 +2529,7 @@ export function renderTimeline<T = unknown>(options: RenderOptions<T>): RenderRe
     layer("labels", labelLayer, itemTransform, interactive),
     layer("foreground", content.foreground, frameTransform, interactive),
     layer("overlay", overlay, itemTransform, interactive),
+    layer("context", axisContextNodes(options, context, scale, content.ticks, domain[0]), undefined, interactive),
   );
 
   const scene: SceneElement = {

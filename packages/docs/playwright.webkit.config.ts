@@ -1,26 +1,27 @@
 import { defineConfig, devices } from "@playwright/test";
 
-/** A port: nem a Chromium-készleté (41737), hogy a kettő egymás mellett is fusson. */
+/** The port: not the Chromium suite's (41737), so the two can run side by side. */
 const PORT = Number(process.env.TL_E2E_PORT ?? 41738);
 
 /**
- * G-E2E-TOUCH-WEBKIT (P31): ugyanaz a gesztus-készlet (`e2e/touch.spec.ts`),
- * mint a Chromiumos G-E2E-TOUCH, a Playwright WebKitjében — az iOS Safari
- * motorjában —, emulált iPhone-on és iPaden.
+ * G-E2E-TOUCH-WEBKIT: the same gesture suite (`e2e/touch.spec.ts`) as
+ * Chromium's G-E2E-TOUCH, in Playwright's WebKit — the iOS Safari engine —
+ * on an emulated iPhone and iPad.
  *
- * Amit ez a készlet NEM mér, és miért: a Playwright WebKitje macOS-en fut,
- * az iOS UIKit-rétege nélkül. Az érintés itt nem görgeti a lapot és nem
- * nagyítja — `touch-action: none`, `pan-y` és `auto` mellett is `scrollY` 0
- * marad, és `pointercancel` sem jön (P31, 2026-10-31, mérve). A két
- * `touch-action`-állítás ezért itt üresen menne át, illetve hamisan bukna;
- * a `grepInvert` kiveszi őket, és a valódi Mobile Safariban, az
- * iOS-szimulátorban mérjük őket (`scripts/sdk_ios_touch.mjs`), negatív
- * kontrollal. A kapu (`sdk_check_e2e_touch_webkit.mjs`) a kettőt együtt kéri.
+ * What this suite does NOT measure, and why: Playwright's WebKit runs on
+ * macOS, without iOS's UIKit layer. Touch here neither scrolls the page nor
+ * zooms it — with `touch-action: none`, `pan-y` and `auto` alike `scrollY`
+ * stays 0, and no `pointercancel` arrives (measured 2026-10-31). The two
+ * `touch-action` claims would therefore pass vacuously here, or fail
+ * falsely; `grepInvert` takes them out, and they are measured in real
+ * Mobile Safari, in the iOS simulator (`scripts/sdk_ios_touch.mjs`), with a
+ * negative control. The check (`sdk_check_e2e_touch_webkit.mjs`) asks for
+ * both together.
  */
 export default defineConfig({
   testDir: "./e2e",
   testMatch: "touch.spec.ts",
-  grepInvert: /touch-action tényleg szól|ELVESZI a gesztust/,
+  grepInvert: /touch-action really takes effect|TAKES the gesture/,
   workers: 1,
   fullyParallel: false,
   retries: 0,

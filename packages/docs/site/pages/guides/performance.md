@@ -16,7 +16,7 @@ Measured in Chromium at a 4× CPU slowdown, 1440 × 900, 10 000 items, missed fr
 | pan at 2×, ~1 050 items and ~1 030 labels | 0–2% | 0% | ~50% |
 | 4.3× ctrl+wheel zoom from a fresh page, 8 notches in and out | ~1–2% | ~0–2% | ~15–20% |
 
-The budget is 5%, and both of the first two columns are CI gates on every phase: `G-PERF` drives the engine the way the [engine guide](core-engine.md) shows, `G-PERF-PUBLIC` drives `createTimeline` from the shipped bundle, with nothing but `density: "dense"` set, `G-PERF-DEEP` runs the 4× pinch on both, and `G-PERF-WHEEL` the [benchmark](../benchmark.md)'s ctrl+wheel zoom, on a fresh page, the median of three. Each also runs its page without a scene space, and that run has to fail the budget, or the measurement could not tell good from bad; the 4× pinch also runs without steps (below), and fails at about 9–12%, and the wheel zoom without wheel runs (below), and fails at about 37%. The numbers move by a point or two with what else the machine is doing.
+The budget is 5%, and both of the first two columns are checked by scripts in the repository, which fail when a view goes over it: `npm run bench:assert -w @temporeum/timeline-core` drives the engine the way the [engine guide](core-engine.md) shows, `npm run bench:public -w @temporeum/timeline-docs` drives `createTimeline` from the shipped bundle, with nothing but `density: "dense"` set, `bench:deep` runs the 4× pinch on both, and `bench:wheel` the [benchmark](../benchmark.md)'s ctrl+wheel zoom, on a fresh page, the median of three. Each also runs its page without a scene space, and that run has to fail the budget, or the measurement could not tell good from bad; the 4× pinch also runs without steps (below), and fails at about 9–12%, and the wheel zoom without wheel runs (below), and fails at about 37%. The numbers move by a point or two with what else the machine is doing.
 
 By hand, with the engine alone, the loop that keeps the space is this — `createTimeline` runs the same one:
 
@@ -42,7 +42,7 @@ const loop = createFrameLoop(element, () => {
 - **Tiles.** The drawn range is cut into tiles a sixteenth of a viewport wide, each drawn once and handed back as the same nodes, so a pan past what is drawn pays for the tile coming in, not for the range — and drawing a tile looks only at the items that start near it. Labels never collide across a tile edge, and a label after an item may run into the next tile.
 - **Culling** in `(main, cross)` space with a one-row margin: nothing outside what is drawn gets a node, along time or across the lanes.
 - **The layout is cached** per items array and checked element by element, so a pan does not re-pack 10 000 items. Replace items, do not write into them.
-- **`mountScene`** skips a subtree handed back as the same object, matches items by id — across tiles too, out of a tile it let go of — and pools what leaves the screen: a long pan stops creating nodes once the pool is warm (`G-MEMORY`: under 0.5% of the live tree in the second half of a long pan, besides the labels the view gains).
+- **`mountScene`** skips a subtree handed back as the same object, matches items by id — across tiles too, out of a tile it let go of — and pools what leaves the screen: a long pan stops creating nodes once the pool is warm (`npm run bench:memory -w @temporeum/timeline-core`: under 0.5% of the live tree in the second half of a long pan, besides the labels the view gains).
 - **One draw per frame**, however many pointer events arrive in it; the instance's store notifies at most once per frame too.
 
 ## For a host

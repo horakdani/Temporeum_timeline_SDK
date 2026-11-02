@@ -1,24 +1,24 @@
 #!/usr/bin/env node
 /**
- * A CommonJS-fogyasztó típusai: minden `dist/**\/*.d.ts` mellé egy `.d.cts`.
+ * Types for CommonJS consumers: a `.d.cts` next to every `dist/**\/*.d.ts`.
  *
- * Miért kell. A csomagok `"type": "module"`-ok, ezért a TypeScript egy
- * `.d.ts`-t ESM-nek olvas. Egy `require()`-rel importáló projekt (node16 /
- * nodenext, CJS oldal) így ESM-típusokat kapott a CJS-kódhoz — az
- * arethetypeswrong ezt „Masquerading as ESM”-nek hívja, és a P11 nyitásakor
- * a mag mindkét belépési pontján pontosan ezt mutatta. Ez a hiba nem dob
- * semmit: a fogyasztó csak rossz `default`-importot és rossz interop-típust
- * kap, amit a fordító nem vesz észre. Ezért néma.
+ * Why it is needed. The packages are `"type": "module"`, so TypeScript reads
+ * a `.d.ts` as ESM. A project importing with `require()` (node16 / nodenext,
+ * the CJS side) therefore got ESM types for CJS code — arethetypeswrong calls
+ * this "Masquerading as ESM", and at one point it reported exactly that on
+ * both of the core's entry points. This bug throws nothing: the consumer just
+ * gets a wrong `default` import and a wrong interop type, which the compiler
+ * does not notice. That is why it is silent.
  *
- * A javítás nem egy második `tsc`-futás: ugyanaz a deklaráció, CJS-formátumú
- * kiterjesztéssel, a relatív specifierek `.js` → `.cjs` átírásával, hogy egy
- * `.d.cts` a testvér `.d.cts`-ére mutasson, ne vissza az ESM-típusra.
+ * The fix is not a second `tsc` run: it is the same declaration, with a
+ * CJS-style extension and relative specifiers rewritten `.js` → `.cjs`, so
+ * that a `.d.cts` points to its sibling `.d.cts`, not back to the ESM type.
  *
- * A G-EXPORTS (scripts/sdk_check_exports.mjs) az eredményt az attw-vel és
- * egy valódi node16-CJS fogyasztó-projekttel ellenőrzi — ha ez a szkript
- * valamit kihagyna, ott bukik, nem itt kell bízni benne.
+ * G-EXPORTS (scripts/sdk_check_exports.mjs) checks the result with attw and a
+ * real node16 CJS consumer project — if this script missed something, it
+ * fails there; you do not have to trust it here.
  *
- * Használat: `node ../../scripts/sdk_cjs_types.mjs` a csomag könyvtárából.
+ * Usage: `node ../../scripts/sdk_cjs_types.mjs` from the package directory.
  */
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -42,7 +42,7 @@ for (const path of declarations(dist)) {
   written += 1;
 }
 if (written === 0) {
-  // Üres dist mellett a „kész” hazugság lenne: a CJS-típusok nem léteznek.
-  process.stderr.write(`sdk_cjs_types: nincs .d.ts a ${dist} alatt\n`);
+  // With an empty dist, "done" would be a lie: the CJS types do not exist.
+  process.stderr.write(`sdk_cjs_types: no .d.ts under ${dist}\n`);
   process.exit(1);
 }

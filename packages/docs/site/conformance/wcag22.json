@@ -5,7 +5,9 @@
     "AA"
   ],
   "product": "@temporeum/timeline-core and @temporeum/timeline-element",
-  "version": "1.10.0",
+  "version": "1.0.0",
+  "date": "2026-11-02",
+  "description": "A timeline for the web: a custom element and a live instance over a DOM-free engine, drawn as SVG — items in lanes along an axis of time, to pan, zoom, select and edit by pointer, touch or keyboard.",
   "scope": "The timeline as the library draws it — the element, its views and tools, in the default configuration and with editing on — in Chromium, on the documentation's own pages. The page around it, its title, language, headings, links and help, is the host's.",
   "statuses": {
     "supports": "Supports",
@@ -126,7 +128,7 @@
         },
         {
           "file": "packages/docs/e2e/responsive.spec.ts",
-          "test": "élő átméretezés"
+          "test": "live resizing"
         }
       ]
     },
@@ -184,12 +186,20 @@
       "id": "1.4.4",
       "name": "Resize Text",
       "level": "AA",
-      "status": "partially-supports",
-      "remarks": "With page zoom the drawing is laid out again for the narrower width, and loses neither content nor function (tested down to 375 CSS pixels, a 1280-pixel window at more than 300%). Text-only zoom, which leaves the layout and enlarges only text, is not tested.",
+      "status": "supports",
+      "remarks": "With the browser's zoom the timeline is laid out again for the narrower view and loses no item, name or key: tested at 200% (a 1280 × 800 window, 640 × 400 CSS pixels at two device pixels each) and at 400% (320 CSS pixels, see 1.4.10). Text-only enlargement does not reach it: its type sizes are pixels from the density, so a root font size of 200% and a 32-pixel default font in the browser leave its labels at 12 and its axis at 11 pixels while the page's own text grows to 64 (tested). A browser's text-only zoom, which enlarges pixel sizes too, is not tested.",
       "tests": [
         {
           "file": "packages/docs/e2e/responsive.spec.ts",
-          "test": "vízszintes lapgörgetés nincs"
+          "test": "page zoom 200%"
+        },
+        {
+          "file": "packages/docs/e2e/responsive.spec.ts",
+          "test": "320 px reflow"
+        },
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "text-only enlargement (1.4.4)"
         }
       ]
     },
@@ -210,16 +220,24 @@
       "id": "1.4.10",
       "name": "Reflow",
       "level": "AA",
-      "status": "partially-supports",
-      "remarks": "At narrow widths the timeline turns vertical, and the page does not scroll sideways; this is tested at 375 CSS pixels, not yet at WCAG's 320.",
+      "status": "supports",
+      "remarks": "At 320 CSS pixels (a 1280-pixel window at 400%) the element turns vertical and dense, the page does not scroll sideways, every item keeps its whole name, and the keys bring each item wholly into view; at 256 pixels tall a horizontal timeline, given a height that fits, shows every lane, so nothing scrolls both ways. Two lanes take 336 pixels across in the dense layout, 16 more than 320: the lanes then scroll across inside the timeline (the keys do it for the focused item), as two-dimensional content may; the page itself never scrolls sideways. The timeline's height is the host's.",
       "tests": [
         {
           "file": "packages/docs/e2e/responsive.spec.ts",
-          "test": "vízszintes lapgörgetés nincs"
+          "test": "320 px reflow"
         },
         {
           "file": "packages/docs/e2e/responsive.spec.ts",
-          "test": "az explicit orientáció felülírja a mérést"
+          "test": "256 px tall reflow"
+        },
+        {
+          "file": "packages/docs/e2e/responsive.spec.ts",
+          "test": "no horizontal page scroll"
+        },
+        {
+          "file": "packages/docs/e2e/responsive.spec.ts",
+          "test": "an explicit orientation overrides the measurement"
         }
       ]
     },
@@ -228,11 +246,15 @@
       "name": "Non-text Contrast",
       "level": "AA",
       "status": "supports",
-      "remarks": "An item's outline, the focus ring, the selection outline, the major ticks and the loading mark are at least 3:1 against what they are drawn on, in both themes.",
+      "remarks": "An item's outline, the focus ring, the selection outline, the major ticks and the loading mark are at least 3:1 against what they are drawn on, in both themes. In forced colours every shape takes the reader's system colours instead — surface and item fill `Canvas`, outlines and text `CanvasText`, minor lines `GrayText`, focus and selection `Highlight` at 3 pixels — tested in a light and a dark palette.",
       "tests": [
         {
           "file": "packages/core/test/a11y/contrast.test.ts",
           "test": "is at least"
+        },
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "paint in the reader's system colours, wider where selected"
         }
       ]
     },
@@ -241,8 +263,21 @@
       "name": "Text Spacing",
       "level": "AA",
       "status": "partially-supports",
-      "remarks": "Not verified by a test. Labels are fitted to their box and shortened with an ellipsis, so wider spacing shortens them instead of overlapping them; the full text stays in the accessible name and the tooltip.",
-      "tests": []
+      "remarks": "Under WCAG's spacing (line height 1.5, letters 0.12em, words 0.16em, paragraphs 2em, all `!important`) no label is cut through a letter: a label that no longer fits its box ends in an ellipsis, the taller line stays centred in it, nothing runs into the axis, the keys still work, and the item's accessible name keeps the whole label (tested on the demo, horizontal and vertical, and on the element, also after it draws again). What falls short: a label's box is fitted to the text as measured without the reader's spacing, so the spacing shortens labels even where the item has room — all eight of the element's test labels, four of the demo's five — and the whole label is then seen only in the item's native tooltip on hover or in a detail the host opens.",
+      "tests": [
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "text spacing (1.4.12): on the demo"
+        },
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "text spacing (1.4.12): on the element"
+        },
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "NEGATIVE CONTROL: text spacing"
+        }
+      ]
     },
     {
       "id": "1.4.13",
@@ -311,11 +346,11 @@
         },
         {
           "file": "packages/docs/e2e/a11y.spec.ts",
-          "test": "Esc elengedi a fókuszt és a kijelölést"
+          "test": "Esc releases the focus and the selection"
         },
         {
           "file": "packages/docs/e2e/a11y.spec.ts",
-          "test": "a többi billentyű a lapé marad"
+          "test": "the other keys stay with the page"
         }
       ]
     },
@@ -408,11 +443,11 @@
       "tests": [
         {
           "file": "packages/docs/e2e/a11y.spec.ts",
-          "test": "Tab az idővonalra, nyilakkal minden elem, a fókusz látszik"
+          "test": "Tab onto the timeline, every item by arrow keys, the focus is visible"
         },
         {
           "file": "packages/docs/e2e/a11y.spec.ts",
-          "test": "g, dátum, Enter: a nézet oda ugrik, és a fókusz visszatér"
+          "test": "g, date, Enter: the view jumps there, and the focus returns"
         }
       ]
     },
@@ -454,7 +489,7 @@
       "name": "Focus Visible",
       "level": "AA",
       "status": "supports",
-      "remarks": "The focused item is drawn with a ring that meets 3:1, in both themes, and the ring moves with the arrows.",
+      "remarks": "The focused item is drawn with a ring that meets 3:1, in both themes, and the ring moves with the arrows. The timeline's own outline is drawn inside its box, so a container with `overflow: hidden` does not cut it: every pixel of the four edges of a clipping card exactly the timeline's size is the outline's colour, and none is when the same outline is drawn outside (the control). In forced colours the ring and the outline take the reader's `Highlight`, the ring 3 pixels wide.",
       "tests": [
         {
           "file": "packages/core/test/theme.test.ts",
@@ -462,11 +497,19 @@
         },
         {
           "file": "packages/docs/e2e/a11y.spec.ts",
-          "test": "a fókusz látszik"
+          "test": "the focus is visible"
         },
         {
           "file": "packages/core/test/a11y/contrast.test.ts",
           "test": "is at least"
+        },
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "the focus outline is drawn inside the timeline"
+        },
+        {
+          "file": "packages/docs/e2e/a11y.spec.ts",
+          "test": "paint in the reader's system colours, wider where selected"
         }
       ]
     },
@@ -475,7 +518,7 @@
       "name": "Focus Not Obscured (Minimum)",
       "level": "AA",
       "status": "supports",
-      "remarks": "An item the keyboard moves to is brought into view with a margin, across the lanes too, so the focus is not hidden at an edge.",
+      "remarks": "An item the keyboard moves to is brought into view with a margin, across the lanes too, so the focus is not hidden at an edge; at 320 pixels the element brings every item wholly into view. The bottom sheet the library opens over a narrow screen leaves the focused item in view, and the focus on the timeline (tested at 320 pixels, for every item).",
       "tests": [
         {
           "file": "packages/core/test/keyboard/navigation.test.ts",
@@ -484,6 +527,14 @@
         {
           "file": "packages/core/test/keyboard/navigation.test.ts",
           "test": "scrolls the lanes to an item across, both ways"
+        },
+        {
+          "file": "packages/docs/e2e/responsive.spec.ts",
+          "test": "the bottom sheet never hides the focused item"
+        },
+        {
+          "file": "packages/docs/e2e/responsive.spec.ts",
+          "test": "320 px reflow"
         }
       ]
     },
@@ -521,7 +572,7 @@
         },
         {
           "file": "packages/docs/e2e/touch.spec.ts",
-          "test": "a visszavonás PONTOSAN visszaállítja a kiindulást"
+          "test": "undo restores the starting state EXACTLY"
         }
       ]
     },
@@ -609,7 +660,7 @@
         },
         {
           "file": "packages/docs/e2e/a11y.spec.ts",
-          "test": "Tab az idővonalra"
+          "test": "Tab onto the timeline"
         }
       ]
     },
@@ -668,7 +719,7 @@
       "tests": [
         {
           "file": "packages/docs/e2e/a11y.spec.ts",
-          "test": "az aszinkron lap elbukott ablakokkal"
+          "test": "the async page with failed windows"
         },
         {
           "file": "packages/core/test/keyboard/parity.test.ts",
@@ -685,7 +736,7 @@
       "tests": [
         {
           "file": "packages/docs/e2e/a11y.spec.ts",
-          "test": "a dátumbekérő nyitva"
+          "test": "the date prompt open"
         }
       ]
     },
@@ -710,7 +761,7 @@
         },
         {
           "file": "packages/docs/e2e/touch.spec.ts",
-          "test": "a visszavonás PONTOSAN visszaállítja a kiindulást"
+          "test": "undo restores the starting state EXACTLY"
         }
       ]
     },
@@ -736,7 +787,11 @@
       "level": "A",
       "status": "not-applicable",
       "remarks": "Obsolete and removed in WCAG 2.2; for HTML it is always satisfied.",
-      "tests": []
+      "tests": [],
+      "earlier": {
+        "status": "supports",
+        "remarks": "EN 301 549 and the Revised Section 508 take this criterion from WCAG 2.1 and 2.0, whose errata hold it always satisfied for content in HTML or XML; the timeline is SVG, an XML language, in HTML."
+      }
     },
     {
       "id": "4.1.2",
@@ -751,7 +806,7 @@
         },
         {
           "file": "packages/docs/e2e/a11y.spec.ts",
-          "test": "a demó alaphelyzetben"
+          "test": "the demo in its initial state"
         },
         {
           "file": "packages/docs/e2e/a11y.spec.ts",
@@ -772,5 +827,108 @@
         }
       ]
     }
-  ]
+  ],
+  "evaluation": [
+    "Automated tests in a real browser (Chromium, through Playwright): axe-core with the WCAG 2.2 A and AA rules on every state of the demo pages and on every page and live example of this site, on a desktop and a phone viewport, with a negative control that proves the scan sees.",
+    "Measurements a scan cannot make, in the same browser: reflow at 320 CSS pixels and 256 pixels tall, page zoom at 200%, text-only enlargement, WCAG's text-spacing override, forced colours in a light and a dark palette, and the focus outline in a container that clips — each by its boxes, computed styles or pixels.",
+    "Unit tests of the engine (Vitest): the accessible names, roles and states of every item, the keyboard order and every key, the parity of each key with its gesture, contrast of every colour pair in both themes, computed as WCAG defines it.",
+    "Every criterion marked Supports cites at least one of these tests, and the release check runs every cited test and fails if one is not green.",
+    "**No manual test with a screen reader has been done yet**, nor any review by a person with a disability: what a screen reader announces rests on the roles, names and states the tests check, not on listening to one. Only Chromium has been tested."
+  ],
+  "chapters": {
+    "en301549": [
+      {
+        "chapter": "4",
+        "title": "Functional Performance Statements",
+        "status": "not-evaluated",
+        "remarks": "Not assessed on their own: where they apply to web content they are met through the WCAG criteria of chapter 9. Without a manual test with a screen reader, usage without vision (4.2.1) rests on the automated checks of names, roles and states."
+      },
+      {
+        "chapter": "5",
+        "title": "Generic Requirements",
+        "status": "not-applicable",
+        "remarks": "Closed functionality, the activation of accessibility features, biometrics, preserving accessibility through conversion, operable parts and locking keys (5.1–5.8) belong to devices and closed systems; a web component has none. Simultaneous user actions (5.9): the one gesture that takes two fingers, pinch, has single keys (`+` and `-`), see 2.1.1."
+      },
+      {
+        "chapter": "6",
+        "title": "ICT with Two-Way Voice Communication",
+        "status": "not-applicable",
+        "remarks": "The library has no voice communication."
+      },
+      {
+        "chapter": "7",
+        "title": "ICT with Video Capabilities",
+        "status": "not-applicable",
+        "remarks": "The library plays no video."
+      },
+      {
+        "chapter": "8",
+        "title": "Hardware",
+        "status": "not-applicable",
+        "remarks": "The library is software only."
+      },
+      {
+        "chapter": "9",
+        "title": "Web",
+        "status": "wcag",
+        "remarks": "Chapter 9 is WCAG 2.1 levels A and AA: clause 9.x.y.z is success criterion x.y.z, and each row of the WCAG tables above names its clause."
+      },
+      {
+        "chapter": "10",
+        "title": "Non-web Documents",
+        "status": "not-applicable",
+        "remarks": "The timeline is not a document. The export plugin, outside this report's scope, writes pictures of the view as SVG, PNG or PDF; they are not evaluated."
+      },
+      {
+        "chapter": "11",
+        "title": "Software",
+        "status": "not-applicable",
+        "remarks": "The library is web content that runs in a browser, evaluated under chapter 9. It is not an authoring tool (11.8): editing moves and resizes items, it does not author content for others."
+      },
+      {
+        "chapter": "12",
+        "title": "Documentation and Support Services",
+        "status": "supports",
+        "remarks": "Product documentation (12.1): the accessibility guide documents the keys, what a screen reader gets, motion, contrast and forced colours; this documentation site is scanned by axe at WCAG 2.2 AA on every page, with 0 violations, but has not been reviewed by hand. Support services (12.2): not applicable — there is no support service, only the public issue tracker."
+      },
+      {
+        "chapter": "13",
+        "title": "ICT Providing Relay or Emergency Service Access",
+        "status": "not-applicable",
+        "remarks": "The library provides no relay or emergency service."
+      }
+    ],
+    "section508": [
+      {
+        "chapter": "3",
+        "title": "Functional Performance Criteria",
+        "status": "not-evaluated",
+        "remarks": "Not assessed on their own: where they apply to web content they are met through the WCAG criteria (E205.4). Without a manual test with a screen reader, use without vision (302.1) rests on the automated checks of names, roles and states."
+      },
+      {
+        "chapter": "4",
+        "title": "Hardware",
+        "status": "not-applicable",
+        "remarks": "The library is software only."
+      },
+      {
+        "chapter": "5",
+        "title": "Software",
+        "status": "not-applicable",
+        "remarks": "The library is web content that runs in a browser, held to WCAG 2.0 levels A and AA through E205.4 (the WCAG tables above); it reaches assistive technology through the browser's accessibility tree (see 4.1.2). User preferences (503.2) exempt software that runs in a web browser; the timeline follows forced colours and reduced motion even so. It is not an authoring tool (504)."
+      },
+      {
+        "chapter": "6",
+        "title": "Support Documentation and Services",
+        "status": "supports",
+        "remarks": "The accessibility guide documents the keys, what a screen reader gets, motion, contrast and forced colours (602.2); this documentation site is scanned by axe at WCAG 2.2 AA on every page, with 0 violations, but has not been reviewed by hand (602.3). There is no support service (603), only the public issue tracker."
+      },
+      {
+        "chapter": "E205",
+        "title": "Electronic Content",
+        "status": "wcag",
+        "remarks": "Electronic content is WCAG 2.0 levels A and AA (E205.4, through 501 for web): the WCAG tables above, minus the criteria WCAG 2.1 and 2.2 added — each row says whether it applies."
+      }
+    ]
+  }
 }

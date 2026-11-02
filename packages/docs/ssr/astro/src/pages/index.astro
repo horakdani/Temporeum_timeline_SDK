@@ -1,5 +1,5 @@
 ---
-// Build közben, Node-ban fut: a lap a szerveren renderelt idővonalat kapja.
+// Runs at build time, in Node: the page gets the server-rendered timeline.
 import { renderTimelineHtml } from "@temporeum/timeline-element";
 
 import { config, WIDTH } from "../../shared/data.mjs";
@@ -7,7 +7,7 @@ import { config, WIDTH } from "../../shared/data.mjs";
 const html = renderTimelineHtml(config, { width: WIDTH, attributes: { id: "timeline" } });
 ---
 <html lang="hu">
-  <head><meta charset="utf-8" /><title>Idővonal — Astro smoke</title></head>
+  <head><meta charset="utf-8" /><title>Timeline — Astro smoke</title></head>
   <body style="margin: 0">
     <main style="width: 960px">
       <h1 style="font-size: 16px">Astro smoke</h1>

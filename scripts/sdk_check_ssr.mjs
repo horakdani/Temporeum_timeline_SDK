@@ -1,38 +1,37 @@
 #!/usr/bin/env node
 /**
- * G-SSR — importálás Node-ban nem dob; a szerveren renderelt HTML
- * hidratálódik. Next (React-adapter), Nuxt (Vue-adapter, P23), Astro (az
- * elem), SvelteKit (Svelte-adapter, P23) és Angular SSR (Angular-adapter,
- * P23) alatt.
+ * G-SSR — importing in Node does not throw; the HTML rendered on the server
+ * hydrates. Under Next (React adapter), Nuxt (Vue adapter), Astro (the
+ * element), SvelteKit (Svelte adapter) and Angular SSR (Angular adapter).
  *
- * A smoke a CSOMAGOT méri, nem a workspace-t: a három csomag `npm pack`
- * tarballja (a P23 óta hat) kerül egy-egy friss alkalmazásba (packages/docs/ssr/*), ahogy
- * egy idegen projekt kapná. Így a smoke az exports mapet, a `files` listát
- * és a "use client" direktívát is méri — ami a forrásból futó tesztek elől
- * rejtve marad.
+ * The smoke test measures the PACKAGE, not the workspace: the `npm pack`
+ * tarballs of the six packages go into a fresh app each (packages/docs/ssr/*),
+ * the way a third-party project would get them. So the smoke test also
+ * measures the exports map, the `files` list and the "use client" directive
+ * — which stay hidden from tests that run from source.
  *
- * Lépések:
- *  1. Node-import: mindhárom csomag minden belépési pontja `import()`-tal és
- *     `require()`-rel, DOM-globál nélkül, és a szerveroldali renderelők
- *     (renderTimelineHtml, React renderToString) le is futnak.
+ * Steps:
+ *  1. Node import: every entry point of the packages with `import()` and
+ *     `require()`, without DOM globals, and the server-side renderers
+ *     (renderTimelineHtml, React renderToString) actually run.
  *  2. Build: next build, nuxt build, astro build, vite build (SvelteKit),
- *     ng build (Angular SSR) — a keretrendszer maga importálja és futtatja
- *     a csomagot a saját szerveroldalán.
- *  3. Szerver: next start, a Nitro kimenete, a statikus Astro-kimenet, a
- *     SvelteKit adapter-node kimenete és az Angular Express-szervere.
- *  4. Playwright (e2e/ssr.spec.ts) mindhárom ellen: a nyers HTML-ben ott a
- *     rajz; JavaScript nélkül is látszik; a kliens ugyanazokat a
- *     csomópontokat veszi át (MutationObserver), konzolhiba nélkül, és
- *     utána egy valódi kattintás kijelöl.
- *     NEGATÍV KONTROLL: egy Astro-lap, amelynek kliense a regisztráció
- *     előtt újraírja a markupot (amit a Vue egy dinamikus v-html-lel tesz),
- *     a mérőn BUKIK — különben a hydrates zöldje semmit nem jelentene.
- *  5. Ítélet a Playwright JSON-riportjából: minden (állítás × keretrendszer)
- *     pár lefutott és átment. Kihagyott, hiányzó vagy bukott pár: BUKÁS.
+ *     ng build (Angular SSR) — the framework itself imports and runs the
+ *     package on its own server side.
+ *  3. Server: next start, the Nitro output, the static Astro output, the
+ *     SvelteKit adapter-node output and the Angular Express server.
+ *  4. Playwright (e2e/ssr.spec.ts) against each of them: the drawing is in
+ *     the raw HTML; it is visible without JavaScript too; the client takes
+ *     over the same nodes (MutationObserver), without console errors, and
+ *     afterwards a real click selects.
+ *     NEGATIVE CONTROL: an Astro page whose client rewrites the markup before
+ *     registration (which Vue does with a dynamic v-html) FAILS the probe —
+ *     otherwise a pass of hydrates would mean nothing.
+ *  5. Verdict from the Playwright JSON report: every (claim × framework)
+ *     pair ran and passed. A skipped, missing or failed pair: FAIL.
  *
- * A keretrendszereket a npm-ből telepíti (friss metaadattal: a
- * `--prefer-offline` elavult csomaglistából ETARGET-tel bukott);
- * ha nem tud, az BUKÁS, nem kihagyás.
+ * It installs the frameworks from npm (with fresh metadata: with
+ * `--prefer-offline` a stale package list failed with ETARGET);
+ * if it cannot, that is a FAIL, not a skip.
  */
 /* global fetch, setTimeout */
 import { execFileSync, spawn } from "node:child_process";
@@ -52,17 +51,18 @@ const REACT = createRequire(join(repo, "packages/react/package.json"))("react/pa
 const FRAMEWORKS = {
   next: { deps: { next: "16.4.3", react: REACT, "react-dom": REACT }, port: 41761 },
   nuxt: { deps: { nuxt: "4.6.3", vue: "^3.5.0" }, port: 41762 },
-  // 7.4.1, nem 7.4.2: a 7.4.2 Node >=22.23.4-et kér, a gép Node-ja 22.22.0
-  // (a 7.4.1-é >=22.22.0). Az utolsó, ami itt fut.
+  // 7.4.1, not 7.4.2: 7.4.2 requires Node >=22.23.4, this machine's Node is
+  // 22.22.0 (7.4.1 requires >=22.22.0). The last one that runs here.
   astro: { deps: { astro: "7.4.1" }, port: 41763 },
-  // P23. A SvelteKit 3.1 Node >=22.17-et kér: a gép 22.22.0-ja elég.
+  // SvelteKit 3.1 requires Node >=22.17: this machine's 22.22.0 is enough.
   sveltekit: {
     deps: { "@sveltejs/kit": "3.1.0", "@sveltejs/adapter-node": "6.0.0", "@sveltejs/vite-plugin-svelte": "7.3.1", svelte: "5.57.3", vite: "8.3.5" },
     port: 41764,
   },
-  // P23. Az Angular 21-sor: a 22 Node ^22.22.3-at kér, a gép 22.22.0. A
-  // build TS 5.9-et kér (<6.0); a fixture .npmrc-je legacy-peer-deps, mert
-  // az npm 10.9.4 az @angular/build opcionális peer-készletén elhasal.
+  // The Angular 21 line: 22 requires Node ^22.22.3, this machine has 22.22.0.
+  // The build requires TS 5.9 (<6.0); the fixture's .npmrc sets
+  // legacy-peer-deps, because npm 10.9.4 trips over @angular/build's optional
+  // peer set.
   angular: {
     deps: {
       "@angular/build": "21.2.29",
@@ -109,18 +109,18 @@ process.on("SIGINT", () => process.exit(130));
 function finish() {
   for (const note of notes) process.stdout.write(`  ok  ${note}\n`);
   if (problems.length > 0) {
-    process.stdout.write(`\nG-SSR: ${String(problems.length)} probléma\n`);
-    for (const problem of problems) process.stdout.write(`  BUKÁS  ${problem}\n`);
+    process.stdout.write(`\nG-SSR: ${String(problems.length)} problem(s)\n`);
+    for (const problem of problems) process.stdout.write(`  FAIL  ${problem}\n`);
     process.exit(1);
   }
-  process.stdout.write("\nG-SSR: Node-ban importálható, és a szerveren renderelt HTML hidratálódik — Next, Nuxt, Astro, SvelteKit, Angular.\n");
+  process.stdout.write("\nG-SSR: importable in Node, and the HTML rendered on the server hydrates — Next, Nuxt, Astro, SvelteKit, Angular.\n");
   process.exit(0);
 }
 
 rmSync(REPORT, { force: true });
 mkdirSync(join(work, "packs"), { recursive: true });
 
-// --- a csomagok, ahogy kiadásra kerülnének ---------------------------------
+// --- the packages, as they would be published ------------------------------
 const tarballs = {};
 for (const [name, dir] of [
   ["@temporeum/timeline-core", "packages/core"],
@@ -135,12 +135,12 @@ for (const [name, dir] of [
     const [info] = JSON.parse(run("npm", ["pack", "--json", "--pack-destination", join(work, "packs")], { cwd: join(repo, dir) }));
     tarballs[name] = join(work, "packs", info.filename);
   } catch (error) {
-    problems.push(`${name}: build/pack bukott\n${tail(error)}`);
+    problems.push(`${name}: build/pack failed\n${tail(error)}`);
   }
 }
 if (problems.length > 0) finish();
 
-// --- telepítés és build keretrendszerenként ---------------------------------
+// --- install and build per framework ---------------------------------------
 for (const [name, framework] of Object.entries(FRAMEWORKS)) {
   const dir = join(work, name);
   mkdirSync(dir, { recursive: true });
@@ -155,25 +155,25 @@ for (const [name, framework] of Object.entries(FRAMEWORKS)) {
   writeFileSync(join(dir, "package.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   try {
     run("npm", ["install", "--no-audit", "--no-fund", "--no-package-lock", "--loglevel=error"], { cwd: dir });
-    // A tarball tartalma változik; a file: függőséget az npm nem mindig
-    // frissíti, ha a verziószám ugyanaz. Ezért kifejezetten újratelepítjük.
+    // The tarball's content changes; npm does not always refresh a file:
+    // dependency when the version number is the same. So it is reinstalled explicitly.
     run("npm", ["install", "--no-audit", "--no-fund", "--no-package-lock", "--no-save", "--loglevel=error", ...Object.values(tarballs)], { cwd: dir });
   } catch (error) {
-    problems.push(`${name}: a telepítés bukott\n${tail(error)}`);
+    problems.push(`${name}: the install failed\n${tail(error)}`);
     continue;
   }
   try {
     run("npm", ["run", "build"], { cwd: dir, env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1", NUXT_TELEMETRY_DISABLED: "1", ASTRO_TELEMETRY_DISABLED: "1" } });
-    notes.push(`${name}: a build lefutott a csomagolt tarballokkal`);
+    notes.push(`${name}: the build ran with the packed tarballs`);
   } catch (error) {
-    problems.push(`${name}: a build bukott\n${tail(error)}`);
+    problems.push(`${name}: the build failed\n${tail(error)}`);
   }
 }
 if (problems.length > 0) finish();
 
-// --- 1. Node-import, a telepített csomagokból ------------------------------
-// Az elem minden alútvonala a package.json exports-ából (P30): egy új plugin
-// pontja magától bekerül.
+// --- 1. Node import, from the installed packages ---------------------------
+// Every subpath of the element comes from package.json's exports: a new
+// plugin's entry point is picked up on its own.
 const ELEMENT_SPECS = Object.keys(JSON.parse(readFileSync(join(repo, "packages/web-component/package.json"), "utf8")).exports)
   .filter((key) => key !== "./package.json")
   .map((key) => (key === "." ? "@temporeum/timeline-element" : `@temporeum/timeline-element/${key.slice(2)}`));
@@ -199,15 +199,15 @@ process.stdout.write(String(specs.length));`,
   );
   try {
     const count = run(process.execPath, [probe], { cwd: join(work, "next") });
-    notes.push(`Node: ${count} belépési pont import()-tal és require()-rel, DOM-globál nélkül; renderTimelineHtml és React renderToString rajzol`);
+    notes.push(`Node: ${count} entry points with import() and require(), without DOM globals; renderTimelineHtml and React renderToString draw`);
   } catch (error) {
-    problems.push(`Node-import bukott\n${tail(error)}`);
+    problems.push(`Node import failed\n${tail(error)}`);
   }
-  // A Vue-adapter ugyanígy, a Nuxt telepítéséből (ott van Vue): import()
-  // és require(), DOM-globál nélkül, és a Vue saját szerver-renderelője
-  // rajzol. A Svelte- és az Angular-csomagot a keretrendszerük fordítja
-  // (.svelte forrás, részleges Angular-deklarációk) — azokat a saját buildjük
-  // importálja és futtatja a szerveren.
+  // The Vue adapter the same way, from the Nuxt install (Vue is there):
+  // import() and require(), without DOM globals, and Vue's own server
+  // renderer draws. The Svelte and Angular packages are compiled by their
+  // frameworks (.svelte source, partial Angular declarations) — their own
+  // builds import and run them on the server.
   const vueProbe = join(work, "nuxt", "probe.mjs");
   writeFileSync(
     vueProbe,
@@ -224,13 +224,13 @@ process.stdout.write("ok");`,
   );
   try {
     run(process.execPath, [vueProbe], { cwd: join(work, "nuxt") });
-    notes.push("Node: a Vue-adapter import()-tal és require()-rel, DOM-globál nélkül; a Vue renderToString rajzol");
+    notes.push("Node: the Vue adapter with import() and require(), without DOM globals; Vue's renderToString draws");
   } catch (error) {
-    problems.push(`Node-import (Vue) bukott\n${tail(error)}`);
+    problems.push(`Node import (Vue) failed\n${tail(error)}`);
   }
 }
 
-// --- szerverek --------------------------------------------------------------
+// --- servers ----------------------------------------------------------------
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".json": "application/json" };
 function serveStatic(root, port) {
   const server = createServer((request, response) => {
@@ -268,20 +268,21 @@ async function ready(url, logOf) {
     }
     await new Promise((done) => setTimeout(done, 500));
   }
-  problems.push(`${url} nem indult el\n${logOf?.().slice(-1500) ?? ""}`);
+  problems.push(`${url} did not start\n${logOf?.().slice(-1500) ?? ""}`);
   return false;
 }
 
-// A foglalt port BUKÁS: egy ott maradt régi szerver válaszolna a mérésnek,
-// és a check egy másik build ellen menne át (a P11-ben pontosan ez történt
-// egy hibakeresés után — a régi Nuxt a régi bundle-t szolgálta ki).
+// A port in use is a FAIL: an old server left behind would answer the
+// measurement, and the check would pass against a different build (exactly
+// this happened once after a debugging session — the old Nuxt served the old
+// bundle).
 for (const [name, framework] of Object.entries(FRAMEWORKS)) {
   const free = await new Promise((done) => {
     const probe = createNetServer();
     probe.once("error", () => done(false));
     probe.listen(framework.port, "127.0.0.1", () => probe.close(() => done(true)));
   });
-  if (!free) problems.push(`${name}: a ${String(framework.port)}-es port foglalt — egy idegen szerver válaszolna a mérésnek`);
+  if (!free) problems.push(`${name}: port ${String(framework.port)} is in use — a foreign server would answer the measurement`);
 }
 if (problems.length > 0) finish();
 
@@ -291,9 +292,9 @@ const nuxtLog = start("nuxt", process.execPath, [join(work, "nuxt/.output/server
 const astro = await serveStatic(join(work, "astro/dist"), FRAMEWORKS.astro.port);
 const svelteLog = start("sveltekit", process.execPath, [join(work, "sveltekit/build/index.js")], { PORT: String(FRAMEWORKS.sveltekit.port), HOST: "127.0.0.1" });
 const angularLog = start("angular", process.execPath, [join(work, "angular/dist/server/server.mjs")], { PORT: String(FRAMEWORKS.angular.port) });
-// "adapter": a keretrendszer-komponens a window.__tl-be teszi a példányt, és
-// a kijelölést a saját store-jából írja ki (#selected); "element": a
-// <temporeum-timeline> maga.
+// "adapter": the framework component puts the instance on window.__tl, and
+// writes the selection out from its own store (#selected); "element": the
+// <temporeum-timeline> itself.
 for (const [name, kind, logOf] of [
   ["next", "adapter", nextLog],
   ["nuxt", "adapter", nuxtLog],
@@ -322,9 +323,9 @@ if (targets.length === Object.keys(FRAMEWORKS).length) {
 astro.close();
 cleanup();
 
-// --- 5. az ítélet ------------------------------------------------------------
+// --- 5. the verdict ----------------------------------------------------------
 if (!existsSync(REPORT)) {
-  problems.push("nincs Playwright-riport: a böngészős rész nem futott le");
+  problems.push("no Playwright report: the browser part did not run");
 } else {
   const report = JSON.parse(readFileSync(REPORT, "utf8"));
   const results = new Map();
@@ -345,9 +346,9 @@ if (!existsSync(REPORT)) {
     // the server's markup must be caught, or "hydrates" proves nothing.
     for (const claim of name === "astro" ? [...CLAIMS, "control"] : CLAIMS) {
       const outcome = results.get(`${claim}@${name}`);
-      if (outcome !== "passed") problems.push(`${claim} @${name}: ${outcome ?? "nem futott"}`);
+      if (outcome !== "passed") problems.push(`${claim} @${name}: ${outcome ?? "did not run"}`);
     }
   }
-  if (problems.length === 0) notes.push(`böngésző: ${String(CLAIMS.length)} állítás × ${String(Object.keys(FRAMEWORKS).length)} keretrendszer + a negatív kontroll = ${String(results.size)} átment pár`);
+  if (problems.length === 0) notes.push(`browser: ${String(CLAIMS.length)} claims × ${String(Object.keys(FRAMEWORKS).length)} frameworks + the negative control = ${String(results.size)} passing pairs`);
 }
 finish();

@@ -14,7 +14,7 @@ import { resourcesPlugin } from "../src/resources.js";
 import { intlPlugin } from "../src/intl.js";
 
 /**
- * P29: the Gantt chart, the resource view and export are plugins on entry
+ * The Gantt chart, the resource view and export are plugins on entry
  * points of their own. Two claims. A page that does not import them does
  * not download them — the base's import graph holds none of the core's
  * `/gantt`, `/resources` or `/export`. And a configuration that asks for a
@@ -66,7 +66,7 @@ function reach(entry: string): { readonly files: Set<string>; readonly packages:
   return { files, packages };
 }
 
-describe("P29: the base does not carry the plugins", () => {
+describe("the base does not carry the plugins", () => {
   it("the base entry reaches none of the core's /gantt, /resources or /export, nor the plugins' own files", () => {
     for (const entry of ["index.ts", "define.ts"]) {
       const { files, packages } = reach(entry);
@@ -86,7 +86,7 @@ describe("P29: the base does not carry the plugins", () => {
   });
 });
 
-describe("P29: a missing plugin is named, not ignored", () => {
+describe("a missing plugin is named, not ignored", () => {
   it("a Gantt configuration with no plugin throws, naming the import", () => {
     expect(hasPlugin("gantt")).toBe(false);
     expect(() => renderTimelineSvg(gantt)).toThrow(TypeError);
@@ -123,7 +123,7 @@ describe("P29: a missing plugin is named, not ignored", () => {
       timeZone: "Europe/Budapest",
       domain: [T0 - DAY, T0 + 6 * DAY],
     };
-    // The words of another language are the `/intl` plugin's since P30.
+    // The words of another language belong to the `/intl` plugin.
     registerPlugin(intlPlugin);
     const drawn = renderTimelineSvg(overbooked).svg;
     // Hungarian dates on Budapest's clock (an hour past UTC midnight), the configured words.

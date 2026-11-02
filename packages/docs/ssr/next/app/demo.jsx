@@ -16,7 +16,7 @@ export default function Demo() {
         ssrWidth={WIDTH}
         timelineRef={(instance) => {
           setTimeline(instance);
-          // A teszt innen tudja, hogy a kliens átvette a rajzot.
+          // This is how the test knows the client has taken over the drawing.
           if (typeof window !== "undefined") window.__tl = instance;
         }}
       />

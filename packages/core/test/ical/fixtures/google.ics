@@ -3,7 +3,7 @@ PRODID:-//Google Inc//Google Calendar 70.9054//EN
 VERSION:2.0
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
-X-WR-CALNAME:Csapat
+X-WR-CALNAME:Team
 X-WR-TIMEZONE:Europe/Budapest
 BEGIN:VTIMEZONE
 TZID:Europe/Budapest
@@ -31,11 +31,11 @@ EXDATE;TZID=Europe/Budapest:20261023T093000
 DTSTAMP:20261030T120000Z
 UID:standup-7f3a@google.com
 CREATED:20261001T080000Z
-DESCRIPTION:Napi egyeztetés\, 15 perc.\nHozd a jegyzeteidet\; köszi!
-LOCATION:Tárgyaló 2\, 3. emelet
+DESCRIPTION:Daily sync\, 15 minutes.\nBring your notes\; thanks!
+LOCATION:Meeting room 2\, 3rd floor
 SEQUENCE:0
 STATUS:CONFIRMED
-SUMMARY:Napi standup
+SUMMARY:Daily standup
 TRANSP:OPAQUE
 BEGIN:VALARM
 ACTION:DISPLAY
@@ -49,7 +49,7 @@ DTEND;TZID=Europe/Budapest:20261028T113000
 DTSTAMP:20261030T120000Z
 UID:standup-7f3a@google.com
 RECURRENCE-ID;TZID=Europe/Budapest:20261028T093000
-SUMMARY:Napi standup (áttéve)
+SUMMARY:Daily standup (moved)
 END:VEVENT
 BEGIN:VEVENT
 DTSTAMP:20261030T120000Z
@@ -63,13 +63,13 @@ DTSTART;VALUE=DATE:20261102
 DTEND;VALUE=DATE:20261105
 DTSTAMP:20261030T120000Z
 UID:offsite-2026@google.com
-SUMMARY:Csapatépítő – Balaton
+SUMMARY:Team offsite – Lake Balaton
 END:VEVENT
 BEGIN:VEVENT
 DTSTART:20261029T150000Z
 DTEND:20261029T160000Z
 DTSTAMP:20261030T120000Z
 UID:review-1@google.com
-SUMMARY:Negyedéves áttekintés, a 2026-os Q4 tervekkel és egy nagyon hosszú címmel, amit hajtogatni kell
+SUMMARY:Quarterly review, with the plans for Q4 2026 and a very long title that has to be folded on output
 END:VEVENT
 END:VCALENDAR

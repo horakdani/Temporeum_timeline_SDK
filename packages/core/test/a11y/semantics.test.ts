@@ -20,12 +20,12 @@ const DAY = 86_400_000;
 const T0 = Date.UTC(2026, 0, 1);
 
 const ITEMS: Item[] = [
-  { id: "a", start: T0, end: T0 + 4 * DAY, label: "Tervezés", laneId: "work" },
-  { id: "b", start: T0 + 3 * DAY, end: T0 + 9 * DAY, label: "Építés", laneId: "work" },
-  { id: "c", start: T0 + 10 * DAY, label: "Mérföldkő", laneId: "ship" },
-  { id: "far", start: T0 + 400 * DAY, end: T0 + 401 * DAY, label: "Messze", laneId: "ship" },
+  { id: "a", start: T0, end: T0 + 4 * DAY, label: "Planning", laneId: "work" },
+  { id: "b", start: T0 + 3 * DAY, end: T0 + 9 * DAY, label: "Building", laneId: "work" },
+  { id: "c", start: T0 + 10 * DAY, label: "Milestone", laneId: "ship" },
+  { id: "far", start: T0 + 400 * DAY, end: T0 + 401 * DAY, label: "Far away", laneId: "ship" },
 ];
-const LANES = [{ id: "work", label: "Munka" }, { id: "ship" }];
+const LANES = [{ id: "work", label: "Work" }, { id: "ship" }];
 
 function render(options: Partial<RenderOptions> = {}): ReturnType<typeof renderTimeline> {
   return renderTimeline({
@@ -60,8 +60,8 @@ const options = (scene: SceneElement): SceneElement[] => all(scene, (node) => no
 
 describe("an interactive frame", () => {
   it("is one focus stop, a listbox named and oriented for the reader", () => {
-    const { scene } = render({ ariaLabel: "Projekt" });
-    expect(scene.attrs).toMatchObject({ role: "listbox", tabindex: 0, "aria-label": "Projekt", "aria-orientation": "horizontal" });
+    const { scene } = render({ ariaLabel: "Project" });
+    expect(scene.attrs).toMatchObject({ role: "listbox", tabindex: 0, "aria-label": "Project", "aria-orientation": "horizontal" });
     expect(scene.attrs?.["aria-multiselectable"]).toBeUndefined();
     expect(render({ multiSelect: true }).scene.attrs?.["aria-multiselectable"]).toBe("true");
     expect(render({ orientation: "vertical" }).scene.attrs?.["aria-orientation"]).toBe("vertical");
@@ -78,10 +78,10 @@ describe("an interactive frame", () => {
     expect(drawn.map((node) => node.attrs?.["aria-setsize"])).toEqual([4, 4, 4]);
     expect(drawn.map((node) => node.attrs?.["aria-posinset"])).toEqual([1, 2, 3]);
     expect(drawn.map((node) => node.attrs?.["aria-selected"])).toEqual(["false", "true", "false"]);
-    expect(drawn[0]?.attrs?.["aria-label"]).toBe("Tervezés, Jan 1, 2026 – Jan 5, 2026, Munka");
-    expect(drawn[2]?.attrs?.["aria-label"]).toBe("Mérföldkő, Jan 11, 2026");
+    expect(drawn[0]?.attrs?.["aria-label"]).toBe("Planning, Jan 1, 2026 – Jan 5, 2026, Work");
+    expect(drawn[2]?.attrs?.["aria-label"]).toBe("Milestone, Jan 11, 2026");
     // The tooltip says the same, so nothing is read twice.
-    expect(drawn[0]?.children?.[0]).toEqual({ tag: "title", text: "Tervezés, Jan 1, 2026 – Jan 5, 2026, Munka" });
+    expect(drawn[0]?.children?.[0]).toEqual({ tag: "title", text: "Planning, Jan 1, 2026 – Jan 5, 2026, Work" });
   });
 
   it("hides everything that repeats or decorates what the items say", () => {
@@ -148,26 +148,26 @@ describe("an interactive frame", () => {
     // A new locale is a new name on every item, not a stale tile: the same
     // frame twice, only the locale differs.
     const english = render({ space, focusedId: "a", selectedIds: ["a"], locale: "en" });
-    expect(options(english.scene)[0]?.attrs?.["aria-label"]).toMatch(/^Tervezés, Jan 1, 2026/);
+    expect(options(english.scene)[0]?.attrs?.["aria-label"]).toMatch(/^Planning, Jan 1, 2026/);
     const hungarian = render({ space, focusedId: "a", selectedIds: ["a"], locale: "hu" });
-    expect(options(hungarian.scene)[0]?.attrs?.["aria-label"]).toMatch(/^Tervezés, 2026\. jan\. 1\./);
+    expect(options(hungarian.scene)[0]?.attrs?.["aria-label"]).toMatch(/^Planning, 2026\. jan\. 1\./);
   });
 
-  // P9 changed this contract: until then an empty frame was a listbox too.
+  // This contract changed: an empty frame used to be a listbox too.
   // A listbox with no option is not one anybody can choose from, and axe
-  // cannot decide it (aria-required-children) — a state the P9 async page
+  // cannot decide it (aria-required-children) — a state the async page
   // reaches whenever a window fails. The root stays the one focus stop.
   it("gives an empty frame the same root element and focus stop, as a group with nothing to choose", () => {
-    const empty = render({ width: 0, ariaLabel: "Projekt" });
-    expect(empty.scene.attrs).toMatchObject({ role: "group", tabindex: 0, "aria-label": "Projekt" });
+    const empty = render({ width: 0, ariaLabel: "Project" });
+    expect(empty.scene.attrs).toMatchObject({ role: "group", tabindex: 0, "aria-label": "Project" });
     expect(empty.scene.attrs?.["aria-orientation"]).toBeUndefined();
     expect(empty.scene.attrs?.["aria-activedescendant"]).toBeUndefined();
-    expect(empty.scene.children?.filter((child) => child.attrs?.["aria-hidden"] === "true")).toHaveLength(6);
+    expect(empty.scene.children?.filter((child) => child.attrs?.["aria-hidden"] === "true")).toHaveLength(7);
   });
 
   it("is a focusable group while no option is drawn, and a listbox again as soon as one is", () => {
-    const none = render({ items: [], ariaLabel: "Projekt", multiSelect: true });
-    expect(none.scene.attrs).toMatchObject({ role: "group", tabindex: 0, "aria-label": "Projekt" });
+    const none = render({ items: [], ariaLabel: "Project", multiSelect: true });
+    expect(none.scene.attrs).toMatchObject({ role: "group", tabindex: 0, "aria-label": "Project" });
     expect(none.scene.attrs?.["aria-multiselectable"]).toBeUndefined();
     // Panned to a stretch with nothing in it.
     const away = render({ domain: [T0 + 900 * DAY, T0 + 930 * DAY], focusedId: "a" });
@@ -211,7 +211,7 @@ describe("accessible names", () => {
   });
 
   it("tells a midnight in UTC without Intl, as Intl does", () => {
-    // P15: the UTC midnight is arithmetic. The same zone under another name
+    // The UTC midnight is arithmetic. The same zone under another name
     // still goes through Intl: both must say the same, before 1970 too.
     const times = [T0, T0 + 1, T0 + 1000, T0 - DAY, Date.UTC(1969, 11, 31), Date.UTC(1969, 11, 31, 23, 59, 59), -1, 0];
     for (const start of times) {
@@ -235,7 +235,7 @@ describe("accessible names", () => {
     const item: Item = { id: "c", start: T0, label: "C" };
     const first = describeItem(item, span(T0, T0), undefined, "en", "UTC");
     expect(describeItem(item, span(T0, T0), undefined, "en", "UTC")).toBe(first);
-    expect(describeItem(item, span(T0, T0), "Sáv", "en", "UTC")).toBe("C, Jan 1, 2026, Sáv");
+    expect(describeItem(item, span(T0, T0), "Lane", "en", "UTC")).toBe("C, Jan 1, 2026, Lane");
     expect(describeItem(item, span(T0, T0), "", "hu", "UTC")).toMatch(/^C, 2026\. jan\. 1\.$/);
   });
 

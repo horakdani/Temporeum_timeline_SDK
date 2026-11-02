@@ -17,7 +17,7 @@ Releases are published by a GitHub Actions workflow, never from a laptop. As a r
    - Set the version in the `package.json` of each of the six packages (`packages/core`, `web-component`, `react`, `vue`, `svelte`, `angular`).
    - Update the dependencies between the packages to that exact version, and the versions the framework templates install (`packages/docs/templates/*/package.json`).
    - Update `VERSION` in `packages/core/src/version.ts`.
-   - Turn each `CHANGELOG.md`'s "not yet published" heading into the version and the date. (The first publication is 1.0.0.)
+   - Date each `CHANGELOG.md`'s "Unreleased" heading: `node scripts/sdk_changelog.mjs --date` (today, or `--date YYYY-MM-DD`). The release workflow refuses to publish a version whose six changelogs do not date it. (The first publication is 1.0.0.)
 2. **Merge it** once CI is green.
 3. **Run the release workflow:** **Actions → Release → Run workflow**, with the dist-tag (`latest` or `next`). The workflow then:
    - builds and tests everything;

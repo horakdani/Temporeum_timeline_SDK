@@ -1,5 +1,5 @@
 /* The docs site. Plain CSS, no build; light and dark from the platform.
-   Every text colour pair here is above 4.5:1 (G-AXE measures it). */
+   Every text colour pair here is above 4.5:1 (the axe run in `npm run test:a11y` measures it). */
 :root {
   color-scheme: light dark;
   --bg: #ffffff;

@@ -33,16 +33,16 @@ const mouse: BrowserCommand<[steps: readonly MouseStep[]]> = async (context, ste
 };
 
 /**
- * Két készlet, két környezet — mert a csomag két dolgot ígér.
+ * Two suites, two environments — because the package makes two promises.
  *
- * - `node`: a szerveroldal. Itt NINCS window és document; ha egy modul
- *   importkor a DOM-hoz nyúlna, ez a készlet nem is töltene be.
- * - `browser`: a komponens igazi Chromiumban (Playwright), igazi Angularral
- *   (JIT, zoneless): createApplication, createComponent, setInput, és CDP-n
- *   át küldött egér- és billentyű-bemenet. A hidratálást a G-SSR méri egy
- *   valódi @angular/ssr alkalmazáson — a szerver kimenete Node-ot kér.
+ * - `node`: the server side. There is NO window or document here; if a module
+ *   reached for the DOM on import, this suite would not even load.
+ * - `browser`: the component in a real Chromium (Playwright), with real Angular
+ *   (JIT, zoneless): createApplication, createComponent, setInput, and mouse
+ *   and keyboard input sent over CDP. The G-SSR check measures hydration on a
+ *   real @angular/ssr application — the server output needs Node.
  *
- * A lefedettség a kettő uniója, fájlonként 90%-os küszöbbel, mint a magban.
+ * Coverage is the union of the two, with a 90% threshold per file, as in the core.
  */
 export default defineConfig({
   test: {

@@ -21,13 +21,13 @@ import type { TimelineConfig, TimelineInstance } from "../src/index.js";
 const DAY = 86_400_000;
 const T0 = Date.UTC(2026, 0, 1);
 const items: Item[] = [
-  { id: "a", start: T0 + 2 * DAY, end: T0 + 6 * DAY, label: "Tervezés", laneId: "l1" },
-  { id: "b", start: T0 + 8 * DAY, end: T0 + 13 * DAY, label: "Építés", laneId: "l1" },
-  { id: "c", start: T0 + 16 * DAY, end: T0 + 20 * DAY, label: "Átadás", laneId: "l2" },
+  { id: "a", start: T0 + 2 * DAY, end: T0 + 6 * DAY, label: "Planning", laneId: "l1" },
+  { id: "b", start: T0 + 8 * DAY, end: T0 + 13 * DAY, label: "Building", laneId: "l1" },
+  { id: "c", start: T0 + 16 * DAY, end: T0 + 20 * DAY, label: "Handover", laneId: "l2" },
 ];
 const lanes = [
-  { id: "l1", label: "Munka" },
-  { id: "l2", label: "Szállítás" },
+  { id: "l1", label: "Work" },
+  { id: "l2", label: "Delivery" },
 ];
 const domain: [number, number] = [T0, T0 + 24 * DAY];
 const base: TimelineConfig = { items, lanes, domain, height: 260 };

@@ -1,4 +1,4 @@
-# A kapu mérései: futásidejű bizonyíték, nem forrás.
+# The checks' measurements: run-time evidence, not source.
 .e2e-touch-report.json
 test-results/
 playwright-report/

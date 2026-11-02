@@ -156,19 +156,20 @@ Measured in Chromium at a 4x CPU slowdown, 1440 x 900, 10 000 items
 
 The "with" column is the loop above: `levels: true` re-anchors a zoom a
 power of two at a time, the old scale's tiles standing in until the view is
-drawn again — without it the 4x pinch misses ~12% (`G-PERF-DEEP` runs that
-as a control, and it has to fail). `createTimeline` in
+drawn again — without it the 4x pinch misses ~12% (`npm run bench:deep -w
+@temporeum/timeline-docs` runs that as a control, and it has to fail). `createTimeline` in
 `@temporeum/timeline-element` runs the same loop at every size
 (`sceneSpace: "auto"`), and the same views through it, from the shipped
-bundle, are gates of their own (`G-PERF-PUBLIC`, `G-PERF-DEEP`): a budget
-only the engine's own page keeps would not be a promise.
+bundle, are measured on their own (`bench:public` and `bench:deep` in
+`@temporeum/timeline-docs`): a budget only the engine's own page keeps would
+not be a promise.
 
 A wheel has no lift, so the machine makes a run of wheel steps one gesture
 (`kind: "wheel"`): it starts with the first step that moves the view and ends
 150 ms after the last, through the machine's own wake-up. That is what keeps
 `settle: !gesture` from settling between two notches — without it the same
-loop misses ~37% of the wheel zoom's frames (`G-PERF-WHEEL` runs that as a
-control too).
+loop misses ~37% of the wheel zoom's frames (`npm run bench:wheel -w
+@temporeum/timeline-docs` runs that as a control too).
 
 ## Formats
 
@@ -236,8 +237,8 @@ These are CI gates, not aspirations:
 | page scroll under a one-finger drag on the timeline, Mobile Safari in the iOS Simulator, iPhone and iPad | 0 px |
 | items of an aborted request on the canvas, during fast zoom | 0 |
 
-Every code block in this README is checked against a running example on each
-gate run (G-EXAMPLES).
+Every code block in this README is checked against a running example in CI
+(`npm run test:examples -w @temporeum/timeline-docs`).
 
 ## License
 

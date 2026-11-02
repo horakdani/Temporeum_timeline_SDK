@@ -1,21 +1,21 @@
 import { defineConfig } from "@playwright/test";
 
-/** Ugyanaz a saját port, mint az érintéses készleté — a kettő sorban fut. */
+/** The same port of our own as the touch suite's — the two run one after the other. */
 const PORT = Number(process.env.TL_E2E_PORT ?? 41737);
 
 /**
- * A reszponzív készlet konfigja — KÜLÖN fájl, nem egy második projekt az
- * érintéses mellett.
+ * The responsive suite's config — a SEPARATE file, not a second project next
+ * to the touch one.
  *
- * Két ok. Az érintéses készlet minden projektjén lefut (`playwright test
- * e2e/touch.spec.ts` projekt-szűrés nélkül), tehát egy itt felvett asztali
- * projekt ott is futtatná a Pixel 7-re írt gesztusokat. És a riportja más
- * fájlba megy: a két kapu két külön bizonyítékot olvas, és egyik futás sem
- * írhatja felül a másik riportját.
+ * Two reasons. The touch suite runs on every project of its config
+ * (`playwright test e2e/touch.spec.ts` with no project filter), so a desktop
+ * project added there would run the gestures written for the Pixel 7 too.
+ * And its report goes to a different file: the two checks read two separate
+ * pieces of evidence, and neither run may overwrite the other's report.
  *
- * Az eszközök a spec-ben vannak, szélességenként (`test.use`), mert a
- * szélesség maga a mérés tárgya: 375 / 768 / 1440 px, és mindegyik a saját
- * kezével — a telefon és a tablet érintéssel, az asztal egérrel.
+ * The devices are in the spec, per width (`test.use`), because the width is
+ * itself what is measured: 375 / 768 / 1440 px, each with its own hand —
+ * the phone and the tablet by touch, the desktop with a mouse.
  */
 export default defineConfig({
   testDir: "./e2e",
@@ -33,7 +33,7 @@ export default defineConfig({
   webServer: {
     command: "node e2e/serve.mjs",
     url: `http://127.0.0.1:${String(PORT)}/responsive.html`,
-    // Lásd az érintéses konfigot: idegen vagy régi szervert nem fogadunk el.
+    // See the touch config: a foreign or stale server is not accepted.
     reuseExistingServer: false,
     timeout: 20_000,
   },

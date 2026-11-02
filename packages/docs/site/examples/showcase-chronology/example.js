@@ -100,6 +100,8 @@ const items = [
 const YEARS = new Set(["year", "decade", "century", "millennium"]);
 function formatTick(tick, timeZone) {
   if (!YEARS.has(tick.granularity)) return defaultTickLabel(tick, timeZone);
+  // A year label is the whole date: no context label at the start of the axis.
+  if (tick.context) return "";
   const y = new Date(tick.time).getUTCFullYear();
   return y <= 0 ? `${String(1 - y)} BC` : `AD ${String(y)}`;
 }

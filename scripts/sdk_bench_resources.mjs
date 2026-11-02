@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * G-PERF-RESOURCES merese: 500 eroforras es 10 000 hozzarendeles a publikus
- * uton (packages/docs/bench/resources.html, a kiadott dist), terhelesi
- * savokkal, pasztazas es gorgos zoom, 4x CPU-lassitassal, friss lapokon — es
- * ugyanez a terheles vagasa nelkul (`?cull=0`, jegyzetnek: a vagas ezen a
- * mereten nem teherhordo), es egy erzekenysegi kontroll (`?burn=24`): a lap
- * minden kepkockaja egy gesztus alatt (huzas, gorgo), masfel
- * vsync-nyi (24 ms) plusz munkat vegez — a negativ kontroll, aminek buknia kell.
+ * The G-PERF-RESOURCES measurement: 500 resources and 10 000 assignments on
+ * the public path (packages/docs/bench/resources.html, the shipped dist), with
+ * load bands, pan and wheel zoom, with 4x CPU throttling, on fresh pages — and
+ * the same without load culling (`?cull=0`, for the record: culling is not
+ * load-bearing at this size), and a sensitivity control (`?burn=24`): during
+ * a gesture (drag, wheel) every frame of the page does one and a half
+ * vsyncs' worth (24 ms) of extra work — the negative control, which must fail.
  *
- * A pasztazas es a zoom ugyanaz a mozdulat, mint a vis-osszevetes merese
- * (sdk_bench_field.mjs): 24 huzas a tengelyen, illetve Control + 8 lepes be
- * es 8 ki 50 ms-onkent. Az itelet a sdk_check_perf_resources.mjs-e.
+ * The pan and the zoom are the same gestures as in the vis comparison
+ * measurement (sdk_bench_field.mjs): 24 drags on the axis, and Control + 8
+ * notches in and 8 out every 50 ms. The verdict is sdk_check_perf_resources.mjs's.
  */
 
 /* global fetch, setTimeout, window */
@@ -39,10 +39,11 @@ const VSYNC = 1000 / 60;
 const PAN = { drags: 24, forward: 12, distancePx: 240, durationMs: 400, moveEveryMs: 16, gapMs: 100, startX: 1100 };
 const ZOOM = { notches: 8, intervalMs: 50, deltaY: Math.log(1.2) / 0.004, tailMs: 300 };
 /**
- * Az erzekenysegi kontroll plusz munkaja kepkockankent: masfel vsync. Egy
- * vsync (16 ms) keves volt: pasztazaskor az elemterben a kepkocka tobbi
- * munkaja szinte nulla, igy 16 ms meg belefer egy 16,7 ms-os vsync-be — egy
- * keretbe fero koltseget a meres joggal nem lat (2026-10-29, probaval).
+ * The sensitivity control's extra work per frame: one and a half vsyncs. One
+ * vsync (16 ms) was too little: while panning, the rest of the frame's work in
+ * the element space is almost zero, so 16 ms still fits into a 16.7 ms vsync —
+ * and the measurement rightly does not see a cost that fits in a frame
+ * (verified by trial, 2026-10-29).
  */
 const BURN_MS = 24;
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
@@ -74,13 +75,13 @@ const server = createServer((request, response) => {
   response.writeHead(404).end();
 });
 await new Promise((done, fail) => {
-  server.once("error", (error) => fail(error.code === "EADDRINUSE" ? new Error(`a ${String(PORT)} port foglalt — idegen lapot nem merunk`) : error));
+  server.once("error", (error) => fail(error.code === "EADDRINUSE" ? new Error(`port ${String(PORT)} is taken — we do not measure someone else's page`) : error));
   server.listen(PORT, "127.0.0.1", done);
 });
 const marker = await (await fetch(`${BASE}/bench/resources.html`)).text();
 if (!marker.includes('data-bench-resources="temporeum"')) {
   server.close();
-  throw new Error("a porton nem az eroforras-meres lapja valaszol");
+  throw new Error("something other than the resource benchmark page answers on the port");
 }
 
 function frameStats(deltas) {
@@ -93,7 +94,7 @@ function frameStats(deltas) {
   };
 }
 
-/** A valtozatok: a mert lap, a vagas nelkuli, es az erzekenysegi kontroll. */
+/** The variants: the measured page, the one without culling, and the sensitivity control. */
 const VARIANTS = [
   ["culled", ""],
   ["control", "?cull=0"],
@@ -109,9 +110,9 @@ async function openPage(browser, query) {
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: THROTTLE });
   await page.goto(`${BASE}/bench/resources.html${query}`);
   await page.waitForFunction(() => window.benchResources !== undefined, undefined, { timeout: 120_000 });
-  if ((await page.evaluate(() => window.benchResources.marker)) !== "temporeum-bench-resources") throw new Error("nem a meres lapja");
+  if ((await page.evaluate(() => window.benchResources.marker)) !== "temporeum-bench-resources") throw new Error("not the benchmark page");
   await page.evaluate(() => window.benchResources.ready);
-  if (errors.length > 0) throw new Error(`lap-hiba: ${errors.join("; ")}`);
+  if (errors.length > 0) throw new Error(`page error: ${errors.join("; ")}`);
   return { context, page };
 }
 
@@ -201,9 +202,9 @@ try {
       const zoom = await zoomRun(browser, query);
       report.runs[name].zoom.push(zoom);
       console.log(
-        `${name} #${String(rep + 1)}: terhelesi oszlop ${String(pan.counts.bars)}, tulfoglalas ${String(pan.counts.overloads)}` +
-          ` | pasztazas ${(pan.missedShare * 100).toFixed(1)}% leghosszabb ${pan.longestFrameMs.toFixed(0)} ms` +
-          ` | zoom ${(zoom.missedShare * 100).toFixed(1)}% leghosszabb ${zoom.longestFrameMs.toFixed(0)} ms (csucs ${zoom.peakFactor.toFixed(2)}x)`,
+        `${name} #${String(rep + 1)}: load bars ${String(pan.counts.bars)}, overloads ${String(pan.counts.overloads)}` +
+          ` | pan ${(pan.missedShare * 100).toFixed(1)}% longest ${pan.longestFrameMs.toFixed(0)} ms` +
+          ` | zoom ${(zoom.missedShare * 100).toFixed(1)}% longest ${zoom.longestFrameMs.toFixed(0)} ms (peak ${zoom.peakFactor.toFixed(2)}x)`,
       );
     }
   }
@@ -216,4 +217,4 @@ const git = spawnSync("git", ["rev-parse", "--short", "HEAD"], { cwd: repoRoot, 
 report.commit = git.status === 0 ? git.stdout.trim() : null;
 const out = join(docsDir, ".bench-resources.json");
 writeFileSync(out, `${JSON.stringify(report, null, 2)}\n`);
-console.log(`riport: ${out}`);
+console.log(`report: ${out}`);

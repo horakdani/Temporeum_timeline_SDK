@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.0.0 — not yet published
+## 1.0.0 — Unreleased
 
-The first release, on 1.0.0 of `@temporeum/timeline-element`. From here on the package follows [semantic versioning](https://github.com/horakdani/temporeum-timeline/blob/main/packages/docs/site/pages/stability.md).
+The first release, on 1.0.0 of `@temporeum/timeline-element`. From here on the package follows [semantic versioning](https://github.com/horakdani/Temporeum_timeline_SDK/blob/main/packages/docs/site/pages/stability.md).
 
 - `<Timeline>` and `useTimelineState` for Vue 3: every `TimelineConfig` field as an attribute, every instance event as an emit (`TIMELINE_EVENTS` of the element), `ready` with the instance.
 - Server-rendered by Vue's own renderer (Nuxt included) and hydrated without a second drawing.

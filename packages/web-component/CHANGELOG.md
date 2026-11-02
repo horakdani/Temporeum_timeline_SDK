@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.0.0 — not yet published
+## 1.0.0 — Unreleased
 
-The first release, on 1.0.0 of `@temporeum/timeline-core`. From here on the package follows [semantic versioning](https://github.com/horakdani/temporeum-timeline/blob/main/packages/docs/site/pages/stability.md): nothing public is removed before 2.0.
+The first release, on 1.0.0 of `@temporeum/timeline-core`. From here on the package follows [semantic versioning](https://github.com/horakdani/Temporeum_timeline_SDK/blob/main/packages/docs/site/pages/stability.md): nothing public is removed before 2.0.
 
 ### The timeline
 
@@ -22,6 +22,8 @@ The first release, on 1.0.0 of `@temporeum/timeline-core`. From here on the pack
   - labels: `labelOverflow`, `maxLabels`, `formatTick`;
   - touch: `touchAction` (`"cooperative"` leaves the page's scroll to the page);
   - editing: move, resize, snap, `snapOrigin`, `minDurationMs`, `crossLane`, `canMove`.
+
+- `axisContext` (on by default): the month, year or day the view is in, at the start of the axis.
 
 ### Plugins
 
@@ -51,4 +53,4 @@ A plain timeline downloads only what it uses. The rest is a plugin on an entry p
 
 ### Packaging
 
-- ESM and CommonJS builds, the `/define` subpath, and a self-contained UMD file for a `<script>` tag. MIT, published with npm provenance.
+- ESM and CommonJS builds, the `/define` subpath, and a self-contained, minified UMD file for a `<script>` tag. MIT, published with npm provenance.

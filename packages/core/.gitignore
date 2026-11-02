@@ -1,4 +1,4 @@
-# A G-ORIENT kapu futasideju bizonyiteka: minden futasnal ujragenerálódik.
+# Run-time evidence of the checks: regenerated on every run.
 .orientation-report.json
 .property-report*.json
 .visual-report.json

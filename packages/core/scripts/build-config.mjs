@@ -1,25 +1,27 @@
-// A mag rollup-konfigurációjának gyára — a belépési pontokat az entries.json
-// adja, nem ez a fájl.
+// The factory for the core's rollup configuration — the entry points come
+// from entries.json, not from this file.
 //
-// Miért gyár, és miért nem elég a rollup.config.mjs. A G-TREESHAKE
-// (scripts/sdk_check_treeshake.mjs) egy kis mintacsomagot is EZZEL a gyárral
-// épít, hogy a közös darabolást a kiadott build mechanizmusán bizonyítsa —
-// akkor is, amikor a valódi belépési pontok épp nem osztanak meg kódot. Ha a
-// minta saját konfigurációval épülne, a check a saját konfigurációját
-// bizonyítaná, nem a miénket.
+// Why a factory, and why rollup.config.mjs alone is not enough. The
+// G-TREESHAKE check (scripts/sdk_check_treeshake.mjs) builds a small sample
+// package with THIS factory as well, to prove the shared chunking on the
+// mechanism of the shipped build — even when the real entry points happen not
+// to share code. If the sample were built with a configuration of its own, the
+// check would prove that configuration, not ours.
 //
-// Három kimenet:
+// Three outputs:
 //
-//  - ESM és CJS EGY többbemenetes buildben, közös darabokkal (`chunks/`).
-//    Egy belépési pont, amely a mag kódját használja, azt importálja, nem
-//    másolja: két belépési pont együttes fogyasztója a közös kódot egyszer
-//    kapja meg. A darabnevek hash nélküliek, hogy a dist determinisztikus
-//    legyen (a fingerprint és a G-DEPS a fájlneveket olvassa).
-//  - UMD belépési pontonként önállóan: egy <script> tag nem tud darabot
-//    betölteni, ezért ott a duplikáció az ára az egyfájlos használatnak.
+//  - ESM and CJS in ONE multi-input build, with shared chunks (`chunks/`).
+//    An entry point that uses the core's code imports it rather than copying
+//    it: a consumer of two entry points gets the shared code once. Chunk
+//    names carry no hash, so that dist is deterministic (the fingerprint and
+//    the G-DEPS check read the file names).
+//  - UMD standalone per entry point: a <script> tag cannot load a chunk, so
+//    there duplication is the price of single-file use.
 //
-// Az `external` SZÁNDÉKOSAN üres: a magnak nulla futásidejű függősége van.
+// `external` is empty ON PURPOSE: the core has zero runtime dependencies.
 import typescript from "@rollup/plugin-typescript";
+
+import { minifyUmd } from "./minify-umd.mjs";
 
 /**
  * @param {{
@@ -27,14 +29,14 @@ import typescript from "@rollup/plugin-typescript";
  *   banner: string;
  *   tsconfig: string;
  *   split?: boolean;
- * }} options `split: false` a darabolás nélküli, belépési pontonként önálló
- *   ESM/CJS buildet adja — ez a G-TREESHAKE negatív kontrollja, nem kiadási mód.
+ * }} options `split: false` gives the unchunked ESM/CJS build, standalone
+ *   per entry point — the negative control of G-TREESHAKE, not a release mode.
  */
 export function createConfig({ entries, banner, tsconfig, split = true }) {
   const ts = () =>
     typescript({
       tsconfig,
-      // A .d.ts-eket a `build:types` lépés írja ki; a rollup csak kódot gyárt.
+      // The `build:types` step writes the .d.ts files; rollup only produces code.
       compilerOptions: {
         declaration: false,
         declarationMap: false,
@@ -43,14 +45,14 @@ export function createConfig({ entries, banner, tsconfig, split = true }) {
       },
     });
 
-  // A megőrzött (`/*!`) licencfejléc csak az alap belépési pont fájljában áll;
-  // a többi ESM/CJS fájl ugyanezt sima megjegyzésként kapja, amit a
-  // minifikáló eldob. A minifikálók minden `/*!`-t megőriznek, amit a bundle
-  // érint, így egy fogyasztó a fejlécet annyiszor fizetné meg, ahány fájlunkat
-  // betölti — a /dom önálló mérésén ez 22 bájt volt a 4 kB-os kereten. A
-  // licenc nem vész el: egy nem-alap belépési pont a magot az alapból
-  // importálja, és az alap fejlécét a bundle megőrzi. Az önálló UMD-k a saját
-  // fejlécüket tartják.
+  // The preserved (`/*!`) license header sits only in the base entry point's
+  // file; the other ESM/CJS files get the same text as a plain comment, which
+  // the minifier drops. Minifiers keep every `/*!` the bundle touches, so a
+  // consumer would pay for the header as many times as it loads one of our
+  // files — on the standalone /dom measurement that was 22 bytes of the 4 kB
+  // budget. The license is not lost: a non-base entry point imports the core
+  // from the base, and the bundle keeps the base's header. The standalone UMDs
+  // keep their own header.
   const plainBanner = banner.replace(/^\/\*!/, "/*");
   const modular = (format, ext) => ({
     format,
@@ -69,20 +71,24 @@ export function createConfig({ entries, banner, tsconfig, split = true }) {
       file: `dist/${entry.name}.umd.js`,
       format: "umd",
       name: entry.umd,
-      sourcemap: true,
+      // The script-tag build, minified: the ESM and CommonJS builds carry
+      // the maps, and are the ones a bundler reads.
+      sourcemap: false,
       exports: "named",
       banner,
+      plugins: [minifyUmd()],
     },
     plugins: [ts()],
   });
 
-  // Hová kerül egy modul. A szabály: egy nem-alap belépési pont SAJÁT kódja a
-  // saját mappájában van (`src/<név>/`), minden más a mag, és a mag kódja az
-  // alap belépési pont (`index`) fájljában marad. Így az alap önálló fogyasztója
-  // ugyanazt az egy fájlt kapja, mint a darabolás előtt (egy külön közös darab
-  // határa a magon 100, a /dom-on 20 bájtot vitt el), a többi belépési pont
-  // pedig a magot az indexből importálja, nem másolja. Két nem-alap belépési
-  // pont közös kódjából a rollup magától csinál darabot (`chunks/`).
+  // Where a module goes. The rule: a non-base entry point's OWN code is in its
+  // own folder (`src/<name>/`), everything else is the core, and the core's
+  // code stays in the base entry point's (`index`) file. So a consumer of the
+  // base alone gets the same single file as before chunking (the boundary of a
+  // separate shared chunk cost 100 bytes on the core and 20 on /dom), and the
+  // other entry points import the core from index rather than copying it.
+  // Rollup makes a chunk (`chunks/`) of two non-base entry points' shared code
+  // on its own.
   const base = entries.find((entry) => entry.name === "index");
   const ownDirs = entries
     .filter((entry) => entry !== base)
@@ -95,11 +101,11 @@ export function createConfig({ entries, banner, tsconfig, split = true }) {
           const srcAt = rel.lastIndexOf("/src/");
           if (srcAt === -1) return undefined;
           const local = rel.slice(srcAt + 1);
-          // A `src/shared/` ket nem-alap belepesi pont kozos kodja (P32: a /live
-          // es a /tools, a /words es az /intl): se nem az alape, se nem
-          // egyikuk sajatja — a rollup kozos darabot csinal belole, igy az
-          // alap nem hizik tole (G-SIZE), es egyik fogyasztoja sem kapja a
-          // masik sajat kodjat (G-TREESHAKE).
+          // `src/shared/` is code shared by two non-base entry points (/live
+          // and /tools, /words and /intl): it belongs neither to the base nor
+          // to either of them — rollup makes a shared chunk of it, so the base
+          // does not grow from it (G-SIZE), and neither consumer gets the
+          // other's own code (G-TREESHAKE).
           if (local.startsWith("src/shared/")) return undefined;
           return ownDirs.some((dir) => local.startsWith(dir)) ? undefined : "index";
         };
@@ -109,14 +115,14 @@ export function createConfig({ entries, banner, tsconfig, split = true }) {
         {
           input: Object.fromEntries(entries.map((entry) => [entry.name, entry.input])),
           external: [],
-          // A belépési pontok aláírása SZIGORÚ: egy belépési pont pontosan a
-          // publikus felületét exportálja, semmi többet. Ha egy másik belépési
-          // pont belső kódot használ a magból (a /dom a formatNumbert), a
-          // rollup a mag kódját egy `chunks/index` darabba teszi, és az
-          // index.mjs csak továbbexportál. Az `allow-extension` ezt a határt
-          // megspórolná, de a mag névterébe belső neveket tenne — a P16-ban
-          // az ESM egy `f`-et, a CJS a `formatNumber`-t tette ki, és a
-          // G-ENTRIES (ESM = CJS = UMD) ezen bukott.
+          // The entry points' signature is STRICT: an entry point exports
+          // exactly its public surface, nothing more. If another entry point
+          // uses internal code from the core (/dom uses formatNumber), rollup
+          // puts the core's code in a `chunks/index` chunk, and index.mjs only
+          // re-exports. `allow-extension` would save that boundary, but it
+          // would put internal names in the core's namespace — when the entry
+          // points were split, ESM exposed an `f` and CJS `formatNumber`, and
+          // G-ENTRIES (ESM = CJS = UMD) failed on it.
           output: [
             { ...modular("es", "mjs"), manualChunks },
             { ...modular("cjs", "cjs"), manualChunks },

@@ -30,13 +30,13 @@ import {
 const DAY = 86_400_000;
 const T0 = Date.UTC(2026, 0, 1);
 const items: Item[] = [
-  { id: "a", start: T0, end: T0 + 4 * DAY, label: "Tervezés", laneId: "l1" },
-  { id: "b", start: new Date(T0 + 6 * DAY), end: new Date(T0 + 9 * DAY), label: "Építés </script><b>", laneId: "l2" },
-  { id: "c", start: T0 + 12 * DAY, label: "Mérföldkő", laneId: "l1" },
+  { id: "a", start: T0, end: T0 + 4 * DAY, label: "Planning", laneId: "l1" },
+  { id: "b", start: new Date(T0 + 6 * DAY), end: new Date(T0 + 9 * DAY), label: "Building </script><b>", laneId: "l2" },
+  { id: "c", start: T0 + 12 * DAY, label: "Milestone", laneId: "l1" },
 ];
 const lanes = [
-  { id: "l1", label: "Munka" },
-  { id: "l2", label: "Szállítás" },
+  { id: "l1", label: "Work" },
+  { id: "l2", label: "Delivery" },
 ];
 
 describe("importing in Node", () => {
@@ -164,7 +164,7 @@ describe("serializeConfig and renderTimelineHtml", () => {
     // The only </script> is the script's own end.
     expect(html.split("</script>")).toHaveLength(2);
     expect(script).toContain("\\u003c/script>");
-    expect(JSON.parse(script.slice(script.indexOf(">") + 1, -9))).toMatchObject({ items: [{ id: "a" }, { label: "Építés </script><b>" }, { id: "c" }] });
+    expect(JSON.parse(script.slice(script.indexOf(">") + 1, -9))).toMatchObject({ items: [{ id: "a" }, { label: "Building </script><b>" }, { id: "c" }] });
   });
 
   it("escapes U+2028 and U+2029, which end a line in a script", () => {
@@ -203,7 +203,7 @@ describe("configFromAttributes", () => {
           theme: "dark",
           locale: "hu",
           "time-zone": "Europe/Budapest",
-          label: "Projekt",
+          label: "Project",
           start: "2026-01-01T00:00:00Z",
           end: String(T0 + 30 * DAY),
           height: "320",
@@ -221,7 +221,7 @@ describe("configFromAttributes", () => {
       theme: "dark",
       locale: "hu",
       timeZone: "Europe/Budapest",
-      ariaLabel: "Projekt",
+      ariaLabel: "Project",
       domain: [T0, T0 + 30 * DAY],
       height: 320,
       breakpoint: 600,

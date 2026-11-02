@@ -86,7 +86,7 @@ describe("placeLabels", () => {
     expect(dropped).toEqual([]);
     expect(kept).toHaveLength(1);
     expect(kept[0]?.placement).toBe("inside");
-    // A hair past the item's start (CLEARANCE, P17), nothing a pixel shows.
+    // A hair past the item's start (CLEARANCE), nothing a pixel shows.
     expect(kept[0]?.box.main).toBeCloseTo(100, 5);
     expect(kept[0]?.box.mainSize).toBeCloseTo(measure("Alpha").main);
   });
@@ -105,7 +105,7 @@ describe("placeLabels", () => {
   });
 
   it("gives the label up when neither placement fits on screen", () => {
-    const { kept, dropped } = place([candidate("a", MAIN_SIZE - 6, 4, "Egy nagyon hosszú címke")]);
+    const { kept, dropped } = place([candidate("a", MAIN_SIZE - 6, 4, "A very long label indeed")]);
     expect(kept).toEqual([]);
     expect(dropped).toEqual([{ id: "a", reason: "no-room" }]);
   });
@@ -309,7 +309,7 @@ describe("placeLabels across the lane axis", () => {
   // Under `overflow: "drop"`, the behaviour before 1.0.0-rc.5; the default
   // shortens instead, below.
   it("gives up a label that is too wide for the lane, in either placement", () => {
-    const long = "Egy nagyon hosszú megnevezés, ami biztosan nem fér el";
+    const long = "A very long description that will certainly not fit";
     expect(verticalMeasure(long).cross).toBeGreaterThan(vertical.rowSize);
     // Not inside a tall item...
     expect(placeVertical(long, 400).dropped).toEqual([{ id: "a", reason: "no-room" }]);
@@ -319,7 +319,7 @@ describe("placeLabels across the lane axis", () => {
   });
 
   it("shortens a label too wide for the lane to what fits across it, by default", () => {
-    const long = "Egy nagyon hosszú megnevezés, ami biztosan nem fér el";
+    const long = "A very long description that will certainly not fit";
     for (const mainSize of [400, 2]) {
       const { kept, dropped } = placeVertical(long, mainSize, "ellipsis");
       expect(dropped).toEqual([]);
@@ -337,13 +337,13 @@ describe("placeLabels across the lane axis", () => {
   });
 
   it("keeps a label that fits across the lane", () => {
-    const { kept } = placeVertical("Kutatás", 400);
+    const { kept } = placeVertical("Research", 400);
     expect(kept).toHaveLength(1);
     expect(kept[0]?.box.crossSize).toBeLessThanOrEqual(vertical.rowSize);
   });
 
   it("never lets a drawn label leave its lane", () => {
-    const { kept } = placeVertical("Kutatás", 2);
+    const { kept } = placeVertical("Research", 2);
     for (const label of kept) {
       expect(label.box.cross).toBeGreaterThanOrEqual(0);
       expect(label.box.cross + label.box.crossSize).toBeLessThanOrEqual(vertical.rowSize);

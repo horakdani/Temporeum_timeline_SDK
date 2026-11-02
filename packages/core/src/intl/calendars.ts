@@ -289,6 +289,24 @@ function labelFormat(locale: string, calendar: string | undefined, timeZone: str
 export function calendarTickLabel(locale: string, calendar?: string): (tick: Tick, timeZone: string) => string {
   return (tick, timeZone) => {
     const as = (kind: string, options: Intl.DateTimeFormatOptions): string => labelFormat(locale, calendar, timeZone, kind, options).format(tick.time);
+    if (tick.context === true) {
+      // The axis's context label: the coarser unit, in the calendar's words.
+      switch (tick.granularity) {
+        case "millisecond":
+          return as("s", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        case "second":
+          return as("cs", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+        case "minute":
+        case "hour":
+          return as("cd", { year: "numeric", month: "short", day: "numeric" });
+        case "day":
+          return as("cm", { year: "numeric", month: "long" });
+        case "month":
+          return as("y", { year: "numeric" });
+        default:
+          return "";
+      }
+    }
     switch (tick.granularity) {
       case "millisecond":
         return as("ms", { second: "2-digit", fractionalSecondDigits: 3 });

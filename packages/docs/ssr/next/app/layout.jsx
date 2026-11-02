@@ -1,4 +1,4 @@
-export const metadata = { title: "Idővonal — Next smoke" };
+export const metadata = { title: "Timeline — Next smoke" };
 
 export default function RootLayout({ children }) {
   return (

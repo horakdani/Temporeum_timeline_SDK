@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /**
- * A szerveroldali proba: a LEFORDITOTT csomag fut-e DOM nelkul.
+ * The server-side probe: does the BUILT package run without a DOM.
  *
- * Kulon processzben indul, mert a lenyeg a kiindulo allapot: itt nincs DOM,
- * es a DOM-szeru globalok NEM egyszeruen hianyoznak, hanem dobnak. Igy ha a
- * csomag barhol hozzaernek — betoltesnel vagy egy teljes tengely-szamitas
- * kozben —, az nem csendes undefined, hanem bukas.
+ * It starts in a separate process, because the starting state is the point:
+ * here there is no DOM, and the DOM-like globals do NOT simply go missing,
+ * they throw. So if the package touches them anywhere — while loading or in
+ * the middle of a full axis computation —, the result is not a silent
+ * undefined but a failure.
  *
- * Hasznalat: node scripts/sdk_nodom_probe.mjs <packages/core utvonal>
+ * Usage: node scripts/sdk_nodom_probe.mjs <packages/core path>
  */
 
 import { createRequire } from "node:module";
@@ -18,21 +19,22 @@ import { pathToFileURL } from "node:url";
 const packageDir = resolve(process.argv[2] ?? ".");
 const esmBundle = join(packageDir, "dist", "index.mjs");
 const cjsBundle = join(packageDir, "dist", "index.cjs");
-// A P4 bongeszo-kotese. Kulon belepesi pont, es pont azert kell itt is
-// megprobalni: egy SSR-bundler behuzhatja (egy komponens importalja), es ha
-// az IMPORT barmit a DOM-tol kerdez, a szerver hibaval valaszol a kezdolapra.
+// The browser binding. It is a separate entry point, and that is exactly why
+// it must be tried here too: an SSR bundler may pull it in (a component
+// imports it), and if the IMPORT asks the DOM for anything, the server
+// answers the home page with an error.
 const domEsmBundle = join(packageDir, "dist", "dom.mjs");
 const domCjsBundle = join(packageDir, "dist", "dom.cjs");
 
 for (const bundle of [esmBundle, cjsBundle, domEsmBundle, domCjsBundle]) {
   if (!existsSync(bundle)) {
-    console.error(`  HIBA nincs lefordított csomag: ${bundle}`);
-    console.error("\nG-NODOM BUKOTT: a szerveroldali próba NEM futott le.");
+    console.error(`  ERROR no built package: ${bundle}`);
+    console.error("\nG-NODOM FAILED: the server-side probe did NOT run.");
     process.exit(1);
   }
 }
 
-// --- A globalok elaknasitasa ------------------------------------------------
+// --- Booby-trapping the globals ---------------------------------------------
 
 const POISONED = [
   "window",
@@ -51,24 +53,24 @@ for (const name of POISONED) {
     Object.defineProperty(globalThis, name, {
       configurable: true,
       get() {
-        throw new Error(`a mag hozzáért a(z) \`${name}\` globálhoz`);
+        throw new Error(`the core touched the \`${name}\` global`);
       },
     });
     armed.push(name);
   } catch {
-    // Egy-egy globált az engine nem engedi felülírni; ezt kiírjuk, nem
-    // elhallgatjuk.
+    // The engine does not allow overriding some globals; we report that, we
+    // do not hide it.
   }
 }
 
 for (const name of REQUIRED_POISON) {
   if (!armed.includes(name)) {
-    console.error(`  HIBA a(z) \`${name}\` globált nem sikerült elaknásítani — a próba értéktelen`);
+    console.error(`  ERROR could not booby-trap the \`${name}\` global — the probe is worthless`);
     process.exit(1);
   }
 }
 
-// --- A proba ----------------------------------------------------------------
+// --- The probe --------------------------------------------------------------
 
 function assert(condition, message) {
   if (!condition) {
@@ -80,10 +82,10 @@ function exercise(api, label) {
   const domain = [Date.UTC(2025, 0, 1), Date.UTC(2026, 0, 1)];
   const scale = api.createTimeScale(domain, 1200);
   const ticks = api.generateTicks(domain, 1200, { timeZone: "Europe/Budapest" });
-  assert(ticks.length > 3, `${label}: a tengely üres`);
+  assert(ticks.length > 3, `${label}: the axis is empty`);
   assert(
     ticks.every((tick) => tick.time >= domain[0] && tick.time <= domain[1]),
-    `${label}: tick a domainen kívül`,
+    `${label}: a tick outside the domain`,
   );
 
   const projector = api.createProjector("vertical");
@@ -93,24 +95,24 @@ function exercise(api, label) {
     cross: 0,
     crossSize: 24,
   });
-  assert(box.height === 2 && box.width === 24, `${label}: a függőleges projekció elcsúszott`);
+  assert(box.height === 2 && box.width === 24, `${label}: the vertical projection is off`);
 
   const zoomed = api.zoomDomainAt(domain, 1200, 600, 4);
   assert(
     Math.abs(api.createTimeScale(zoomed, 1200).toTime(600) - scale.toTime(600)) < 1,
-    `${label}: a zoom nem a fókuszhoz horgonyzott`,
+    `${label}: the zoom is not anchored to the focus`,
   );
-  assert(api.startOf(domain[0], "year", "UTC") === domain[0], `${label}: startOf hibás`);
-  assert(typeof api.VERSION === "string", `${label}: nincs VERSION`);
+  assert(api.startOf(domain[0], "year", "UTC") === domain[0], `${label}: startOf is wrong`);
+  assert(typeof api.VERSION === "string", `${label}: no VERSION`);
 
-  // A RENDERELES is itt fut le, nem csak a geometria. A P3 allitasa az, hogy a
-  // szerveroldali renderelés ugyanaz a kodut, mint a bongeszoben — ez az
-  // allitas addig csak erv, amig egy elaknasitott DOM-u folyamatban le nem fut
-  // egy teljes frame.
+  // RENDERING runs here too, not just the geometry. The claim is that
+  // server-side rendering takes the same code path as in the browser — and
+  // that claim is only an argument until a full frame has run in a process
+  // with a booby-trapped DOM.
   const frame = api.renderTimeline({
     items: [
-      { id: "a", start: domain[0], end: domain[0] + 86_400_000 * 40, label: "Szakasz" },
-      { id: "b", start: domain[0] + 86_400_000 * 100, open: true, label: "Nyitott" },
+      { id: "a", start: domain[0], end: domain[0] + 86_400_000 * 40, label: "Stage" },
+      { id: "b", start: domain[0] + 86_400_000 * 100, open: true, label: "Open" },
     ],
     domain,
     width: 1200,
@@ -120,44 +122,44 @@ function exercise(api, label) {
     timeZone: "Europe/Budapest",
     decorations: [
       { kind: "banding" },
-      { kind: "now", time: domain[0] + 86_400_000 * 50, label: "most" },
+      { kind: "now", time: domain[0] + 86_400_000 * 50, label: "now" },
     ],
   });
   const svg = api.renderToSvgString(frame.scene);
-  assert(svg.startsWith("<svg"), `${label}: a renderelés nem SVG-t adott`);
-  assert(svg.includes("tl-item"), `${label}: a frame-ben nincs elem`);
-  assert(svg.includes("tl-now"), `${label}: a frame-ben nincs dekoráció`);
-  assert(svg.includes("--tl-surface:"), `${label}: a frame-ben nincs téma`);
-  assert(frame.visibleCount === 2, `${label}: a culling elvitte a látható elemeket`);
-  assert(api.countSceneNodes(frame.scene) > 10, `${label}: üres jelenet`);
+  assert(svg.startsWith("<svg"), `${label}: rendering did not produce SVG`);
+  assert(svg.includes("tl-item"), `${label}: the frame has no item`);
+  assert(svg.includes("tl-now"), `${label}: the frame has no decoration`);
+  assert(svg.includes("--tl-surface:"), `${label}: the frame has no theme`);
+  assert(frame.visibleCount === 2, `${label}: culling removed the visible items`);
+  assert(api.countSceneNodes(frame.scene) > 10, `${label}: empty scene`);
   return ticks.length;
 }
 
 try {
   const esm = await import(pathToFileURL(esmBundle).href);
   const esmTicks = exercise(esm, "ESM");
-  console.log(`  ok   dist/index.mjs: betöltve és lefutott DOM nélkül (${esmTicks} tick)`);
+  console.log(`  ok   dist/index.mjs: loaded and ran without a DOM (${esmTicks} ticks)`);
 
   const require = createRequire(pathToFileURL(join(packageDir, "package.json")).href);
   const cjs = require(cjsBundle);
   const cjsTicks = exercise(cjs, "CJS");
-  console.log(`  ok   dist/index.cjs: betöltve és lefutott DOM nélkül (${cjsTicks} tick)`);
+  console.log(`  ok   dist/index.cjs: loaded and ran without a DOM (${cjsTicks} ticks)`);
 
   const domEsm = await import(pathToFileURL(domEsmBundle).href);
   assert(
     typeof domEsm.attachInput === "function",
-    "dist/dom.mjs: az attachInput nem jött ki a csomagból",
+    "dist/dom.mjs: attachInput is not exported from the package",
   );
   const domCjs = require(domCjsBundle);
   assert(
     typeof domCjs.attachInput === "function",
-    "dist/dom.cjs: az attachInput nem jött ki a csomagból",
+    "dist/dom.cjs: attachInput is not exported from the package",
   );
-  console.log("  ok   dist/dom.mjs és dist/dom.cjs: betöltve DOM nélkül, importkor semmi nem dob");
+  console.log("  ok   dist/dom.mjs and dist/dom.cjs: loaded without a DOM, nothing throws on import");
 
-  console.log(`  ok   elaknásított globálok: ${armed.join(", ")}`);
+  console.log(`  ok   booby-trapped globals: ${armed.join(", ")}`);
 } catch (error) {
-  console.error(`  HIBA ${error instanceof Error ? error.message : String(error)}`);
-  console.error("\nG-NODOM BUKOTT: a lefordított csomag nem fut DOM nélkül.");
+  console.error(`  ERROR ${error instanceof Error ? error.message : String(error)}`);
+  console.error("\nG-NODOM FAILED: the built package does not run without a DOM.");
   process.exit(1);
 }

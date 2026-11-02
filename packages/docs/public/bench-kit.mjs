@@ -1,18 +1,18 @@
 /*
- * A teljesítmény-mérés közös eszközei: az adat, a gesztusok, a képkocka-
- * számlálás és a forgatókönyvek.
+ * Shared tools for the performance measurements: the data, the gestures, the
+ * frame counting and the scenarios.
  *
- * Két lap használja: a bench.html a mag saját útját méri (G-PERF), a
- * bench-public.html a publikus utat, `createTimeline`-t a shippelt
- * element-bundle-ból (G-PERF-PUBLIC). A P13-ig ez a kód a bench.html-ben
- * élt; azért van most egy helyen, hogy a két mérés ne sodródhasson szét —
- * ugyanaz az adat, ugyanaz az ujj, ugyanaz a számlálás, csak a mért út más.
+ * Two pages use it: bench.html measures the core's own path (G-PERF), and
+ * bench-public.html the public path, `createTimeline` from the shipped
+ * element bundle (G-PERF-PUBLIC). This code used to live in bench.html; it
+ * sits in one place now so the two measurements cannot drift apart — the
+ * same data, the same finger, the same counting, only the measured path differs.
  */
 
-// --- az adat: 10 000 elem, determinisztikusan --------------------------
-// 60 egymásba csúsztatott folyam, 8 napos elemek 10 naponként: a pakolás
-// ~48 sort ad, ami dense sűrűségen kitölti a 900 px-et. A nézet a teljes
-// tartomány ötöde, így ~2000 elem látszik a 10 000-ből.
+// --- the data: 10,000 items, deterministic ----------------------------
+// 60 interleaved streams, 8-day items every 10 days: packing gives ~48 rows,
+// which fills the 900 px at dense density. The view is a fifth of the whole
+// range, so ~2000 of the 10,000 items are visible.
 const DAY = 86_400_000;
 export const START = Date.UTC(2026, 0, 1);
 const STREAMS = 60;
@@ -25,12 +25,12 @@ export function benchItems() {
     const stream = index % STREAMS;
     const round = Math.floor(index / STREAMS);
     const start = START + round * PERIOD + (stream * PERIOD) / STREAMS;
-    items.push({ id: `e${index}`, start, end: start + LENGTH, label: `Elem ${index}` });
+    items.push({ id: `e${index}`, start, end: start + LENGTH, label: `Item ${index}` });
   }
   return items;
 }
 
-/** A kiinduló nézet: a teljes tartomány második ötöde. */
+/** The starting view: the second fifth of the whole range. */
 export function benchDomain(items) {
   const total = items[items.length - 1].end - START;
   return [START + total * 0.2, START + total * 0.4];
@@ -40,19 +40,19 @@ export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 export const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
 
 /**
- * A mérőeszközök egy kerethez.
+ * The measuring tools for one frame element.
  *
- * `counters()` adja a hurok két számát: hány rajzolást kértek (`requests`)
- * és hányat rajzolt (`frames`) — ebből látszik, hogy a bemenet képkockánként
- * össze van vonva. `settleAt(domain)` a lap saját útján állítja be a nézetet,
- * és megvárja, hogy kirajzolódjon.
+ * `counters()` gives the loop's two numbers: how many draws were requested
+ * (`requests`) and how many it drew (`frames`) — this shows that input is
+ * coalesced per frame. `settleAt(domain)` sets the view through the page's
+ * own path and waits for it to be drawn.
  */
 export function createBenchKit({ frame, counters, settleAt, origin }) {
   const H = () => frame.clientHeight;
   const W = () => frame.clientWidth;
   let dispatched = 0;
 
-  /** A böngésző szerint TÉNYLEG látható elemek és címkék — nem a renderelő szerint. */
+  /** The items and labels ACTUALLY visible according to the browser — not according to the renderer. */
   function visibility() {
     const box = frame.getBoundingClientRect();
     const inside = (rect) =>
@@ -89,9 +89,9 @@ export function createBenchKit({ frame, counters, settleAt, origin }) {
   }
 
   /**
-   * Egy gesztus 120 Hz-es digitalizálóval. A pozíció az eltelt IDŐBŐL
-   * számol, nem a képkockákból — ahogy egy valódi ujj is halad, akkor is,
-   * ha a lap lemarad. `path(u)` az u ∈ [0, 1] helyhez adja az ujjakat.
+   * One gesture with a 120 Hz digitizer. The position is computed from the
+   * elapsed TIME, not from frames — the way a real finger keeps moving even
+   * when the page falls behind. `path(u)` gives the fingers for u ∈ [0, 1].
    */
   async function performGesture(durationMs, path) {
     const frames = [];
@@ -114,15 +114,15 @@ export function createBenchKit({ frame, counters, settleAt, origin }) {
       };
       setTimeout(tick, 8);
     });
-    // Az utolsó gesztus-képkocka még kirajzolódik, mielőtt az ujj felemelkedik.
+    // The last gesture frame is still drawn before the finger lifts.
     await nextFrame();
     recording = false;
     const end = path(1);
     const upAt = performance.now();
     end.forEach((p, index) => dispatch("pointerup", index + 1, p.x, p.y));
-    // A nyugvó képkocka: a felemelés után a hurok rajzol (elemtérben
-    // újrahorgonyoz, ha volt zoom), és a KÖVETKEZŐ képkocka eleje az, amikor
-    // az már a képernyőn van.
+    // The settle frame: after the lift the loop draws (re-anchoring in item
+    // space if there was a zoom), and the start of the NEXT frame is when that
+    // is on screen.
     await nextFrame();
     await nextFrame();
     const settleMs = performance.now() - upAt;
@@ -154,13 +154,13 @@ export function createBenchKit({ frame, counters, settleAt, origin }) {
     };
   }
 
-  /** Egy ujjas húzás jobbról balra és vissza: 960 px/s, két másodperc. */
+  /** A one-finger drag from right to left and back: 960 px/s, two seconds. */
   const panPath = (u) => {
     const x = u < 0.5 ? 1200 - 1920 * u : 240 + 1920 * (u - 0.5);
     return [{ x, y: H() / 2 }];
   };
 
-  /** Csipesz a közép körül: 200 px-ről 400 px-re (2x) és vissza. */
+  /** A pinch around the centre: from 200 px to 400 px (2x) and back. */
   const pinchPath = (u) => {
     const spread = u < 0.5 ? 200 + 400 * u : 400 - 400 * (u - 0.5);
     const cx = W() / 2;
@@ -171,11 +171,11 @@ export function createBenchKit({ frame, counters, settleAt, origin }) {
   };
 
   /**
-   * Mély csipesz: 100 px-ről 400 px-re (4x) és vissza — a G-PERF-DEEP
-   * forgatókönyve (P14 óta kapu). A 2x-es zoom sem fér az elemtér 1,5x-es
-   * nyújtásába (útközben két-három újrahorgonyzás; a P13-ig itt álló
-   * komment ennek az ellenkezőjét állította), a 4x-es pedig hatot kér:
-   * ez a forgatókönyv azt méri, mibe kerül az újrahorgonyzás.
+   * A deep pinch: from 100 px to 400 px (4x) and back — the G-PERF-DEEP
+   * scenario (a gated check). Even the 2x zoom does not fit into item space's
+   * 1.5x stretch (two or three re-anchors along the way; an earlier comment
+   * here claimed the opposite), and the 4x one needs six: this scenario
+   * measures what re-anchoring costs.
    */
   const deepPinchPath = (u) => {
     const spread = u < 0.5 ? 100 + 600 * u : 400 - 600 * (u - 0.5);
@@ -187,11 +187,10 @@ export function createBenchKit({ frame, counters, settleAt, origin }) {
   };
 
   /**
-   * Hosszú pásztázás, csak tájékoztatásra: négy húzás egymás után, mind
-   * 1200 px balra, 960 px/s-mal — 4800 px, a ráhagyáson messze túl, így a
-   * belépő csempéket a gesztus alatt kell megrajzolni. A húzások között
-   * nincs szünet: a nyugalmi feltöltés csak annyi képkockát kap, amennyi
-   * két húzás közé esik.
+   * A long pan, for information only: four drags in a row, each 1200 px to
+   * the left at 960 px/s — 4800 px, far beyond the overscan, so incoming
+   * tiles have to be drawn during the gesture. There is no pause between the
+   * drags: the idle fill only gets the frames that fall between two drags.
    */
   async function longPan() {
     const runs = [];
@@ -216,21 +215,22 @@ export function createBenchKit({ frame, counters, settleAt, origin }) {
   }
 
   /**
-   * Felvétel kívülről jövő bemenethez (P15, G-PERF-WHEEL): a valódi görgőt a
-   * mérő szkript küldi a Node-ból (`page.mouse.wheel`), ahogy a
-   * vis-összevetés is, így a böngésző saját bemeneti útja is a mérésben van.
-   * A felvétel a rAF-időket, a lapra érkező görgő-eseményeket és a hurok
-   * rajzolásait gyűjti. A `stop()` összegzése ugyanaz, mint a gesztusoké; a
-   * nyugvó képkocka itt a leghosszabb képkocka az utolsó görgő-lépés után
-   * (abban rajzol a lap újra nyugalomban, a görgő-sorozat végét kivárva).
+   * Recording for input that comes from outside (G-PERF-WHEEL): the real
+   * wheel is sent by the measuring script from Node (`page.mouse.wheel`), as
+   * in the vis comparison, so the browser's own input path is part of the
+   * measurement. The recording collects rAF times, the wheel events reaching
+   * the page and the loop's draws. `stop()` summarises the same way as for
+   * gestures; the settle frame here is the longest frame after the last wheel
+   * step (in it the page redraws at rest, after waiting for the wheel burst
+   * to end).
    */
   let recordingNow;
 
   async function startRecording(extras = {}) {
     await settleAt(origin);
-    // A csendes lapról indul, ahogy a vis-összevetés is: ott a mérés a
-    // `ready` után kezdődik (két egymást követő képkocka rajzolás nélkül),
-    // itt is megvárja, hogy a hurok két képkockán át ne rajzoljon.
+    // It starts from a quiet page, as the vis comparison does: there the
+    // measurement begins after `ready` (two consecutive frames without a
+    // draw), and here too it waits until the loop has not drawn for two frames.
     for (let quiet = 0, waited = 0; quiet < 2 && waited < 300; waited += 1) {
       const drawn = counters().frames;
       await nextFrame();
@@ -280,14 +280,14 @@ export function createBenchKit({ frame, counters, settleAt, origin }) {
   }
 
   /**
-   * Egy forgatókönyv. `extras.start()` a mérés elején fut, `extras.end(token)`
-   * a végén, és amit visszaad, a lap saját diagnosztikája (újrahorgonyzás,
-   * leglassabb rajzolások) — a kapu azt nem méri.
+   * One scenario. `extras.start()` runs at the start of the measurement,
+   * `extras.end(token)` at the end, and what it returns is the page's own
+   * diagnostics (re-anchoring, slowest draws) — the check does not measure it.
    */
   async function scenario(name, extras = {}) {
     await settleAt(origin);
     if (name === "pan-labelled") {
-      // A 2x-es nézet, ahol a címkék kiférnek.
+      // The 2x view, where the labels fit.
       const middle = (origin[0] + origin[1]) / 2;
       const half = (origin[1] - origin[0]) / 4;
       await settleAt([middle - half, middle + half]);

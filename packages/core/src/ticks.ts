@@ -34,6 +34,12 @@ export interface Tick {
   readonly granularity: Granularity;
   /** True when the tick also starts the next coarser unit, e.g. midnight for hours. */
   readonly major: boolean;
+  /**
+   * Set on the axis's context label only: not a tick, but the coarser unit
+   * the view starts in — the month of a view of days, the year of a view of
+   * months — held at the start of the axis. `time` is the view's start.
+   */
+  readonly context?: true;
 }
 
 /** How the caller tunes the axis. */

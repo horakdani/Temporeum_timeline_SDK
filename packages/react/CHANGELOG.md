@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.0.0 — not yet published
+## 1.0.0 — Unreleased
 
-The first release, on 1.0.0 of `@temporeum/timeline-element`. From here on the package follows [semantic versioning](https://github.com/horakdani/temporeum-timeline/blob/main/packages/docs/site/pages/stability.md).
+The first release, on 1.0.0 of `@temporeum/timeline-element`. From here on the package follows [semantic versioning](https://github.com/horakdani/Temporeum_timeline_SDK/blob/main/packages/docs/site/pages/stability.md).
 
 - `<Timeline>`: every configuration field a prop, every instance event an `on…` prop (`TIMELINE_EVENTS` of the element); it does not re-render to draw.
 - `useTimelineState(timeline, selector, isEqual?)`: subscribe to the part of the state a component renders, through `useSyncExternalStore`.

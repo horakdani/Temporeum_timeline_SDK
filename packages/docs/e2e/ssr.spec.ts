@@ -2,26 +2,26 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 /**
- * G-SSR: a szerveren renderelt HTML hidratálódik — Next, Nuxt, Astro,
- * SvelteKit, Angular (a P23 óta a Nuxt, a SvelteKit és az Angular a saját
- * keretrendszer-adapterével).
+ * G-SSR: server-rendered HTML hydrates — Next, Nuxt, Astro, SvelteKit,
+ * Angular (Nuxt, SvelteKit and Angular each with their own framework
+ * adapter).
  *
- * A közös konfiguráció a P26 óta jobbról balra és magyar szótárral rajzol
- * (ssr/shared/data.mjs): minden állítás RTL-ben és más nyelven áll.
+ * The shared config draws right to left, with a Hungarian dictionary
+ * (ssr/shared/data.mjs): every claim holds in RTL and in another language.
  *
- * Három állítás keretrendszerenként:
- *  - server-html: a nyers válaszban (JavaScript előtt) ott a rajz, minden
- *    elemével, a kisegítő szerepekkel.
- *  - no-js: kikapcsolt JavaScripttel is látszik és olvasható.
- *  - hydrates: a kliens UGYANAZOKAT a csomópontokat veszi át — egy
- *    betöltés előtt beállított MutationObserver szerint egyetlen svg és
- *    egyetlen elem-csomópont sem tűnik el —, konzolhiba (hidratálási
- *    eltérés) nélkül, és utána egy valódi kattintás kijelöl.
+ * Three claims per framework:
+ *  - server-html: the drawing is in the raw response (before JavaScript),
+ *    with every item and the accessibility roles.
+ *  - no-js: with JavaScript turned off it is still visible and readable.
+ *  - hydrates: the client takes over THE SAME nodes — by a MutationObserver
+ *    set up before the load, not a single svg and not a single item node
+ *    disappears — with no console error (hydration mismatch), and after
+ *    that a real click selects.
  */
 
 interface Target {
   readonly name: string;
-  /** "adapter": a keretrendszer-komponens (window.__tl, #selected); "element": a <temporeum-timeline>. */
+  /** "adapter": the framework component (window.__tl, #selected); "element": the <temporeum-timeline>. */
   readonly kind: "adapter" | "element";
   readonly url: string;
 }
@@ -58,7 +58,7 @@ async function watch(page: Page): Promise<void> {
           const holds = (each: Element): boolean =>
             each.localName === "svg" ||
             each.hasAttribute("data-tl-id") ||
-            // A dependency arrow (P20): the server drew it, the client keeps it.
+            // A dependency arrow: the server drew it, the client keeps it.
             each.hasAttribute("data-tl-dep") ||
             (each.shadowRoot?.querySelector("svg") ?? null) !== null;
           if (node instanceof Element && (holds(node) || [...node.querySelectorAll("*")].some(holds))) {
@@ -96,7 +96,7 @@ async function takeOver(page: Page, url: string, kind: Target["kind"]) {
 
 for (const target of targets) {
   if (target.name === "astro") {
-    test(`[claim:control] @${target.name} NEGATÍV KONTROLL: egy kliens, ami újraírja a markupot, a mérőn bukik`, async ({ page }) => {
+    test(`[claim:control] @${target.name} NEGATIVE CONTROL: a client that rewrites the markup fails the meter`, async ({ page }) => {
       const state = await takeOver(page, new URL("naive/", target.url).href, target.kind);
       expect(state.sawServer).toBe(true);
       // The drawing works — it is just not the server's any more.
@@ -106,28 +106,28 @@ for (const target of targets) {
     });
   }
 
-  test(`[claim:server-html] @${target.name} a nyers HTML-ben ott a rajz`, async ({ request }) => {
+  test(`[claim:server-html] @${target.name} the drawing is in the raw HTML`, async ({ request }) => {
     const html = await (await request.get(target.url)).text();
     expect(html).toContain('role="listbox"');
     expect(html.match(/role="option"/g)).toHaveLength(ITEMS);
     // The Gantt arrows are in the server's drawing, in their layer under the
-    // items: a path per look, naming its arrows (P20, after G-PERF-GANTT).
+    // items: a path per look, naming its arrows.
     const arrows = [...html.matchAll(/data-tl-dep="([^"]*)"/g)].flatMap((match) => (match[1] ?? "").split(" "));
     expect(arrows).toHaveLength(DEPENDENCIES);
     expect(html.indexOf("tl-layer--deps")).toBeLessThan(html.indexOf("tl-layer--items"));
     // The resource view's load is in it too, under the arrows: the load
-    // lanes, the overbooked stretch in red, and its items marked (P22).
+    // lanes, the overbooked stretch in red, and its items marked.
     expect(html.indexOf("tl-layer--load")).toBeGreaterThan(-1);
     expect(html.indexOf("tl-layer--load")).toBeLessThan(html.indexOf("tl-layer--deps"));
     expect(html).toContain("tl-load--over");
     expect(html.match(/tl-item--overbooked/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
-    expect(html).toContain('aria-label="Projekt idővonal"');
-    // P24: az áttekintő sáv és a ragadó sávfejlécek a szerver rajzában.
+    expect(html).toContain('aria-label="Project timeline"');
+    // The overview strip and the sticky lane headers are in the server's drawing.
     expect(html).toContain("tl-layer--minimap");
     expect(html).toContain("data-tl-minimap-window");
     expect(html).toContain("tl-layer--lane-headers");
     if (target.kind === "element") expect(html).toContain('<template shadowrootmode="open">');
-    // P26: jobbról balra, magyar szavakkal — a tükröző csoport és a szótár a szerver rajzában.
+    // Right to left, in Hungarian words — the mirroring group and the dictionary are in the server's drawing.
     expect(html).toContain('dir="rtl"');
     expect(html).toContain("tl-mirror");
     expect(html).toContain("% kész");
@@ -135,7 +135,7 @@ for (const target of targets) {
     expect(html).not.toContain("% done");
   });
 
-  test(`[claim:no-js] @${target.name} JavaScript nélkül is látszik`, async ({ browser }) => {
+  test(`[claim:no-js] @${target.name} visible without JavaScript too`, async ({ browser }) => {
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
     await page.goto(target.url);
@@ -146,7 +146,7 @@ for (const target of targets) {
     await context.close();
   });
 
-  test(`[claim:hydrates] @${target.name} a kliens a szerver csomópontjait veszi át, és él`, async ({ page }) => {
+  test(`[claim:hydrates] @${target.name} the client takes over the server's nodes, and is live`, async ({ page }) => {
     const errors: string[] = [];
     page.on("console", (message) => {
       if (message.type() === "error") errors.push(message.text());
@@ -161,7 +161,7 @@ for (const target of targets) {
 
     await page.locator('[data-tl-id="b"]').click();
     await expect(page.locator('[data-tl-id="b"]')).toHaveAttribute("aria-selected", "true");
-    // The selection, read back through the framework's own store (P23: every adapter).
+    // The selection, read back through the framework's own store (every adapter).
     if (target.kind === "adapter") await expect(page.locator("#selected")).toHaveText("b");
   });
 }

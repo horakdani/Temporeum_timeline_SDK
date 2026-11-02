@@ -6,21 +6,22 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 /**
- * G-ASYNC, igazi böngészőben: gyors zoom közben a megszakított kérések
- * eredménye SOHA nem kerül ki a vászonra.
+ * G-ASYNC, in a real browser: during a fast zoom, the results of aborted
+ * requests NEVER reach the canvas.
  *
- * A lap (public/async.html) egy hamis, késleltetett szervert kérdez, és
- * minden elem a nevében hordja a kérés sorszámát (`@r<n>`). Egy
- * MutationObserver MINDEN valaha beszúrt vagy átírt option nevét rögzíti, nem
- * csak a végállapotot: egy képkockányi szivárgás is nyomot hagy. A teszt a
- * végén összeveti a látott neveket a megszakított kérésekkel.
+ * The page (public/async.html) queries a fake, delayed server, and every
+ * item carries the request's sequence number in its name (`@r<n>`). A
+ * MutationObserver records the name of EVERY option ever inserted or
+ * rewritten, not just the final state: a leak lasting one frame leaves a
+ * trace too. At the end the test compares the names seen with the aborted
+ * requests.
  *
- * Két szerver-viselkedés: amelyik a signalra megszakít, és amelyik NEM tud
- * megszakítani, és az abortált kérésre is válaszol — ez a nehezebb eset, mert
- * ott a válasz tényleg megérkezik, és a betöltőnek kell eldobnia.
+ * Two server behaviours: one that aborts on the signal, and one that CANNOT
+ * abort and answers the aborted request anyway — the harder case, because
+ * there the answer really arrives, and the loader has to drop it.
  *
- * Az összesítés a `.async-browser-log.json`-be kerül; a sdk_check_async.mjs
- * abból ítél, nem a tesztek címéből.
+ * The summary goes to `.async-browser-log.json`; sdk_check_async.mjs judges
+ * from that, not from the test titles.
  */
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -88,12 +89,12 @@ async function fastZoom(page: Page, bursts: number): Promise<void> {
 }
 
 for (const mode of ["abort", "ignore-abort"] as const) {
-  test(`[claim:browser-no-stale] ${mode}: gyors Ctrl+görgős zoom közben egy megszakított kérés eleme sem kerül a vászonra`, async ({ page }) => {
+  test(`[claim:browser-no-stale] ${mode}: during a fast Ctrl+wheel zoom, no item of an aborted request reaches the canvas`, async ({ page }) => {
     await page.goto(`/async.html?latency=250${mode === "ignore-abort" ? "&ignoreAbort=1" : ""}`);
     await idle(page);
     await fastZoom(page, 24);
     await idle(page);
-    // A végén minden kérés lezárul, a későn jövők is.
+    // In the end every request settles, the late ones too.
     await page.waitForTimeout(700);
     const result = await report(page);
     record(mode, result);
@@ -101,13 +102,13 @@ for (const mode of ["abort", "ignore-abort"] as const) {
     expect(result.aborted).toBeGreaterThan(5);
     expect(result.namesSeen).toBeGreaterThan(50);
     if (mode === "ignore-abort") {
-      // Nem üres: az abortált kérések válasza tényleg megérkezett.
+      // Not vacuous: the answers to the aborted requests really arrived.
       expect(result.answeredAfterAbort).toBeGreaterThan(5);
     }
   });
 }
 
-test("[claim:browser-negative-control] NEGATÍV KONTROLL: a mérő egy minden választ megtartó betöltőn szivárgást talál", async ({ page }) => {
+test("[claim:browser-negative-control] NEGATIVE CONTROL: the meter finds a leak in a loader that keeps every answer", async ({ page }) => {
   await page.goto("/async.html?latency=250&ignoreAbort=1&naive=1");
   await idle(page);
   await fastZoom(page, 24);
@@ -119,7 +120,7 @@ test("[claim:browser-negative-control] NEGATÍV KONTROLL: a mérő egy minden v�
   expect(result.leaks.length).toBeGreaterThan(0);
 });
 
-test("[claim:browser-loading-mark] a betöltés a tengelyen látszik, a gyökér aria-busy, és a végén eltűnik", async ({ page }) => {
+test("[claim:browser-loading-mark] loading shows on the axis, the root is aria-busy, and at the end it is gone", async ({ page }) => {
   await page.goto("/async.html?latency=900");
   const svg = page.locator("#frame svg");
   await expect(svg).toHaveAttribute("aria-busy", "true");
@@ -133,7 +134,7 @@ test("[claim:browser-loading-mark] a betöltés a tengelyen látszik, a gyökér
   await expect(page.locator("#frame [role=option]").first()).toBeAttached();
 });
 
-test("[claim:browser-reduced-motion] reduced-motion mellett a betöltés jele áll", async ({ page }) => {
+test("[claim:browser-reduced-motion] with reduced motion the loading mark stands still", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/async.html?latency=900");
   const mark = page.locator("#frame line.tl-loading").first();
@@ -141,7 +142,7 @@ test("[claim:browser-reduced-motion] reduced-motion mellett a betöltés jele á
   expect(await mark.evaluate((node) => getComputedStyle(node).animationName)).toBe("none");
 });
 
-test("[claim:browser-failure] egy elbukott ablak pöttyözve látszik, és az Újra gomb újrakéri", async ({ page }) => {
+test("[claim:browser-failure] a failed window shows dotted, and the Retry button requests it again", async ({ page }) => {
   await page.goto("/async.html?latency=100&fail=1");
   const failed = page.locator("#frame line.tl-loading--failed").first();
   await expect(failed).toBeAttached();

@@ -1,62 +1,64 @@
 #!/usr/bin/env node
 /**
- * A touch-action meres a valodi Mobile Safariban (P31, a G-E2E-TOUCH-WEBKIT
- * fele).
+ * The touch-action measurement in real Mobile Safari (half of the
+ * G-E2E-TOUCH-WEBKIT check).
  *
- * Miert kell. A Playwright WebKitje macOS-en fut, az iOS UIKit-retege nelkul:
- * ott az erintes nem gorgeti a lapot — `touch-action: none`, `pan-y` es
- * `auto` mellett is `scrollY` 0 marad, `pointercancel` sem jon (2026-10-31,
- * mérve). Arrol tehat, hogy a `touch-action` iOS-en tenyleg megallitja-e a
- * lapgorgetest, ott semmit nem lehet megtudni: a pozitiv allitas uresen
- * menne at, es egy negativ kontroll sem bukna. Ezt csak az a WebKit tudja,
- * amelyik a gorgetest is csinalja: az iOS-szimulator Mobile Safarija.
+ * Why it is needed. Playwright's WebKit runs on macOS, without iOS's UIKit
+ * layer: there a touch does not scroll the page — with `touch-action: none`,
+ * `pan-y` and `auto` alike, `scrollY` stays 0, and no `pointercancel` arrives
+ * either (measured, 2026-10-31). So nothing can be learned there about whether
+ * `touch-action` really stops page scrolling on iOS: the positive claim would
+ * pass vacuously, and no negative control would fail. Only the WebKit that
+ * also does the scrolling can tell: the iOS simulator's Mobile Safari.
  *
- * Hogyan. Az Xcode iOS-szimulatoraban (iPhone es iPad), a safaridriver
- * W3C WebDriveren at (fuggoseg nelkul, `fetch`-csel), `pointerType: "touch"`
- * akciokkal. A lap a SHIPPELT dist-et futtatja (`e2e/serve.mjs`, a
- * Chromium-keszlet demo lapja). Minden proba:
+ * How. In Xcode's iOS simulator (iPhone and iPad), over safaridriver's W3C
+ * WebDriver (no dependencies, with `fetch`), with `pointerType: "touch"`
+ * actions. The page runs the SHIPPED dist (`e2e/serve.mjs`, the Chromium
+ * suite's demo page). Every trial:
  *
- *  - friss safaridriver-munkamenet, friss Safari (a proba egyszer fut,
- *    ujraprobalas nincs);
- *  - a lap betoltese utan 1,5 s: az elso erintes ennel korabban
- *    nem-determinisztikusan elveszett (mérve, P31);
- *  - a lap az allapotat `sendBeacon`-nel egy gyujtonek kuldi. Ez nem
- *    kenyelem: amikor a natív gorgetes atveszi az erintest, a safaridriver a
- *    szintetikus felengedesre var, es tobbe nem valaszol (mérve: pontosan a
- *    gorgeto probakban). Az allapot ezert nem a WebDriveren jon vissza; a
- *    beragadas a proba lebontasaval er veget, es a riportba kerul.
+ *  - a fresh safaridriver session, a fresh Safari (each trial runs once,
+ *    there are no retries);
+ *  - 1.5 s after the page loads: a first touch earlier than that was lost
+ *    non-deterministically (measured);
+ *  - the page sends its state to a collector with `sendBeacon`. This is not
+ *    a convenience: when native scrolling takes over the touch, safaridriver
+ *    waits for the synthetic release and never answers again (measured:
+ *    exactly in the scrolling trials). So the state does not come back over
+ *    WebDriver; a hang ends when the trial is torn down, and it goes into
+ *    the report.
  *
- * A probak (mindket eszkozon):
+ * The trials (on both devices):
  *
- *  1. none:        fuggoleges huzas az idovonalon — a lap NEM gorog, az
- *                  idovonal pasztaz (a Chromium-keszlet "touch-action tenyleg
- *                  szól" allitasa);
- *  2. edge:        ugyanez az idovonal szelen tul folytatva — a gesztus
- *                  vegig az idovonale, a lap akkor sem gorog
- *                  (overscroll-behavior / gorgetes-elnyeles);
- *  3. cooperative: `touch-action: pan-y` — a lap gorog, es a bongeszo
- *                  ELVESZI a gesztust: valodi `pointercancel`, a gesztus
- *                  `:cancelled`-del zarul (a passziv viselkedes: a
- *                  konyvtar figyeloi nem tartjak vissza a gorgetest);
- *  5. longpress:   hosszu nyomas (700 ms) egy elemen, majd huzas — az elem
- *                  mozdul, az iOS nem veszi el (callout, nagyito,
- *                  kijeloles: nincs pointercancel), a lap nem gorog;
+ *  1. none:        a vertical drag on the timeline — the page does NOT
+ *                  scroll, the timeline pans (the Chromium suite's
+ *                  "touch-action really applies" claim);
+ *  2. edge:        the same, continued past the timeline's edge — the
+ *                  gesture belongs to the timeline throughout, and the page
+ *                  does not scroll then either (overscroll-behavior /
+ *                  scroll swallowing);
+ *  3. cooperative: `touch-action: pan-y` — the page scrolls, and the browser
+ *                  TAKES the gesture: a real `pointercancel`, and the gesture
+ *                  ends with `:cancelled` (the passive behaviour: the
+ *                  library's listeners do not hold back scrolling);
+ *  5. longpress:   a long press (700 ms) on an item, then a drag — the item
+ *                  moves, iOS does not take it (callout, magnifier,
+ *                  selection: no pointercancel), and the page does not scroll;
  *
- * Ami itt NEM merheto: a ket ujjas csipes. A safaridriver ket egyideju
- * `touch` pointer-forrasabol iOS-en egyetlen erintes lesz (mérve, P31: egy
- * pointerdown, a csipes helyett pasztazas, es a `touch-action: auto`-s
- * kontroll sem nagyitotta a lapot — a kontroll nem harapott). Hogy a csipes
- * a lap helyett az idovonalat nagyitja-e, azt valodi iOS-en senki nem merte;
- * a csipes gesztus-allitasa a Playwright WebKitben mérve.
- *  4. control:     NEGATIV KONTROLL — ugyanaz a huzas, mint az 1-ben, de a
- *                  gyokerre `touch-action: auto` kerul: a lapnak gorognie
- *                  KELL. Ha nem gorog, a meres vak, es az 1. zoldje semmit
- *                  nem bizonyit.
+ * What CANNOT be measured here: the two-finger pinch. On iOS, safaridriver
+ * turns two simultaneous `touch` pointer sources into a single touch
+ * (measured: one pointerdown, a pan instead of a pinch, and the control with
+ * `touch-action: auto` did not zoom the page either — the control did not
+ * bite). Whether a pinch zooms the timeline instead of the page has not been
+ * measured on real iOS; the pinch gesture claim is measured in Playwright's WebKit.
+ *  4. control:     NEGATIVE CONTROL — the same drag as in 1, but the root
+ *                  gets `touch-action: auto`: the page MUST scroll. If it
+ *                  does not, the measurement is blind, and the green of 1
+ *                  proves nothing.
  *
- * Kimenet: packages/docs/.ios-touch-report.json. Az itelet a
- * `sdk_check_e2e_touch_webkit.mjs`-e; ez a szkript csak akkor lep ki nem
- * nullaval, ha a meres maga nem futhatott (nincs Xcode, szimulator,
- * safaridriver) — es akkor a riport is ezt mondja.
+ * Output: packages/docs/.ios-touch-report.json. The verdict is
+ * `sdk_check_e2e_touch_webkit.mjs`'s; this script exits non-zero only if the
+ * measurement itself could not run (no Xcode, simulator or safaridriver) —
+ * and then the report says so too.
  */
 
 /* global setTimeout, fetch, AbortSignal */
@@ -85,13 +87,13 @@ function fail(message) {
   process.exit(1);
 }
 
-// --- az eszkozok -----------------------------------------------------------------------
+// --- the devices -----------------------------------------------------------------------
 let listing;
 try {
   listing = JSON.parse(execFileSync("xcrun", ["simctl", "list", "-j", "devices", "available"], { encoding: "utf8" }));
   execFileSync("safaridriver", ["--version"], { encoding: "utf8" });
 } catch (error) {
-  fail(`nincs iOS-szimulator vagy safaridriver (Xcode kell): ${String(error).slice(0, 200)}`);
+  fail(`no iOS simulator or safaridriver (Xcode is required): ${String(error).slice(0, 200)}`);
 }
 const runtimes = Object.keys(listing.devices)
   .filter((key) => /SimRuntime\.iOS-/.test(key) && listing.devices[key].length > 0)
@@ -100,7 +102,7 @@ const runtimes = Object.keys(listing.devices)
     const [x, y] = [version(a), version(b)];
     return y[0] - x[0] || (y[1] ?? 0) - (x[1] ?? 0);
   });
-if (runtimes.length === 0) fail("nincs iOS-futtatokornyezet a szimulatorban");
+if (runtimes.length === 0) fail("no iOS runtime in the simulator");
 const runtime = runtimes[0];
 report.runtime = runtime.split(".").pop();
 const pool = listing.devices[runtime];
@@ -113,9 +115,9 @@ const pick = (patterns) => {
 };
 const phone = pick([/^iPhone \d+$/, /^iPhone/]);
 const tablet = pick([/^iPad Pro 11/, /^iPad Air 11/, /^iPad/]);
-if (phone === undefined || tablet === undefined) fail(`a(z) ${report.runtime} futtatokornyezetben nincs iPhone es iPad`);
+if (phone === undefined || tablet === undefined) fail(`the ${report.runtime} runtime has no iPhone and iPad`);
 
-// --- a lap es a gyujto ----------------------------------------------------------------------
+// --- the page and the collector -------------------------------------------------------------
 const pageServer = spawn(process.execPath, [join(docs, "e2e", "serve.mjs")], {
   cwd: docs,
   env: { ...process.env, TL_E2E_PORT: String(PAGE_PORT) },
@@ -132,7 +134,7 @@ const collector = createServer((request, response) => {
       const previous = beacons.get(trial);
       if (previous === undefined || snapshot.t >= previous.t) beacons.set(trial, snapshot);
     } catch {
-      // egy csonka beacon nem allapot
+      // a truncated beacon is not a state
     }
     response.writeHead(204, { "access-control-allow-origin": "*" });
     response.end();
@@ -246,14 +248,14 @@ const TRIALS = [
   { name: "none", query: "", style: "", path: "inside" },
   { name: "edge", query: "", style: "", path: "edge" },
   { name: "cooperative", query: "?touchAction=cooperative", style: "", path: "inside" },
-  // A negativ kontroll: ugyanaz, mint a "none", csak a gyoker touch-action-je auto.
+  // The negative control: the same as "none", except the root's touch-action is auto.
   { name: "control", query: "", style: "#frame svg{touch-action:auto !important}", path: "inside" },
-  // Hosszu nyomas egy elemen, majd huzas: az iOS nem veszi el (callout, nagyito,
-  // kijeloles), es a lap nem gorog.
+  // A long press on an item, then a drag: iOS does not take it (callout,
+  // magnifier, selection), and the page does not scroll.
   { name: "longpress", query: "", style: "", path: "hold" },
 ];
 
-/** Egy ujj W3C-akcioi. */
+/** One finger's W3C actions. */
 function finger(id, from, to, steps, hold) {
   return {
     type: "pointer",
@@ -296,8 +298,8 @@ async function runTrial(device, trial) {
       const item = setup.item;
       actions = [finger("finger", item, { x: item.x + 70, y: item.y }, 6, 700)];
     } else {
-      // inside: 90 CSS-px felfele, az idovonalon belul. edge: az idovonal tetejen tul,
-      // a viewport tetejeig — a gesztus nagyobbik fele mar a lap folott megy.
+      // inside: 90 CSS px upwards, within the timeline. edge: past the top of the
+      // timeline, up to the top of the viewport — most of the gesture goes over the page.
       const to = trial.path === "edge" ? 2 : from - 90;
       actions = [finger("finger", { x, y: from }, { x, y: to }, 6, 0)];
     }
@@ -310,7 +312,7 @@ async function runTrial(device, trial) {
         20_000,
       );
       result.actionsMs = Date.now() - started;
-      // A felengedes csak az akcio-allapot elengedesevel jut el a laphoz (mérve).
+      // The release reaches the page only when the action state is released (measured).
       await request("DELETE", at("/actions"), undefined, 8_000);
     } catch (error) {
       result.driverHung = true;
@@ -342,7 +344,7 @@ for (const [kind, device] of [["iphone", phone], ["ipad", tablet]]) {
     const final = result.final;
     process.stdout.write(
       `  ${result.id.padEnd(20)} touch-action ${String(result.setup?.touchAction)}  scrollY ${String(final?.scrollY)}  ` +
-        `scale ${String(final?.scale)}  gestures ${JSON.stringify(final?.gestures)}  edits ${JSON.stringify(final?.edits)}  ${result.driverHung ? "(a meghajto beragadt)" : ""}${result.error === null ? "" : ` HIBA ${result.error}`}\n`,
+        `scale ${String(final?.scale)}  gestures ${JSON.stringify(final?.gestures)}  edits ${JSON.stringify(final?.edits)}  ${result.driverHung ? "(the driver hung)" : ""}${result.error === null ? "" : ` ERROR ${result.error}`}\n`,
     );
   }
   try {
@@ -359,5 +361,5 @@ for (const [kind, device] of [["iphone", phone], ["ipad", tablet]]) {
 
 report.finishedAt = new Date().toISOString();
 save();
-process.stdout.write(`sdk_ios_touch: ${String(report.trials.length)} proba, ${phone.name} es ${tablet.name}, ${report.runtime} — ${reportFile}\n`);
+process.stdout.write(`sdk_ios_touch: ${String(report.trials.length)} trials, ${phone.name} and ${tablet.name}, ${report.runtime} — ${reportFile}\n`);
 process.exit(0);

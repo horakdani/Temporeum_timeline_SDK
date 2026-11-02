@@ -1,28 +1,29 @@
 #!/usr/bin/env node
 /**
- * G-ZOOM-LABELS: bizonyitja, hogy egy cimke, ami a zoom elott es utan is
- * latszik, a zoom egyetlen kepkockajan sem hianyzik — generalt, monoton
- * zoom-gesztusokon, a README ciklusaval hajtva (lepcsos ujrahorgonyzas,
- * pendingTiles-ig ujrarajzolas, nyugalomban a rahagyas kiteljesedeseig).
+ * G-ZOOM-LABELS: proves that a label visible both before and after a zoom
+ * is missing from none of the zoom's frames — on generated, monotonic zoom
+ * gestures, driven by the README's loop (stepwise re-anchoring, redrawing
+ * until pendingTiles, at rest until the overscan is complete).
  *
- * Ket fuggetlen ellenorzes:
+ * Two independent checks:
  *
- *  1. A PROPERTY: a riportban a "zoom keeps the labels on both ends" zold,
- *     seeddel, legalabb MIN_CASES esettel. A riport hianya BUKAS: a
- *     csomagparancs elotte torli, tehat a jelenlete azt jelenti, hogy MOST
- *     futott.
- *  2. A KONTROLL: ugyanazok az esetek az 1.0.0-rc.4 modjan rajzolva — a
- *     gesztus minden kepkockaja `bare`: az uj csempek cimke nelkul, a szelek
- *     cimkeje nincs kituzve — legalabb egy, az elejen es a vegen is latszo
- *     cimket elveszitenek. Ha nem, a property a valtoztatas nelkul is
- *     atmenne, es semmit nem bizonyitana rola. Es az esetekben osszesen
- *     legalabb MIN_LABELS ilyen cimke van: egy property, ami cimke nelkuli
- *     eseteken fut, uresen igaz.
+ *  1. THE PROPERTY: "zoom keeps the labels on both ends" passes in the
+ *     report, with a seed and at least MIN_CASES cases. A missing report
+ *     FAILS: the package command deletes it beforehand, so its presence
+ *     means it ran NOW.
+ *  2. THE CONTROL: the same cases drawn the 1.0.0-rc.4 way — every frame of
+ *     the gesture `bare`: new tiles without labels, edge labels not pinned —
+ *     would lose at least one label visible at both the start and the end.
+ *     If not, the property would pass without the change too and would
+ *     prove nothing about it. And the cases hold at least MIN_LABELS such
+ *     labels in total: a property that runs on cases without labels is
+ *     vacuously true.
  *
- * Miert csak monoton zoom (a tesztfajl fejkommentje reszletesen): minden
- * cimke a sajat elemenek helyen el, es ez a hely egy monoton zoom alatt
- * sosem kisebb kozben, mint a ket vegen; oda-vissza zoomnal egy cimke kozben
- * joggal nem ferhet el. A maxLabels-plafon es a furtozes nincs lefedve.
+ * Why only monotonic zoom (the test file's header comment has the details):
+ * every label lives in its own item's space, and under a monotonic zoom that
+ * space is never smaller midway than at both ends; with a back-and-forth
+ * zoom a label may rightly not fit midway. The maxLabels cap and clustering
+ * are not covered.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -40,13 +41,13 @@ const failures = [];
 const notes = [];
 const read = (file) => {
   if (!existsSync(file)) {
-    failures.push(`hianyzik: ${file} — a keszlet NEM futott le, ezert BUKAS`);
+    failures.push(`missing: ${file} — the suite did NOT run, so this FAILS`);
     return undefined;
   }
   try {
     return JSON.parse(readFileSync(file, "utf8"));
   } catch (error) {
-    failures.push(`olvashatatlan: ${file}: ${String(error)}`);
+    failures.push(`unreadable: ${file}: ${String(error)}`);
     return undefined;
   }
 };
@@ -55,36 +56,36 @@ const report = read(reportFile);
 if (report !== undefined) {
   const entry = Array.isArray(report) ? report.find((candidate) => candidate?.name === PROPERTY) : undefined;
   if (entry === undefined) {
-    failures.push(`a property hianyzik a riportbol: "${PROPERTY}"`);
+    failures.push(`the property is missing from the report: "${PROPERTY}"`);
   } else {
-    if (entry.passed !== true) failures.push(`bukott: ${PROPERTY} — ${JSON.stringify(entry.counterexample ?? null)}`);
+    if (entry.passed !== true) failures.push(`failed: ${PROPERTY} — ${JSON.stringify(entry.counterexample ?? null)}`);
     if (!Number.isInteger(entry.cases) || entry.cases < MIN_CASES) {
-      failures.push(`${PROPERTY}: ${String(entry.cases)} eset, de legalabb ${String(MIN_CASES)} kell`);
+      failures.push(`${PROPERTY}: ${String(entry.cases)} cases, but at least ${String(MIN_CASES)} are required`);
     }
-    if (!Number.isFinite(entry.seed)) failures.push(`${PROPERTY}: nincs seed`);
-    if (entry.passed === true) notes.push(`${PROPERTY}: ${String(entry.cases)} eset, seed ${String(entry.seed)}`);
+    if (!Number.isFinite(entry.seed)) failures.push(`${PROPERTY}: no seed`);
+    if (entry.passed === true) notes.push(`${PROPERTY}: ${String(entry.cases)} cases, seed ${String(entry.seed)}`);
   }
 }
 
 const control = read(controlFile);
 if (control !== undefined) {
   if (!(control.cases >= MIN_CASES)) {
-    failures.push(`a kontroll csak ${String(control.cases)} esetet futott, legalabb ${String(MIN_CASES)} kell`);
+    failures.push(`the control ran only ${String(control.cases)} cases, at least ${String(MIN_CASES)} are required`);
   }
   if (!(control.labelsBeforeAndAfter >= MIN_LABELS)) {
-    failures.push(`az esetekben csak ${String(control.labelsBeforeAndAfter)} cimke latszik elotte es utana, legalabb ${String(MIN_LABELS)} kell`);
+    failures.push(`only ${String(control.labelsBeforeAndAfter)} labels are visible before and after in the cases, at least ${String(MIN_LABELS)} are required`);
   }
   if (!(control.lostByOld > 0)) {
-    failures.push("a kontroll NEM bukik: az rc.4-es mod is minden cimket megtart — a property a valtoztatasrol semmit nem bizonyit");
+    failures.push("the control does NOT fail: the rc.4 way keeps every label too — the property proves nothing about the change");
   } else {
     notes.push(
-      `kontroll: az rc.4-es mod ${String(control.lostByOld)} / ${String(control.labelsBeforeAndAfter)} elotte-utana latszo cimket elveszit ` +
-        `(${String(control.casesLostByOld)} / ${String(control.cases)} esetben, ${String(control.gestureFrames)} gesztus-kepkockan)`,
+      `control: the rc.4 way loses ${String(control.lostByOld)} / ${String(control.labelsBeforeAndAfter)} labels visible before and after ` +
+        `(in ${String(control.casesLostByOld)} / ${String(control.cases)} cases, over ${String(control.gestureFrames)} gesture frames)`,
     );
   }
 }
 
 for (const note of notes) console.log(`  ok    ${note}`);
-for (const failure of failures) console.log(`  BUKAS ${failure}`);
-console.log(failures.length === 0 ? "G-ZOOM-LABELS: atment" : "G-ZOOM-LABELS: BUKOTT");
+for (const failure of failures) console.log(`  FAIL  ${failure}`);
+console.log(failures.length === 0 ? "G-ZOOM-LABELS: passed" : "G-ZOOM-LABELS: FAILED");
 process.exit(failures.length === 0 ? 0 : 1);

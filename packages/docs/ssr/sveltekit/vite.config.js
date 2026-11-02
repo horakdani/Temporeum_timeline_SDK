@@ -1,5 +1,5 @@
-// A SvelteKit 3 a konfigurációt a Vite-pluginban kapja (svelte.config.js már
-// nincs). A Node-szerver (adapter-node) kimenetét a G-SSR indítja: build/.
+// SvelteKit 3 takes its config in the Vite plugin (there is no svelte.config.js
+// any more). The Node server's (adapter-node) output is started by G-SSR: build/.
 import adapter from "@sveltejs/adapter-node";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { defineConfig } from "vite";

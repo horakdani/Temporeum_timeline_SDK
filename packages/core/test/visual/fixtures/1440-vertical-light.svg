@@ -1,10 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="tl" viewBox="0 0 1440 480" width="1440" height="480" data-tl-orientation="vertical" data-tl-density="comfortable" data-tl-theme="light" data-tl-instance="1440-vertical-light" role="listbox" tabindex="0" aria-label="Projekt idővonal" aria-orientation="vertical">
-  <style>.tl[data-tl-instance="1440-vertical-light"]{--tl-surface:#ffffff;--tl-surface-alt:#f3f5f8;--tl-text:#1a1d21;--tl-text-muted:#5b6471;--tl-line:#d8dce2;--tl-line-strong:#737b87;--tl-item-fill:#dce9fd;--tl-item-stroke:#5b8fd6;--tl-item-text:#16222e;--tl-accent:#2f6fd0;--tl-now:#c62a4e;--tl-era:#eceefb;--tl-era-text:#3c3f66;--tl-marker:#6f41ba;--tl-focus:#1d4ed8}.tl[data-tl-instance="1440-vertical-light"]{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}.tl[data-tl-instance="1440-vertical-light"] .tl-surface{fill:var(--tl-surface)}.tl[data-tl-instance="1440-vertical-light"] .tl-band{fill:var(--tl-surface-alt)}.tl[data-tl-instance="1440-vertical-light"] .tl-lane{fill:none}.tl[data-tl-instance="1440-vertical-light"] .tl-lane--pinned{fill:var(--tl-surface-alt)}.tl[data-tl-instance="1440-vertical-light"] .tl-tick{stroke:var(--tl-line);stroke-width:1}.tl[data-tl-instance="1440-vertical-light"] .tl-tick--major{stroke:var(--tl-line-strong)}.tl[data-tl-instance="1440-vertical-light"] .tl-tick-label{fill:var(--tl-text-muted);font-size:11px}.tl[data-tl-instance="1440-vertical-light"] .tl-tick-label--major{fill:var(--tl-text)}.tl[data-tl-instance="1440-vertical-light"] .tl-item{fill:var(--tl-item-fill);stroke:var(--tl-item-stroke);stroke-width:1}.tl[data-tl-instance="1440-vertical-light"] .tl-item--open{stroke-dasharray:4 3}.tl[data-tl-instance="1440-vertical-light"] .tl-item--selected{stroke:var(--tl-focus);stroke-width:2}.tl[data-tl-instance="1440-vertical-light"] .tl-label{fill:var(--tl-item-text);color:var(--tl-item-text);font-size:12px;pointer-events:none}.tl[data-tl-instance="1440-vertical-light"] .tl-label&gt;div{white-space:pre;margin:0;padding:0 0 0 6px;line-height:16px}.tl[data-tl-instance="1440-vertical-light"] .tl-label--after{fill:var(--tl-text);color:var(--tl-text)}.tl[data-tl-instance="1440-vertical-light"] .tl-cluster{fill:var(--tl-accent);stroke:var(--tl-surface);stroke-width:1;cursor:zoom-in}.tl[data-tl-instance="1440-vertical-light"] .tl-cluster--selected{stroke:var(--tl-focus);stroke-width:2}.tl[data-tl-instance="1440-vertical-light"] .tl-cluster-count{fill:var(--tl-surface);color:var(--tl-surface);font-weight:600}.tl[data-tl-instance="1440-vertical-light"] .tl-label--after.tl-cluster-count{fill:var(--tl-text);color:var(--tl-text)}.tl[data-tl-instance="1440-vertical-light"] .tl-era{fill:var(--tl-era)}.tl[data-tl-instance="1440-vertical-light"] .tl-era-label{fill:var(--tl-era-text);font-size:11px}.tl[data-tl-instance="1440-vertical-light"] .tl-now{stroke:var(--tl-now);stroke-width:2}.tl[data-tl-instance="1440-vertical-light"] .tl-now-label{fill:var(--tl-now);font-size:11px}.tl[data-tl-instance="1440-vertical-light"] .tl-marker{fill:var(--tl-marker)}.tl[data-tl-instance="1440-vertical-light"] .tl-marker-label{fill:var(--tl-marker);font-size:11px}.tl[data-tl-instance="1440-vertical-light"] .tl-accent{fill:var(--tl-accent)}.tl[data-tl-instance="1440-vertical-light"]:focus-visible,.tl[data-tl-instance="1440-vertical-light"] :focus-visible{outline:2px solid var(--tl-focus);outline-offset:1px}.tl[data-tl-instance="1440-vertical-light"] .tl-focus-ring{fill:none;stroke:var(--tl-focus);stroke-width:2;vector-effect:non-scaling-stroke;pointer-events:none}.tl[data-tl-instance="1440-vertical-light"]:not(:focus) .tl-focus-ring{display:none}.tl[data-tl-instance="1440-vertical-light"] .tl-loading{stroke:var(--tl-accent);stroke-width:3;stroke-dasharray:10 5;vector-effect:non-scaling-stroke;pointer-events:none;animation:tl-loading 0.9s linear infinite}.tl[data-tl-instance="1440-vertical-light"] .tl-loading--failed{stroke:var(--tl-now);stroke-dasharray:2 4;animation:none}@keyframes tl-loading{to{stroke-dashoffset:-15}}@media (prefers-reduced-motion:reduce){.tl[data-tl-instance="1440-vertical-light"] .tl-loading{animation:none}}.tl[data-tl-instance="1440-vertical-light"]{touch-action:none;overscroll-behavior:contain;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;cursor:grab}.tl[data-tl-instance="1440-vertical-light"][data-tl-gesture="pan"],.tl[data-tl-instance="1440-vertical-light"][data-tl-gesture="pinch"]{cursor:grabbing}.tl[data-tl-instance="1440-vertical-light"][data-tl-edit="move"]{cursor:grabbing}.tl[data-tl-instance="1440-vertical-light"][data-tl-edit="resize-start"],.tl[data-tl-instance="1440-vertical-light"][data-tl-edit="resize-end"]{cursor:ns-resize}</style>
+<svg xmlns="http://www.w3.org/2000/svg" class="tl" viewBox="0 0 1440 480" width="1440" height="480" data-tl-orientation="vertical" data-tl-density="comfortable" data-tl-theme="light" data-tl-instance="1440-vertical-light" role="listbox" tabindex="0" aria-label="Project timeline" aria-orientation="vertical">
+  <style>.tl[data-tl-instance="1440-vertical-light"]{--tl-surface:#ffffff;--tl-surface-alt:#f3f5f8;--tl-text:#1a1d21;--tl-text-muted:#5b6471;--tl-line:#d8dce2;--tl-line-strong:#737b87;--tl-item-fill:#dce9fd;--tl-item-stroke:#5b8fd6;--tl-item-text:#16222e;--tl-accent:#2f6fd0;--tl-now:#c62a4e;--tl-era:#eceefb;--tl-era-text:#3c3f66;--tl-marker:#6f41ba;--tl-focus:#1d4ed8}.tl[data-tl-instance="1440-vertical-light"]{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}.tl[data-tl-instance="1440-vertical-light"] .tl-surface{fill:var(--tl-surface)}.tl[data-tl-instance="1440-vertical-light"] .tl-band{fill:var(--tl-surface-alt)}.tl[data-tl-instance="1440-vertical-light"] .tl-lane{fill:none}.tl[data-tl-instance="1440-vertical-light"] .tl-lane--pinned{fill:var(--tl-surface-alt)}.tl[data-tl-instance="1440-vertical-light"] .tl-tick{stroke:var(--tl-line);stroke-width:1}.tl[data-tl-instance="1440-vertical-light"] .tl-tick--major{stroke:var(--tl-line-strong)}.tl[data-tl-instance="1440-vertical-light"] .tl-tick-label{fill:var(--tl-text-muted);font-size:11px}.tl[data-tl-instance="1440-vertical-light"] .tl-tick-label--major{fill:var(--tl-text)}.tl[data-tl-instance="1440-vertical-light"] .tl-axis-context{fill:var(--tl-surface)}.tl[data-tl-instance="1440-vertical-light"] .tl-item{fill:var(--tl-item-fill);stroke:var(--tl-item-stroke);stroke-width:1}.tl[data-tl-instance="1440-vertical-light"] .tl-item--open{stroke-dasharray:4 3}.tl[data-tl-instance="1440-vertical-light"] .tl-item--selected{stroke:var(--tl-focus);stroke-width:2}.tl[data-tl-instance="1440-vertical-light"] .tl-label{fill:var(--tl-item-text);color:var(--tl-item-text);font-size:12px;pointer-events:none}.tl[data-tl-instance="1440-vertical-light"] .tl-label&gt;div{white-space:pre;margin:0;padding:0 0 0 6px;line-height:16px;height:100%;align-content:unsafe center;overflow:hidden;text-overflow:ellipsis}.tl[data-tl-instance="1440-vertical-light"] .tl-label--after{fill:var(--tl-text);color:var(--tl-text)}.tl[data-tl-instance="1440-vertical-light"] .tl-cluster{fill:var(--tl-accent);stroke:var(--tl-surface);stroke-width:1;cursor:zoom-in}.tl[data-tl-instance="1440-vertical-light"] .tl-cluster--selected{stroke:var(--tl-focus);stroke-width:2}.tl[data-tl-instance="1440-vertical-light"] .tl-cluster-count{fill:var(--tl-surface);color:var(--tl-surface);font-weight:600}.tl[data-tl-instance="1440-vertical-light"] .tl-label--after.tl-cluster-count{fill:var(--tl-text);color:var(--tl-text)}.tl[data-tl-instance="1440-vertical-light"] .tl-era{fill:var(--tl-era)}.tl[data-tl-instance="1440-vertical-light"] .tl-era-label{fill:var(--tl-era-text);font-size:11px}.tl[data-tl-instance="1440-vertical-light"] .tl-now{stroke:var(--tl-now);stroke-width:2}.tl[data-tl-instance="1440-vertical-light"] .tl-now-label{fill:var(--tl-now);font-size:11px}.tl[data-tl-instance="1440-vertical-light"] .tl-marker{fill:var(--tl-marker)}.tl[data-tl-instance="1440-vertical-light"] .tl-marker-label{fill:var(--tl-marker);font-size:11px}.tl[data-tl-instance="1440-vertical-light"] .tl-accent{fill:var(--tl-accent)}.tl[data-tl-instance="1440-vertical-light"]:focus-visible{outline:2px solid var(--tl-focus);outline-offset:-2px}.tl[data-tl-instance="1440-vertical-light"] :focus-visible{outline:2px solid var(--tl-focus);outline-offset:1px}.tl[data-tl-instance="1440-vertical-light"] .tl-focus-ring{fill:none;stroke:var(--tl-focus);stroke-width:2;vector-effect:non-scaling-stroke;pointer-events:none}.tl[data-tl-instance="1440-vertical-light"]:not(:focus) .tl-focus-ring{display:none}.tl[data-tl-instance="1440-vertical-light"] .tl-loading{stroke:var(--tl-accent);stroke-width:3;stroke-dasharray:10 5;vector-effect:non-scaling-stroke;pointer-events:none;animation:tl-loading 0.9s linear infinite}.tl[data-tl-instance="1440-vertical-light"] .tl-loading--failed{stroke:var(--tl-now);stroke-dasharray:2 4;animation:none}@keyframes tl-loading{to{stroke-dashoffset:-15}}@media (prefers-reduced-motion:reduce){.tl[data-tl-instance="1440-vertical-light"] .tl-loading{animation:none}}@media (forced-colors:active){.tl[data-tl-instance="1440-vertical-light"],.tl[data-tl-instance="1440-vertical-light"]:not([data-tl-theme="light"]),.tl[data-tl-instance="1440-vertical-light"][data-tl-theme]{--tl-surface:Canvas;--tl-surface-alt:Canvas;--tl-text:CanvasText;--tl-text-muted:CanvasText;--tl-line:GrayText;--tl-line-strong:CanvasText;--tl-item-fill:Canvas;--tl-item-stroke:CanvasText;--tl-item-text:CanvasText;--tl-accent:CanvasText;--tl-now:CanvasText;--tl-era:Canvas;--tl-era-text:CanvasText;--tl-marker:CanvasText;--tl-focus:Highlight}.tl[data-tl-instance="1440-vertical-light"] .tl-item--selected,.tl[data-tl-instance="1440-vertical-light"] .tl-cluster--selected,.tl[data-tl-instance="1440-vertical-light"] .tl-focus-ring{stroke-width:3}}.tl[data-tl-instance="1440-vertical-light"]{touch-action:none;overscroll-behavior:contain;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;cursor:grab}.tl[data-tl-instance="1440-vertical-light"][data-tl-gesture="pan"],.tl[data-tl-instance="1440-vertical-light"][data-tl-gesture="pinch"]{cursor:grabbing}.tl[data-tl-instance="1440-vertical-light"][data-tl-edit="move"]{cursor:grabbing}.tl[data-tl-instance="1440-vertical-light"][data-tl-edit="resize-start"],.tl[data-tl-instance="1440-vertical-light"][data-tl-edit="resize-end"]{cursor:ns-resize}</style>
   <rect class="tl-surface" x="0" y="0" width="1440" height="480" aria-hidden="true"/>
   <g class="tl-layer tl-layer--background" aria-hidden="true">
     <rect class="tl-band" x="84" y="0" width="1356" height="239.284"/>
     <rect class="tl-era" data-tl-era="q1" x="84" y="0" width="1356" height="239.284"/>
-    <text class="tl-era-label" x="90" y="8" dominant-baseline="central" text-anchor="start">Q1 vége</text>
+    <text class="tl-era-label" x="90" y="8" dominant-baseline="central" text-anchor="start">End of Q1</text>
   </g>
   <g class="tl-layer tl-layer--axis" aria-hidden="true">
     <line class="tl-tick" x1="0" y1="0" x2="1440" y2="0"/>
@@ -14,85 +14,89 @@
     <line class="tl-tick" x1="0" y1="480" x2="1440" y2="480"/>
   </g>
   <g class="tl-layer tl-layer--lanes" aria-hidden="true">
-    <rect class="tl-lane tl-lane--pinned" data-tl-lane="mert" x="84" y="0" width="168" height="480"/>
-    <rect class="tl-lane" data-tl-lane="terv" x="264" y="0" width="340" height="480"/>
-    <rect class="tl-lane" data-tl-lane="epit" x="616" y="0" width="684" height="480"/>
-    <rect class="tl-lane" data-tl-lane="ures" x="1312" y="0" width="168" height="480"/>
+    <rect class="tl-lane tl-lane--pinned" data-tl-lane="milestones" x="84" y="0" width="168" height="480"/>
+    <rect class="tl-lane" data-tl-lane="plan" x="264" y="0" width="340" height="480"/>
+    <rect class="tl-lane" data-tl-lane="build" x="616" y="0" width="684" height="480"/>
+    <rect class="tl-lane" data-tl-lane="empty" x="1312" y="0" width="168" height="480"/>
   </g>
   <g class="tl-layer tl-layer--items" role="none">
-    <rect id="1440-vertical-light-i-roviden" role="option" aria-label="Egy nagyon hosszú megnevezés, ami biztosan nem fér el, Mar 26, 2025, 12:00 AM – Mar 26, 2025, 6:00 AM, Mérföldkövek" aria-selected="false" aria-posinset="4" aria-setsize="12" class="tl-item" data-tl-id="roviden" x="84" y="68.776" width="168" height="8.597" rx="4">
-      <title>Egy nagyon hosszú megnevezés, ami biztosan nem fér el, Mar 26, 2025, 12:00 AM – Mar 26, 2025, 6:00 AM, Mérföldkövek</title>
+    <rect id="1440-vertical-light-i-brief" role="option" aria-label="A very long name that is certain not to fit in, Mar 26, 2025, 12:00 AM – Mar 26, 2025, 6:00 AM, Milestones" aria-selected="false" aria-posinset="4" aria-setsize="12" class="tl-item" data-tl-id="brief" x="84" y="68.776" width="168" height="8.597" rx="4">
+      <title>A very long name that is certain not to fit in, Mar 26, 2025, 12:00 AM – Mar 26, 2025, 6:00 AM, Milestones</title>
     </rect>
-    <rect id="1440-vertical-light-i-pillanat" role="option" aria-label="Pillanat, Mar 31, 2025, 9:30 AM, Mérföldkövek" aria-selected="false" aria-posinset="8" aria-setsize="12" class="tl-item tl-item--instant" data-tl-id="pillanat" x="84" y="252.896" width="168" height="3" rx="4">
-      <title>Pillanat, Mar 31, 2025, 9:30 AM, Mérföldkövek</title>
+    <rect id="1440-vertical-light-i-instant" role="option" aria-label="Instant, Mar 31, 2025, 9:30 AM, Milestones" aria-selected="false" aria-posinset="8" aria-setsize="12" class="tl-item tl-item--instant" data-tl-id="instant" x="84" y="252.896" width="168" height="3" rx="4">
+      <title>Instant, Mar 31, 2025, 9:30 AM, Milestones</title>
     </rect>
-    <rect id="1440-vertical-light-i-kiadas" role="option" aria-label="Kiadás, Apr 5, 2025, Mérföldkövek" aria-selected="false" aria-posinset="11" aria-setsize="12" class="tl-item" data-tl-id="kiadas" x="84" y="411.224" width="168" height="34.388" rx="4">
-      <title>Kiadás, Apr 5, 2025, Mérföldkövek</title>
+    <rect id="1440-vertical-light-i-release" role="option" aria-label="Release, Apr 5, 2025, Milestones" aria-selected="false" aria-posinset="11" aria-setsize="12" class="tl-item" data-tl-id="release" x="84" y="411.224" width="168" height="34.388" rx="4">
+      <title>Release, Apr 5, 2025, Milestones</title>
     </rect>
-    <rect id="1440-vertical-light-i-elozmeny" role="option" aria-label="Előzmény, részben kilátszó, Mar 10, 2025 – Mar 26, 2025, Tervezés" aria-selected="false" aria-posinset="1" aria-setsize="12" class="tl-item" data-tl-id="elozmeny" x="264" y="-168" width="168" height="236.776" rx="4">
-      <title>Előzmény, részben kilátszó, Mar 10, 2025 – Mar 26, 2025, Tervezés</title>
+    <rect id="1440-vertical-light-i-earlier" role="option" aria-label="Earlier, partly visible, Mar 10, 2025 – Mar 26, 2025, Planning" aria-selected="false" aria-posinset="1" aria-setsize="12" class="tl-item" data-tl-id="earlier" x="264" y="-168" width="168" height="236.776" rx="4">
+      <title>Earlier, partly visible, Mar 10, 2025 – Mar 26, 2025, Planning</title>
     </rect>
-    <rect id="1440-vertical-light-i-kutatas" role="option" aria-label="Kutatás, Mar 25, 2025 – Mar 31, 2025, Tervezés" aria-selected="true" aria-posinset="3" aria-setsize="12" class="tl-item tl-item--selected" data-tl-id="kutatas" x="436" y="34.388" width="168" height="204.896" rx="4">
-      <title>Kutatás, Mar 25, 2025 – Mar 31, 2025, Tervezés</title>
+    <rect id="1440-vertical-light-i-research" role="option" aria-label="Research, Mar 25, 2025 – Mar 31, 2025, Planning" aria-selected="false" aria-posinset="3" aria-setsize="12" class="tl-item" data-tl-id="research" x="436" y="34.388" width="168" height="204.896" rx="4">
+      <title>Research, Mar 25, 2025 – Mar 31, 2025, Planning</title>
     </rect>
-    <rect id="1440-vertical-light-i-interjuk" role="option" aria-label="Interjúk, Mar 27, 2025 – Mar 29, 2025, Tervezés" aria-selected="false" aria-posinset="5" aria-setsize="12" class="tl-item" data-tl-id="interjuk" x="264" y="103.164" width="168" height="68.776" rx="4">
-      <title>Interjúk, Mar 27, 2025 – Mar 29, 2025, Tervezés</title>
+    <rect id="1440-vertical-light-i-interviews" role="option" aria-label="Interviews, Mar 27, 2025 – Mar 29, 2025, Planning" aria-selected="false" aria-posinset="5" aria-setsize="12" class="tl-item" data-tl-id="interviews" x="264" y="103.164" width="168" height="68.776" rx="4">
+      <title>Interviews, Mar 27, 2025 – Mar 29, 2025, Planning</title>
     </rect>
-    <rect id="1440-vertical-light-i-dontes" role="option" aria-label="Döntés napja, Mar 30, 2025, Tervezés" aria-selected="false" aria-posinset="7" aria-setsize="12" class="tl-item" data-tl-id="dontes" x="264" y="206.328" width="168" height="32.955" rx="4">
-      <title>Döntés napja, Mar 30, 2025, Tervezés</title>
+    <rect id="1440-vertical-light-i-decision" role="option" aria-label="Decision day, Mar 30, 2025, Planning" aria-selected="false" aria-posinset="7" aria-setsize="12" class="tl-item" data-tl-id="decision" x="264" y="206.328" width="168" height="32.955" rx="4">
+      <title>Decision day, Mar 30, 2025, Planning</title>
     </rect>
-    <rect id="1440-vertical-light-i-nevtelen" role="option" aria-label="nevtelen, Apr 2, 2025 – Apr 4, 2025, Tervezés" aria-selected="false" aria-posinset="10" aria-setsize="12" class="tl-item" data-tl-id="nevtelen" x="264" y="308.06" width="168" height="68.776" rx="4">
-      <title>nevtelen, Apr 2, 2025 – Apr 4, 2025, Tervezés</title>
+    <rect id="1440-vertical-light-i-nevtelen" role="option" aria-label="nevtelen, Apr 2, 2025 – Apr 4, 2025, Planning" aria-selected="false" aria-posinset="10" aria-setsize="12" class="tl-item" data-tl-id="nevtelen" x="264" y="308.06" width="168" height="68.776" rx="4">
+      <title>nevtelen, Apr 2, 2025 – Apr 4, 2025, Planning</title>
     </rect>
-    <rect id="1440-vertical-light-i-szakasz" role="option" aria-label="Első szakasz, Mar 24, 2025 – Apr 2, 2025, Építés" aria-selected="false" aria-posinset="2" aria-setsize="12" class="tl-item" data-tl-id="szakasz" x="616" y="0" width="340" height="308.06" rx="4">
-      <title>Első szakasz, Mar 24, 2025 – Apr 2, 2025, Építés</title>
+    <rect id="1440-vertical-light-i-phase" role="option" aria-label="First phase, Mar 24, 2025 – Apr 2, 2025, Building" aria-selected="false" aria-posinset="2" aria-setsize="12" class="tl-item" data-tl-id="phase" x="616" y="0" width="340" height="308.06" rx="4">
+      <title>First phase, Mar 24, 2025 – Apr 2, 2025, Building</title>
     </rect>
-    <rect id="1440-vertical-light-i-fejlesztes" role="option" aria-label="Fejlesztés, nyitott, Mar 28, 2025 –, Építés" aria-selected="false" aria-posinset="6" aria-setsize="12" class="tl-item tl-item--open" data-tl-id="fejlesztes" x="960" y="137.552" width="168" height="510.448" rx="4">
-      <title>Fejlesztés, nyitott, Mar 28, 2025 –, Építés</title>
+    <rect id="1440-vertical-light-i-development" role="option" aria-label="Development, open, Mar 28, 2025 –, Building" aria-selected="false" aria-posinset="6" aria-setsize="12" class="tl-item tl-item--open" data-tl-id="development" x="960" y="137.552" width="168" height="510.448" rx="4">
+      <title>Development, open, Mar 28, 2025 –, Building</title>
     </rect>
-    <rect id="1440-vertical-light-i-javitas" role="option" aria-label="Javítás, Apr 1, 2025 – Apr 3, 2025, Építés" aria-selected="false" aria-posinset="9" aria-setsize="12" class="tl-item" data-tl-id="javitas" x="1132" y="273.672" width="168" height="68.776" rx="4">
-      <title>Javítás, Apr 1, 2025 – Apr 3, 2025, Építés</title>
+    <rect id="1440-vertical-light-i-fixes" role="option" aria-label="Fixes, Apr 1, 2025 – Apr 3, 2025, Building" aria-selected="false" aria-posinset="9" aria-setsize="12" class="tl-item" data-tl-id="fixes" x="1132" y="273.672" width="168" height="68.776" rx="4">
+      <title>Fixes, Apr 1, 2025 – Apr 3, 2025, Building</title>
     </rect>
   </g>
   <g class="tl-layer tl-layer--labels" aria-hidden="true">
-    <foreignObject class="tl-label" data-tl-label="fejlesztes" x="986.28" y="137.552" width="115.44" height="16">
-      <div xmlns="http://www.w3.org/1999/xhtml">Fejlesztés, nyitott</div>
+    <foreignObject class="tl-label" data-tl-label="development" x="984.78" y="137.552" width="118.44" height="16">
+      <div xmlns="http://www.w3.org/1999/xhtml">Development, open</div>
     </foreignObject>
-    <foreignObject class="tl-label" data-tl-label="szakasz" x="742.56" y="0" width="86.88" height="16">
-      <div xmlns="http://www.w3.org/1999/xhtml">Első szakasz</div>
+    <foreignObject class="tl-label" data-tl-label="phase" x="748.56" y="0" width="74.88" height="16">
+      <div xmlns="http://www.w3.org/1999/xhtml">First phase</div>
     </foreignObject>
-    <foreignObject class="tl-label" data-tl-label="kutatas" x="492.46" y="34.388" width="55.08" height="16">
-      <div xmlns="http://www.w3.org/1999/xhtml">Kutatás</div>
+    <foreignObject class="tl-label" data-tl-label="research" x="488.38" y="34.388" width="63.24" height="16">
+      <div xmlns="http://www.w3.org/1999/xhtml">Research</div>
     </foreignObject>
-    <foreignObject class="tl-label" data-tl-label="javitas" x="1186.9" y="273.672" width="58.2" height="16">
-      <div xmlns="http://www.w3.org/1999/xhtml">Javítás</div>
+    <foreignObject class="tl-label" data-tl-label="fixes" x="1194.1" y="273.672" width="43.8" height="16">
+      <div xmlns="http://www.w3.org/1999/xhtml">Fixes</div>
     </foreignObject>
-    <foreignObject class="tl-label" data-tl-label="interjuk" x="320.52" y="103.164" width="54.96" height="16">
-      <div xmlns="http://www.w3.org/1999/xhtml">Interjúk</div>
+    <foreignObject class="tl-label" data-tl-label="interviews" x="312.06" y="103.164" width="71.88" height="16">
+      <div xmlns="http://www.w3.org/1999/xhtml">Interviews</div>
     </foreignObject>
-    <foreignObject class="tl-label" data-tl-label="elozmeny" x="266.16" y="0" width="163.68" height="16">
-      <div xmlns="http://www.w3.org/1999/xhtml">Előzmény, részben kiláts…</div>
+    <foreignObject class="tl-label" data-tl-label="earlier" x="282.78" y="0" width="130.44" height="16">
+      <div xmlns="http://www.w3.org/1999/xhtml">Earlier, partly visible</div>
     </foreignObject>
-    <foreignObject class="tl-label" data-tl-label="kiadas" x="142.5" y="411.224" width="51" height="16">
-      <div xmlns="http://www.w3.org/1999/xhtml">Kiadás</div>
+    <foreignObject class="tl-label" data-tl-label="release" x="139.62" y="411.224" width="56.76" height="16">
+      <div xmlns="http://www.w3.org/1999/xhtml">Release</div>
     </foreignObject>
-    <foreignObject class="tl-label" data-tl-label="dontes" x="305.4" y="206.328" width="85.2" height="16">
-      <div xmlns="http://www.w3.org/1999/xhtml">Döntés napja</div>
+    <foreignObject class="tl-label" data-tl-label="decision" x="306.12" y="206.328" width="83.76" height="16">
+      <div xmlns="http://www.w3.org/1999/xhtml">Decision day</div>
     </foreignObject>
-    <foreignObject class="tl-label tl-label--after" data-tl-label="roviden" x="84.78" y="77.373" width="166.44" height="16">
-      <div xmlns="http://www.w3.org/1999/xhtml">Egy nagyon hosszú megne…</div>
+    <foreignObject class="tl-label tl-label--after" data-tl-label="brief" x="85.92" y="77.373" width="164.16" height="16">
+      <div xmlns="http://www.w3.org/1999/xhtml">A very long name that is c…</div>
     </foreignObject>
-    <foreignObject class="tl-label tl-label--after" data-tl-label="pillanat" x="139.98" y="255.896" width="56.04" height="16">
-      <div xmlns="http://www.w3.org/1999/xhtml">Pillanat</div>
+    <foreignObject class="tl-label tl-label--after" data-tl-label="instant" x="142.92" y="255.896" width="50.16" height="16">
+      <div xmlns="http://www.w3.org/1999/xhtml">Instant</div>
     </foreignObject>
   </g>
   <g class="tl-layer tl-layer--foreground" aria-hidden="true">
     <line class="tl-now" x1="0" y1="222.09" x2="1440" y2="222.09"/>
-    <text class="tl-now-label" x="23.075" y="208.09" dominant-baseline="central" text-anchor="start">most</text>
-    <polygon class="tl-marker" data-tl-marker="atallas" points="36.5,209.194 47.5,214.694 47.5,203.694"/>
-    <text class="tl-marker-label" x="4.21" y="228.694" dominant-baseline="central" text-anchor="start">óraátállítás</text>
+    <text class="tl-now-label" x="24.945" y="208.09" dominant-baseline="central" text-anchor="start">now</text>
+    <polygon class="tl-marker" data-tl-marker="dst" points="36.5,209.194 47.5,214.694 47.5,203.694"/>
+    <text class="tl-marker-label" x="2.835" y="228.694" dominant-baseline="central" text-anchor="start">clock change</text>
     <circle class="tl-marker" data-tl-marker="demo" cx="42" cy="376.836" r="5.5"/>
-    <text class="tl-marker-label" x="21.645" y="396.336" dominant-baseline="central" text-anchor="start">demó</text>
+    <text class="tl-marker-label" x="21.975" y="396.336" dominant-baseline="central" text-anchor="start">demo</text>
   </g>
   <g class="tl-layer tl-layer--overlay" aria-hidden="true"/>
+  <g class="tl-layer tl-layer--context" aria-hidden="true">
+    <rect class="tl-axis-context" x="0" y="0" width="84" height="16"/>
+    <text class="tl-tick-label tl-tick-label--major tl-tick-label--context" x="6" y="8" dominant-baseline="central" text-anchor="start">2025-03</text>
+  </g>
 </svg>

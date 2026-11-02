@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 /**
- * Torli a property-riportokat a futas ELOTT.
+ * Deletes the property reports BEFORE the run.
  *
- * Miert kell: a riport a bizonyitek arra, hogy a property-teszt lefutott. Egy
- * elozo futasbol ottmaradt riport viszont ugyanolyan jol olvashato, mint egy
- * friss — tehat egy torolt vagy soha le nem futott property-fajl riportja
- * zold pipat adna. A reset az, ami miatt a riport jelenlete tenyleg azt
- * jelenti, hogy MOST futott le.
+ * Why it is needed: the report is the evidence that the property test ran. But
+ * a report left over from a previous run reads just as well as a fresh one —
+ * so the report of a deleted or never-run property file would give a green
+ * tick. The reset is what makes the presence of a report really mean that it
+ * ran NOW.
  *
- * Argumentum nelkul MINDEN riportot eldob, ami a teljes property-futas elott
- * a helyes. Keszletnevekkel csak azokat — egy kapu, ami egyetlen keszletet
- * futtat (G-INVERSE), nem teheti elavultta a tobbi riportjat, mert akkor a
- * ket kapu sorrendje dontene el, melyik bukik.
+ * Without arguments it drops EVERY report, which is right before a full
+ * property run. With suite names it drops only those — a check that runs a
+ * single suite (G-INVERSE) must not make the other reports stale, because
+ * then the order of the two checks would decide which one fails.
  */
 import { readdirSync, rmSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -29,5 +29,5 @@ for (const name of readdirSync(corePackage)) {
     removed += 1;
   }
 }
-const scope = suites.length === 0 ? "mind" : suites.join(", ");
-console.log(`property-riport reset (${scope}): ${String(removed)} elavult riport torolve`);
+const scope = suites.length === 0 ? "all" : suites.join(", ");
+console.log(`property report reset (${scope}): ${String(removed)} stale reports deleted`);

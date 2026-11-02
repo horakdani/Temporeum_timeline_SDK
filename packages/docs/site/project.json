@@ -1,8 +1,8 @@
 {
   "name": "Temporeum Timeline",
-  "repository": "https://github.com/horakdani/temporeum-timeline",
-  "docs": "https://horakdani.github.io/temporeum-timeline/",
-  "homepage": "https://github.com/horakdani/temporeum-timeline#readme",
+  "repository": "https://github.com/horakdani/Temporeum_timeline_SDK",
+  "docs": "https://horakdani.github.io/Temporeum_timeline_SDK/",
+  "homepage": "https://github.com/horakdani/Temporeum_timeline_SDK#readme",
   "branch": "main",
   "license": "MIT",
   "copyright": "Copyright (c) 2026 Daniel Horak and contributors",

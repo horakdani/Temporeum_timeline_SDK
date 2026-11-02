@@ -1,21 +1,20 @@
 #!/usr/bin/env node
 /**
- * G-ORIENT: bizonyitja, hogy MINDEN geometriai teszt lefutott vizszintesen
- * ES fuggolegesen.
+ * G-ORIENT: proves that EVERY geometry test ran horizontally AND
+ * vertically.
  *
- * Ket fuggetlen ellenorzes, mert a grep egyedul hazudhat:
+ * Two independent checks, because grep alone can lie:
  *
- *  1. FUTASIDEJU: a vitest JSON-riportjabol minden teszt neve ki van olvasva.
- *     Minden tesztnek viselnie kell egy orientacio-cimket, es minden
- *     tesztnevhez MINDKET orientacionak le kell futnia. Ha egy teszt csak
- *     vizszintesen futott le, az itt kiesik — akkor is, ha a fajl latszolag
- *     a harness-t hasznalja.
- *  2. STATIKUS: a harness az orientacio-listat a magbol veszi (ORIENTATIONS),
- *     nem sajat masolatbol, es a mag listaja tenylegesen mindkettot
- *     tartalmazza. Igy egy harmadik orientacio bevezetese utan ezek a
- *     tesztek maguktol lefutnanak abban is.
+ *  1. RUNTIME: every test name is read from the vitest JSON report. Every
+ *     test must carry an orientation tag, and BOTH orientations must have run
+ *     for every test name. A test that only ran horizontally is caught here —
+ *     even if the file appears to use the harness.
+ *  2. STATIC: the harness takes the orientation list from the core
+ *     (ORIENTATIONS), not from its own copy, and the core's list really
+ *     contains both. So if a third orientation were introduced, these tests
+ *     would run in it too on their own.
  *
- * A riport hianya vagy ures geometriai konyvtar BUKAS, nem kihagyas.
+ * A missing report or an empty geometry directory is a FAILURE, not a skip.
  */
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
@@ -40,10 +39,10 @@ function ok(message) {
   notes.push(message);
 }
 
-// --- 1. A geometriai tesztek egyaltalan leteznek-e ---------------------------
+// --- 1. Whether the geometry tests exist at all ------------------------------
 
 if (!existsSync(geometryDir)) {
-  fail(`nincs geometriai teszt-konyvtar: ${geometryDir}`);
+  fail(`no geometry test directory: ${geometryDir}`);
 }
 
 const geometryFiles = existsSync(geometryDir)
@@ -51,17 +50,17 @@ const geometryFiles = existsSync(geometryDir)
   : [];
 
 if (geometryFiles.length === 0) {
-  fail("a test/geometry/ alatt nincs egyetlen tesztfajl sem — nincs mit bizonyitani");
+  fail("there is not a single test file under test/geometry/ — nothing to prove");
 } else {
-  ok(`${geometryFiles.length} geometriai tesztfajl: ${geometryFiles.join(", ")}`);
+  ok(`${geometryFiles.length} geometry test files: ${geometryFiles.join(", ")}`);
 }
 
-// --- 2. FUTASIDEJU: a riport minden tesztje mindket orientacioban lefutott ---
+// --- 2. RUNTIME: every test in the report ran in both orientations -----------
 
 if (!existsSync(reportFile)) {
   fail(
-    `nincs vitest-riport (${reportFile}) — az orientacio-ellenorzes NEM futott le, ` +
-      "ezert a check BUKAS, nem kihagyas",
+    `no vitest report (${reportFile}) — the orientation check did NOT run, ` +
+      "so the check is a FAILURE, not a skip",
   );
 } else {
   const report = JSON.parse(readFileSync(reportFile, "utf8"));
@@ -71,11 +70,11 @@ if (!existsSync(reportFile)) {
   );
 
   if (geometryResults.length === 0) {
-    fail("a riport egyetlen test/geometry alatti fajlt sem tartalmaz");
+    fail("the report contains no file under test/geometry");
   } else if (geometryResults.length !== geometryFiles.length) {
     fail(
-      `${geometryFiles.length} geometriai tesztfajl van, de a riport ${geometryResults.length}-t ` +
-        "tartalmaz — valamelyik nem futott le",
+      `there are ${geometryFiles.length} geometry test files, but the report contains ${geometryResults.length} ` +
+        "— one of them did not run",
     );
   }
 
@@ -87,13 +86,13 @@ if (!existsSync(reportFile)) {
     for (const test of file.assertionResults ?? []) {
       total += 1;
       if (test.status !== "passed") {
-        fail(`nem zold teszt: ${String(test.fullName)} (${String(test.status)})`);
+        fail(`test not green: ${String(test.fullName)} (${String(test.status)})`);
       }
       const match = /\[(horizontal|vertical)\]/.exec(String(test.fullName));
       if (match === null) {
         fail(
-          `orientacio-cimke nelkuli teszt a test/geometry alatt: ${String(test.fullName)} — ` +
-            "a describeBothOrientations harness-en kell futnia",
+          `test without an orientation tag under test/geometry: ${String(test.fullName)} — ` +
+            "it must run on the describeBothOrientations harness",
         );
         continue;
       }
@@ -105,57 +104,57 @@ if (!existsSync(reportFile)) {
   }
 
   if (byBaseName.size === 0) {
-    fail("a riportban nincs egyetlen orientacio-cimkezett teszt sem");
+    fail("the report has not a single orientation-tagged test");
   }
 
   for (const [base, seen] of byBaseName) {
     if (!(seen.has("horizontal") && seen.has("vertical"))) {
-      fail(`csak ${[...seen].join(", ")} orientacioban futott le: ${base}`);
+      fail(`ran only in the ${[...seen].join(", ")} orientation: ${base}`);
     }
   }
 
   if (failures.length === 0) {
     ok(
-      `${total} geometriai teszt futott le, ${byBaseName.size} tesztnev x 2 orientacio, mind zold`,
+      `${total} geometry tests ran, ${byBaseName.size} test names x 2 orientations, all green`,
     );
   }
 }
 
-// --- 3. STATIKUS: a harness a magbol veszi a listat --------------------------
+// --- 3. STATIC: the harness takes the list from the core ---------------------
 
 if (!existsSync(harnessFile)) {
-  fail(`nincs orientacio-harness: ${harnessFile}`);
+  fail(`no orientation harness: ${harnessFile}`);
 } else {
   const harness = readFileSync(harnessFile, "utf8");
   if (!/import\s*\{[^}]*\bORIENTATIONS\b[^}]*\}\s*from\s*"\.\.\/src\/geometry\.js"/.test(harness)) {
-    fail("a harness nem a magbol (src/geometry.js) importalja az ORIENTATIONS listat");
+    fail("the harness does not import the ORIENTATIONS list from the core (src/geometry.js)");
   } else {
-    ok("a harness a mag ORIENTATIONS listajan jar, nem sajat masolaton");
+    ok("the harness walks the core's ORIENTATIONS list, not its own copy");
   }
   if (/\["horizontal"\s*,\s*"vertical"\]/.test(harness)) {
-    fail("a harness sajat orientacio-listat tartalmaz — az elavulhat a magtol");
+    fail("the harness contains its own orientation list — it can drift from the core");
   }
 }
 
 if (!existsSync(geometrySource)) {
-  fail(`nincs ${geometrySource}`);
+  fail(`missing: ${geometrySource}`);
 } else {
   const source = readFileSync(geometrySource, "utf8");
   const declaration = /export const ORIENTATIONS[^=]*=\s*\[([^\]]*)\]/.exec(source);
   if (declaration === null) {
-    fail("a src/geometry.ts nem exportal ORIENTATIONS listat");
+    fail("src/geometry.ts does not export an ORIENTATIONS list");
   } else {
     const listed = [...declaration[1].matchAll(/"([a-z]+)"/g)].map((m) => m[1]);
     for (const required of ["horizontal", "vertical"]) {
       if (!listed.includes(required)) {
-        fail(`a mag ORIENTATIONS listajabol kimaradt: ${required}`);
+        fail(`missing from the core's ORIENTATIONS list: ${required}`);
       }
     }
-    ok(`a mag ORIENTATIONS listaja: ${listed.join(", ")}`);
+    ok(`the core's ORIENTATIONS list: ${listed.join(", ")}`);
   }
 }
 
-// --- Eredmeny ---------------------------------------------------------------
+// --- Result -----------------------------------------------------------------
 
 for (const note of notes) {
   console.log(`  ok   ${note}`);
@@ -164,10 +163,10 @@ for (const note of notes) {
 if (failures.length > 0) {
   console.error("");
   for (const failure of failures) {
-    console.error(`  HIBA ${failure}`);
+    console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-ORIENT BUKOTT: ${failures.length} hiba.`);
+  console.error(`\nG-ORIENT FAILED: ${failures.length} failure(s).`);
   process.exit(1);
 }
 
-console.log("\nG-ORIENT atment: minden geometriai teszt lefutott mindket orientacioban.");
+console.log("\nG-ORIENT passed: every geometry test ran in both orientations.");

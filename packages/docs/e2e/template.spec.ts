@@ -5,16 +5,17 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 
 /**
- * G-TEMPLATE böngészős fele: egy szkriptet, `onerror`-t és `onclick`-et
- * tartalmazó sablon a shippelt bundle-lel, valódi Chromiumban.
+ * The browser half of G-TEMPLATE: a template holding a script, an `onerror`
+ * and an `onclick`, with the shipped bundle, in a real Chromium.
  *
- *  - Alapértelmezésben semmi nem fut le (`window.__ran` üres marad), és a
- *    szerver (`renderTimelineSvg`) ugyanazt a sablon-markupot adja, mint az
- *    élő példány.
- *  - NEGATÍV KONTROLL: `sanitize: false`-szal ugyanaz a sablon LEFUT — ha
- *    nem futna, a mérő vak volna, és a fenti „nem futott” semmit nem jelentene.
+ *  - By default nothing runs (`window.__ran` stays empty), and the server
+ *    (`renderTimelineSvg`) gives the same template markup as the live
+ *    instance.
+ *  - NEGATIVE CONTROL: with `sanitize: false` the same template DOES run —
+ *    if it did not, the meter would be blind, and "did not run" above would
+ *    mean nothing.
  *
- * Az eredmény a `.template-e2e.json`-be kerül; a sdk_check_template.mjs abból ítél.
+ * The result goes to `.template-e2e.json`; sdk_check_template.mjs judges from that.
  */
 
 const here = dirname(fileURLToPath(import.meta.url));

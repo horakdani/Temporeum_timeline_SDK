@@ -43,6 +43,11 @@ const YEARS = new Set(["year", "decade", "century", "millennium"]);
 const MONTH = new Intl.DateTimeFormat("en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
 const DAY = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 function formatTick(tick, timeZone) {
+  // The label held at the start of the axis says what the ticks leave out: the month of a view of days, the day of a view of hours.
+  if (tick.context) {
+    if (tick.granularity === "day" || tick.granularity === "week") return MONTH.format(tick.time);
+    return YEARS.has(tick.granularity) || tick.granularity === "month" ? "" : days.format(tick.time);
+  }
   if (YEARS.has(tick.granularity)) return era(yearOf(tick.time));
   if (tick.granularity === "month") return MONTH.format(tick.time);
   if (tick.granularity === "day" || tick.granularity === "week") return DAY.format(tick.time);

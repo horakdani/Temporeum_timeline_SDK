@@ -1,38 +1,39 @@
 #!/usr/bin/env node
-/* global window, document -- a page.evaluate callbackjei a lapon futnak */
+/* global window, document -- the page.evaluate callbacks run on the page */
 /**
- * G-MIGRATION (P18, a P28 ota mindharom utmutato): a vis-timeline-, a
- * frappe-gantt- es a react-calendar-timeline-utmutato minden lekepezesi sora
- * futo pelda, es a "meg nincs" sorok tenyleg nincsenek a konfiguracioban —
- * egy kitalalt lekepezes BUKIK.
+ * G-MIGRATION (now covering all three guides): every mapping row of the
+ * vis-timeline, frappe-gantt and react-calendar-timeline guides is a running
+ * example, and the "not yet" rows really are absent from the configuration —
+ * an invented mapping FAILS.
  *
- * A forras a packages/docs/site/migration/<lib>.json; az oldal tablazata a
- * buildben ugyanebbol keszul, igy a ketto nem valhat el. Mindharom fajlnak
- * leteznie kell, es mindegyikben legalabb 10 lekepezesi sornak; a hianyzo
- * utmutato BUKAS. A frappe-gantt sorai Gantt-keretben futnak (egy feladat
- * egy sav, haladas, fuggosegek), a masik ketto az idovonal-keretben.
+ * The source is packages/docs/site/migration/<lib>.json; the page's table is
+ * built from the same file, so the two cannot drift apart. All three files
+ * must exist, each with at least 10 mapping rows; a missing guide is a
+ * FAILURE. The frappe-gantt rows run in a Gantt harness (one task per lane,
+ * progress, dependencies), the other two in the timeline harness.
  *
- *  1. TIPUSOK. Minden lekepezesi sor `uses` tagja ("Tipus.tag") letezik a
- *     kiadott tipusokban (az elem es a mag publikus exportjai, a forrasbol,
- *     orokolt tagokkal egyutt); minden "meg nincs" sor `absent` tagja NEM
- *     letezik.
- *  2. FORDITAS. Minden lekepezesi sor peldaja a kozos kerettel (ugyanaz,
- *     amit a bongeszo futtat) TypeScript-fajlla all ossze, es a kiadott
- *     .d.ts-ek ellen strict modban hiba nelkul fordul. Egy kitalalt opcio a
- *     konfiguracio objektum-literaljaban "excess property" hiba.
- *  3. FUTAS. Ugyanez a pelda JavaScriptkent a felepitett oldal bundle-jeivel
- *     (import map, packages/docs/dist/lib) igazi Chromiumban fut: nincs
- *     lap-hiba es nincs console.error, es a #timeline-ban van legalabb egy
- *     [role=option] (kiveve a `drawn: false` sort: a `destroy()` utan a
- *     pelda maga allitja, hogy a peldany megszunt).
- *  4. NEGATIV KONTROLL ugyanezen a meron: egy kitalalt lekepezes
- *     (rollingMode -> `rollingMode: { follow: true }`; a P24 ota a `rolling`
- *     valodi opcio, ezert a kitalalt kulcs a vis-nev maga) az 1. es a 2. ponton is
- *     BUKIK, es egy letezo kulcsot "meg nincs"-nek allito sor (cluster) az
- *     1. ponton BUKIK. Ha barmelyik atmenne, a mero vak.
+ *  1. TYPES. Every mapping row's `uses` member ("Type.member") exists in the
+ *     published types (the public exports of the element and the core, from
+ *     source, inherited members included); every "not yet" row's `absent`
+ *     member does NOT exist.
+ *  2. COMPILATION. Every mapping row's example, with the shared harness (the
+ *     same one the browser runs), is assembled into a TypeScript file and
+ *     compiles without errors in strict mode against the published .d.ts
+ *     files. An invented option in the configuration object literal is an
+ *     "excess property" error.
+ *  3. RUNNING. The same example as JavaScript runs in real Chromium with the
+ *     built site's bundles (import map, packages/docs/dist/lib): no page
+ *     error and no console.error, and #timeline holds at least one
+ *     [role=option] (except the `drawn: false` row: after `destroy()` the
+ *     example itself asserts that the instance is gone).
+ *  4. NEGATIVE CONTROL with the same measure: an invented mapping
+ *     (rollingMode -> `rollingMode: { follow: true }`; `rolling` is a real
+ *     option now, so the invented key is the vis name itself) FAILS both
+ *     point 1 and point 2, and a row claiming an existing key is "not yet"
+ *     (cluster) FAILS point 1. If either passed, the measure would be blind.
  *
- * Elofeltetel: `npm run build -w @temporeum/timeline-docs` (a dist es a
- * csomagok .d.ts-ei). A nem futtathato lepes BUKAS, nem kihagyas.
+ * Prerequisite: `npm run build -w @temporeum/timeline-docs` (the dist and the
+ * packages' .d.ts files). A step that cannot run is a FAILURE, not a skip.
  */
 
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -50,7 +51,7 @@ const MIN_MAPPINGS = 10;
 const failures = [];
 const notes = [];
 
-// --- a kozos keret ------------------------------------------------------------
+// --- the shared harness --------------------------------------------------------
 const HARNESS_ITEMS = `const DAY = 86_400_000;
 const container = document.querySelector("#timeline") as HTMLElement;
 const lanes = [
@@ -64,7 +65,7 @@ const items = [
   { id: "launch", start: new Date("2026-03-27"), end: new Date("2026-04-03"), label: "Launch", laneId: "ship" },
   { id: "retro", start: new Date("2026-04-06"), label: "Retro", laneId: "work" },
 ];`;
-/** A frappe-gantt-sorok kerete: egy feladat egy sav, haladassal; a fuggosegek a `dependencies`-ben. */
+/** The frappe-gantt rows' harness: one task per lane, with progress; the dependencies in `dependencies`. */
 const HARNESS_TASKS = `const DAY = 86_400_000;
 const container = document.querySelector("#timeline") as HTMLElement;
 const tasks = [
@@ -84,12 +85,12 @@ const dependencies = [
 ];`;
 const HARNESSES = { "vis-timeline": HARNESS_ITEMS, "react-calendar-timeline": HARNESS_ITEMS, "frappe-gantt": HARNESS_TASKS };
 
-/** Egy sor peldaja, TypeScriptkent. A bongeszo ugyanezt kapja, tipusok nelkul. */
+/** One row's example, as TypeScript. The browser gets the same, without types. */
 /**
- * A keret minden plugint regisztral (P29, P30), ahogy egy migralo lap tenne:
- * a forraskonyvtar mindent rajzol, a sorok peldai a Gantt-ot, a csoportfat,
- * az ido-eszkozoket, az elemtipusokat es a szotarat is hasznaljak. A plugin
- * nelkuli hiba a G-PLUGINS es a G-PLUGINS-2 merese, nem ezee.
+ * The harness registers every plugin, as a migrating page would: the
+ * source library draws everything, and the rows' examples use the Gantt, the
+ * group tree, the time tools, the item kinds and the dictionary too. The
+ * error without a plugin is measured by G-PLUGINS and G-PLUGINS-2, not here.
  */
 const PLUGINS = ["gantt", "resources", "export", "tools", "groups", "items", "intl"];
 const REGISTER = [
@@ -116,17 +117,17 @@ function exampleSource(row, library = "vis-timeline") {
   ].join("\n");
 }
 
-/** A TypeScript-annotaciok nelkuli valtozat a bongeszonek. */
+/** The version without TypeScript annotations, for the browser. */
 function browserSource(row, library) {
   return ts.transpileModule(exampleSource(row, library), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
 }
 
-// --- 1. a tipusok tagjai -------------------------------------------------------
+// --- 1. the types' members -----------------------------------------------------
 let checker;
 let exportsByName;
 function typeMembers(name) {
   if (checker === undefined) {
-    // Az elem, a mag, es a mag ket alutvonala, amelyre a frappe-gantt- es a vis-sorok hivatkoznak.
+    // The element, the core, and the two core subpaths the frappe-gantt and vis rows refer to.
     const entries = ["web-component/src/index.ts", "core/src/index.ts", "core/src/gantt/index.ts", "core/src/vis-compat/index.ts"].map((path) => join(repo, "packages", path));
     const program = ts.createProgram(entries, {
       target: ts.ScriptTarget.ES2022,
@@ -150,7 +151,7 @@ function typeMembers(name) {
   return new Set(checker.getPropertiesOfType(checker.getDeclaredTypeOfSymbol(symbol)).map((property) => property.getName()));
 }
 
-/** Egy sor tag-allitasainak hibai. */
+/** The errors in one row's member claims. */
 export function judgeMembers(row) {
   const problems = [];
   const lookup = (ref) => {
@@ -161,19 +162,19 @@ export function judgeMembers(row) {
   };
   for (const ref of row.uses ?? []) {
     const found = lookup(ref);
-    if (!found.known) problems.push(`"${row.vis}": a ${found.type} tipus nincs a publikus exportok kozott (${ref})`);
-    else if (!found.has) problems.push(`"${row.vis}": a lekepezes nem letezo tagra mutat: ${ref}`);
+    if (!found.known) problems.push(`"${row.vis}": the type ${found.type} is not among the public exports (${ref})`);
+    else if (!found.has) problems.push(`"${row.vis}": the mapping points to a member that does not exist: ${ref}`);
   }
   for (const ref of row.absent ?? []) {
     const found = lookup(ref);
-    if (!found.known) problems.push(`"${row.vis}": a ${found.type} tipus nincs a publikus exportok kozott (${ref})`);
-    else if (found.has) problems.push(`"${row.vis}": "meg nincs"-nek allitja, de LETEZIK: ${ref}`);
+    if (!found.known) problems.push(`"${row.vis}": the type ${found.type} is not among the public exports (${ref})`);
+    else if (found.has) problems.push(`"${row.vis}": claims "not yet", but it EXISTS: ${ref}`);
   }
   return problems;
 }
 
-// --- 2. forditas ---------------------------------------------------------------
-/** Sorok forditasi hibai, soronkent. A fajlok a docs csomagban allnak, hogy a workspace-csomagokat (dist .d.ts) talaljak. */
+// --- 2. compilation ------------------------------------------------------------
+/** Compile errors of rows, per row. The files sit in the docs package so that they find the workspace packages (dist .d.ts). */
 export function compileRows(rows, library = "vis-timeline") {
   const dir = join(docs, ".migration-check");
   rmSync(dir, { recursive: true, force: true });
@@ -212,38 +213,38 @@ const guides = [];
 for (const library of GUIDES) {
   const path = join(docs, "site", "migration", `${library}.json`);
   if (!existsSync(path)) {
-    failures.push(`hianyzik a(z) ${library} migracios utmutato adatfajlja (site/migration/${library}.json)`);
+    failures.push(`the data file of the ${library} migration guide is missing (site/migration/${library}.json)`);
     continue;
   }
   const guide = JSON.parse(readFileSync(path, "utf8"));
-  if (guide.library !== library) failures.push(`site/migration/${library}.json: a library mezo ${JSON.stringify(guide.library)}`);
+  if (guide.library !== library) failures.push(`site/migration/${library}.json: the library field is ${JSON.stringify(guide.library)}`);
   const mappings = guide.rows.filter((row) => row.status !== "missing");
   const missing = guide.rows.filter((row) => row.status === "missing");
-  if (mappings.length < MIN_MAPPINGS) failures.push(`${library}: csak ${String(mappings.length)} lekepezesi sor, legalabb ${String(MIN_MAPPINGS)} kell`);
+  if (mappings.length < MIN_MAPPINGS) failures.push(`${library}: only ${String(mappings.length)} mapping rows, at least ${String(MIN_MAPPINGS)} are required`);
   guides.push({ library, mappings, missing });
   for (const row of guide.rows) failures.push(...judgeMembers(row).map((problem) => `${library}: ${problem}`));
   if (!existsSync(join(repo, "packages", "web-component", "dist", "index.d.ts"))) {
-    failures.push("nincs packages/web-component/dist — a build nem futott, a forditas nem futtathato, ezert BUKAS");
+    failures.push("no packages/web-component/dist — the build did not run, compilation cannot run, so this is a FAILURE");
   } else {
     const results = compileRows(mappings, library);
     for (const [index, row] of mappings.entries()) {
-      if (results[index].length > 0) failures.push(`${library} "${row.vis}": a pelda nem fordul — ${results[index].slice(0, 2).join(" | ")}`);
+      if (results[index].length > 0) failures.push(`${library} "${row.vis}": the example does not compile — ${results[index].slice(0, 2).join(" | ")}`);
     }
-    if (results.length > mappings.length) failures.push(`${library}: globalis forditasi hiba: ${results.at(-1).slice(0, 2).join(" | ")}`);
-    else notes.push(`${library}: ${String(mappings.length)} lekepezes fordul strict TypeScripttel, a kiadott tipusok ellen`);
+    if (results.length > mappings.length) failures.push(`${library}: global compile error: ${results.at(-1).slice(0, 2).join(" | ")}`);
+    else notes.push(`${library}: ${String(mappings.length)} mappings compile with strict TypeScript, against the published types`);
   }
-  notes.push(`${library}: ${String(missing.length)} "meg nincs" sor kulcsai tenyleg hianyoznak (ha fent nincs BUKAS)`);
+  notes.push(`${library}: the keys of ${String(missing.length)} "not yet" rows really are missing (if there is no FAIL above)`);
 }
 
-// --- 4. negativ kontroll (a tipus-feleken) ----------------------------------------
+// --- 4. negative control (on the type halves) -------------------------------------
 const invented = { area: "Control", vis: "rollingMode", status: "renamed", temporeum: "rollingMode", uses: ["TimelineConfig.rollingMode"], config: "rollingMode: { follow: true }" };
 const falseMissing = { area: "Control", vis: "cluster", status: "missing", absent: ["TimelineConfig.cluster"] };
-if (judgeMembers(invented).length === 0) failures.push("NEGATIV KONTROLL: a kitalalt lekepezes tag-ellenorzese NEM bukik");
-if (judgeMembers(falseMissing).length === 0) failures.push('NEGATIV KONTROLL: a letezo kulcsot "meg nincs"-nek allito sor NEM bukik');
-if (existsSync(join(repo, "packages", "web-component", "dist", "index.d.ts")) && compileRows([invented])[0].length === 0) failures.push("NEGATIV KONTROLL: a kitalalt opcio peldaja hiba nelkul fordul");
-else notes.push("negativ kontroll bukik, ahogy kell — kitalalt lekepezes (tagok, forditas), hamis \"meg nincs\" (tagok)");
+if (judgeMembers(invented).length === 0) failures.push("NEGATIVE CONTROL: the member check of the invented mapping does NOT fail");
+if (judgeMembers(falseMissing).length === 0) failures.push('NEGATIVE CONTROL: the row claiming an existing key is "not yet" does NOT fail');
+if (existsSync(join(repo, "packages", "web-component", "dist", "index.d.ts")) && compileRows([invented])[0].length === 0) failures.push("NEGATIVE CONTROL: the invented option's example compiles without errors");
+else notes.push("the negative control fails, as it should — invented mapping (members, compilation), false \"not yet\" (members)");
 
-// --- 3. futas a bongeszoben -------------------------------------------------------
+// --- 3. running in the browser -----------------------------------------------------
 const TYPES = { ".html": "text/html; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".map": "application/json" };
 const pages = new Map();
 function pageFor(row, library) {
@@ -258,10 +259,10 @@ window.__ready = true;</script></body></html>`;
 async function runInBrowser() {
   const { chromium } = await import("@playwright/test");
   if (!existsSync(join(dist, "site-manifest.json"))) {
-    failures.push("nincs packages/docs/dist — a build nem futott, a futas nem futtathato, ezert BUKAS");
+    failures.push("no packages/docs/dist — the build did not run, the run cannot run, so this is a FAILURE");
     return;
   }
-  // Az oldal import mapje a buildbol (build-site.mjs IMPORTS), a /lib/ ala.
+  // The page's import map from the build (build-site.mjs IMPORTS), under /lib/.
   const { IMPORTS } = await import(join(docs, "scripts", "build-site.mjs"));
   writeFileSync(join(dist, ".import-map.json"), JSON.stringify(Object.fromEntries(Object.entries(IMPORTS).map(([name, path]) => [name, `/${path}`]))));
   const server = createServer((request, response) => {
@@ -282,7 +283,7 @@ async function runInBrowser() {
   await new Promise((done) => server.listen(0, "127.0.0.1", done));
   const base = `http://127.0.0.1:${String(server.address().port)}`;
   const browser = await chromium.launch({ channel: "chromium-headless-shell" });
-  /** Egy sor futasa: hibak listaja. */
+  /** Running one row: a list of errors. */
   const run = async (row, index, library = "vis-timeline") => {
     const path = `/migration-${library}-${String(index)}.html`;
     pages.set(path, pageFor(row, library));
@@ -298,7 +299,7 @@ async function runInBrowser() {
       await page.waitForTimeout(300);
       const options = await page.evaluate(() => document.querySelectorAll("#timeline svg [role=option]").length);
       const problems = [...errors];
-      if (row.drawn !== false && options < 1) problems.push(`${String(options)} [role=option] a #timeline-ban`);
+      if (row.drawn !== false && options < 1) problems.push(`${String(options)} [role=option] in #timeline`);
       return problems;
     } catch (error) {
       return [...errors, String(error.message).split("\n")[0]];
@@ -311,14 +312,14 @@ async function runInBrowser() {
       let ran = 0;
       for (const [index, row] of mappings.entries()) {
         const problems = await run(row, index, library);
-        if (problems.length > 0) failures.push(`${library} "${row.vis}": a pelda a bongeszoben nem fut rendben — ${problems.slice(0, 2).join(" | ")}`);
+        if (problems.length > 0) failures.push(`${library} "${row.vis}": the example does not run cleanly in the browser — ${problems.slice(0, 2).join(" | ")}`);
         else ran += 1;
       }
-      notes.push(`${library}: ${String(ran)}/${String(mappings.length)} pelda fut Chromiumban, hiba nelkul, rajzolt elemekkel`);
+      notes.push(`${library}: ${String(ran)}/${String(mappings.length)} examples run in Chromium, without errors, with drawn items`);
     }
-    // Negativ kontroll: egy eldobo pelda ugyanezen a meron hibat mutat.
+    // Negative control: a throwing example shows an error with the same measure.
     const thrown = await run({ vis: "control", after: 'throw new Error("control");' }, "control");
-    if (thrown.length === 0) failures.push("NEGATIV KONTROLL: egy eldobo pelda a bongeszoben NEM bukik");
+    if (thrown.length === 0) failures.push("NEGATIVE CONTROL: a throwing example does NOT fail in the browser");
   } finally {
     await browser.close();
     server.close();
@@ -329,6 +330,6 @@ async function runInBrowser() {
 await runInBrowser();
 
 for (const note of notes) console.log(`  ok    ${note}`);
-for (const failure of failures) console.log(`  BUKAS ${failure}`);
-console.log(failures.length === 0 ? "G-MIGRATION: atment" : `G-MIGRATION: BUKOTT (${String(failures.length)} hiba)`);
+for (const failure of failures) console.log(`  FAIL  ${failure}`);
+console.log(failures.length === 0 ? "G-MIGRATION: passed" : `G-MIGRATION: FAILED (${String(failures.length)} failure(s))`);
 process.exit(failures.length === 0 ? 0 : 1);

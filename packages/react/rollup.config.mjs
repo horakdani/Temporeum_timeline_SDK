@@ -1,9 +1,10 @@
-// ESM és CJS. A React és a testvércsomagok KÜLSŐK: egy alkalmazásban
-// egyetlen React lehet, és a horgok egy második példánnyal eltörnek.
+// ESM and CJS. React and the sibling packages are EXTERNAL: an application
+// can have only one React, and hooks break with a second copy.
 //
-// A "use client" a fájl élén marad: a Next App Routere ebből tudja, hogy a
-// komponens a kliensen fut (a szerveren is renderelhető, de horgokat hív).
-// A rollup a modul-szintű direktívákat kidobja, ezért bannerként kerül vissza.
+// "use client" stays at the top of the file: that is how the Next App Router
+// knows the component runs on the client (it can render on the server too,
+// but it calls hooks). Rollup drops module-level directives, so it goes back
+// in as a banner.
 import typescript from "@rollup/plugin-typescript";
 
 const banner = '"use client";\n/*! @temporeum/timeline-react | MIT */';

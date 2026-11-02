@@ -14,8 +14,8 @@ import { Timeline, timelineState } from "../src/index.js";
 const DAY = 86_400_000;
 const T0 = Date.UTC(2026, 0, 1);
 const items: Item[] = [
-  { id: "a", start: T0, end: T0 + 4 * DAY, label: "Tervezés" },
-  { id: "b", start: T0 + 6 * DAY, end: T0 + 9 * DAY, label: "Építés" },
+  { id: "a", start: T0, end: T0 + 4 * DAY, label: "Planning" },
+  { id: "b", start: T0 + 6 * DAY, end: T0 + 9 * DAY, label: "Building" },
 ];
 
 describe("the Svelte adapter in Node", () => {

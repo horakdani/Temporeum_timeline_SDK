@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 /**
- * A G-RTL vizualis fele: a vizualis matrix jobbrol balra, a SHIPPELT bundle-on.
+ * The visual half of G-RTL: the visual matrix right-to-left, on the SHIPPED bundle.
  *
- * Ugyanaz a matrix, mint a G-VISUAL-e (a matrix.json szelessegei, a mag
- * ORIENTATIONS-e es THEMES-e), ugyanaz a scenario — es minden eset a
- * `mirrorScene`-en at (/intl), a dist-bol. Kulon konyvtarban
- * (test/rtl/fixtures/), mert a G-VISUAL a sajat konyvtaraban minden
- * esetlen fajlt elavultnak vesz.
+ * The same matrix as G-VISUAL's (the widths from matrix.json, the core's
+ * ORIENTATIONS and THEMES), the same scenario — and every case goes through
+ * `mirrorScene` (/intl), from dist. In a separate directory
+ * (test/rtl/fixtures/), because G-VISUAL treats every file in its own
+ * directory that has no case as stale.
  *
- * Ugyanaz a harom dontes, mint a sdk_visual_snapshots.mjs-ben: a forditott
- * csomagot meri, ujragenerál es bajtra hasonlit (hianyzo fixture BUKAS), es
- * sha256-provenanciat tart.
+ * The same three decisions as in sdk_visual_snapshots.mjs: it measures the
+ * built package, regenerates and compares byte for byte (a missing fixture is
+ * a FAILURE), and keeps sha256 provenance.
  *
- * Hasznalat:
- *   node scripts/sdk_rtl_snapshots.mjs            # megirja a fixture-oket
- *   node scripts/sdk_rtl_snapshots.mjs --check    # kapu-mod: csak ellenoriz
+ * Usage:
+ *   node scripts/sdk_rtl_snapshots.mjs            # writes the fixtures
+ *   node scripts/sdk_rtl_snapshots.mjs --check    # gate mode: only checks
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -32,11 +32,11 @@ const checkOnly = process.argv.includes("--check");
 const sha256 = (text) => createHash("sha256").update(text).digest("hex");
 const time = (value) => {
   const parsed = Date.parse(value);
-  if (Number.isNaN(parsed)) throw new Error(`Ertelmezhetetlen idopont a scenarioban: ${String(value)}`);
+  if (Number.isNaN(parsed)) throw new Error(`Unparseable time in the scenario: ${String(value)}`);
   return parsed;
 };
 
-/** A scenario, ahogy a G-VISUAL is olvassa: ISO-sztringek epoch ms-re. */
+/** The scenario, read the way G-VISUAL reads it: ISO strings to epoch ms. */
 export function hydrateScenario(scenario) {
   return {
     timeZone: scenario.timeZone,
@@ -59,7 +59,7 @@ export function hydrateScenario(scenario) {
   };
 }
 
-/** A matrix RTL-esetei: szelesseg x orientacio x tema, a nev `-rtl` vegu. */
+/** The matrix's RTL cases: width x orientation x theme, with names ending in `-rtl`. */
 export function rtlCases(core, matrix) {
   const cases = [];
   for (const width of matrix.widths) {
@@ -79,7 +79,7 @@ export function rtlCases(core, matrix) {
   return cases;
 }
 
-/** Egy eset: a G-VISUAL-e ugyanugy rajzolva, majd tukrozve. */
+/** One case: drawn the same way as G-VISUAL's, then mirrored. */
 export function renderRtlCase(core, intl, scenario, entry) {
   const result = core.renderTimeline({
     items: scenario.items,
@@ -109,7 +109,7 @@ async function main() {
   const cases = rtlCases(core, JSON.parse(matrixSource));
   const rendered = new Map(cases.map((entry) => [`${entry.name}.svg`, renderRtlCase(core, intl, scenario, entry)]));
   const manifest = {
-    note: "A G-RTL vizualis provenanciaja: a G-VISUAL matrixa tukrozve. A scenario, a matrix es minden fixture sha256-ja.",
+    note: "G-RTL's visual provenance: the G-VISUAL matrix, mirrored. The sha256 of the scenario, the matrix and every fixture.",
     core: core.VERSION,
     scenarioSha256: sha256(scenarioSource),
     matrixSha256: sha256(matrixSource),
@@ -120,31 +120,31 @@ async function main() {
     mkdirSync(fixturesDir, { recursive: true });
     for (const [name, svg] of rendered) writeFileSync(join(fixturesDir, name), svg, "utf8");
     writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
-    console.log(`${String(rendered.size)} RTL-fixture megirva: ${fixturesDir}`);
+    console.log(`${String(rendered.size)} RTL fixtures written: ${fixturesDir}`);
     return;
   }
 
   const failures = [];
   if (!existsSync(manifestPath)) {
-    failures.push(`nincs manifest (${manifestPath}) — nincs mihez hasonlitani, tehat BUKAS`);
+    failures.push(`no manifest (${manifestPath}) — nothing to compare against, so FAIL`);
   } else {
     const stored = JSON.parse(readFileSync(manifestPath, "utf8"));
-    if (stored.scenarioSha256 !== manifest.scenarioSha256) failures.push("a scenario megvaltozott, de az RTL-fixture-ok nem lettek ujrageneralva");
-    if (stored.matrixSha256 !== manifest.matrixSha256) failures.push("a matrix megvaltozott, de az RTL-fixture-ok nem lettek ujrageneralva");
+    if (stored.scenarioSha256 !== manifest.scenarioSha256) failures.push("the scenario changed, but the RTL fixtures were not regenerated");
+    if (stored.matrixSha256 !== manifest.matrixSha256) failures.push("the matrix changed, but the RTL fixtures were not regenerated");
   }
   const onDisk = existsSync(fixturesDir) ? readdirSync(fixturesDir).filter((name) => name.endsWith(".svg")) : [];
-  for (const name of onDisk) if (!rendered.has(name)) failures.push(`elavult RTL-fixture: ${name} — nincs hozza eset`);
+  for (const name of onDisk) if (!rendered.has(name)) failures.push(`stale RTL fixture: ${name} — no case for it`);
   for (const [name, svg] of rendered) {
     const path = join(fixturesDir, name);
-    if (!existsSync(path)) failures.push(`hianyzo RTL-fixture: ${name} — hianyzo fixture BUKAS, nem kihagyas`);
-    else if (readFileSync(path, "utf8") !== svg) failures.push(`elcsuszott RTL-fixture: ${name}`);
+    if (!existsSync(path)) failures.push(`missing RTL fixture: ${name} — a missing fixture is a FAILURE, not a skip`);
+    else if (readFileSync(path, "utf8") !== svg) failures.push(`RTL fixture drifted: ${name}`);
   }
   if (failures.length > 0) {
-    for (const failure of failures) console.error(`  HIBA ${failure}`);
-    console.error(`\nG-RTL (fixture-ok) BUKOTT: ${String(failures.length)} hiba.`);
+    for (const failure of failures) console.error(`  ERROR ${failure}`);
+    console.error(`\nG-RTL (fixtures) FAILED: ${String(failures.length)} errors.`);
     process.exit(1);
   }
-  console.log(`G-RTL fixture-ok: mind a ${String(rendered.size)} RTL-eset bajtra egyezik.`);
+  console.log(`G-RTL fixtures: all ${String(rendered.size)} RTL cases match byte for byte.`);
 }
 
 if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -240,9 +240,15 @@ describe("P30: registered, each plugin draws its part", () => {
     // "auto" on a server, which has no computed style, draws left to right.
     expect(renderTimelineSvg({ ...base, direction: "auto" }).svg).not.toContain('dir="rtl"');
     // 5 January 2026 is 16 Tevet 5786: the axis counts the calendar's own days.
-    const labels = (svg: string): string[] => [...svg.matchAll(/class="tl-tick-label[^"]*"[^>]*>([^<]*)</g)].map((match) => match[1] as string);
+    const labels = (svg: string): string[] =>
+      [...svg.matchAll(/class="tl-tick-label(?![^"]*--context)[^"]*"[^>]*>([^<]*)</g)].map((match) => match[1] as string);
+    const context = (svg: string): string | undefined => /class="[^"]*tl-tick-label--context"[^>]*>([^<]*)</.exec(svg)?.[1];
     expect(labels(renderTimelineSvg(base).svg)).toEqual(["05", "12"]);
-    expect(labels(renderTimelineSvg({ ...base, calendar: "hebrew", locale: "en" }).svg)).toEqual(["16", "23"]);
+    expect(context(renderTimelineSvg(base).svg)).toBe("2026-01");
+    const hebrew = renderTimelineSvg({ ...base, calendar: "hebrew", locale: "en" }).svg;
+    expect(labels(hebrew)).toEqual(["16", "23"]);
+    // The context label is the calendar's month too.
+    expect(context(hebrew)).toMatch(/Tevet 5786/);
   });
 
   it("with every plugin registered, every option above draws", () => {

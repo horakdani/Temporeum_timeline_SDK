@@ -1,28 +1,28 @@
 #!/usr/bin/env node
 /**
- * G-CANMOVE: bizonyitja, hogy a hoszt szabalya tenyleg megallitja a
- * szerkesztest — MINDEN uton, es egeszben.
+ * G-CANMOVE: proves that the host's rule really stops an edit — on EVERY
+ * path, and as a whole.
  *
- * Harom allitas, mindharom konnyen elromlik csendben:
+ * Three claims, and all three break silently with ease:
  *
- *  - A veto ATOMI: egy visszautasitott elem az EGESZ ajanlatot visszautasitja.
- *    Egy reszleges mozgatas eszrevetlenul atrendezi azt, amit a hasznalo
- *    megfogott, es o ezt a konyvtar hibajanak olvassa, nem a sajat szabalya
- *    mukodesenek.
- *  - A veto NEM lemondas: az utolso elfogadott pozicio megy ki ujra
- *    `vetoed: true`-val. Az elem ott marad, ahol a szabaly engedte — nem
- *    ugrik vissza a kezdetre, es nem marad a visszautasitott helyen, amikor
- *    az ujj felemelkedik. A kapu ezert azt is meri, hogy visszautasitott
- *    pozicióra SOHA nem keletkezik command.
- *  - Mindket ut szamit: a gesztus ES a programozott iker. Egy veto, ami csak
- *    ujjra mukodik, az a billentyuzetes hasznalo adatvesztese. Eppen ez az,
- *    amit egy cimre epulo kapu nem lat: a `runEdit` veto-aga a P5 elott a
- *    lefedettsegben is lyuk volt.
+ *  - The veto is ATOMIC: one refused item refuses the WHOLE proposal. A
+ *    partial move quietly rearranges what the user grabbed, and they read it
+ *    as a bug in the library, not as their own rule at work.
+ *  - The veto is NOT a cancel: the last accepted position goes out again
+ *    with `vetoed: true`. The item stays where the rule allowed it — it does
+ *    not jump back to the start, and it does not stay at the refused spot
+ *    when the finger lifts. So the check also measures that a command is
+ *    NEVER created for a refused position.
+ *  - Both paths count: the gesture AND the programmatic twin. A veto that
+ *    only works for the finger is data loss for the keyboard user. That is
+ *    exactly what a check built on titles does not see: the veto branch of
+ *    `runEdit` was once a hole in the coverage as well.
  *
- * Harom fuggetlen ellenorzes: a vitest-riport (a keszlet lefutott es zold), a
- * gep nyomvonala (melyik uton volt tenyleg veto, es keletkezett-e command),
- * es a statikus fel (a veto az ELSO bukott patch-nel all meg, mindket uton
- * meg van hivva, es a lezart elem kimarad a huzasbol, nem visszautasitja).
+ * Three independent checks: the vitest report (the suite ran and passed),
+ * the machine's trace (on which path there really was a veto, and whether a
+ * command was created), and the static half (the veto stops at the FIRST
+ * failed patch, it is called on both paths, and a locked item is left out
+ * of the drag rather than refusing it).
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -48,7 +48,7 @@ const REQUIRED_CLAIMS = [
   "will not start a drag on a locked item",
   "non-resizable",
 ];
-/** Minden ut, amin egy szerkesztes elindulhat. Mindegyiken kell veto. */
+/** Every path an edit can start on. Each one needs a veto. */
 const REQUIRED_ROUTES = ["gesture-move", "gesture-resize", "api-move", "api-resize"];
 
 const failures = [];
@@ -56,11 +56,11 @@ const notes = [];
 
 const codeOf = (source) => source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
-// --- 1. FUTASIDEJU: a keszlet ------------------------------------------------
+// --- 1. RUNTIME: the suite ----------------------------------------------------
 
 if (!existsSync(reportFile)) {
   failures.push(
-    `nincs vitest-riport (${reportFile}) — a canMove-keszlet NEM futott le, ezert BUKAS`,
+    `no vitest report (${reportFile}) — the canMove suite did NOT run, so this is a FAILURE`,
   );
 } else {
   const report = JSON.parse(readFileSync(reportFile, "utf8"));
@@ -68,83 +68,83 @@ if (!existsSync(reportFile)) {
   const tests = files.flatMap((file) => file.assertionResults ?? []);
   if (tests.length < MIN_TESTS) {
     failures.push(
-      `${String(tests.length)} canMove-teszt futott, de legalabb ${String(MIN_TESTS)} kell`,
+      `${String(tests.length)} canMove tests ran, but at least ${String(MIN_TESTS)} are required`,
     );
   }
   for (const test of tests) {
     if (test.status !== "passed") {
-      failures.push(`nem zold canMove-teszt: ${String(test.fullName)} (${String(test.status)})`);
+      failures.push(`failing canMove test: ${String(test.fullName)} (${String(test.status)})`);
     }
   }
   const names = tests.map((test) => String(test.fullName).toLowerCase());
   for (const claim of REQUIRED_CLAIMS) {
     if (!names.some((name) => name.includes(claim.toLowerCase()))) {
-      failures.push(`a kapu allit valamit, amit senki nem mer: "${claim}"`);
+      failures.push(`the check claims something nobody measures: "${claim}"`);
     }
   }
   if (failures.length === 0) {
     notes.push(
-      `${String(tests.length)} canMove-teszt, mind zold, es mind a ` +
-        `${String(REQUIRED_CLAIMS.length)} kotelezo allitasra van teszt`,
+      `${String(tests.length)} canMove tests, all passing, and every one of the ` +
+        `${String(REQUIRED_CLAIMS.length)} required claims has a test`,
     );
   }
 }
 
-// --- 2. FUTASIDEJU: a nyom ---------------------------------------------------
+// --- 2. RUNTIME: the trace ----------------------------------------------------
 
 if (!existsSync(traceFile)) {
   failures.push(
-    `nincs veto-nyomvonal (${traceFile}) — akkor nem tudjuk, melyik uton volt tenyleg veto, ` +
-      "csak azt, hogy a tesztek zoldek",
+    `no veto trace (${traceFile}) — then we do not know on which path there really was a veto, ` +
+      "only that the tests pass",
   );
 } else {
   let trace;
   try {
     trace = JSON.parse(readFileSync(traceFile, "utf8"));
   } catch (error) {
-    failures.push(`a veto-nyomvonal olvashatatlan: ${String(error)}`);
+    failures.push(`the veto trace is unreadable: ${String(error)}`);
   }
   if (trace !== undefined) {
     const vetoed = Array.isArray(trace.vetoed) ? trace.vetoed : [];
     for (const route of REQUIRED_ROUTES) {
       if (!vetoed.includes(route)) {
         failures.push(
-          `a(z) "${route}" uton nem volt veto — ha ezen az uton a szabaly nem all meg, ` +
-            "ez az ut irja felul a hoszt sajat szabalyat",
+          `there was no veto on the "${route}" path — if the rule does not stop on this path, ` +
+            "this path overrides the host's own rule",
         );
       }
     }
     if (trace.commandsAfterVeto !== 0) {
       failures.push(
-        `${String(trace.commandsAfterVeto)} command keletkezett visszautasitott pozicióra — ` +
-          "a veto ilyenkor csak latszolagos: a valtozas megis eltarolhato",
+        `${String(trace.commandsAfterVeto)} commands were created for a refused position — ` +
+          "then the veto is only for show: the change can still be stored",
       );
     }
     const atomic = Array.isArray(trace.atomic) ? trace.atomic : [];
     const proven = atomic.filter((entry) => entry.selected >= 2 && entry.movedAnyway === 0);
     if (proven.length === 0) {
       failures.push(
-        "egyetlen tobbelemu ajanlat sincs, amit egy veto EGESZBEN utasitott vissza — " +
-          `az atomicitas igy nincs merve (${String(atomic.length)} probalkozas a nyomvonalban)`,
+        "there is not a single multi-item proposal that a veto refused AS A WHOLE — " +
+          `so atomicity is not measured (${String(atomic.length)} attempts in the trace)`,
       );
     }
     if (!Number.isInteger(trace.canMoveCalls) || trace.canMoveCalls < 1) {
-      failures.push("a szabalyt egyszer sem kerdeztek meg — a keszlet nem a canMove-ot meri");
+      failures.push("the rule was never asked — the suite does not measure canMove");
     }
     if (failures.length === 0) {
       notes.push(
-        `mind a ${String(REQUIRED_ROUTES.length)} uton volt veto, ${String(trace.canMoveCalls)} ` +
-          "szabaly-kerdes, egyetlen command sem keletkezett visszautasitott pozicióra, " +
-          "es a tobbelemu ajanlatot egeszben utasitotta vissza",
+        `there was a veto on all ${String(REQUIRED_ROUTES.length)} paths, ${String(trace.canMoveCalls)} ` +
+          "rule queries, not a single command was created for a refused position, " +
+          "and the multi-item proposal was refused as a whole",
       );
     }
   }
 }
 
-// --- 3. STATIKUS: a mertek es a csovezetek -----------------------------------
+// --- 3. STATIC: the measurement and the pipeline ----------------------------
 
 if (!existsSync(testFile)) {
-  failures.push(`nincs canMove-tesztfajl: ${testFile}`);
+  failures.push(`no canMove test file: ${testFile}`);
 } else {
   const source = readFileSync(testFile, "utf8");
   if (
@@ -152,65 +152,65 @@ if (!existsSync(testFile)) {
       source,
     )
   ) {
-    failures.push("a canMove-teszt nem a mag createInputMachine exportjat hajtja");
+    failures.push("the canMove test does not drive the core's createInputMachine export");
   }
   if (!/canMove:/.test(source)) {
-    failures.push("a canMove-teszt nem ad at canMove szabalyt — akkor mit mer?");
+    failures.push("the canMove test passes no canMove rule — then what does it measure?");
   }
   for (const twin of ["moveItems(", "resizeItem("]) {
     if (!source.includes(twin)) {
       failures.push(
-        `a canMove-teszt nem hajtja a ${twin} programozott ikret — a billentyuzetes ut ` +
-          "pont az, ami kimaradhat",
+        `the canMove test does not drive the ${twin} programmatic twin — the keyboard path ` +
+          "is exactly the one that can be missed",
       );
     }
   }
   if (!/multiSelect:\s*true/.test(source)) {
-    failures.push("a canMove-teszt nem mer tobbes kijelolest — az atomicitas csak ott latszik");
+    failures.push("the canMove test does not measure a multi-selection — atomicity only shows there");
   }
   if (failures.length === 0) {
-    notes.push("a mertek a valodi gepet hajtja, mindket uton, tobbes kijelolessel");
+    notes.push("the measurement drives the real machine, on both paths, with a multi-selection");
   }
 }
 
 const machine = existsSync(machineFile) ? readFileSync(machineFile, "utf8") : "";
 if (machine === "") {
-  failures.push(`nincs bemeneti csovezetek: ${machineFile}`);
+  failures.push(`no input pipeline: ${machineFile}`);
 } else {
   const code = codeOf(machine);
   const callSites = (code.match(/\brefused\(/g) ?? []).length;
-  // Egy definicio + legalabb ket hivas: a gesztus es a programozott iker.
+  // One definition + at least two calls: the gesture and the programmatic twin.
   if (callSites < 3) {
     failures.push(
-      `a refused() ${String(callSites - 1 > 0 ? callSites - 1 : 0)} helyen van meghivva, de ` +
-        "legalabb kettore kell: a gesztus-utra es a programozott ikerre",
+      `refused() is called in ${String(callSites - 1 > 0 ? callSites - 1 : 0)} places, but ` +
+        "it needs at least two: the gesture path and the programmatic twin",
     );
   }
   const body = /function refused\(([\s\S]*?)\n {2}\}/.exec(code);
   if (body === null) {
-    failures.push("nem talalhato a refused()");
+    failures.push("refused() not found");
   } else if (!/for \(const patch of patches\)[\s\S]*return true;/.test(body[1])) {
     failures.push(
-      "a refused() nem az ELSO bukott patch-nel all meg — egy olyan ellenorzes, ami " +
-        "osszegyujti a bukasokat es reszben engedi az ajanlatot, nem atomi",
+      "refused() does not stop at the FIRST failed patch — a check that " +
+        "collects the failures and partly allows the proposal is not atomic",
     );
   }
   if (!/other\.item\.movable !== false/.test(code)) {
     failures.push(
-      "a huzas nem hagyja ki a lezart elemet (movable === false) — ha helyette " +
-        "visszautasitja az egesz gesztust, egy kijelolesben egyetlen kitüzott elem " +
-        "hasznalhatatlanna teszi a kijelolest",
+      "the drag does not leave out the locked item (movable === false) — if it " +
+        "refuses the whole gesture instead, a single pinned item in a selection " +
+        "makes the selection unusable",
     );
   }
   if (failures.length === 0) {
     notes.push(
-      "a veto az elso bukott patch-nel all meg, mindket uton meg van hivva, es a lezart " +
-        "elem kimarad a huzasbol",
+      "the veto stops at the first failed patch, it is called on both paths, and the locked " +
+        "item is left out of the drag",
     );
   }
 }
 
-// --- Eredmeny ----------------------------------------------------------------
+// --- Result ------------------------------------------------------------------
 
 for (const note of notes) {
   console.log(`  ok   ${note}`);
@@ -219,13 +219,13 @@ for (const note of notes) {
 if (failures.length > 0) {
   console.error("");
   for (const failure of failures) {
-    console.error(`  HIBA ${failure}`);
+    console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-CANMOVE BUKOTT: ${String(failures.length)} hiba.`);
+  console.error(`\nG-CANMOVE FAILED: ${String(failures.length)} problems.`);
   process.exit(1);
 }
 
 console.log(
-  "\nG-CANMOVE atment: a hoszt szabalya mindket uton megall, egeszben, es " +
-    "visszautasitott pozicióra nem keletkezik command.",
+  "\nG-CANMOVE passed: the host's rule stops the edit on both paths, as a whole, and " +
+    "no command is created for a refused position.",
 );

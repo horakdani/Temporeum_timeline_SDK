@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="hu">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Idővonal SDK — a publikus út mérése (G-PERF-PUBLIC)</title>
+    <title>Timeline SDK — measuring the public path (G-PERF-PUBLIC)</title>
     <style>
       body {
         margin: 0;
         font-family: system-ui, sans-serif;
       }
-      /* Ugyanaz a keret, mint a bench.html-ben: 1440 széles, 900 magas. */
+      /* The same frame as in bench.html: 1440 wide, 900 high. */
       #frame {
         position: relative;
         height: 900px;
@@ -41,26 +41,26 @@
 
     <script type="module">
       /*
-       * A publikus út mérése. Nem a mag kézi huzalozása (az a bench.html),
-       * hanem az, amit egy felhasználó hív: `createTimeline` a SHIPPELT
-       * element-bundle-ból, a mag dist-jével, alapbeállításokkal — a sűrűség
-       * kivételével, ami a mérés adatához kell, ahogy a bench.html-ben is.
-       * Ugyanaz az adat, ugyanaz az ujj, ugyanaz a számlálás (bench-kit.mjs).
+       * Measuring the public path. Not the core's manual wiring (that is
+       * bench.html), but what a user calls: `createTimeline` from the SHIPPED
+       * element bundle, with the core's dist, on default settings — except
+       * density, which the measurement's data needs, as in bench.html.
+       * The same data, the same finger, the same counting (bench-kit.mjs).
        *
-       * ?mode=space   (alap) a konfiguráció alapja, sceneSpace: "auto" —
-       *               10 000 elemnél ez elemteret jelent
-       * ?mode=exact   negatív kontroll: sceneSpace: false, minden képkocka
-       *               pontos (az 1.0.0-rc.0 publikus útja)
-       * ?editing=1&density=auto   a vis-összevetés lapjának beállítása
-       *               (bench/temporeum.html: szerkesztés be, a sűrűség
-       *               alapértéke) — a G-PERF-WHEEL így méri, hogy a kapu a
-       *               közölt számot jelezze előre
+       * ?mode=space   (default) the configuration default, sceneSpace: "auto" —
+       *               at 10,000 items this means item space
+       * ?mode=exact   negative control: sceneSpace: false, every frame exact
+       *               (the public path of 1.0.0-rc.0)
+       * ?editing=1&density=auto   the settings of the vis comparison page
+       *               (bench/temporeum.html: editing on, the default
+       *               density) — G-PERF-WHEEL measures this way so that the
+       *               check predicts the published number
        *
-       * A lap a hurkot nem látja (a példány belső része), ezért a két számát
-       * kívülről számolja: a kért rajzolás a lapra küldött pointer-esemény,
-       * a megrajzolt képkocka a példány értesítése (`subscribe`) — az
-       * képkockánként legfeljebb egyszer jön, és minden képkockán, amelyen a
-       * nézet változott.
+       * The page cannot see the loop (it is internal to the instance), so it
+       * counts the loop's two numbers from outside: a requested draw is a
+       * pointer event sent to the page, a drawn frame is the instance's
+       * notification (`subscribe`) — which comes at most once per frame, and on
+       * every frame in which the view changed.
        */
       import { createTimeline } from "@temporeum/timeline-element";
       import { benchDomain, benchItems, createBenchKit, nextFrame } from "/bench-kit.mjs";
@@ -76,7 +76,7 @@
         items,
         domain: origin,
         density: params.get("density") ?? "dense",
-        ariaLabel: "Tízezer elem",
+        ariaLabel: "Ten thousand items",
         ...(params.has("editing") ? { editing: { enabled: true } } : {}),
         ...(mode === "exact" ? { sceneSpace: false } : {}),
       });
@@ -98,7 +98,7 @@
         origin,
       });
 
-      // Az első képkocka a méret-megfigyelőre vár.
+      // The first frame waits for the resize observer.
       while (timeline.result === undefined) await nextFrame();
 
       const extras = {

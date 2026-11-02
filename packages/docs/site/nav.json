@@ -51,6 +51,7 @@
       "reference/api",
       "reference/entry-points",
       "conformance",
+      "vpat",
       "benchmark",
       "benchmark-field",
       "stability",

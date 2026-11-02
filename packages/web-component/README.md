@@ -77,11 +77,14 @@ The element and the React component are shells around this. Use it directly
 when you want no element at all:
 
 ```js excerpt:example/quick-start
-import { createTimeline } from "@temporeum/timeline-element";
+import { createTimeline, registerPlugin } from "@temporeum/timeline-element";
+import { groupsPlugin } from "@temporeum/timeline-element/groups";
+
+registerPlugin(groupsPlugin);
 
 const timeline = createTimeline(document.querySelector("#timeline"), {
   items,
-  lanes,
+  groups,
   ariaLabel: "Release plan",
   editing: { enabled: true, snapMs: 86_400_000 },
 });
@@ -159,7 +162,7 @@ in English, left to right, on the Gregorian axis. For that it loads the
 core's main entry point, `/dom`, `/live` and `/words`, and not the core's
 `/tools`, `/groups`, `/items` or `/intl`. Measured the way the field benchmark
 measures (minified, gzipped, per file), a plain timeline's page loads
-50.51 kB of JavaScript, and a Gantt chart's (with `/gantt`) 58.34 kB. An
+52.55 kB of JavaScript, and a Gantt chart's (with `/gantt`) 60.37 kB. An
 import map needs `@temporeum/timeline-core/live` and `/words`, and the
 subpaths of the plugins it uses.
 
@@ -212,7 +215,7 @@ builds no declarative shadow root from `innerHTML`), register the element
 from a client plugin, and tell Vue it is an element
 (`vue.compilerOptions.isCustomElement`).
 
-Every framework path is checked on every gate run (`npm run test:ssr -w
+Every framework path is checked in CI (`npm run test:ssr -w
 @temporeum/timeline-docs`) with the packed tarballs: Next, Nuxt, Astro,
 SvelteKit and Angular.
 
@@ -238,4 +241,4 @@ Guides, four recipes (a Gantt plan, an event log, a chronology, a roadmap),
 starter projects for six frameworks and the API reference, with live examples,
 are on the docs site (`npm run build -w @temporeum/timeline-docs`, then
 `packages/docs/dist`). Every code block in this README is checked against a
-running example on each gate run (G-EXAMPLES).
+running example in CI (`npm run test:examples -w @temporeum/timeline-docs`).

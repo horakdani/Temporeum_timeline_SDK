@@ -33,16 +33,16 @@ const mouse: BrowserCommand<[steps: readonly MouseStep[]]> = async (context, ste
 };
 
 /**
- * Két készlet, két környezet — mert a csomag két dolgot ígér.
+ * Two suites, two environments — because the package makes two promises.
  *
- * - `node`: a szerveroldal. Itt NINCS window és document; ha egy modul
- *   importkor a DOM-hoz nyúlna, ez a készlet nem is töltene be.
- * - `browser`: az elem és a példány igazi Chromiumban (Playwright), igazi
- *   custom element registryvel, shadow DOM-mal, deklaratív shadow roottal
- *   és CDP-n át küldött egér-, görgő- és billentyű-bemenettel. Egy
- *   szimulált DOM ezek közül éppen a hidratálást nem tudná.
+ * - `node`: the server side. There is NO window or document here; if a module
+ *   reached for the DOM on import, this suite would not even load.
+ * - `browser`: the element and the instance in a real Chromium (Playwright),
+ *   with a real custom element registry, shadow DOM, declarative shadow root,
+ *   and mouse, wheel and keyboard input sent over CDP. Of these, a simulated
+ *   DOM could not do hydration in particular.
  *
- * A lefedettség a kettő uniója, fájlonként 90%-os küszöbbel, mint a magban.
+ * Coverage is the union of the two, with a 90% threshold per file, as in the core.
  */
 export default defineConfig({
   test: {
@@ -72,8 +72,8 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
-      // Csak újraexportál, illetve betöltéskor regisztrál: a futtatható sora
-      // egy hívás, amit a UMD-teszt a kész bundle-ön mér.
+      // It only re-exports and registers on load: its executable line is one
+      // call, which the UMD test measures on the finished bundle.
       exclude: ["src/umd.ts"],
       reporter: ["text", "json-summary"],
       thresholds: { perFile: true, lines: 90, functions: 90, branches: 90, statements: 90 },

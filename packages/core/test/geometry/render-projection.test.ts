@@ -14,10 +14,10 @@ const WIDTH = 900;
 const HEIGHT = 420;
 
 const ITEMS: readonly Item[] = [
-  { id: "early", start: T0 + DAY, end: T0 + 4 * DAY, label: "Első", laneId: "work" },
-  { id: "overlap", start: T0 + 2 * DAY, end: T0 + 6 * DAY, label: "Átfedő", laneId: "work" },
-  { id: "late", start: T0 + 15 * DAY, end: T0 + 18 * DAY, label: "Utolsó", laneId: "home" },
-  { id: "ongoing", start: T0 + 10 * DAY, open: true, label: "Nyitott", laneId: "home" },
+  { id: "early", start: T0 + DAY, end: T0 + 4 * DAY, label: "First", laneId: "work" },
+  { id: "overlap", start: T0 + 2 * DAY, end: T0 + 6 * DAY, label: "Overlapping", laneId: "work" },
+  { id: "late", start: T0 + 15 * DAY, end: T0 + 18 * DAY, label: "Last", laneId: "home" },
+  { id: "ongoing", start: T0 + 10 * DAY, open: true, label: "Open", laneId: "home" },
 ];
 const LANES = [{ id: "work" }, { id: "home" }];
 
@@ -45,7 +45,7 @@ describeBothOrientations("render projection", (orientation) => {
     width: WIDTH,
     height: HEIGHT,
     orientation,
-    decorations: [{ kind: "banding" }, { kind: "now", time: T0 + 8 * DAY, label: "most" }],
+    decorations: [{ kind: "banding" }, { kind: "now", time: T0 + 8 * DAY, label: "now" }],
   });
   const mainKey = mainAxisOf(orientation);
   const crossKey = crossAxisOf(orientation);

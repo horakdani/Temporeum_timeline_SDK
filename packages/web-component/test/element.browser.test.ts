@@ -20,13 +20,13 @@ import type { Timeline, TimelineSnapshot } from "../src/index.js";
 const DAY = 86_400_000;
 const T0 = Date.UTC(2026, 0, 1);
 const items: Item[] = [
-  { id: "a", start: T0 + 2 * DAY, end: T0 + 6 * DAY, label: "Tervezés", laneId: "l1" },
-  { id: "b", start: T0 + 8 * DAY, end: T0 + 13 * DAY, label: "Építés", laneId: "l1" },
-  { id: "c", start: T0 + 16 * DAY, end: T0 + 20 * DAY, label: "Átadás", laneId: "l2" },
+  { id: "a", start: T0 + 2 * DAY, end: T0 + 6 * DAY, label: "Planning", laneId: "l1" },
+  { id: "b", start: T0 + 8 * DAY, end: T0 + 13 * DAY, label: "Building", laneId: "l1" },
+  { id: "c", start: T0 + 16 * DAY, end: T0 + 20 * DAY, label: "Handover", laneId: "l2" },
 ];
 const lanes = [
-  { id: "l1", label: "Munka" },
-  { id: "l2", label: "Szállítás" },
+  { id: "l1", label: "Work" },
+  { id: "l2", label: "Delivery" },
 ];
 const domain: [number, number] = [T0, T0 + 24 * DAY];
 
@@ -282,8 +282,8 @@ describe("<temporeum-timeline>", () => {
     await vi.waitFor(() => expect(svgOf(el).querySelectorAll("[role=option]")).toHaveLength(1));
     el.selectedIds = ["a"];
     await vi.waitFor(() => expect(nodeOf(el, "a").getAttribute("aria-selected")).toBe("true"));
-    el.hooks = { describeItem: (placed) => `Elem: ${String(placed.item.label)}` };
-    await vi.waitFor(() => expect(nodeOf(el, "a").getAttribute("aria-label")).toBe("Elem: Tervezés"));
+    el.hooks = { describeItem: (placed) => `Item: ${String(placed.item.label)}` };
+    await vi.waitFor(() => expect(nodeOf(el, "a").getAttribute("aria-label")).toBe("Item: Planning"));
     el.lanes = undefined;
     el.hooks = undefined;
     expect(el.items).toHaveLength(1);
@@ -413,7 +413,7 @@ describe("createTimeline — the instance and its store", () => {
   it("keeps the snapshot's identity while nothing in it changed", async () => {
     const { timeline } = await instance();
     const before = timeline.getSnapshot();
-    timeline.update({ ariaLabel: "Más név" });
+    timeline.update({ ariaLabel: "Another name" });
     timeline.flush();
     expect(timeline.getSnapshot()).toBe(before);
     expect(Object.isFrozen(before)).toBe(true);
@@ -451,7 +451,7 @@ describe("createTimeline — the instance and its store", () => {
     const { timeline } = await instance();
     const layouts: number[] = [];
     timeline.on("layoutChanged", ({ visibleItemCount }) => layouts.push(visibleItemCount));
-    timeline.setItems([...items, { id: "d", start: T0 + 22 * DAY, label: "Új", laneId: "l2" }]);
+    timeline.setItems([...items, { id: "d", start: T0 + 22 * DAY, label: "New", laneId: "l2" }]);
     timeline.flush();
     expect(layouts).toEqual([4]);
     expect(timeline.getLayout()?.items).toHaveLength(4);
@@ -566,8 +566,8 @@ describe("createTimeline — the instance and its store", () => {
     const guess = box(estimated.result.labels.kept[0]);
     expect(real).toBeLessThan(guess);
     // The box is the text plus the label's padding on both sides; the text
-    // is what the browser itself lays out for the drawn label — since P17 a
-    // line of HTML in a foreignObject, so its text node's own extent.
+    // is what the browser itself lays out for the drawn label — a line of
+    // HTML in a foreignObject, so its text node's own extent.
     const padding = 2 * densityMetrics("comfortable", "horizontal").labelPadding;
     const line = measured.el.querySelector(".tl-label > div")?.firstChild as Node;
     const range = document.createRange();
@@ -597,11 +597,11 @@ describe("createTimeline — the instance and its store", () => {
 
   it("carries an item into another lane when crossLane is on, and restores an instant without a lane exactly", async () => {
     const mixed: Item[] = [
-      { id: "m", start: T0 + 3 * DAY, end: T0 + 7 * DAY, label: "Mozgó", laneId: "l1" },
-      { id: "p", start: T0 + 12 * DAY, label: "Pillanat" },
+      { id: "m", start: T0 + 3 * DAY, end: T0 + 7 * DAY, label: "Moving", laneId: "l1" },
+      { id: "p", start: T0 + 12 * DAY, label: "Instant" },
     ];
     const { timeline, el } = await instance({ items: mixed, lanes: undefined, editing: { enabled: true, crossLane: true } });
-    timeline.update({ lanes: [...lanes, { id: DEFAULT_LANE_ID, label: "Egyéb" }] });
+    timeline.update({ lanes: [...lanes, { id: DEFAULT_LANE_ID, label: "Other" }] });
     timeline.flush();
     const moved: { id: string; laneId: string | null | undefined }[] = [];
     timeline.on("itemMoved", ({ item, to }) => moved.push({ id: item.id, laneId: to.laneId }));

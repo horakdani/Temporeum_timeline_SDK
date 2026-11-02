@@ -50,6 +50,7 @@ jobs:
 
       - name: build and test
         run: |
+          node scripts/sdk_changelog.mjs --check
           npm run build
           npm test
           npm run deps

@@ -74,5 +74,5 @@ pass functions (callbacks, `timelineRef`) from a client component.
 
 Guides, recipes and the API reference with live examples are on the docs site
 (`npm run build -w @temporeum/timeline-docs`, then `packages/docs/dist`). Every
-code block in this README is checked against a running template on each gate
-run (G-EXAMPLES).
+code block in this README is checked against a running template in CI
+(`npm run test:examples -w @temporeum/timeline-docs`).

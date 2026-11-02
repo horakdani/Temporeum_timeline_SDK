@@ -1,22 +1,24 @@
 #!/usr/bin/env node
 /**
- * G-ANCHOR: bizonyitja, hogy a zoom a gesztus fokuszahoz van horgonyozva —
- * es hogy a mereshez hasznalt turelem tenyleg szoros.
+ * G-ANCHOR: proves that zoom is anchored to the gesture's focus — and that
+ * the tolerance used for the measurement really is tight.
  *
- * Ez a kapu azert kulonleges, mert itt a MERES maga a kockazat. Egy teszt,
- * ami "50 pixelen belul" allitja a horgonyt, zolden atmegy, miközben a zoom
- * erzete tonkre van: a tartalom elszokik az ujj alol. Ezert a szkript nem
- * csak az eredmenyt olvassa, hanem a turelmet is ellenorzi, statikusan is.
+ * This check is special because here the MEASUREMENT itself is the risk. A
+ * test that asserts the anchor "within 50 pixels" passes green while the feel
+ * of the zoom is broken: the content slides out from under the finger. So
+ * the script does not only read the result, it also checks the tolerance,
+ * statically too.
  *
- * Harom ellenorzes:
+ * Three checks:
  *
- *  1. FUTASIDEJU: minden forgatokonyvnek zoldnek kell lennie, legalabb
- *     MIN_CASES generalt esettel, es a legnagyobb hiba a turelem alatt.
- *  2. NEM TRIVIALIS: a generalt esetek tenyleg zoomoltak BE es KI is (a
- *     span-arany szorasa), es a gesztus tenyleg mozgott. Egy keszlet, ami
- *     csak 1.0-hoz kozeli faktorokat probal, barmit atenged.
- *  3. STATIKUS: a turelem-konstans a tesztfajlban is a kuszob alatt van, az
- *     esetszam a kuszob felett, es a hibat a mag sajat skalajaval merik.
+ *  1. RUNTIME: every scenario must pass, with at least MIN_CASES generated
+ *     cases, and the largest error below the tolerance.
+ *  2. NON-TRIVIAL: the generated cases really zoomed both IN and OUT (the
+ *     spread of the span ratio), and the gesture really moved. A suite that
+ *     only tries factors close to 1.0 lets anything through.
+ *  3. STATIC: the tolerance constant in the test file is below the threshold
+ *     too, the case count above it, and the error is measured with the
+ *     core's own scale.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -30,10 +32,10 @@ const reportFile = join(corePackage, ".zoom-anchor-report.json");
 
 const MIN_SCENARIOS = 5;
 const MIN_CASES = 200;
-/** Ennel nagyobb turelem mar nem bizonyit erzetet. Fel keppont a maximum. */
+/** A larger tolerance no longer proves the feel. Half a pixel is the maximum. */
 const MAX_TOLERANCE_PX = 0.5;
 const MAX_SKIPPED_RATIO = 0.02;
-/** A keszletnek be ES ki is kell zoomolnia. */
+/** The suite must zoom both in AND out. */
 const NEEDED_ZOOM_IN = 0.5;
 const NEEDED_ZOOM_OUT = 2;
 const MIN_TRAVEL_PX = 10;
@@ -41,95 +43,95 @@ const MIN_TRAVEL_PX = 10;
 const failures = [];
 const notes = [];
 
-// --- 1-2. FUTASIDEJU ---------------------------------------------------------
+// --- 1-2. RUNTIME ------------------------------------------------------------
 
 if (!existsSync(reportFile)) {
   failures.push(
-    `nincs horgony-riport (${reportFile}) — a meres NEM futott le, ezert BUKAS`,
+    `no anchor report (${reportFile}) — the measurement did NOT run, so this FAILS`,
   );
 } else {
   const report = JSON.parse(readFileSync(reportFile, "utf8"));
   if (!Array.isArray(report) || report.length < MIN_SCENARIOS) {
     failures.push(
-      `${String(Array.isArray(report) ? report.length : 0)} forgatokonyv futott, de legalabb ${String(MIN_SCENARIOS)} kell`,
+      `${String(Array.isArray(report) ? report.length : 0)} scenarios ran, but at least ${String(MIN_SCENARIOS)} are required`,
     );
   }
   for (const entry of report) {
-    const name = String(entry?.scenario ?? "(nevtelen)");
+    const name = String(entry?.scenario ?? "(unnamed)");
     if (entry?.passed !== true) {
-      failures.push(`bukott forgatokonyv: ${name} — ${String(entry?.maxErrorPx)} px hiba`);
+      failures.push(`failed scenario: ${name} — ${String(entry?.maxErrorPx)} px error`);
     }
     if (!Number.isInteger(entry?.cases) || entry.cases < MIN_CASES) {
-      failures.push(`${name}: ${String(entry?.cases)} eset, de legalabb ${String(MIN_CASES)} kell`);
+      failures.push(`${name}: ${String(entry?.cases)} cases, but at least ${String(MIN_CASES)} are required`);
     }
     if (!Number.isFinite(entry?.tolerancePx) || entry.tolerancePx > MAX_TOLERANCE_PX) {
       failures.push(
-        `${name}: ${String(entry?.tolerancePx)} px turelem — ${String(MAX_TOLERANCE_PX)} px fölött a zold pipa nem erzet, csak formasag`,
+        `${name}: ${String(entry?.tolerancePx)} px tolerance — above ${String(MAX_TOLERANCE_PX)} px a green tick says nothing about the feel, it is a formality`,
       );
     }
     if (!Number.isFinite(entry?.maxErrorPx) || entry.maxErrorPx > entry.tolerancePx) {
-      failures.push(`${name}: a legnagyobb hiba (${String(entry?.maxErrorPx)} px) a turelem fölött`);
+      failures.push(`${name}: the largest error (${String(entry?.maxErrorPx)} px) is above the tolerance`);
     }
     if (!Number.isFinite(entry?.seed)) {
-      failures.push(`${name}: nincs seed, tehat egy bukas nem reprodukalhato`);
+      failures.push(`${name}: no seed, so a failure cannot be reproduced`);
     }
     if (Number(entry?.skipped ?? 0) > Number(entry?.cases ?? 0) * MAX_SKIPPED_RATIO) {
       failures.push(
-        `${name}: ${String(entry?.skipped)} kihagyott eset ${String(entry?.cases)}-bol — ennyi kihagyas mar a meres kikerulese`,
+        `${name}: ${String(entry?.skipped)} skipped cases out of ${String(entry?.cases)} — that many skips amount to dodging the measurement`,
       );
     }
     if (!Number.isFinite(entry?.travelPxMax) || entry.travelPxMax < MIN_TRAVEL_PX) {
       failures.push(
-        `${name}: a gesztus legtobb ${String(entry?.travelPxMax)} px-t mozgott — egy allo gesztuson barmi igaz`,
+        `${name}: the gesture moved at most ${String(entry?.travelPxMax)} px — anything is true of a gesture that stands still`,
       );
     }
   }
   const zoomedIn = report.some((entry) => Number(entry?.spanRatioMin) <= NEEDED_ZOOM_IN);
   const zoomedOut = report.some((entry) => Number(entry?.spanRatioMax) >= NEEDED_ZOOM_OUT);
   if (!zoomedIn) {
-    failures.push("egyetlen forgatokonyv sem zoomolt BE legalabb ketszeresere");
+    failures.push("no scenario zoomed IN by at least a factor of two");
   }
   if (!zoomedOut) {
-    failures.push("egyetlen forgatokonyv sem zoomolt KI legalabb a felere");
+    failures.push("no scenario zoomed OUT to at least half");
   }
   if (failures.length === 0) {
     const total = report.reduce((sum, entry) => sum + entry.cases, 0);
     const worst = Math.max(...report.map((entry) => entry.maxErrorPx));
     notes.push(
-      `${String(report.length)} forgatokonyv, ${String(total)} generalt gesztus: ` +
+      `${String(report.length)} scenarios, ${String(total)} generated gestures: ` +
         report.map((entry) => entry.scenario).join(", "),
     );
     notes.push(
-      `a legnagyobb horgony-hiba ${worst.toExponential(2)} px, a turelem ${String(report[0].tolerancePx)} px`,
+      `the largest anchor error is ${worst.toExponential(2)} px, the tolerance ${String(report[0].tolerancePx)} px`,
     );
   }
 }
 
-// --- 3. STATIKUS -------------------------------------------------------------
+// --- 3. STATIC ---------------------------------------------------------------
 
 if (!existsSync(testFile)) {
-  failures.push(`nincs horgony-tesztfajl: ${testFile}`);
+  failures.push(`no anchor test file: ${testFile}`);
 } else {
   const source = readFileSync(testFile, "utf8");
   const tolerance = /const\s+TOLERANCE_PX\s*=\s*([0-9.e-]+)/.exec(source);
   const cases = /const\s+CASES\s*=\s*(\d+)/.exec(source);
   if (tolerance === null || Number(tolerance[1]) > MAX_TOLERANCE_PX) {
     failures.push(
-      `a tesztfajl turelme ${String(tolerance?.[1])} px — a riport allithat barmit, a forras a dontő`,
+      `the test file's tolerance is ${String(tolerance?.[1])} px — the report can claim anything, the source decides`,
     );
   }
   if (cases === null || Number(cases[1]) < MIN_CASES) {
-    failures.push(`a tesztfajl esetszama ${String(cases?.[1])}, de legalabb ${String(MIN_CASES)} kell`);
+    failures.push(`the test file's case count is ${String(cases?.[1])}, but at least ${String(MIN_CASES)} are required`);
   }
   if (!/createTimeScale/.test(source)) {
-    failures.push("a hibat nem a mag createTimeScale-javal merik — helyi keplet ugyanazt a hibat tartalmazhatja");
+    failures.push("the error is not measured with the core's createTimeScale — a local formula could contain the same bug");
   }
   if (!/makeRandom/.test(source)) {
-    failures.push("nincs generator: kezzel valasztott pontokon a horgony konnyen igaz");
+    failures.push("no generator: on hand-picked points the anchor is easily true");
   }
 }
 
-// --- Eredmeny ----------------------------------------------------------------
+// --- Result -------------------------------------------------------------------
 
 for (const note of notes) {
   console.log(`  ok   ${note}`);
@@ -138,10 +140,10 @@ for (const note of notes) {
 if (failures.length > 0) {
   console.error("");
   for (const failure of failures) {
-    console.error(`  HIBA ${failure}`);
+    console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-ANCHOR BUKOTT: ${String(failures.length)} hiba.`);
+  console.error(`\nG-ANCHOR FAILED: ${String(failures.length)} failure(s).`);
   process.exit(1);
 }
 
-console.log("\nG-ANCHOR atment: a fokusz alatti IDOPILLANAT a zoom utan ugyanott van.");
+console.log("\nG-ANCHOR passed: the MOMENT under the focus is in the same place after the zoom.");

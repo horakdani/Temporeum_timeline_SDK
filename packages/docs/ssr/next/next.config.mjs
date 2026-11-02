@@ -1,7 +1,7 @@
 export default {
-  // A smoke a mi csomagjainkat méri, nem a Next lintjét vagy típusait.
+  // The smoke measures our packages, not Next's lint or types.
   typescript: { ignoreBuildErrors: true },
-  // A fixture a repón kívül épül; a Next ne keressen feljebb munkaterületet.
+  // The fixture is built outside the repo; Next should not look further up for a workspace.
   outputFileTracingRoot: import.meta.dirname,
   turbopack: { root: import.meta.dirname },
 };

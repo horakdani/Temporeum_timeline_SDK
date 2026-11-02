@@ -1,16 +1,16 @@
 /**
- * A dokumentacios csomag statikus szervere — nulla fuggosegbol.
+ * The docs package's static server — with zero dependencies.
  *
- * Azert sajat, es nem egy kesz static-server csomag, mert a kampany
- * fuggoseg-politikaja a dev-fuggosegekre is all: ez huszon ket sor, egy
- * csomag pedig egy tovabbi tranzitiv fa a CI-ban. Ket dolgot szolgal ki:
+ * Our own, and not a ready-made static-server package, because the
+ * project's dependency policy applies to dev dependencies too: this is a few
+ * dozen lines, and a package is one more transitive tree in CI. It serves:
  *
  *   /            -> packages/docs/public
- *   /core/...    -> packages/core/dist   (a SHIPPELT bundle, nem a forras)
- *   /element/... -> packages/web-component/dist (a G-PERF-PUBLIC ezt meri)
- *   /site/...    -> packages/docs/dist   (a felepitett dokumentacios oldal)
+ *   /core/...    -> packages/core/dist   (the SHIPPED bundle, not the source)
+ *   /element/... -> packages/web-component/dist (G-PERF-PUBLIC measures this)
+ *   /site/...    -> packages/docs/dist   (the built docs site)
  *
- * A `/core/` szandekosan a dist-re nez: a bongeszoben az fut, amit publikalunk.
+ * `/core/` points at dist on purpose: what runs in the browser is what we publish.
  */
 
 import { createReadStream, existsSync, statSync } from "node:fs";
@@ -23,8 +23,8 @@ const publicDir = resolve(here, "..", "public");
 const coreDist = resolve(here, "..", "..", "core", "dist");
 const elementDist = resolve(here, "..", "..", "web-component", "dist");
 const siteDist = resolve(here, "..", "dist");
-// A playwright.config.ts ugyanezt a kornyezeti valtozot adja; a 41737
-// szandekosan nem a Vite preview alapertelmezese (4173).
+// playwright.config.ts passes the same environment variable; 41737 is
+// deliberately not Vite preview's default (4173).
 const port = Number(process.env.TL_E2E_PORT ?? process.env.PORT ?? 41737);
 
 const TYPES = {
@@ -51,7 +51,7 @@ const server = createServer((request, response) => {
       : path.startsWith("/site/")
       ? join(siteDist, path.slice("/site/".length))
       : join(publicDir, path);
-  // Konyvtarbol kiszokes nincs: a feloldott utnak a negy gyoker alatt kell lennie.
+  // No escaping the directories: the resolved path has to be under one of the four roots.
   const safe = resolve(target);
   if (!safe.startsWith(publicDir) && !safe.startsWith(coreDist) && !safe.startsWith(elementDist) && !safe.startsWith(siteDist)) {
     response.writeHead(403).end("forbidden");
@@ -64,21 +64,21 @@ const server = createServer((request, response) => {
   response.writeHead(200, {
     "content-type": TYPES[extname(safe)] ?? "application/octet-stream",
     "cache-control": "no-store",
-    // Az oldal elo peldai sandboxolt (opaque origin) iframe-ben futnak, es
-    // onnan importaljak a /site/lib bundle-oket: CORS nelkul nem toltenenek.
+    // The site's live examples run in sandboxed (opaque-origin) iframes, and
+    // import the /site/lib bundles from there: without CORS they would not load.
     "access-control-allow-origin": "*",
   });
   createReadStream(safe).pipe(response);
 });
 
-// A foglalt port NEM "majd jo lesz": ha mar ul rajta valami, az a valami
-// nem mi vagyunk, es amit a bongeszo merne, az nem a mi lapunk. Hangosan
-// elhasalunk, hogy a kapu kimenete megmondja, mi tortent.
+// A taken port is NOT "it'll be fine": if something already sits on it, that
+// something is not us, and what the browser would measure is not our page.
+// We fail loudly, so the check's output says what happened.
 server.on("error", (error) => {
   if (error.code === "EADDRINUSE") {
     console.error(
-      `A ${String(port)} port foglalt. Mas ul rajta — NEM indulok el, mert a ` +
-        "bongeszos keszlet idegen lapot mérne. Nezd meg: lsof -nP -iTCP:" +
+      `Port ${String(port)} is taken. Something else is on it — NOT starting, because the ` +
+        "browser suite would measure a foreign page. Check: lsof -nP -iTCP:" +
         String(port),
     );
     process.exit(1);

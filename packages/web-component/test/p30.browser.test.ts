@@ -10,9 +10,9 @@ import { itemsPlugin } from "../src/items.js";
 import { toolsPlugin } from "../src/tools.js";
 
 /**
- * P30 through the live instance, in a real Chromium, on a page that starts
- * with no plugin registered: a plain timeline draws, pans, edits and takes
- * live changes without any of the four new plugins; an option, a change or
+ * The tools, groups, items and intl plugins through the live instance, in a
+ * real Chromium, on a page that starts with no plugin registered: a plain
+ * timeline draws, pans, edits and takes live changes without any of the four; an option, a change or
  * a command that needs one throws — naming the import — and leaves the
  * instance as it was; registered, the same calls work.
  *
@@ -57,7 +57,7 @@ function thrown(run: () => unknown): string {
   return "nothing thrown";
 }
 
-describe("P30: a page with none of the new plugins", () => {
+describe("a page with none of the four plugins", () => {
   it("draws, edits and takes live changes with none of them", async () => {
     for (const name of ["tools", "groups", "items", "intl"] as const) expect(hasPlugin(name)).toBe(false);
     const { element, timeline } = await mount({ editing: { enabled: true } });
@@ -120,7 +120,7 @@ describe("P30: a page with none of the new plugins", () => {
   });
 });
 
-describe("P30: registered, the same calls work", () => {
+describe("registered, the same calls work", () => {
   it("adds from the keyboard, applies an add command, shows the tools and the tree", async () => {
     registerPlugin(itemsPlugin, toolsPlugin, groupsPlugin);
     const { element, timeline } = await mount({ editing: { enabled: true, add: true }, tooltip: true, minimap: true });

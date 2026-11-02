@@ -11,11 +11,14 @@ npm install @temporeum/timeline-element
 Give it a container and a configuration; it measures the container, draws, and listens to pointer, wheel and keyboard. The [example on the home page](index.md) is this:
 
 ```js excerpt:example/quick-start
-import { createTimeline } from "@temporeum/timeline-element";
+import { createTimeline, registerPlugin } from "@temporeum/timeline-element";
+import { groupsPlugin } from "@temporeum/timeline-element/groups";
+
+registerPlugin(groupsPlugin);
 
 const timeline = createTimeline(document.querySelector("#timeline"), {
   items,
-  lanes,
+  groups,
   ariaLabel: "Release plan",
   editing: { enabled: true, snapMs: 86_400_000 },
 });
@@ -26,7 +29,7 @@ timeline.on("itemMoved", ({ item, to }) => {
 });
 ```
 
-An item is an `id`, a `start`, and optionally an `end`, a `label` and a `laneId`. Times are epoch milliseconds or `Date` objects — not strings: parse them first. Without an `end` an item is an instant. The container needs a height; the timeline takes the container's (or `height` in the configuration, 300 px by default).
+An item is an `id`, a `start`, and optionally an `end`, a `label` and a `laneId`: the row it is drawn in. A group is a row with its name drawn as a header (`groups`, from the groups plugin); plain `lanes` are rows without one, named only in each item's accessible name. Times are epoch milliseconds or `Date` objects — not strings: parse them first. Without an `end` an item is an instant. The container needs a height; the timeline takes the container's (or `height` in the configuration, 300 px by default).
 
 Change anything later with `timeline.update({ … })` — only the keys you pass change — and call `timeline.destroy()` when the container goes away.
 

@@ -1,29 +1,29 @@
 #!/usr/bin/env node
 /**
- * G-BENCH-TRADEOFF (P32): a terepi benchmark-oldal kimondja a cseret — tobb
- * bajtot toltunk, de nagy adatnal sokszor gyorsabbak vagyunk —, es a
- * csere-szakasz minden szama a results.json mediánja.
+ * G-BENCH-TRADEOFF: the field benchmark page states the trade-off — we load
+ * more bytes, but on large data we are often faster —, and every number in
+ * the trade-off section is a median from results.json.
  *
- *  1. A FORRAS. A results.json letezik, nem fustproba; a lap forrasaban a
- *     `{{bench:field-tradeoff}}` blokk pontosan egyszer all.
- *  2. A CELLAK. A felepitett packages/docs/dist/benchmark-field.html csere-
- *     blokkjaban minden `data-tradeoff` szam pontosan a results.json
- *     megfelelo mediánja (az oldal formazasaval). A mero a SAJAT kodjaval
- *     szamolja ki, minek kell ott allnia: munkaterhelesenkent a legnagyobb
- *     meret, minden konyvtar, a bajtok, es bongeszonkent az elso rajz, a
- *     DOM-elemek es a pasztazas kihagyott kepkockai. Ami hianyzik, vagy ami
- *     nincs a results.json-ban, BUKAS. A kozolt meret (`data-tradeoff-n`) a
- *     legnagyobb meret.
- *  3. A SZAVAK. Minden osszehasonlito szo (`data-claim`: kevesebb, tobb,
- *     „about”) a mero sajat szamitasaval egyezik, ugyanazzal a zaj-
- *     szaballyal, amit a lap a vesztesegek listajanal kozol.
- *  4. KEZZEL IRT SZAM NINCS. A blokk szovegeben a jelolt szamokon es a
- *     konyvtarak nevén (verzioval) kivul nincs szamjegy.
- *  5. NEGATIV KONTROLL. Egy atirt cella, egy megforditott szo es egy
- *     beirt szam ugyanezen a meron BUKIK.
+ *  1. THE SOURCE. results.json exists and is not a smoke run; the
+ *     `{{bench:field-tradeoff}}` block appears exactly once in the page source.
+ *  2. THE CELLS. In the trade-off block of the built
+ *     packages/docs/dist/benchmark-field.html every `data-tradeoff` number is
+ *     exactly the matching median in results.json (with the page's
+ *     formatting). The checker computes with its OWN code what must be
+ *     there: per workload the largest size, every library, the bytes, and
+ *     per browser the first render, the DOM elements and the pan's missed
+ *     frames. Anything missing, or not in results.json, is a FAILURE. The
+ *     stated size (`data-tradeoff-n`) is the largest size.
+ *  3. THE WORDS. Every comparison word (`data-claim`: lower, higher,
+ *     "about") matches the checker's own computation, with the same noise
+ *     rule the page states for the list of losses.
+ *  4. NO HAND-WRITTEN NUMBERS. The block's text has no digits apart from the
+ *     marked numbers and the library names (with their versions).
+ *  5. NEGATIVE CONTROL. An edited cell, a flipped word and a typed-in number
+ *     FAIL on this same checker.
  *
- * Elofeltetel: a docs build a results.json utan futott (a `npm run
- * bench:field` ezt a sorrendet futtatja; a kapuban a G-DOCS is).
+ * Prerequisite: the docs build ran after results.json (`npm run
+ * bench:field` runs them in this order; in the gate, G-DOCS does too).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -39,7 +39,7 @@ const notes = [];
 
 const BROWSERS = ["chromium", "firefox", "webkit"];
 const PER_BROWSER = ["first-render", "dom-elements-after-load", "pan-missed-frames"];
-// A sajat szabaly — ugyanaz, amit az oldal a modszer-tablaban kozol.
+// Our own rule — the same one the page states in its method table.
 const RULE = { relative: 0.1, absolute: { ms: 10, "%": 1, MB: 0.5, elements: 0, kB: 1 } };
 
 const fmt = (value) => {
@@ -57,7 +57,7 @@ function verdict(ours, theirs, unit) {
   return "same";
 }
 
-/** Amit a mero szerint a blokkban latni kell. */
+/** What the checker says must be visible in the block. */
 export function expected(data) {
   const cells = new Map();
   const claims = new Map();
@@ -82,7 +82,7 @@ export function expected(data) {
   return { cells, claims, sizes };
 }
 
-/** A felepitett lap csere-blokkja. */
+/** The trade-off block of the built page. */
 export function readBlock(html) {
   const start = html.indexOf('<div class="bench-tradeoff-block">');
   if (start < 0) return null;
@@ -114,61 +114,61 @@ export function judge(data, page) {
   const seen = new Set();
   for (const [key, value] of page.cells) {
     seen.add(key);
-    if (!want.cells.has(key)) problems.push(`a blokk olyan szamot mutat, ami nem a csere-szakaszba valo vagy nincs a results.json-ban: ${key}`);
-    else if (want.cells.get(key) !== value) problems.push(`${key}: a lapon ${value}, a results.json szerint ${want.cells.get(key)}`);
+    if (!want.cells.has(key)) problems.push(`the block shows a number that does not belong in the trade-off section or is not in results.json: ${key}`);
+    else if (want.cells.get(key) !== value) problems.push(`${key}: the page says ${value}, results.json says ${want.cells.get(key)}`);
   }
-  for (const key of want.cells.keys()) if (!seen.has(key)) problems.push(`hianyzik a blokkbol: ${key}`);
+  for (const key of want.cells.keys()) if (!seen.has(key)) problems.push(`missing from the block: ${key}`);
   const claimed = new Map(page.claims);
   for (const [key, word] of want.claims) {
-    if (!claimed.has(key)) problems.push(`hianyzik az osszehasonlitas: ${key}`);
-    else if (claimed.get(key) !== word) problems.push(`${key}: a lap szerint "${claimed.get(key)}", a sajat szamitas szerint "${word}"`);
+    if (!claimed.has(key)) problems.push(`missing comparison: ${key}`);
+    else if (claimed.get(key) !== word) problems.push(`${key}: the page says "${claimed.get(key)}", our own computation says "${word}"`);
   }
-  for (const key of claimed.keys()) if (!want.claims.has(key)) problems.push(`folosleges osszehasonlitas: ${key}`);
+  for (const key of claimed.keys()) if (!want.claims.has(key)) problems.push(`extra comparison: ${key}`);
   const sizes = new Map(page.sizes);
-  for (const [workload, n] of want.sizes) if (sizes.get(workload) !== n) problems.push(`${workload}: a lap merete ${String(sizes.get(workload))}, a legnagyobb meret ${n}`);
-  // Kezzel irt szam: a jelolt szamok es a konyvtarnevek nelkul nem maradhat szamjegy.
+  for (const [workload, n] of want.sizes) if (sizes.get(workload) !== n) problems.push(`${workload}: the page's size is ${String(sizes.get(workload))}, the largest size is ${n}`);
+  // Hand-written numbers: without the marked numbers and the library names, no digit may remain.
   const names = Object.entries(data.libraries).map(([library, info]) => `${info?.name ?? library} ${info?.version ?? ""}`.trim()).sort((a, b) => b.length - a.length);
   let text = page.block.replace(/<span data-tradeoff(?:-n)?="[^"]*">[^<]*<\/span>/g, "").replace(/<[^>]+>/g, " ");
   text = unescape(text);
   for (const name of names) text = text.split(name).join(" ");
   const stray = text.match(/[^\s]*\d[^\s]*/g);
-  if (stray !== null) problems.push(`jeloletlen szam a blokkban: ${stray.slice(0, 4).join(", ")}`);
+  if (stray !== null) problems.push(`unmarked number in the block: ${stray.slice(0, 4).join(", ")}`);
   return problems;
 }
 
-if (!existsSync(resultsFile)) failures.push("nincs site/benchmark/field/results.json — a terepi benchmark NEM futott, ezert BUKAS");
+if (!existsSync(resultsFile)) failures.push("no site/benchmark/field/results.json — the field benchmark did NOT run, so this is a FAILURE");
 else {
   const data = JSON.parse(readFileSync(resultsFile, "utf8"));
-  if (data.smoke) failures.push("a results.json fustproba kimenete, nem meres");
+  if (data.smoke) failures.push("results.json is the output of a smoke run, not a measurement");
   const source = readFileSync(sourceFile, "utf8");
   const slots = source.match(/^\{\{bench:field-tradeoff\}\}\s*$/gm) ?? [];
-  if (slots.length !== 1) failures.push(`a lap forrasaban a {{bench:field-tradeoff}} ${String(slots.length)}x all, pontosan egyszer kell`);
-  if (!existsSync(pageFile)) failures.push("nincs packages/docs/dist/benchmark-field.html — a docs build nem futott, ezert BUKAS");
+  if (slots.length !== 1) failures.push(`{{bench:field-tradeoff}} appears ${String(slots.length)}x in the page source, exactly once is required`);
+  if (!existsSync(pageFile)) failures.push("no packages/docs/dist/benchmark-field.html — the docs build did not run, so this is a FAILURE");
   else {
     const page = readBlock(readFileSync(pageFile, "utf8"));
-    if (page === null) failures.push("a felepitett lapon nincs csere-blokk");
+    if (page === null) failures.push("the built page has no trade-off block");
     else {
       const problems = judge(data, page);
       failures.push(...problems);
       const want = expected(data);
-      if (problems.length === 0) notes.push(`${String(page.cells.length)} szam, mind a results.json mediánja; ${String(page.claims.length)} osszehasonlito szo, mind a sajat szamitassal egyezik; meretek: ${[...want.sizes].map(([w, n]) => `${w} ${n}`).join(", ")}`);
-      // --- negativ kontroll ---
+      if (problems.length === 0) notes.push(`${String(page.cells.length)} numbers, all medians from results.json; ${String(page.claims.length)} comparison words, all matching our own computation; sizes: ${[...want.sizes].map(([w, n]) => `${w} ${n}`).join(", ")}`);
+      // --- negative control ---
       const forged = page.cells.map(([key, value], index) => [key, index === 0 ? `${value}9` : value]);
       const flipped = page.claims.map(([key, word], index) => [key, index === 0 ? (word === "lower" ? "higher" : "lower") : word]);
       const typed = page.block.replace("</ul>", "<li>Temporeum is 3x faster.</li></ul>");
       const controls = [
-        ["atirt cella", judge(data, { ...page, cells: forged })],
-        ["megforditott szo", judge(data, { ...page, claims: flipped })],
-        ["beirt szam", judge(data, { ...page, block: typed })],
+        ["edited cell", judge(data, { ...page, cells: forged })],
+        ["flipped word", judge(data, { ...page, claims: flipped })],
+        ["typed-in number", judge(data, { ...page, block: typed })],
       ];
       const blind = controls.filter(([, found]) => found.length === 0).map(([name]) => name);
-      if (page.cells.length === 0 || blind.length > 0) failures.push(`NEGATIV KONTROLL: nem bukik — ${blind.join(", ") || "ures blokk"}`);
-      else notes.push(`negativ kontroll bukik, ahogy kell — ${controls.map(([name, found]) => `${name}: ${found[0]}`).join(" | ")}`);
+      if (page.cells.length === 0 || blind.length > 0) failures.push(`NEGATIVE CONTROL: does not fail — ${blind.join(", ") || "empty block"}`);
+      else notes.push(`negative control fails, as it should — ${controls.map(([name, found]) => `${name}: ${found[0]}`).join(" | ")}`);
     }
   }
 }
 
 for (const note of notes) console.log(`  ok    ${note}`);
-for (const failure of failures.slice(0, 40)) console.log(`  BUKAS ${failure}`);
-console.log(failures.length === 0 ? "G-BENCH-TRADEOFF: atment" : `G-BENCH-TRADEOFF: BUKOTT (${String(failures.length)} hiba)`);
+for (const failure of failures.slice(0, 40)) console.log(`  FAIL  ${failure}`);
+console.log(failures.length === 0 ? "G-BENCH-TRADEOFF: passed" : `G-BENCH-TRADEOFF: FAILED (${String(failures.length)} problems)`);
 process.exit(failures.length === 0 ? 0 : 1);

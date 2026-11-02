@@ -2,7 +2,7 @@
  * The layout cache is never stale.
  *
  * The renderer remembers the last layout per items array, because packing is
- * done in time and a pan or zoom does not change it (P7: 31 of 33 ms of a
+ * done in time and a pan or zoom does not change it (31 of 33 ms of a
  * frame at 10 000 items). A cache like that is only worth having if it can
  * never be caught out — and the way it gets caught out is a host mutating the
  * array it already handed over: pushing an item, replacing one, swapping the
@@ -48,7 +48,7 @@ function randomItem(random: () => number, serial: number, laneCount: number): It
     start,
     end: start + Math.floor(1 + random() * 40) * DAY,
     laneId: `lane-${String(Math.floor(random() * laneCount))}`,
-    label: `Új ${String(serial)}`,
+    label: `New ${String(serial)}`,
   };
 }
 

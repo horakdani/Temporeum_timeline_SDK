@@ -1,5 +1,5 @@
-// ESM és CJS. A Vue és a testvércsomagok KÜLSŐK: egy alkalmazásban egyetlen
-// Vue lehet, és a reaktivitás egy második példánnyal szétesik.
+// ESM and CJS. Vue and the sibling packages are EXTERNAL: an application can
+// have only one Vue, and reactivity falls apart with a second copy.
 import typescript from "@rollup/plugin-typescript";
 
 const banner = "/*! @temporeum/timeline-vue | MIT */";

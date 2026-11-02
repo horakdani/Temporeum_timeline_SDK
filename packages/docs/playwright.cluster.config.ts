@@ -1,12 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * G-CLUSTER böngészős fele: a jelölők az élő DOM-ban, igazi koppintással,
- * egérrel és billentyűvel.
+ * The browser half of G-CLUSTER: the markers in the live DOM, with real
+ * taps, mouse and keyboard.
  *
- * Saját port (a P4 tanulsága: egy idegen lapon futó készlet rosszabb, mint a
- * hiányzó). Két eszköz: asztali Chromium (egér, görgő, billentyű) és egy
- * Pixel 7 emuláció, ahol a koppintás valódi touch-esemény.
+ * Its own port (a suite running on a foreign page is worse than a missing
+ * one). Two devices: desktop Chromium (mouse, wheel, keys) and a Pixel 7
+ * emulation, where a tap is a real touch event.
  */
 const PORT = Number(process.env.TL_CLUSTER_PORT ?? 41745);
 

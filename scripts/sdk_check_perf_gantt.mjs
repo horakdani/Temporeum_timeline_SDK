@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 /**
- * G-PERF-GANTT (P20): 10 000 feladat es 10 000 fuggoseg mellett a
- * pasztazas es a gorgos zoom a G-PERF kuszobein belul van (<= 5% kihagyott
- * vsync, <= 100 ms leghosszabb kepkocka, harom friss lap medianjaval) — es
- * nyil-culling nelkul (`gantt.cull: false`, negativ kontroll) BUKIK: a
- * pasztazas vagy a zoom a kuszob folott van.
+ * G-PERF-GANTT: with 10,000 tasks and 10,000 dependencies, pan and wheel
+ * zoom are within the G-PERF thresholds (<= 5% missed vsyncs, <= 100 ms
+ * longest frame, by the median of three fresh pages) — and without arrow
+ * culling (`gantt.cull: false`, the negative control) it FAILS: the pan or
+ * the zoom is over the threshold.
  *
- * Ervenyesseg — ha barmelyik serul, a check BUKIK:
- *   - a riport letezik, `gantt`, 4x lassitassal, mindket valtozatban
- *     legalabb harom futassal, friss core- es element-disttel;
- *   - a lap 10 000 feladatot es 10 000 fuggoseget rajzol, es a culled
- *     valtozat tenyleg cullingolt (`cull: true`), a kontroll nem;
- *   - a culled lapon latszik nyil (> 0), a kontrollban legalabb 10 000 —
- *     kulonben a kontroll nem azt meri, amit allit;
- *   - a huzasok tenyleg mozgattak a nezetet, semmit nem szerkesztettek, es a
- *     zoom tenyleg nagyitott (csucs >= 3x).
+ * Validity — if any of these is violated, the check FAILS:
+ *   - the report exists, `gantt`, with 4x throttling, at least three runs in
+ *     both variants, with a fresh core and element dist;
+ *   - the page draws 10,000 tasks and 10,000 dependencies, and the culled
+ *     variant really culled (`cull: true`), the control did not;
+ *   - arrows are visible on the culled page (> 0), at least 10,000 in the
+ *     control — otherwise the control does not measure what it claims;
+ *   - the drags really moved the view, edited nothing, and the zoom really
+ *     magnified (peak >= 3x).
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -33,50 +33,50 @@ const notes = [];
 const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
 const within = (runs) => median(runs.map((run) => run.missedShare)) <= MAX_MISSED_SHARE && median(runs.map((run) => run.longestFrameMs)) <= MAX_LONGEST_FRAME_MS;
 const say = (runs) =>
-  `median ${(median(runs.map((run) => run.missedShare)) * 100).toFixed(1)}% kihagyott vsync, leghosszabb ${median(runs.map((run) => run.longestFrameMs)).toFixed(0)} ms (futasok: ${runs.map((run) => `${(run.missedShare * 100).toFixed(1)}%`).join(" ")})`;
+  `median ${(median(runs.map((run) => run.missedShare)) * 100).toFixed(1)}% missed vsyncs, longest ${median(runs.map((run) => run.longestFrameMs)).toFixed(0)} ms (runs: ${runs.map((run) => `${(run.missedShare * 100).toFixed(1)}%`).join(" ")})`;
 
 if (!existsSync(reportFile)) {
-  failures.push(`hianyzik: ${reportFile} — a meres NEM futott le, ezert BUKAS`);
+  failures.push(`missing: ${reportFile} — the measurement did NOT run, so this is a FAILURE`);
 } else {
   const report = JSON.parse(readFileSync(reportFile, "utf8"));
-  if (report.kind !== "gantt") failures.push(`a riport nem a Gantt-meres (${String(report.kind)})`);
-  if (report.throttle !== 4) failures.push(`a lassitas ${String(report.throttle)}x, nem 4x`);
-  if (report.fresh?.core !== true || report.fresh?.element !== true) failures.push(`elavult dist (${JSON.stringify(report.fresh)}) — regi kodot merne`);
+  if (report.kind !== "gantt") failures.push(`the report is not the Gantt measurement (${String(report.kind)})`);
+  if (report.throttle !== 4) failures.push(`the throttling is ${String(report.throttle)}x, not 4x`);
+  if (report.fresh?.core !== true || report.fresh?.element !== true) failures.push(`stale dist (${JSON.stringify(report.fresh)}) — it would measure old code`);
   for (const name of ["culled", "control"]) {
     const { pan = [], zoom = [] } = report.runs?.[name] ?? {};
-    if (pan.length < MIN_REPS || zoom.length < MIN_REPS) failures.push(`${name}: ${String(pan.length)}/${String(zoom.length)} futas, legalabb ${String(MIN_REPS)} kell — a nem futtathato meres BUKAS`);
+    if (pan.length < MIN_REPS || zoom.length < MIN_REPS) failures.push(`${name}: ${String(pan.length)}/${String(zoom.length)} runs, at least ${String(MIN_REPS)} are required — a measurement that cannot run is a FAILURE`);
     pan.forEach((run, index) => {
-      const at = `${name} pasztazas #${String(index + 1)}`;
-      if (run.tasks !== 10_000 || run.dependencies !== 10_000) failures.push(`${at}: ${String(run.tasks)} feladat, ${String(run.dependencies)} fuggoseg — 10 000 / 10 000 kell`);
-      if (run.cull !== (name === "culled")) failures.push(`${at}: a lap cull=${String(run.cull)}, a valtozat ${name}`);
-      if (name === "culled" && !(run.counts.arrows > 0)) failures.push(`${at}: egyetlen nyil sincs a lapon — a meres ures`);
-      if (name === "control" && !(run.counts.arrows >= 10_000)) failures.push(`${at}: a kontroll ${String(run.counts.arrows)} nyilat rajzol, 10 000 kell — nem azt meri, amit allit`);
-      if (!(Math.abs(run.midPx - TARGET_PX) <= 0.25 * TARGET_PX)) failures.push(`${at}: 12 huzas ${run.midPx.toFixed(0)} px-et mozgatott, ~${String(TARGET_PX)} kell`);
-      if (run.edits !== 0) failures.push(`${at}: a pasztazas ${String(run.edits)} elemet szerkesztett`);
+      const at = `${name} pan #${String(index + 1)}`;
+      if (run.tasks !== 10_000 || run.dependencies !== 10_000) failures.push(`${at}: ${String(run.tasks)} tasks, ${String(run.dependencies)} dependencies — 10,000 / 10,000 are required`);
+      if (run.cull !== (name === "culled")) failures.push(`${at}: the page has cull=${String(run.cull)}, the variant is ${name}`);
+      if (name === "culled" && !(run.counts.arrows > 0)) failures.push(`${at}: not a single arrow on the page — the measurement is empty`);
+      if (name === "control" && !(run.counts.arrows >= 10_000)) failures.push(`${at}: the control draws ${String(run.counts.arrows)} arrows, 10,000 are required — it does not measure what it claims`);
+      if (!(Math.abs(run.midPx - TARGET_PX) <= 0.25 * TARGET_PX)) failures.push(`${at}: 12 drags moved ${run.midPx.toFixed(0)} px, ~${String(TARGET_PX)} is required`);
+      if (run.edits !== 0) failures.push(`${at}: the pan edited ${String(run.edits)} items`);
     });
     zoom.forEach((run, index) => {
-      if (!(run.peakFactor >= 3)) failures.push(`${name} zoom #${String(index + 1)}: a csucs ${run.peakFactor.toFixed(2)}x, legalabb 3x kell`);
-      if (run.edits !== 0) failures.push(`${name} zoom #${String(index + 1)}: ${String(run.edits)} szerkesztes`);
+      if (!(run.peakFactor >= 3)) failures.push(`${name} zoom #${String(index + 1)}: the peak is ${run.peakFactor.toFixed(2)}x, at least 3x is required`);
+      if (run.edits !== 0) failures.push(`${name} zoom #${String(index + 1)}: ${String(run.edits)} edits`);
     });
   }
   const culled = report.runs?.culled ?? {};
   const control = report.runs?.control ?? {};
   if ((culled.pan?.length ?? 0) > 0 && (culled.zoom?.length ?? 0) > 0) {
-    for (const [what, runs] of [["pasztazas", culled.pan], ["zoom", culled.zoom]]) {
+    for (const [what, runs] of [["pan", culled.pan], ["zoom", culled.zoom]]) {
       if (within(runs)) notes.push(`${what}: ${say(runs)}`);
-      else failures.push(`${what}: ${say(runs)} — a kuszob 5% es 100 ms`);
+      else failures.push(`${what}: ${say(runs)} — the threshold is 5% and 100 ms`);
     }
   }
   if ((control.pan?.length ?? 0) > 0 && (control.zoom?.length ?? 0) > 0) {
     if (within(control.pan) && within(control.zoom)) {
-      failures.push(`a negativ kontroll (culling nelkul) NEM bukik: pasztazas ${say(control.pan)}, zoom ${say(control.zoom)} — a meres nem latja, amit a culling megsporol`);
+      failures.push(`the negative control (without culling) does NOT fail: pan ${say(control.pan)}, zoom ${say(control.zoom)} — the measurement cannot see what culling saves`);
     } else {
-      notes.push(`kontroll (culling nelkul) bukik, ahogy kell: pasztazas ${say(control.pan)}; zoom ${say(control.zoom)}`);
+      notes.push(`the control (without culling) fails, as it should: pan ${say(control.pan)}; zoom ${say(control.zoom)}`);
     }
   }
 }
 
 for (const note of notes) console.log(`  ok    ${note}`);
-for (const failure of failures) console.log(`  BUKAS ${failure}`);
-console.log(failures.length === 0 ? "G-PERF-GANTT: atment" : "G-PERF-GANTT: BUKOTT");
+for (const failure of failures) console.log(`  FAIL  ${failure}`);
+console.log(failures.length === 0 ? "G-PERF-GANTT: passed" : "G-PERF-GANTT: FAILED");
 process.exit(failures.length === 0 ? 0 : 1);

@@ -1,13 +1,13 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * G-AXE: az akadálymentesség böngészős fele.
+ * G-AXE: the browser half of accessibility.
  *
- * Saját port, hogy a touch-készlettel párhuzamosan se üljenek egymás
- * szerverén (a P4 tanulsága: idegen lapon futó készlet rosszabb, mint a
- * hiányzó). Két projekt: asztali Chromium billentyűzettel — itt fut az axe
- * és a billentyűs út —, és Pixel 7, ahol a keskeny nézet és az alsó lap
- * kerül az axe elé.
+ * Its own port, so that even alongside the touch suite neither sits on the
+ * other's server (a suite running on a foreign page is worse than a missing
+ * one). Two projects: desktop Chromium with a keyboard — axe and the
+ * keyboard path run here — and Pixel 7, where the narrow view and the
+ * bottom sheet are put in front of axe.
  */
 const PORT = Number(process.env.TL_A11Y_PORT ?? 41741);
 

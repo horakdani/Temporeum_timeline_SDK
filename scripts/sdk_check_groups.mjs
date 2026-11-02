@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * G-GROUPS: generalt csoportfakon, mindket orientacioban — az osszecsukott
- * csoport leszarmazottai sem a layoutban, sem az akadalymentessegi faban
- * nincsenek, a kibontas ugyanazt a layoutot adja vissza, es az atrendezes
- * visszafordithato parancs (a huzas es a billentyu ugyanazt adja).
+ * G-GROUPS: on generated group trees, in both orientations — the descendants
+ * of a collapsed group are neither in the layout nor in the accessibility
+ * tree, expanding gives back the same layout, and reordering is a reversible
+ * command (dragging and the keyboard give the same one).
  *
- * Statikusan azt is nezi, hogy a createTimeline a csoportfejleceket a
- * listboxon kivul, `role="tree"`-ben rajzolja, es a huzas meg a billentyu is
- * a mag `moveGroupCommand`-jat hivja — nem egy masolatot.
+ * Statically it also checks that createTimeline draws the group headers
+ * outside the listbox, in a `role="tree"`, and that both dragging and the
+ * keyboard call the core's `moveGroupCommand` — not a copy.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -18,7 +18,7 @@ import { checkReport, codeOf, finish } from "./sdk_suite_report.mjs";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const failures = checkReport({
   file: join(root, "packages", "core", ".groups-report.json"),
-  label: "csoport",
+  label: "groups",
   minTests: 12,
   claims: ["collapsed-hidden", "expand-restores", "reorder-inverse", "drag-equals-key"],
   orientations: true,
@@ -26,6 +26,6 @@ const failures = checkReport({
 
 const header = codeOf(readFileSync(join(root, "packages", "web-component", "src", "groups.ts"), "utf8"));
 for (const needle of ['"tree"', '"treeitem"', '"aria-expanded"', '"aria-level"', "moveGroupCommand", "dropPosition", "groupKeyStep", "resolveGroupKey"]) {
-  if (!header.includes(needle)) failures.push(`a csoportfejlec-reteg (web-component/src/groups.ts) nem hasznalja: ${needle}`);
+  if (!header.includes(needle)) failures.push(`the group header layer (web-component/src/groups.ts) does not use: ${needle}`);
 }
 finish("G-GROUPS", failures);

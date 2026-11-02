@@ -167,8 +167,8 @@ describe("openDetail", () => {
     const world = fakeWorld(375);
     const handle = openDetail(world.container, {
       surface: "popover",
-      content: "Építés",
-      label: "Részletek",
+      content: "Building",
+      label: "Details",
       // Hard against the right edge: centring would push it off screen.
       anchor: { x: 360, y: 100, width: 10, height: 20 },
     });
@@ -178,7 +178,7 @@ describe("openDetail", () => {
     expect(handle.surface).toBe("popover");
     expect(element?.attrs.get("data-tl-detail")).toBe("popover");
     expect(element?.attrs.get("role")).toBe("dialog");
-    expect(element?.attrs.get("aria-label")).toBe("Részletek");
+    expect(element?.attrs.get("aria-label")).toBe("Details");
     expect(element?.attrs.get("data-tl-side")).toBe("below");
     const left = Number.parseFloat(element?.style.left ?? "NaN");
     const width = Number.parseFloat(element?.style.width ?? "NaN");
@@ -221,15 +221,15 @@ describe("openDetail", () => {
     const onClose = vi.fn();
     const handle = openDetail(world.container, {
       surface: "sheet",
-      content: "Mérföldkő",
-      closeLabel: "Bezárás",
+      content: "Milestone",
+      closeLabel: "Dismiss",
       onClose,
     });
     const [sheet, button] = world.created;
     expect(sheet?.style.cssText).toContain("bottom:0");
     expect(sheet?.style.cssText).toContain("left:0;right:0");
     expect(sheet?.attrs.get("data-tl-detail")).toBe("sheet");
-    expect(button?.textContent).toBe("Bezárás");
+    expect(button?.textContent).toBe("Dismiss");
     expect(button?.type).toBe("button");
     expect(sheet?.children).toContain(button);
     button?.listeners.get("click")?.({});

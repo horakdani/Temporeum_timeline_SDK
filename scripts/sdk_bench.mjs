@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * G-PERF es G-MEMORY: a meres. Igazi Chromiumban, a docs csomag bench.html
- * lapjan, a lap SAJAT utjan (attachInput -> gep -> kepkocka-hurok -> elemter
- * -> foltozo). A szkript nem itel: kiirja a nyers merest egy riportba, es a
- * sdk_check_perf.mjs / sdk_check_memory.mjs mondja meg, atment-e. Igy a
- * kuszobok egy helyen vannak, es a riport a kuszoboktol fuggetlenul
- * visszanezheto.
+ * G-PERF and G-MEMORY: the measurement. In real Chromium, on the docs
+ * package's bench.html page, along the page's OWN path (attachInput -> machine
+ * -> frame loop -> element space -> patcher). The script does not judge: it
+ * writes the raw measurement to a report, and sdk_check_perf.mjs /
+ * sdk_check_memory.mjs say whether it passed. That way the thresholds live in
+ * one place, and the report can be reviewed independently of them.
  *
  *   node scripts/sdk_bench.mjs perf     -> packages/core/.bench-perf.json
  *   node scripts/sdk_bench.mjs memory   -> packages/core/.bench-memory.json
@@ -13,41 +13,46 @@
  *   node scripts/sdk_bench.mjs deep     -> packages/docs/.bench-deep.json
  *   node scripts/sdk_bench.mjs wheel    -> packages/docs/.bench-wheel.json
  *
- * A `wheel` (P15, G-PERF-WHEEL) a vis-osszevetes zoomjat meri MINDKET uton,
- * ugyanugy: FRISS, csendes lap (a publikus uton meg erintetlen, raadas
- * nelkul), Control lenyomva, valodi `page.mouse.wheel` a nezet kozepen, 8
- * lepes be es 8 ki, 50 ms-onkent, lepesenkent 1,2x (deltaY 45,6:
- * exp(45,6 * 0,004)), es a felvetel az utolso lepes utan meg 300 ms-ig tart,
- * hogy a nyugalmi kepkockak is benne legyenek. Minden valtozat WHEEL_REPS (3)
- * friss lapon fut, a check a mediant iteli meg (a vis-osszevetes is mediant
- * kozol). Negativ kontroll: elemter nelkul mindket uton, es a mag lapjan
- * gorgo-sorozat nelkul (?run=0: a hoszt minden lepes utan nyugalomba all).
+ * `wheel` (G-PERF-WHEEL) measures the vis comparison's zoom on BOTH paths,
+ * the same way: a FRESH, quiet page (on the public path still untouched, no
+ * extras), Control held down, a real `page.mouse.wheel` in the middle of the
+ * view, 8 notches in and 8 out, every 50 ms, 1.2x per notch (deltaY 45.6:
+ * exp(45.6 * 0.004)), and recording continues for 300 ms after the last
+ * notch so the settling frames are included. Every variant runs on WHEEL_REPS
+ * (3) fresh pages, and the check judges the median (the vis comparison also
+ * reports the median). Negative controls: without element space on both
+ * paths, and on the core page without a wheel run (?run=0: the host settles
+ * after every notch).
  *
- * A `deep` (P14, G-PERF-DEEP) a 4x-es csipest (zoom-deep) meri MINDKET uton:
- * a mag lapjan (bench.html) az ajanlott uttal, a lepcsos ujrahorgonyzas
- * nelkul (?levels=0) es elemter nelkul — a ket negativ kontroll —, a publikus
- * lapon (bench-public.html) a createTimeline-nal es elemter nelkul.
+ * `deep` (G-PERF-DEEP) measures the 4x pinch (zoom-deep) on BOTH paths: on
+ * the core page (bench.html) with the recommended path, without stepped
+ * re-anchoring (?levels=0) and without element space — the two negative
+ * controls —, and on the public page (bench-public.html) with createTimeline
+ * and without element space.
  *
- * A `public` (P13, G-PERF-PUBLIC) ugyanezt a merest a bench-public.html
- * lapon futtatja: ott a `createTimeline` a shippelt element-bundle-bol rajzol,
- * a lap a mag kezi huzalozasa helyett a felhasznalo utjat jarja. A friss-
- * seg-ellenorzes ott a core ES az element forrasara is kiterjed.
+ * `public` (G-PERF-PUBLIC) runs the same measurement on the bench-public.html
+ * page: there `createTimeline` draws from the shipped element bundle, so the
+ * page walks the user's path instead of hand-wiring the core. The freshness
+ * check there covers both the core AND the element source.
  *
- * Harom dolog, ami nelkul a meres hazudhatna:
+ * Three things without which the measurement could lie:
  *
- *  1. SAJAT szerver, sajat porton (41738, TL_BENCH_PORT), es a lap jelolojet
- *     ellenorizzuk: idegen lapot nem merunk (ez a P6 elotti tanulsag).
- *  2. FRISS dist: a lap kiolvassa a dist/build.json forras-lenyomatat, a
- *     szkript ujraszamolja a forrasbol. Ha elter, a riport "stale" — es a
- *     check bukik. Egy nemán elbukott build regi kodot merne zolden.
- *  3. A lassitas ALKALMAZVA van: a CDP Emulation.setCPUThrottlingRate minden
- *     merő lapra kulon fut, es a negativ kontroll (elemter nelkul) BUKASA
- *     bizonyitja, hogy a meres kulonbseget tesz — ha a lassitas nem hatna,
- *     a kontroll is atmenne, es a check ezt bukasnak veszi.
+ *  1. OUR OWN server, on our own port (41738, TL_BENCH_PORT), and we check
+ *     the page's marker: we never measure someone else's page (a lesson
+ *     learned the hard way).
+ *  2. A FRESH dist: the page reads the source fingerprint from
+ *     dist/build.json, and the script recomputes it from the source. If they
+ *     differ, the report is "stale" — and the check fails. A silently failed
+ *     build would measure old code as green.
+ *  3. The throttling IS APPLIED: CDP Emulation.setCPUThrottlingRate runs
+ *     separately on every measured page, and the FAILURE of the negative
+ *     control (without element space) proves that the measurement makes a
+ *     difference — if the throttling had no effect, the control would pass
+ *     too, and the check treats that as a failure.
  */
 
-// A `window` kizarolag a page.evaluate visszahivasaiban szerepel: azok a
-// BONGESZOBEN futnak, nem itt. A `fetch` es a `setTimeout` Node-globalok.
+// `window` appears only in page.evaluate callbacks: those run in the
+// BROWSER, not here. `fetch` and `setTimeout` are Node globals.
 /* global fetch, performance, setTimeout, window */
 
 import { spawn } from "node:child_process";
@@ -66,27 +71,27 @@ const docsDir = join(repoRoot, "packages", "docs");
 const PORT = Number(process.env.TL_BENCH_PORT ?? 41738);
 const BASE = `http://127.0.0.1:${String(PORT)}`;
 const VIEWPORT = { width: 1440, height: 900 };
-/** A kozep-Android kozelitese: a Lighthouse mobil-konvencioja. Rogzitve a state.json-ban. */
+/** An approximation of a mid-range Android device: Lighthouse's mobile convention. Recorded in the state file. */
 const THROTTLE = 4;
 /**
- * A kapu harom forgatokonyve, es ket tajekoztato. Azokat a check nem iteli
- * meg (a kapu elore rogzitett forgatokonyvei kozott nincsenek ott), csak
- * kiirja: a 2x-es zoom belefer a ter megengedett nyujtasaba, a 960 px-es
- * huzas a rahagyasba. A 4x-es csipesz megmutatja, mennyibe kerul a gesztus
- * alatti ujrahorgonyzas, a hosszu pasztazas (4 x 1200 px), mennyibe a
- * belepo csempek.
+ * The check's three scenarios, plus two informational ones. The check does
+ * not judge those (they are not among its pre-agreed scenarios), it only
+ * prints them: the 2x zoom fits within the space's allowed stretch, the
+ * 960 px drag within the overscan. The 4x pinch shows what re-anchoring
+ * during a gesture costs, and the long pan (4 x 1200 px) what entering
+ * tiles cost.
  */
 const SCENARIOS = ["pan", "zoom", "pan-labelled", "zoom-deep", "pan-long"];
-/** A hosszu pasztazas: 24 huzas x 240 px = 5760 px, az adat ~4 nezetnyi szelessege. */
+/** The long pan: 24 drags x 240 px = 5760 px, about 4 view widths of the data. */
 const SWIPES = 24;
 
-/** A vis-osszevetes zoomja (sdk_bench_compare.mjs ZOOM), a mi deltaY-unkkal. */
+/** The vis comparison's zoom (sdk_bench_compare.mjs ZOOM), with our deltaY. */
 const WHEEL = { notches: 8, intervalMs: 50, deltaY: 45.6, tailMs: 300 };
 const WHEEL_REPS = Number(process.env.TL_WHEEL_REPS ?? 3);
 
 const kind = process.argv[2];
 if (kind !== "perf" && kind !== "memory" && kind !== "public" && kind !== "deep" && kind !== "wheel") {
-  console.error("hasznalat: node scripts/sdk_bench.mjs perf|memory|public|deep|wheel");
+  console.error("usage: node scripts/sdk_bench.mjs perf|memory|public|deep|wheel");
   process.exit(2);
 }
 const PAGE = kind === "public" ? "bench-public.html" : "bench.html";
@@ -103,7 +108,7 @@ async function startServer() {
   });
   for (let attempt = 0; attempt < 100; attempt += 1) {
     if (exited) {
-      throw new Error(`a szerver nem indult el a ${String(PORT)} porton (foglalt?)`);
+      throw new Error(`the server did not start on port ${String(PORT)} (in use?)`);
     }
     try {
       const response = await fetch(`${BASE}/bench.html`);
@@ -111,9 +116,9 @@ async function startServer() {
       if (response.ok && text.includes('data-bench="temporeum-timeline"')) {
         return child;
       }
-      throw new Error("a porton nem a mi lapunk valaszol");
+      throw new Error("something other than our page answers on the port");
     } catch (error) {
-      if (String(error).includes("nem a mi lapunk")) {
+      if (String(error).includes("other than our page")) {
         child.kill();
         throw error;
       }
@@ -121,7 +126,7 @@ async function startServer() {
     }
   }
   child.kill();
-  throw new Error("a szerver 10 s alatt sem valaszolt");
+  throw new Error("the server did not answer within 10 s");
 }
 
 async function openBench(browser, query, target = { page: PAGE, marker: MARKER }) {
@@ -138,7 +143,7 @@ async function openBench(browser, query, target = { page: PAGE, marker: MARKER }
     wheelRun: window.tlBench.wheelRun,
   }));
   if (identity.marker !== target.marker) {
-    throw new Error("a lap nem a meres lapja");
+    throw new Error("the page is not the benchmark page");
   }
   return { page, identity };
 }
@@ -155,7 +160,7 @@ const report = {
   runs: [],
 };
 
-/** Egy gorgo-sorozat a Node-bol, valodi bemenettel; a lap a felvetelt adja. */
+/** A wheel run from Node, with real input; the page provides the recording. */
 async function wheelZoom(page) {
   const before = await page.evaluate(() => window.tlBench.startWheel());
   const [start0, end0] = await page.evaluate(() => window.tlBench.domain());
@@ -202,8 +207,8 @@ try {
         page: "bench-public.html",
         marker: "temporeum-timeline-bench-public",
         source: `${coreSource}|${sourceHash(elementDir)}`,
-        // A vis-osszevetes lapjanak beallitasa: szerkesztes be, a surusseg
-        // alaperteke. A kozolt szam azon a lapon szuletik.
+        // The vis comparison page's settings: editing on, density at its
+        // default. The published number is produced on that page.
         modes: [
           ["space", "mode=space&editing=1&density=auto"],
           ["exact", "mode=exact&editing=1&density=auto"],
@@ -211,7 +216,7 @@ try {
       },
     ];
     report.expectedSource = targets.map((target) => target.source).join("+");
-    // Diagnosztikahoz: TL_WHEEL_MODES="space:mode=space&trace=1" csak ezt futtatja.
+    // For diagnostics: TL_WHEEL_MODES="space:mode=space&trace=1" runs only this.
     const only = process.env.TL_WHEEL_MODES?.split(",").map((entry) => entry.split(":"));
     for (const target of targets) {
       for (const [mode, query] of only ?? target.modes) {
@@ -232,11 +237,11 @@ try {
             throttle: THROTTLE,
           });
           console.log(
-            `${target.path.padEnd(7)} ${mode.padEnd(6)} #${String(rep + 1)} zoom-wheel lathato ${String(result.before.visibleItems).padStart(4)}` +
-              ` csucs ${result.peakFactor.toFixed(2)}x vege ${result.finalFactor.toFixed(2)}x horgony ${String(result.reanchors ?? "-")}` +
-              `  kihagyott vsync ${(result.missedVsyncShare * 100).toFixed(1).padStart(5)}%` +
-              `  leghosszabb ${result.longestFrameMs.toFixed(0)} ms  nyugvo ${result.settleMs.toFixed(0)} ms` +
-              `  gorgo/rajz ${String(result.inputEvents)}/${String(result.draws)}`,
+            `${target.path.padEnd(7)} ${mode.padEnd(6)} #${String(rep + 1)} zoom-wheel visible ${String(result.before.visibleItems).padStart(4)}` +
+              ` peak ${result.peakFactor.toFixed(2)}x end ${result.finalFactor.toFixed(2)}x anchors ${String(result.reanchors ?? "-")}` +
+              `  missed vsync ${(result.missedVsyncShare * 100).toFixed(1).padStart(5)}%` +
+              `  longest ${result.longestFrameMs.toFixed(0)} ms  settle ${result.settleMs.toFixed(0)} ms` +
+              `  wheel/draw ${String(result.inputEvents)}/${String(result.draws)}`,
           );
           await page.close();
         }
@@ -278,11 +283,11 @@ try {
         const result = await page.evaluate(() => window.tlBench.scenario("zoom-deep"));
         report.runs.push({ ...result, path: target.path, mode, levels: identity.levels ?? null, totalItems: identity.totalItems, throttle: THROTTLE });
         console.log(
-          `${target.path.padEnd(7)} ${mode.padEnd(6)} zoom-deep lathato ${String(result.before.visibleItems).padStart(4)}` +
-            ` horgony ${String(result.reanchors ?? "-")}` +
-            `  kihagyott vsync ${(result.missedVsyncShare * 100).toFixed(1).padStart(5)}%` +
-            `  leghosszabb ${result.longestFrameMs.toFixed(0)} ms  nyugvo ${result.settleMs.toFixed(0)} ms` +
-            `  esemeny/rajz ${String(result.inputEvents)}/${String(result.draws)}`,
+          `${target.path.padEnd(7)} ${mode.padEnd(6)} zoom-deep visible ${String(result.before.visibleItems).padStart(4)}` +
+            ` anchors ${String(result.reanchors ?? "-")}` +
+            `  missed vsync ${(result.missedVsyncShare * 100).toFixed(1).padStart(5)}%` +
+            `  longest ${result.longestFrameMs.toFixed(0)} ms  settle ${result.settleMs.toFixed(0)} ms` +
+            `  events/draws ${String(result.inputEvents)}/${String(result.draws)}`,
         );
         await page.close();
       }
@@ -298,12 +303,12 @@ try {
         const result = await page.evaluate((scenario) => window.tlBench.scenario(scenario), name);
         report.runs.push({ ...result, totalItems: identity.totalItems, throttle: THROTTLE });
         console.log(
-          `${mode.padEnd(6)} ${name.padEnd(13)} lathato ${String(result.before.visibleItems).padStart(4)}` +
-            ` cimke ${String(result.before.visibleLabels).padStart(4)}` +
-            ` horgony ${String(result.reanchors ?? "-")}` +
-            `  kihagyott vsync ${(result.missedVsyncShare * 100).toFixed(1).padStart(5)}%` +
-            `  ${result.effectiveFps.toFixed(1)} fps  leghosszabb ${result.longestFrameMs.toFixed(0)} ms` +
-            `  nyugvo ${result.settleMs.toFixed(0)} ms  esemeny/rajz ${String(result.inputEvents)}/${String(result.draws)}`,
+          `${mode.padEnd(6)} ${name.padEnd(13)} visible ${String(result.before.visibleItems).padStart(4)}` +
+            ` labels ${String(result.before.visibleLabels).padStart(4)}` +
+            ` anchors ${String(result.reanchors ?? "-")}` +
+            `  missed vsync ${(result.missedVsyncShare * 100).toFixed(1).padStart(5)}%` +
+            `  ${result.effectiveFps.toFixed(1)} fps  longest ${result.longestFrameMs.toFixed(0)} ms` +
+            `  settle ${result.settleMs.toFixed(0)} ms  events/draws ${String(result.inputEvents)}/${String(result.draws)}`,
         );
       }
       await page.close();
@@ -327,8 +332,8 @@ try {
       report.runs.push({ poolLimit: identity.poolLimit, totalItems: identity.totalItems, first, samples });
       const last = samples[samples.length - 1];
       console.log(
-        `pool ${pool === null ? "alap" : String(pool)}: letrehozva ${String(first.created)} -> ${String(last.created)},` +
-          ` ujrahasznositva ${String(last.reused)}, el DOM ${String(last.domNodes)}, CDP Nodes ${String(last.cdpNodes)}`,
+        `pool ${pool === null ? "default" : String(pool)}: created ${String(first.created)} -> ${String(last.created)},` +
+          ` reused ${String(last.reused)}, live DOM ${String(last.domNodes)}, CDP Nodes ${String(last.cdpNodes)}`,
       );
       await page.close();
     }
@@ -345,4 +350,4 @@ const out =
       ? join(docsDir, `.bench-${kind}.json`)
       : join(coreDir, kind === "perf" ? ".bench-perf.json" : ".bench-memory.json");
 writeFileSync(out, `${JSON.stringify(report, null, 2)}\n`);
-console.log(`riport: ${out}`);
+console.log(`report: ${out}`);

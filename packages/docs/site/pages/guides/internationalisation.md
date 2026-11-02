@@ -66,7 +66,7 @@ To find a word a translation missed, draw with `pseudoStrings()` from `@temporeu
 - **Months and years are the calendar's own.** A Hebrew month begins with the new moon, a Persian year at Nowruz, a Chinese year at the new year; a month tick is the first day of the calendar's month, and a year tick the first day of its year. A quarter is the calendar's own three months, whether its year has twelve or thirteen.
 - **Longer steps fall on the calendar's own numbers**: a Hebrew decade starts in 5790, a Persian one in 1410. The Japanese calendar's years restart with each era, so its decades are the Gregorian ones.
 - **Days and hours** are days and hours in every calendar; the first of the calendar's month is the major one.
-- **Labels are `Intl`'s**, in `locale` and the calendar. `formatTick`, when you give one, still wins.
+- **Labels are `Intl`'s**, in `locale` and the calendar — the context label at the start of the axis too ("March 2026" over a view of days). `formatTick`, when you give one, still wins.
 
 `"gregory"` keeps the Gregorian axis, labelled by `Intl` in your locale. Without `calendar` the axis is Gregorian, and its labels the library's own: the same on every machine, which is what a server-rendered frame needs. Hidden dates work with any calendar: a tick that falls in hidden time sits at the seam, as it always does.
 

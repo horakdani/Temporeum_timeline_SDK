@@ -16,9 +16,9 @@ const DAY = 86_400_000;
 const DOMAIN: readonly [number, number] = [Date.UTC(2025, 2, 1), Date.UTC(2025, 2, 21)];
 
 const ITEMS: readonly Item[] = [
-  { id: "a", start: Date.UTC(2025, 2, 3), end: Date.UTC(2025, 2, 9), label: "Kutatás", laneId: "terv" },
-  { id: "b", start: Date.UTC(2025, 2, 5), end: Date.UTC(2025, 2, 7), label: "Interjúk", laneId: "terv" },
-  { id: "c", start: Date.UTC(2025, 2, 12), open: true, label: "Fejlesztés", laneId: "build" },
+  { id: "a", start: Date.UTC(2025, 2, 3), end: Date.UTC(2025, 2, 9), label: "Research", laneId: "terv" },
+  { id: "b", start: Date.UTC(2025, 2, 5), end: Date.UTC(2025, 2, 7), label: "Interviews", laneId: "terv" },
+  { id: "c", start: Date.UTC(2025, 2, 12), open: true, label: "Development", laneId: "build" },
 ];
 
 function render(overrides: Partial<Parameters<typeof renderTimeline>[0]> = {}) {
@@ -54,8 +54,8 @@ describe("the scene a render produces", () => {
     expect(scene.tag).toBe("svg");
     expect(scene.attrs?.viewBox).toBe("0 0 900 300");
     expect(scene.attrs?.xmlns).toBe("http://www.w3.org/2000/svg");
-    // A listbox and one focus stop since P8; a group, as before, when the
-    // frame is only an image.
+    // A listbox and one focus stop; a group when the frame is only an
+    // image.
     expect(scene.attrs?.role).toBe("listbox");
     expect(scene.attrs?.tabindex).toBe(0);
     expect(scene.attrs?.["aria-label"]).toBe("Timeline");
@@ -65,8 +65,8 @@ describe("the scene a render produces", () => {
   });
 
   it("takes the accessible name the host gives it", () => {
-    expect(render({ ariaLabel: "Projekt idővonal" }).scene.attrs?.["aria-label"]).toBe(
-      "Projekt idővonal",
+    expect(render({ ariaLabel: "Project timeline" }).scene.attrs?.["aria-label"]).toBe(
+      "Project timeline",
     );
   });
 
@@ -83,6 +83,7 @@ describe("the scene a render produces", () => {
       "tl-layer tl-layer--labels",
       "tl-layer tl-layer--foreground",
       "tl-layer tl-layer--overlay",
+      "tl-layer tl-layer--context",
     ]);
     expect(layerOf(scene, "overlay")).toEqual([]);
   });
@@ -130,8 +131,8 @@ describe("items", () => {
     const { visibleCount, scene } = render({
       items: [
         ...ITEMS,
-        { id: "past", start: Date.UTC(2020, 0, 1), end: Date.UTC(2020, 0, 2), label: "régi" },
-        { id: "future", start: Date.UTC(2030, 0, 1), label: "jövő" },
+        { id: "past", start: Date.UTC(2020, 0, 1), end: Date.UTC(2020, 0, 2), label: "old" },
+        { id: "future", start: Date.UTC(2030, 0, 1), label: "future" },
       ],
     });
     expect(visibleCount).toBe(3);
@@ -142,7 +143,7 @@ describe("items", () => {
   it("keeps an instant visible instead of drawing nothing", () => {
     const metrics = densityMetrics("comfortable", "horizontal");
     const { scene } = render({
-      items: [{ id: "tiny", start: Date.UTC(2025, 2, 10), label: "pillanat" }],
+      items: [{ id: "tiny", start: Date.UTC(2025, 2, 10), label: "instant" }],
     });
     const node = byId(scene, "tiny");
     expect(number(node?.attrs?.width)).toBe(metrics.minItemMainSize);
@@ -152,7 +153,7 @@ describe("items", () => {
   it("clips an item that reaches far past the viewport", () => {
     const { scene } = render({
       items: [
-        { id: "long", start: Date.UTC(1990, 0, 1), end: Date.UTC(2060, 0, 1), label: "hosszú" },
+        { id: "long", start: Date.UTC(1990, 0, 1), end: Date.UTC(2060, 0, 1), label: "long" },
       ],
     });
     const node = byId(scene, "long");
@@ -182,18 +183,18 @@ describe("items", () => {
 
   it("carries the full label as an accessible name even when the visible one is dropped", () => {
     const { scene, labels } = render({
-      items: [{ id: "x", start: Date.UTC(2025, 2, 10), label: "Egy hosszú megnevezés" }],
+      items: [{ id: "x", start: Date.UTC(2025, 2, 10), label: "A long description" }],
       width: 60,
       height: 100,
     });
     expect(labels.kept).toEqual([]);
     expect(labels.dropped).toEqual([{ id: "x", reason: "no-room" }]);
-    // Since P8 the name says when as well as what.
+    // The name says when as well as what.
     expect(byId(scene, "x")?.children?.[0]).toEqual({
       tag: "title",
-      text: "Egy hosszú megnevezés, Mar 10, 2025",
+      text: "A long description, Mar 10, 2025",
     });
-    expect(byId(scene, "x")?.attrs?.["aria-label"]).toBe("Egy hosszú megnevezés, Mar 10, 2025");
+    expect(byId(scene, "x")?.attrs?.["aria-label"]).toBe("A long description, Mar 10, 2025");
   });
 
   it("falls back to the id as the accessible name", () => {
@@ -455,7 +456,7 @@ describe("the axis band is shared", () => {
     const { scene } = render({
       width: 420,
       decorations: [
-        { kind: "marker", id: "m", time: DOMAIN[0] + DAY, label: "egy hosszú marker felirat" },
+        { kind: "marker", id: "m", time: DOMAIN[0] + DAY, label: "a long marker caption" },
       ],
     });
     const spans: { start: number; end: number }[] = [];
@@ -487,7 +488,7 @@ describe("the axis band is shared", () => {
     const { scene } = render({
       width: 300,
       decorations: [
-        { kind: "marker", id: "m", time: DOMAIN[0] + DAY, label: "egy nagyon hosszú felirat ide" },
+        { kind: "marker", id: "m", time: DOMAIN[0] + DAY, label: "a very long caption right here" },
       ],
     });
     const foreground = layerOf(scene, "foreground");
@@ -531,7 +532,7 @@ describe("a container that measures nothing", () => {
     expect(empty.scene.attrs?.["data-tl-orientation"]).toBe("horizontal");
     // Negative extents do not leak into the markup.
     expect(renderTimeline({ ...base, width: -10, height: 200 }).scene.attrs?.width).toBe(0);
-    // Same layer structure as a real frame, so a patching renderer (P7) can
+    // Same layer structure as a real frame, so a patching renderer can
     // diff the two instead of rebuilding.
     const layersOf = (scene: SceneElement): readonly (string | number | undefined)[] =>
       (scene.children ?? [])
@@ -563,5 +564,93 @@ describe("a container that measures nothing", () => {
     expect(
       machine.handle({ pointerId: 1, phase: "move", x: 500, y: 10, time: 10, pointerType: "touch" }).length,
     ).toBeGreaterThan(0);
+  });
+});
+
+describe("the axis's context label", () => {
+  const contextOf = (scene: SceneElement): readonly SceneElement[] => layerOf(scene, "context");
+
+  it("says the month of a view of days, at the start of the axis, over the surface", () => {
+    const nodes = contextOf(render().scene);
+    expect(nodes.map((node) => node.attrs?.class)).toEqual([
+      "tl-axis-context",
+      "tl-tick-label tl-tick-label--major tl-tick-label--context",
+    ]);
+    expect(nodes[1]?.text).toBe("2025-03");
+    expect(number(nodes[0]?.attrs?.x)).toBe(0);
+  });
+
+  it("says the year of a view of months, and nothing for a view of years", () => {
+    const months = render({ domain: [Date.UTC(2025, 1, 1), Date.UTC(2025, 11, 1)] });
+    expect(contextOf(months.scene)[1]?.text).toBe("2025");
+    const years = render({ domain: [Date.UTC(1900, 0, 1), Date.UTC(2100, 0, 1)] });
+    expect(contextOf(years.scene)).toEqual([]);
+  });
+
+  it("names the unit whose first tick is under it, not the sliver before", () => {
+    // Daily ticks: March's first is four hours in, under the label.
+    const under = contextOf(render({ domain: [Date.UTC(2025, 1, 28, 20), Date.UTC(2025, 2, 9)] }).scene);
+    expect(under[1]?.text).toBe("2025-03");
+    // Weekly ticks: the first is March 3rd, a hundred pixels in — the days
+    // before it are February's, and the label says so.
+    const before = contextOf(render({ domain: [Date.UTC(2025, 1, 28, 20), Date.UTC(2025, 2, 20)] }).scene);
+    expect(before[1]?.text).toBe("2025-02");
+  });
+
+  it("covers every tick label that starts under it, whole", () => {
+    const { scene, ticks } = render({ domain: [Date.UTC(2025, 2, 1, 12), Date.UTC(2025, 2, 21)] });
+    const width = number(contextOf(scene)[0]?.attrs?.width);
+    const measure = labelSpace(densityMetrics("comfortable", "horizontal"), estimateTextWidth, densityMetrics("comfortable", "horizontal").tickFontSize);
+    const scale = (time: number): number => ((time - Date.UTC(2025, 2, 1, 12)) / (Date.UTC(2025, 2, 21) - Date.UTC(2025, 2, 1, 12))) * 900;
+    for (const tick of ticks) {
+      const main = scale(tick.time);
+      if (main >= 0 && main < width) {
+        expect(main + measure(defaultTickLabel(tick)).main).toBeLessThanOrEqual(width + 1e-6);
+      }
+    }
+  });
+
+  it("is the host's formatTick, told it is the context, and can be switched off", () => {
+    const seen: Tick[] = [];
+    const { scene } = render({
+      formatTick: (tick) => {
+        seen.push(tick);
+        return tick.context === true ? "March" : "x";
+      },
+    });
+    expect(contextOf(scene)[1]?.text).toBe("March");
+    expect(seen.filter((tick) => tick.context === true).length).toBeGreaterThan(0);
+    expect(contextOf(render({ axisContext: false }).scene)).toEqual([]);
+  });
+
+  it("formats each granularity's context without Intl", () => {
+    const at = Date.UTC(2025, 2, 30, 13, 45, 7, 250);
+    const context = (granularity: Tick["granularity"]): string => defaultTickLabel({ time: at, granularity, major: true, context: true });
+    expect(context("millisecond")).toBe("13:45:07");
+    expect(context("second")).toBe("2025-03-30 13:45");
+    expect(context("minute")).toBe("2025-03-30");
+    expect(context("hour")).toBe("2025-03-30");
+    expect(context("day")).toBe("2025-03");
+    expect(context("month")).toBe("2025");
+    expect(context("year")).toBe("");
+  });
+});
+
+describe("focus and forced colours", () => {
+  const css = (): string => (render().scene.children ?? [])[0]?.text ?? "";
+
+  it("draws the timeline's own focus ring inside its box, where a clipping parent cannot cut it", () => {
+    expect(css()).toContain(".tl:focus-visible{outline:2px solid var(--tl-focus);outline-offset:-2px}");
+  });
+
+  it("turns every token into a system colour in forced colours, whatever the theme", () => {
+    const text = css();
+    const at = text.indexOf("@media (forced-colors:active)");
+    expect(at).toBeGreaterThan(-1);
+    const block = text.slice(at);
+    expect(block).toContain('.tl:not([data-tl-theme="light"])');
+    for (const token of ["surface", "text", "item-fill", "item-stroke", "item-text", "focus", "accent", "line"]) {
+      expect(block).toMatch(new RegExp(`--tl-${token}:(Canvas|CanvasText|GrayText|Highlight)[;}]`));
+    }
   });
 });

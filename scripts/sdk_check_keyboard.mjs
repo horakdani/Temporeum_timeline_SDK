@@ -1,25 +1,25 @@
 #!/usr/bin/env node
 /**
- * G-KEYBOARD: bizonyitja, hogy MINDEN gesztussal elerheto kepesseghez van
- * billentyus megfelelo — futasidoben, mindket orientacioban.
+ * G-KEYBOARD: proves that EVERY capability reachable by a gesture has a
+ * keyboard equivalent — at runtime, in both orientations.
  *
- * A kepessegek listajat NEM ez a fajl irja: a gep tipusaibol jon
- * (sdk_gesture_vocabulary.mjs), ugyanaz, amit a G-NO-GESTURE-ONLY statikusan
- * ellenoriz. Igy egy uj gesztus-kepesseg mindket kapun egyszerre bukik, amig
- * nincs billentyuje es tesztje.
+ * This file does NOT write the list of capabilities: it comes from the
+ * machine's types (sdk_gesture_vocabulary.mjs), the same list the
+ * G-NO-GESTURE-ONLY check verifies statically. So a new gesture capability
+ * fails both checks at once until it has a key and a test.
  *
- * Harom fuggetlen ellenorzes:
+ * Three independent checks:
  *
- *  1. A KESZLET: a vitest-riportban minden kepesseghez (`[cap:<id>]`) es
- *     szabalyhoz (`[rule:<nev>]`) van zold teszt, VIZSZINTESEN ES
- *     FUGGOLEGESEN is; nincs bukott es nincs kihagyott teszt.
- *  2. A NAPLO: a paritas-teszt minden kepessegnel leirja, mit adott a
- *     gesztus es mit a billentyu (`.keyboard-parity.json`). A cim elcsuszhat
- *     a viselkedestol, a naplo nem, mert a gep irta. Minden kepesseg minden
- *     orientaciojahoz kell egy bejegyzes, ahol mindket ut adott eredmenyt,
- *     es a ketto egyezett.
- *  3. STATIKUS: a paritas-teszt ugyanazt a gep-tipust hajtja mindket uton
- *     (`machine.handle` es `machine.key`), es nem mockolja a gepet.
+ *  1. THE SUITE: in the vitest report every capability (`[cap:<id>]`) and
+ *     rule (`[rule:<name>]`) has a green test, HORIZONTALLY AND VERTICALLY;
+ *     no test failed and none was skipped.
+ *  2. THE LOG: for every capability the parity test records what the
+ *     gesture produced and what the key produced (`.keyboard-parity.json`).
+ *     A title can drift from the behaviour, the log cannot, because the
+ *     machine wrote it. Every capability needs an entry for every
+ *     orientation in which both paths produced a result and the two agreed.
+ *  3. STATIC: the parity test drives the same machine type on both paths
+ *     (`machine.handle` and `machine.key`), and does not mock the machine.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -29,7 +29,7 @@ import { CORE, entryVocabulary, gestureVocabulary } from "./sdk_gesture_vocabula
 
 const reportFile = join(CORE, ".keyboard-report.json");
 const logFile = join(CORE, ".keyboard-parity.json");
-/** A P19 kepessegeinek naploja (test/keyboard/entries.test.ts): a gepen kivul, a belepesi pontokban elnek. */
+/** The log of the entry-point capabilities (test/keyboard/entries.test.ts): they live outside the machine, in the entry points. */
 const entryLogFile = join(CORE, ".keyboard-parity-entries.json");
 const parityTest = join(CORE, "test", "keyboard", "parity.test.ts");
 const ORIENTATIONS = ["horizontal", "vertical"];
@@ -38,23 +38,23 @@ const MIN_TESTS = 60;
 const failures = [];
 const notes = [];
 const vocabulary = gestureVocabulary();
-for (const problem of vocabulary.problems) failures.push(`szokincs: ${problem}`);
+for (const problem of vocabulary.problems) failures.push(`vocabulary: ${problem}`);
 const tagOf = (id) => (id.startsWith("rule.") ? `[rule:${id.slice("rule.".length)}]` : `[cap:${id}]`);
 const entries = entryVocabulary();
-for (const problem of entries.problems) failures.push(`P19-szokincs: ${problem}`);
+for (const problem of entries.problems) failures.push(`entry-point vocabulary: ${problem}`);
 const required = [...vocabulary.capabilities, ...entries.capabilities, ...vocabulary.rules];
 
-// --- 1. A keszlet --------------------------------------------------------------
+// --- 1. The suite --------------------------------------------------------------
 if (!existsSync(reportFile)) {
-  failures.push(`nincs vitest-riport (${reportFile}) — a billentyu-keszlet NEM futott, ezert BUKAS`);
+  failures.push(`no vitest report (${reportFile}) — the keyboard suite did NOT run, so this is a FAILURE`);
 } else {
   const report = JSON.parse(readFileSync(reportFile, "utf8"));
   const tests = (report.testResults ?? []).flatMap((file) => file.assertionResults ?? []);
   const failed = tests.filter((test) => test.status === "failed");
   const skipped = tests.filter((test) => test.status !== "passed" && test.status !== "failed");
-  for (const test of failed) failures.push(`bukott: ${test.fullName}`);
-  for (const test of skipped) failures.push(`nem futott (${test.status}): ${test.fullName}`);
-  if (tests.length < MIN_TESTS) failures.push(`csak ${tests.length} teszt futott (legalabb ${MIN_TESTS} kell)`);
+  for (const test of failed) failures.push(`failed: ${test.fullName}`);
+  for (const test of skipped) failures.push(`did not run (${test.status}): ${test.fullName}`);
+  if (tests.length < MIN_TESTS) failures.push(`only ${tests.length} tests ran (at least ${MIN_TESTS} are required)`);
   for (const id of required) {
     for (const orientation of ORIENTATIONS) {
       const hit = tests.find(
@@ -63,32 +63,32 @@ if (!existsSync(reportFile)) {
           test.title.includes(tagOf(id)) &&
           (test.ancestorTitles ?? []).some((title) => title.includes(`[${orientation}]`)),
       );
-      if (hit === undefined) failures.push(`nincs zold teszt: ${tagOf(id)} ${orientation} orientacioban`);
+      if (hit === undefined) failures.push(`no green test: ${tagOf(id)} in the ${orientation} orientation`);
     }
   }
-  // P26: jobbrol balra is. A tukrozott keret a gepnek a masik nyilat adja
-  // (attachInput direction); a nyilak ugy mozognak, ahogy a kepernyon mutatnak,
-  // es minden nyilas kotes elerheto marad.
+  // Right to left too. The mirrored frame gives the machine the other arrow
+  // (attachInput direction); the arrows move the way they point on screen,
+  // and every arrow binding stays reachable.
   for (const orientation of ORIENTATIONS) {
     const hit = tests.filter(
       (test) => test.status === "passed" && test.title.includes("[claim:rtl-keys]") && (test.ancestorTitles ?? []).some((title) => title.includes(`[${orientation}]`)),
     );
-    if (hit.length < 2) failures.push(`nincs eleg zold RTL-billentyu-teszt ([claim:rtl-keys]) ${orientation} orientacioban: ${String(hit.length)} / 2`);
+    if (hit.length < 2) failures.push(`not enough green RTL key tests ([claim:rtl-keys]) in the ${orientation} orientation: ${String(hit.length)} / 2`);
   }
-  // P27: a heti es napi nezet. Ott a mutato egyetlen dolgot tesz — egy
-  // kattintas kivalaszt egy esemenyt —, es ennek billentyuje az Enter azon az
-  // esemenyen, amin a billentyuzet all. A nezetnek nincs orientacioja (az ido
-  // mindig lefele fut), ezert itt nem orientacionkent, hanem oda-vissza
-  // iranyban kell legalabb harom zold teszt: a kotesek, es hogy minden
-  // esemenyre a kattintas es a billentyuk ugyanazt valasztjak.
+  // The week and day views. There the pointer does a single thing — a
+  // click selects an event — and its key is Enter on the event the keyboard
+  // is on. The view has no orientation (time always runs downwards), so
+  // instead of per orientation it needs at least three green tests in both
+  // directions: the bindings, and that for every event the click and the
+  // keys select the same thing.
   const calendarKeys = tests.filter((test) => test.status === "passed" && test.title.includes("[claim:calendar-keys]"));
-  if (calendarKeys.length < 3) failures.push(`nincs eleg zold naptar-billentyu-teszt ([claim:calendar-keys]): ${String(calendarKeys.length)} / 3`);
-  notes.push(`${tests.filter((test) => test.status === "passed").length} zold teszt a test/keyboard/ alatt`);
+  if (calendarKeys.length < 3) failures.push(`not enough green calendar key tests ([claim:calendar-keys]): ${String(calendarKeys.length)} / 3`);
+  notes.push(`${tests.filter((test) => test.status === "passed").length} green tests under test/keyboard/`);
 }
 
-// --- 2. A naplo ------------------------------------------------------------------
+// --- 2. The log ------------------------------------------------------------------
 if (!existsSync(logFile) || !existsSync(entryLogFile)) {
-  failures.push(`nincs paritas-naplo (${existsSync(logFile) ? entryLogFile : logFile}) — nem tudni, mit adott a ket ut`);
+  failures.push(`no parity log (${existsSync(logFile) ? entryLogFile : logFile}) — there is no knowing what the two paths produced`);
 } else {
   const log = [...JSON.parse(readFileSync(logFile, "utf8")), ...JSON.parse(readFileSync(entryLogFile, "utf8"))];
   let exact = 0;
@@ -96,32 +96,32 @@ if (!existsSync(logFile) || !existsSync(entryLogFile)) {
     for (const orientation of ORIENTATIONS) {
       const entry = log.find((each) => each.capability === id && each.orientation === orientation);
       if (entry === undefined) {
-        failures.push(`a naplobol hianyzik: ${id} ${orientation}`);
+        failures.push(`missing from the log: ${id} ${orientation}`);
         continue;
       }
-      // A JSON elhagyja az undefined-ot: ha a kulcs hianyzik, az az ut nem
-      // adott semmit. (A null ertelmes eredmeny: "semmit nem talalt".)
+      // JSON drops undefined: if the key is missing, that path produced
+      // nothing. (null is a meaningful result: "found nothing".)
       if (!("gesture" in entry) || !("keyboard" in entry)) {
-        failures.push(`${id} ${orientation}: valamelyik ut nem adott eredmenyt`);
+        failures.push(`${id} ${orientation}: one of the paths produced no result`);
       }
-      if (entry.same !== true) failures.push(`${id} ${orientation}: a gesztus es a billentyu mast adott`);
+      if (entry.same !== true) failures.push(`${id} ${orientation}: the gesture and the key produced different results`);
       if (JSON.stringify(entry.gesture) === JSON.stringify(entry.keyboard)) exact += 1;
     }
   }
-  notes.push(`${required.length} kepesseg es szabaly x 2 orientacio a naploban; ebbol ${exact} bajtra azonos eredmeny (a tobbi azonos iranyu, pl. fel nezetnyi lapozas vs huzas)`);
+  notes.push(`${required.length} capabilities and rules x 2 orientations in the log; ${exact} of them byte-identical results (the rest agree in direction, e.g. a half-view page vs a drag)`);
 }
 
-// --- 3. Statikus ------------------------------------------------------------------
+// --- 3. Static ------------------------------------------------------------------
 const source = existsSync(parityTest) ? readFileSync(parityTest, "utf8") : "";
 if (!source.includes('from "../../src/input.js"') || !source.includes("machine.handle(") || !source.includes("machine.key(")) {
-  failures.push("a paritas-teszt nem ugyanazt a gepet hajtja mindket uton");
+  failures.push("the parity test does not drive the same machine on both paths");
 }
-if (/vi\.mock\(|vi\.fn\(/.test(source)) failures.push("a paritas-teszt mockol — a paritas igy nem a gep paritasa");
+if (/vi\.mock\(|vi\.fn\(/.test(source)) failures.push("the parity test mocks — then the parity is not the machine's parity");
 
 for (const note of notes) console.log(`  · ${note}`);
 if (failures.length > 0) {
-  console.error("\nG-KEYBOARD BUKOTT:");
+  console.error("\nG-KEYBOARD FAILED:");
   for (const failure of failures) console.error(`  ✗ ${failure}`);
   process.exit(1);
 }
-console.log(`\nG-KEYBOARD: mind a ${vocabulary.capabilities.length + entries.capabilities.length} gesztus-kepesseg es ${vocabulary.rules.length} szabaly billentyuvel is all, mindket orientacioban.`);
+console.log(`\nG-KEYBOARD: all ${vocabulary.capabilities.length + entries.capabilities.length} gesture capabilities and ${vocabulary.rules.length} rules also work by keyboard, in both orientations.`);

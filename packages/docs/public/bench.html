@@ -1,16 +1,16 @@
 <!doctype html>
-<html lang="hu">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Idővonal SDK — teljesítmény-mérés (G-PERF, G-MEMORY)</title>
+    <title>Timeline SDK — performance measurement (G-PERF, G-MEMORY)</title>
     <style>
       body {
         margin: 0;
         font-family: system-ui, sans-serif;
       }
-      /* A mért konténer. A szélessége a nézetablaké (1440), a magassága
-         rögzített, hogy a látható elemszám ne a böngésző ablakán múljon. */
+      /* The measured container. Its width is the viewport's (1440), its height
+         is fixed, so the number of visible items does not depend on the browser window. */
       #frame {
         position: relative;
         height: 900px;
@@ -26,21 +26,21 @@
 
     <script type="module">
       /*
-       * A mérés lapja. Nem demó: minden, ami itt történik, az a hoszt útja,
-       * amit a README ajánl — igazi attachInput, igazi gép, képkocka-hurok,
-       * elemtér, foltozó. A mérés a lap SAJÁT útját méri, nem egy
-       * benchmark-specifikus rövidítést.
+       * The measurement page. Not a demo: everything that happens here is the
+       * host path the README recommends — real attachInput, real machine, frame
+       * loop, item space, patcher. The measurement measures the page's OWN
+       * path, not a benchmark-specific shortcut.
        *
-       * ?mode=space   (alap) az ajánlott út: elemtér + foltozó
-       * ?mode=exact   negatív kontroll: elemtér nélkül, minden képkocka pontos
-       * ?pool=0       negatív kontroll a memóriához: pool nélküli foltozó
-       * ?levels=0     negatív kontroll a mély zoomhoz (G-PERF-DEEP): a gesztus
-       *               közbeni újrahorgonyzás egy képkockában, lépcsők nélkül
-       * ?run=0        negatív kontroll a görgős zoomhoz (G-PERF-WHEEL): a lap
-       *               nem veszi gesztusnak a görgő-sorozatot (a P15 előtti
-       *               gép), így minden görgő-lépés után nyugalomba áll
-       * ?overscan=, ?maxStretch=, ?growth=   a tervező hangolása, kísérletezéshez; a
-       *               kapu az alapértékeket méri
+       * ?mode=space   (default) the recommended path: item space + patcher
+       * ?mode=exact   negative control: no item space, every frame exact
+       * ?pool=0       negative control for memory: a patcher without a pool
+       * ?levels=0     negative control for deep zoom (G-PERF-DEEP): re-anchoring
+       *               during the gesture in one frame, without steps
+       * ?run=0        negative control for wheel zoom (G-PERF-WHEEL): the page
+       *               does not treat the wheel burst as a gesture (the earlier
+       *               machine), so it comes to rest after every wheel step
+       * ?overscan=, ?maxStretch=, ?growth=   planner tuning, for experiments; the
+       *               check measures the defaults
        */
       import { createInputMachine, planSceneSpace, renderTimeline } from "/core/index.mjs";
       import { attachInput, createFrameLoop, mountScene } from "/core/dom.mjs";
@@ -49,16 +49,16 @@
       const params = new URLSearchParams(location.search);
       const mode = params.get("mode") === "exact" ? "exact" : "space";
       const poolLimit = params.has("pool") ? Number(params.get("pool")) : undefined;
-      // A README ajánlott útja: a gesztus kettes lépcsőkben horgonyoz újra, és
-      // a régi lépték csempéi helyettesítenek, amíg az új feltöltődik.
+      // The README's recommended path: the gesture re-anchors in steps of two,
+      // and the old scale's tiles stand in while the new one fills.
       const plan = { levels: params.get("levels") !== "0" };
       const wheelRun = params.get("run") !== "0";
       for (const name of ["overscan", "maxStretch", "growth"]) {
         if (params.has(name)) plan[name] = Number(params.get(name));
       }
 
-      // Az adat és a kiinduló nézet a közös készletből (bench-kit.mjs): a
-      // G-PERF-PUBLIC lapja ugyanezt méri.
+      // The data and the starting view come from the shared kit (bench-kit.mjs):
+      // the G-PERF-PUBLIC page measures the same.
       const items = benchItems();
       const total = items[items.length - 1].end - START;
 
@@ -83,15 +83,15 @@
       });
       const mount = mountScene(frame, poolLimit === undefined ? {} : { poolLimit });
 
-      /** Képkockánként a renderelés és a foltozás ideje — diagnosztika. */
+      /** Render and patch time per frame — diagnostics. */
       const drawTimes = [];
 
       function draw() {
         const began = performance.now();
         if (mode === "space") {
           const next = planSceneSpace(space, { domain, mainSize: width() }, { ...plan, settle: !gesture });
-          // Újrahorgonyzás: új origó vagy új lépték — ilyenkor minden
-          // megrajzolt csomópont újraíródik. A rajzolt tartomány változása nem az.
+          // Re-anchoring: a new origin or a new scale — then every drawn node
+          // is rewritten. A change in the drawn range is not one.
           if (space === undefined || next.origin !== space.origin || next.msPerPx !== space.msPerPx) {
             anchors.push(performance.now());
           }
@@ -110,9 +110,9 @@
         const rendered = performance.now();
         mount.update(result.scene);
         drawTimes.push({ at: began, render: rendered - began, mount: performance.now() - rendered, pending: result.pendingTiles, gesture });
-        // A tervező a nyugalomban képkockánként tölti fel a ráhagyást: ha
-        // újratervezve mást mond, még van mit rajzolni. Lépcsős újrahorgonyzás
-        // után pedig addig, amíg a régi lépték csempéi helyettesítenek.
+        // At rest the planner fills the overscan frame by frame: if replanning
+        // gives a different answer, there is still something to draw. After a
+        // stepped re-anchor, also for as long as the old scale's tiles stand in.
         if (mode === "space" && !gesture) {
           const again = planSceneSpace(space, { domain, mainSize: width() }, { ...plan, settle: true });
           if (again !== space) loop.request();
@@ -142,7 +142,7 @@
       draw();
       machine.resize({ contentCrossSize: result.contentCrossSize });
 
-      // --- mérőeszközök -------------------------------------------------------
+      // --- measuring tools ---------------------------------------------------
 
       async function settleAt(nextDomain) {
         machine.setDomain(nextDomain);
@@ -177,9 +177,9 @@
       const scenario = (name) => kit.scenario(name, extras);
 
       /**
-       * Hosszú pásztázás a memóriához: a nézet az adat elejére áll, aztán a
-       * mérő szkript húzásonként hívja a `swipe`-ot, és közben a böngésző saját
-       * számlálóit (CDP) is leolvassa.
+       * A long pan for memory: the view moves to the start of the data, then the
+       * measuring script calls `swipe` once per drag and reads the browser's own
+       * counters (CDP) along the way.
        */
       async function prepareLongPan() {
         await settleAt([START, START + total * 0.2]);
@@ -189,12 +189,12 @@
       async function swipe() {
         await performGesture(400, (u) => [{ x: 1000 - 240 * u, y: height() / 2 }]);
         await sleep(30);
-        // Az élő címke-csomópontok: a G-MEMORY a számukkal együtt növő
-        // létrehozást nem rója fel a poolnak (az nem adhat vissza címkét,
-        // amíg egy sem volt elengedve), és az élő DOM-ból is levonja őket.
-        // A P17 óta egy címke egy foreignObject és egy HTML-sor: két elem
-        // (labelNodes), a szövegével három csomópont (labelTree) — ahogy a
-        // foltozó és a CDP számolja.
+        // The live label nodes: G-MEMORY does not charge the pool for creation
+        // that grows with their number (it cannot hand back a label while none
+        // has been released), and it subtracts them from the live DOM too.
+        // A label is a foreignObject and an HTML row: two elements
+        // (labelNodes), three nodes with its text (labelTree) — the way the
+        // patcher and CDP count them.
         let labelTree = 0;
         for (const label of frame.querySelectorAll(".tl-label")) {
           const walker = document.createTreeWalker(label);

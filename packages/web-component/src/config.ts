@@ -209,6 +209,12 @@ export interface TimelineConfig<T = unknown> {
    */
   readonly formatTick?: (tick: Tick, timeZone: string) => string;
   /**
+   * The month (or year, or day) the view is in, held at the start of the
+   * axis — `formatTick` writes it too, told by `tick.context`. On by
+   * default; `false` leaves the axis to its ticks.
+   */
+  readonly axisContext?: boolean;
+  /**
    * Whether the timeline claims every touch gesture (`own`, the default) or
    * leaves the page's vertical scroll to the page (`cooperative`) — for a
    * timeline embedded in an article, which a reader has to be able to
@@ -803,6 +809,7 @@ export function frameOptions<T>(config: TimelineConfig<T>, state: FrameState<T>)
     ...(config.timeZone === undefined ? {} : { timeZone: config.timeZone }),
     ...(config.locale === undefined ? {} : { locale: config.locale }),
     ...tickOptionsOf(config, hidden),
+    ...(config.axisContext === false ? { axisContext: false } : {}),
     ...(config.touchAction === undefined ? {} : { touchAction: config.touchAction }),
     ...(config.maxLabels === undefined ? {} : { maxLabels: config.maxLabels }),
     ...(config.labelOverflow === undefined ? {} : { labelOverflow: config.labelOverflow }),

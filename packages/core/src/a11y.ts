@@ -3,7 +3,7 @@
  *
  * A screen reader gets one string per item, and it has to carry what the eye
  * gets from position: when the item happens, and in which lane. The label
- * alone ("Építés") says what, not when — the axis says when, and the axis is
+ * alone ("Build") says what, not when — the axis says when, and the axis is
  * hidden from assistive technology because reading every tick would bury the
  * items. So the date range goes into the name, formatted by `Intl` in the
  * host's locale and time zone, and nothing in this file knows a language.

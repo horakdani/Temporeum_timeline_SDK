@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * G-CYCLE: egy koros fuggosegi graf veges idon belul hibat jelent a kor
- * tagjaival, es nem modosit semmit.
+ * G-CYCLE: a dependency graph with a cycle reports an error naming the
+ * cycle's members in finite time, and changes nothing.
  *
- * A tagokat egy nyers eleresi referencia ellen merjuk (cycle-members), a
- * veges idot egy 10 000 tagu gyurun es egy 2000 tagu, 20 000 nyilas
- * gubancon (finite), es azt, hogy semmi nem valtozik (nothing-changed).
- * Statikusan: a korkereses nem rekurziv — egy 10 000 tagu kor egy rekurziv
- * keresest a verem aljaig vinne.
+ * The members are measured against a brute-force reachability reference
+ * (cycle-members), finite time on a 10 000-node ring and on a 2000-node,
+ * 20 000-arrow tangle (finite), and that nothing changes (nothing-changed).
+ * Statically: cycle detection is not recursive — a 10 000-node cycle would
+ * drive a recursive search to the bottom of the stack.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -18,12 +18,12 @@ import { checkReport, codeOf, finish } from "./sdk_suite_report.mjs";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const failures = checkReport({
   file: join(root, "packages", "core", ".schedule-cycles-report.json"),
-  label: "utemezo-kor",
+  label: "schedule-cycle",
   minTests: 3,
   claims: ["cycle-members", "finite", "nothing-changed"],
 });
 const source = codeOf(readFileSync(join(root, "packages", "core", "src", "schedule", "index.ts"), "utf8"));
 const body = /function cyclesOf\([\s\S]*?\n}\n/.exec(source)?.[0];
-if (body === undefined) failures.push("a cyclesOf hianyzik a /schedule-bol");
-else if ((body.match(/cyclesOf\(/g) ?? []).length > 1) failures.push("a cyclesOf rekurziv");
+if (body === undefined) failures.push("cyclesOf is missing from /schedule");
+else if ((body.match(/cyclesOf\(/g) ?? []).length > 1) failures.push("cyclesOf is recursive");
 finish("G-CYCLE", failures);

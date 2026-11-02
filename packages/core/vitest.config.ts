@@ -2,21 +2,21 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    // A mag Node-ban fut, DOM nélkül — ez a P1 G-NODOM kapujának az alapja.
+    // The core runs in Node, without a DOM — the basis of the G-NODOM check.
     environment: "node",
     include: ["test/**/*.test.ts"],
-    // Egy teszt időkorlátja, nem teljesítmény-küszöb (azt a G-PERF méri).
-    // A vitest alapértelmezése 5 s, és az a GÉP terhelésének mértéke: a P10
-    // [claim:contiguous] property-je magában 1,4 s, a párhuzamos coverage-
-    // futásban 3,9–5,4 s, és a P11 kapujában 5,36 s-nál kiakadt. Ugyanígy a
-    // render-cache, a mount és a room property-je is korlát nélkül, 2–4 s-on
-    // fut. A legnehezebbek (conservation, no-stale) eddig is maguk adtak meg
-    // 120–240 s-ot; ez a többiek közös felső határa. Egy valódi akadás
-    // továbbra is bukik — 30 s-nál, nem a szomszéd tesztek terhelésétől.
+    // A per-test time limit, not a performance threshold (G-PERF measures that).
+    // The vitest default is 5 s, and that measures the MACHINE's load: the
+    // [claim:contiguous] property takes 1.4 s on its own, 3.9–5.4 s in the
+    // parallel coverage run, and once timed out at 5.36 s in a gate run.
+    // Likewise the render-cache, mount and room properties run in 2–4 s
+    // without a limit. The heaviest ones (conservation, no-stale) already set
+    // 120–240 s themselves; this is the common upper bound for the rest. A
+    // real hang still fails — at 30 s, not from the load of neighbouring tests.
     testTimeout: 30_000,
     typecheck: {
-      // A típusteszt ugyanannyira teszt, mint a futásidejű: a publikus API
-      // alakja a termék része.
+      // A type test is as much a test as a runtime one: the shape of the
+      // public API is part of the product.
       enabled: true,
       include: ["test/**/*.test-d.ts"],
       tsconfig: "./tsconfig.json",
@@ -24,16 +24,16 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
-      // A típusdeklarációkban nincs futtatható sor; a lefedettségi számot
-      // hígítanák.
+      // Type declarations have no executable lines; they would dilute the
+      // coverage figure.
       exclude: ["src/types.ts"],
       reporter: ["text", "json-summary"],
       thresholds: {
-        // Fájlonként, nem összesítve. Az összesített küszöb átengedte, hogy a
-        // ticks.ts teljes tesztkészlete eltűnjön: a modult más tesztek
-        // közvetve még futtatták, így a sorai "lefedettek" maradtak, miközben
-        // semmi nem állított róluk semmit — 94.7%-os összesített értékkel.
-        // A fájlonkénti küszöb ezt a csendet nem engedi.
+        // Per file, not in aggregate. The aggregate threshold let the whole
+        // test suite of ticks.ts disappear: other tests still ran the module
+        // indirectly, so its lines stayed "covered" while nothing asserted
+        // anything about them — at 94.7% in aggregate. The per-file threshold
+        // does not allow that silence.
         perFile: true,
         lines: 90,
         functions: 90,

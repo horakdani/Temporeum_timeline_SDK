@@ -80,22 +80,22 @@ describe("G-ICAL: the shapes the big calendars write", () => {
 
   it("[claim:meaning] the Google file: weekdays at 9:30 Budapest time, one excluded, one moved, one cancelled", () => {
     const calendar = parseICal(read("google.ics"));
-    expect(calendar.name).toBe("Csapat");
+    expect(calendar.name).toBe("Team");
     const standup = calendar.events.find((event) => event.id === "standup-7f3a@google.com" && event.recurrenceId === undefined);
-    expect(standup?.description).toBe("Napi egyeztetés, 15 perc.\nHozd a jegyzeteidet; köszi!");
-    expect(standup?.location).toBe("Tárgyaló 2, 3. emelet");
+    expect(standup?.description).toBe("Daily sync, 15 minutes.\nBring your notes; thanks!");
+    expect(standup?.location).toBe("Meeting room 2, 3rd floor");
     const items = expandEvents(calendar.events, Date.UTC(2026, 9, 19), Date.UTC(2026, 10, 2));
     const standups = items.filter((item) => item.id.startsWith("standup"));
     expect(standups.map((item) => [new Date(item.start as number).toISOString().slice(5, 16), item.label])).toEqual([
-      ["10-19T07:30", "Napi standup"],
-      ["10-20T07:30", "Napi standup"],
-      ["10-21T07:30", "Napi standup"],
-      ["10-22T07:30", "Napi standup"],
+      ["10-19T07:30", "Daily standup"],
+      ["10-20T07:30", "Daily standup"],
+      ["10-21T07:30", "Daily standup"],
+      ["10-22T07:30", "Daily standup"],
       // 23 October is an EXDATE; the clocks go back on the 25th.
-      ["10-26T08:30", "Napi standup"],
-      ["10-27T08:30", "Napi standup"],
-      ["10-28T10:00", "Napi standup (áttéve)"],
-      ["10-29T08:30", "Napi standup"],
+      ["10-26T08:30", "Daily standup"],
+      ["10-27T08:30", "Daily standup"],
+      ["10-28T10:00", "Daily standup (moved)"],
+      ["10-29T08:30", "Daily standup"],
       // 30 October is cancelled.
     ]);
     const offsite = items.find((item) => item.id === "offsite-2026@google.com");

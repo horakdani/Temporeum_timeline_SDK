@@ -1,24 +1,24 @@
 #!/usr/bin/env node
 /**
- * G-DEPS — bizonyítja, hogy a magnak NULLA futásidejű függősége van.
+ * G-DEPS — proves that the core has ZERO runtime dependencies.
  *
- * Két független módon, mert a kettő más hibát fog meg:
+ * In two independent ways, because each catches a different bug:
  *
- *  1. A manifesztek: a core-ban nincs dependencies / peerDependencies /
- *     optionalDependencies. Ez a szándékot ellenőrzi.
- *  2. A lefordított bundle-ök: egyetlen "bare" import- vagy require-specifier
- *     sem maradt bennük. Ez a valóságot ellenőrzi — egy deklarálatlan import
- *     a manifesztben nem látszik, a kimenetben igen. VALÓDI PARSERREL, nem
- *     szövegmintával: hogy miért, azt a 2. szakasz kommentje mondja el.
+ *  1. The manifests: the core has no dependencies / peerDependencies /
+ *     optionalDependencies. This checks the intent.
+ *  2. The compiled bundles: not a single "bare" import or require specifier
+ *     is left in them. This checks reality — an undeclared import does not
+ *     show in the manifest, but it does in the output. With a REAL PARSER,
+ *     not a text pattern: the comment on section 2 says why.
  *
- * Ha a dist nem létezik, az BUKÁS, nem kihagyás: a 2. ellenőrzés nem futott le,
- * tehát a kapu nem mondhatja, hogy bizonyított.
+ * If dist does not exist, that is a FAILURE, not a skip: check 2 did not run,
+ * so the check cannot claim it proved anything.
  */
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// A rollup már a build eszköze: a parsere nem új függőség.
+// rollup is already the build tool: its parser is not a new dependency.
 import { parseAst } from "rollup/parseAst";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -37,15 +37,15 @@ const workspaceDirs = (rootManifest.workspaces ?? []).map((w) =>
   join(repoRoot, w),
 );
 if (workspaceDirs.length === 0) {
-  problems.push("A gyökér package.json nem deklarál workspace-eket.");
+  problems.push("The root package.json declares no workspaces.");
 }
 
-// --- 1. A manifesztek -------------------------------------------------------
+// --- 1. The manifests --------------------------------------------------------
 let coreDir;
 for (const dir of workspaceDirs) {
   const manifestPath = join(dir, "package.json");
   if (!existsSync(manifestPath)) {
-    problems.push(`Nincs package.json a workspace-ben: ${dir}`);
+    problems.push(`No package.json in the workspace: ${dir}`);
     continue;
   }
   const manifest = readJson(manifestPath);
@@ -64,61 +64,61 @@ for (const dir of workspaceDirs) {
     ]) {
       if (list.length > 0) {
         problems.push(
-          `${name}: ${kind} nem üres (${list.join(", ")}) — a magnak nulla futásidejű függősége van.`,
+          `${name}: ${kind} is not empty (${list.join(", ")}) — the core has zero runtime dependencies.`,
         );
       }
     }
-    notes.push(`${name}: 0 futásidejű függőség a manifesztben`);
+    notes.push(`${name}: 0 runtime dependencies in the manifest`);
     continue;
   }
 
-  // A többi csomag peer-függősége legitim (react, pl.), de futásidejű
-  // dependency csak workspace-testvér lehet.
+  // Peer dependencies of the other packages are legitimate (react, e.g.), but
+  // a runtime dependency can only be a workspace sibling.
   const foreign = runtime.filter((d) => !d.startsWith(WORKSPACE_SCOPE));
   if (foreign.length > 0) {
     problems.push(
-      `${name}: külső futásidejű függőség (${foreign.join(", ")}) — csak workspace-testvér engedett.`,
+      `${name}: external runtime dependency (${foreign.join(", ")}) — only workspace siblings are allowed.`,
     );
   }
   notes.push(
-    `${name}: ${runtime.length} futásidejű dep (${runtime.join(", ") || "nincs"}), ${peers.length} peer`,
+    `${name}: ${runtime.length} runtime deps (${runtime.join(", ") || "none"}), ${peers.length} peers`,
   );
 }
 
 if (coreDir === undefined) {
-  problems.push(`A ${CORE} csomag nincs a workspace-ek között.`);
+  problems.push(`The ${CORE} package is not among the workspaces.`);
 }
 
-// --- 2. A lefordított bundle-ök --------------------------------------------
+// --- 2. The compiled bundles -----------------------------------------------
 /**
- * A specifierek VALÓDI PARSERREL, nem szövegmintával.
+ * The specifiers, with a REAL PARSER, not a text pattern.
  *
- * Volt itt egy regex (`from\s*["']([^"']+)["']`), és hazudott. A P5-ben ez a
- * mondat került az `editing.ts`-be:
+ * There used to be a regex here (`from\s*["']([^"']+)["']`), and it lied. At
+ * one point this sentence went into `editing.ts`:
  *
  *     // ... which is the shortest path from "it
  *     // happened" to "it lasted".
  *
- * A minta illeszkedett rá, és a check mindhárom bundle-ben egy `it\n//
- * happened` nevű "külső függőséget" jelentett — miközben a manifeszt-oldal
- * ugyanabban a futásban 0 függőséget mondott. Nem a bundle volt rossz: a
- * CHECK volt rossz.
+ * The pattern matched it, and the check reported an "external dependency"
+ * named `it\n// happened` in all three bundles — while the manifest side
+ * said 0 dependencies in the same run. The bundle was not wrong: the CHECK
+ * was wrong.
  *
- * Az első javításom egy kézi komment-stripper volt. Az is rossz volt, és ezt
- * egy roncsolásos próba mondta meg: egy blokk-kommentbe írt `import x from
- * "lodash"` MÉGIS bukást okozott, mert a stripper valahol a bundle-ben
- * elcsúszott (egy idézőjelet tartalmazó regex-literálon), és onnantól a fájl
- * többi részét nyersen átengedte. Egy kézi lexer rossz válasz egy olyan
- * kérdésre, amire van parser.
+ * The first fix was a hand-written comment stripper. That was wrong too, and
+ * a tampering test showed it: an `import x from "lodash"` written inside a
+ * block comment STILL caused a failure, because the stripper lost its place
+ * somewhere in the bundle (on a regex literal containing a quote), and from
+ * there let the rest of the file through raw. A hand-written lexer is the
+ * wrong answer to a question that has a parser.
  *
- * Ezért most a rollup `parseAst`-ja parsol — **nem új függőség**, a rollup már
- * a build eszköze. Egy parser számára a komment definíció szerint nem létezik,
- * tehát ez az osztály hiba többé nem lehetséges, nem csak valószínűtlen.
+ * So now rollup's `parseAst` parses — **not a new dependency**, rollup is
+ * already the build tool. To a parser a comment does not exist by
+ * definition, so this class of bug is no longer possible, not just unlikely.
  *
- * Amit megnéz: `import ... from`, `export ... from`, `export * from`,
- * `import(...)` és `require(...)`. Ha egy `import()` vagy `require()`
- * argumentuma nem szövegliterál, az PROBLÉMA: egy futásidőben összerakott
- * specifier pont az, amit a kapu nem tud bizonyítani.
+ * What it looks at: `import ... from`, `export ... from`, `export * from`,
+ * `import(...)` and `require(...)`. If the argument of an `import()` or
+ * `require()` is not a string literal, that is a PROBLEM: a specifier put
+ * together at runtime is exactly what the check cannot prove.
  */
 function walkAst(node, visit) {
   if (node === null || typeof node !== "object") return;
@@ -142,7 +142,7 @@ function isStringLiteral(node) {
   );
 }
 
-/** A modulban szereplő összes specifier, és a nem-literál helyek száma. */
+/** Every specifier in the module, and the number of non-literal sites. */
 function specifiersOf(code) {
   const specifiers = new Set();
   const computed = [];
@@ -172,10 +172,10 @@ function specifiersOf(code) {
 }
 
 if (coreDir !== undefined) {
-  // A P16 óta minden belépési pont (entries.json) és minden közös darab
-  // (dist/chunks/) kiadott kód: egy új belépési pont vagy darab külső
-  // importja ugyanúgy függőség, mint az alapé. A lista a forrásból jön, nem
-  // kézzel — egy kézi lista az új belépési pontot nem látná.
+  // Every entry point (entries.json) and every shared chunk (dist/chunks/)
+  // is shipped code: an external import in a new entry point or chunk is a
+  // dependency just as much as one in the base. The list comes from the
+  // source, not by hand — a hand-written list would not see a new entry point.
   const { entries } = JSON.parse(readFileSync(join(coreDir, "entries.json"), "utf8"));
   const chunkDir = join(coreDir, "dist", "chunks");
   const chunks = existsSync(chunkDir)
@@ -189,7 +189,7 @@ if (coreDir !== undefined) {
     const path = join(coreDir, rel);
     if (!existsSync(path)) {
       problems.push(
-        `Nincs lefordított bundle: ${rel} — a futásidejű import-ellenőrzés NEM futott le. Futtasd előbb: npm run build -w packages/core`,
+        `No compiled bundle: ${rel} — the runtime import check did NOT run. Run this first: npm run build -w packages/core`,
       );
       continue;
     }
@@ -197,28 +197,28 @@ if (coreDir !== undefined) {
     try {
       parsed = specifiersOf(readFileSync(path, "utf8"));
     } catch (error) {
-      // A parse-hiba is BUKÁS: egy nem parsolható bundle-ről nem tudunk
-      // semmit mondani, és a "nem tudunk semmit" nem átmenet.
-      problems.push(`${rel}: nem parsolható (${error.message}) — az ellenőrzés nem futott le.`);
+      // A parse error is a FAILURE too: we cannot say anything about a bundle
+      // that does not parse, and "we cannot say anything" is not a pass.
+      problems.push(`${rel}: does not parse (${error.message}) — the check did not run.`);
       continue;
     }
     const external = [...parsed.specifiers].filter(
       (spec) => !spec.startsWith(".") && !spec.startsWith("/"),
     );
     if (external.length > 0) {
-      // A node: beépítettek is bukást jelentenek: a mag böngészőben fut.
+      // node: built-ins are a failure too: the core runs in the browser.
       problems.push(
-        `${rel}: külső specifier a kimenetben (${external.join(", ")}) — a bundle nem önálló.`,
+        `${rel}: external specifier in the output (${external.join(", ")}) — the bundle is not self-contained.`,
       );
     }
     if (parsed.computed.length > 0) {
       problems.push(
-        `${rel}: ${String(parsed.computed.length)} nem-literál specifier (${[...new Set(parsed.computed)].join(", ")}) — futásidőben összerakott betöltést a kapu nem tud bizonyítani.`,
+        `${rel}: ${String(parsed.computed.length)} non-literal specifiers (${[...new Set(parsed.computed)].join(", ")}) — the check cannot prove a load put together at runtime.`,
       );
     }
     if (external.length === 0 && parsed.computed.length === 0) {
       notes.push(
-        `${rel}: 0 külső specifier (${String(parsed.specifiers.size)} relatív, parserrel)`,
+        `${rel}: 0 external specifiers (${String(parsed.specifiers.size)} relative, by parser)`,
       );
     }
   }
@@ -227,8 +227,8 @@ if (coreDir !== undefined) {
 for (const note of notes) console.log(`  ok   ${note}`);
 if (problems.length > 0) {
   console.error("");
-  for (const problem of problems) console.error(`  HIBA ${problem}`);
-  console.error(`\nG-DEPS BUKOTT: ${problems.length} probléma.`);
+  for (const problem of problems) console.error(`  FAIL ${problem}`);
+  console.error(`\nG-DEPS FAILED: ${problems.length} problems.`);
   process.exit(1);
 }
-console.log(`\nG-DEPS átment: nulla futásidejű függőség, ${notes.length} ellenőrzés.`);
+console.log(`\nG-DEPS passed: zero runtime dependencies, ${notes.length} checks.`);

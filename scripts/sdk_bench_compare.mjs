@@ -455,16 +455,15 @@ try {
 // --- bytes ---------------------------------------------------------------------
 
 const EXPECTED_SCRIPTS = {
-  // A P16 óta a mag kódja a belső chunks/index darabban van, az index.mjs és
-  // a dom.mjs onnan importál (packages/core/scripts/build-config.mjs).
-  // A P19 óta az element a /groups és az /items pontot is importálja, a P20 óta a /gantt-ot, a P22 óta a /resources-t is,
-  // a P24 óta a /tools-t, a P25 óta az /export-ot, a P26 óta az /intl-t. A /calendar-t
-  // nem: a naptárnézet az elem saját alútvonala (@temporeum/timeline-element/calendar).
-  // A P29 óta a /gantt-ot, a /resources-t és az /export-ot sem: azok az elem
-  // pluginjai (@temporeum/timeline-element/gantt, /resources, /export), és
-  // egy sima idővonal lapja nem tölti be őket.
-  // A P30 óta a /groups-ot, az /items-et, a /tools-t és az /intl-t sem: azok is
-  // pluginok; helyettük a /live (élő adat) és a /words (az angol szavak).
+  // The core's code lives in the internal chunks/index chunk; index.mjs and
+  // dom.mjs import from there (packages/core/scripts/build-config.mjs).
+  // The element does not import /calendar: the calendar view is the element's
+  // own subpath (@temporeum/timeline-element/calendar). Nor /gantt, /resources
+  // or /export: those are the element's plugins
+  // (@temporeum/timeline-element/gantt, /resources, /export), and a plain
+  // timeline page does not load them. Nor /groups, /items, /tools or /intl:
+  // those are plugins too; instead it loads /live (live data) and /words (the
+  // English words).
   temporeum: [
     "/core/chunks/index.mjs",
     "/core/dom.mjs",

@@ -1,7 +1,7 @@
-// Az Angular SSR-en (@angular/ssr) az Angular-adapter maga rajzol: a
-// komponens a szerveren a renderTimelineSvg rajzát írja a csomópontjába, a
-// kliens (provideClientHydration) a szerver DOM-ját megtartja, és a példány
-// azt veszi át (P23).
+// On Angular SSR (@angular/ssr) the Angular adapter draws by itself: on the
+// server the component writes renderTimelineSvg's drawing into its node, the
+// client (provideClientHydration) keeps the server's DOM, and the instance
+// takes that over.
 import { Component, signal } from "@angular/core";
 import { TimelineComponent, timelineState } from "@temporeum/timeline-angular";
 import type { TimelineConfig, TimelineInstance } from "@temporeum/timeline-angular";
@@ -27,7 +27,7 @@ export class App {
 
   onReady(instance: TimelineInstance | null): void {
     this.timeline.set(instance);
-    // A teszt innen tudja, hogy a kliens átvette a rajzot.
+    // This is how the test knows the client has taken over the drawing.
     (window as unknown as { __tl?: unknown }).__tl = instance;
   }
 }

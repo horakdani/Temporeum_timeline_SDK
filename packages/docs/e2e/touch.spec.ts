@@ -2,24 +2,25 @@ import { expect, test } from "@playwright/test";
 import type { CDPSession, Page } from "@playwright/test";
 
 /**
- * A böngészős készlet: valódi tap, húzás és pinch, eszköz-emulációval.
+ * The browser suite: real tap, drag and pinch, with device emulation.
  *
- * Amit a mag tesztjei bizonyítanak: a gesztus-állapotgép helyesen számol.
- * Amit CSAK itt lehet bizonyítani: hogy a böngésző is így gondolja. Három
- * állítás tartozik ide, és egyik sem mérhető DOM nélkül:
+ * What the core's tests prove: the gesture state machine computes correctly.
+ * What can ONLY be proved here: that the browser agrees. Three claims belong
+ * here, and none of them can be measured without a DOM:
  *
- *  1. a `touch-action` tényleg leállítja a lapgörgetést a húzás alatt;
- *  2. `cooperative` módban tényleg elgörren a lap, ÉS a böngésző elveszi a
- *     gesztust — azaz valódi `pointercancel` jön, nem szimulált;
- *  3. két érintési pont tényleg zoomol, a CSS-pixelekben megadott ujjak alatt.
+ *  1. `touch-action` really stops page scrolling during a drag;
+ *  2. in `cooperative` mode the page really scrolls, AND the browser takes
+ *     the gesture away — that is, a real `pointercancel` arrives, not a
+ *     simulated one;
+ *  3. two touch points really zoom, under fingers given in CSS pixels.
  *
- * A két érintési pont a böngésző saját érintés-bemenetén megy: a Playwright
- * `touchscreen` API-ja egy pontot tud, és pinch-hez kettő kell. Chromiumban
- * ez a CDP `Input.dispatchTouchEvent`-je; WebKitben (P31) a Playwright
- * WebKit-buildjének protokollja, amelynek ugyanilyen nevű parancsa van, de a
- * publikus API nem adja ki — lásd `fingersFor`. Mindkettő valódi, a böngésző
- * által gyártott (`isTrusted`) Pointer Eventeket ad, nem a lapba injektált
- * eseményt.
+ * The two touch points go through the browser's own touch input: the
+ * Playwright `touchscreen` API can do one point, and a pinch needs two. In
+ * Chromium this is CDP's `Input.dispatchTouchEvent`; in WebKit it is the
+ * protocol of Playwright's WebKit build, which has a command of the same
+ * name, but the public API does not expose it — see `fingersFor`. Both give
+ * real Pointer Events produced by the browser (`isTrusted`), not events
+ * injected into the page.
  */
 
 interface TouchPoint {
@@ -37,7 +38,7 @@ interface TimelineState {
   readonly edits: readonly string[];
   readonly selectedIds: readonly string[];
   readonly undoDepth: number;
-  /** Elemenként a kezdet, naptól számítva a projekt indulásától. */
+  /** Per item, the start, in days from the project's start. */
   readonly days: Record<string, number>;
   readonly lanesOf: Record<string, string>;
   readonly visible: number;
@@ -52,27 +53,27 @@ const MIDDLE_Y = 130;
 
 type TouchType = "touchStart" | "touchMove" | "touchEnd";
 
-/** A böngésző érintés-bemenete: egy vagy több ujj, valódi eseményekkel. */
+/** The browser's touch input: one or more fingers, with real events. */
 interface Fingers {
   send(type: TouchType, points: readonly TouchPoint[]): Promise<void>;
   detach(): Promise<void>;
 }
 
-/** A Playwright WebKit-oldali munkamenete — a publikus API nem adja ki. */
+/** Playwright's WebKit-side session — the public API does not expose it. */
 interface WebKitSession {
   send(method: "Input.dispatchTouchEvent", params: { type: TouchType; touchPoints: { x: number; y: number; id: number }[] }): Promise<unknown>;
 }
 
 /**
- * Chromiumban a CDP. WebKitben a Playwright saját WebKit-buildjének
- * `Input.dispatchTouchEvent` parancsa (a protocol.json-ban), amelyet a
- * Playwright maga csak a koppintáshoz használ: a folyamaton belül futó
- * Playwright `toImpl`-je adja meg a szerveroldali lapot, és annak
- * munkamenetét. Két eltérés a CDP-től, mindkettő itt van elnyelve:
- * a koordináta egész (a WebKit-protokoll `integer`-t vár), és a `touchEnd`
- * a felengedett ujjakat sorolja fel (üres listára a WebKit nem enged fel
- * semmit). A WebKit a parancs után aszinkron kézbesít, ezért a `send` egy
- * képkockát vár: a lap a következő olvasás előtt feldolgozza.
+ * In Chromium, CDP. In WebKit, the `Input.dispatchTouchEvent` command of
+ * Playwright's own WebKit build (in its protocol.json), which Playwright
+ * itself uses only for taps: the in-process Playwright's `toImpl` gives the
+ * server-side page, and its session. Two differences from CDP, both
+ * absorbed here: the coordinate is an integer (the WebKit protocol expects
+ * an `integer`), and `touchEnd` lists the fingers being lifted (given an
+ * empty list, WebKit lifts nothing). WebKit delivers asynchronously after
+ * the command, so `send` waits a frame: the page processes it before the
+ * next read.
  */
 async function fingersFor(page: Page): Promise<Fingers> {
   if (page.context().browser()?.browserType().name() !== "webkit") {
@@ -89,7 +90,7 @@ async function fingersFor(page: Page): Promise<Fingers> {
   }
   const internal = page as unknown as { _connection: { toImpl?: (object: unknown) => { delegate: { _pageProxySession: WebKitSession } } } };
   const toImpl = internal._connection.toImpl;
-  if (toImpl === undefined) throw new Error("a Playwright nem a folyamaton belül fut: a WebKit érintés-bemenete nem érhető el");
+  if (toImpl === undefined) throw new Error("Playwright is not running in-process: WebKit's touch input is not reachable");
   const session = toImpl(page).delegate._pageProxySession;
   let down: readonly TouchPoint[] = [];
   return {
@@ -116,7 +117,7 @@ async function stateOf(page: Page): Promise<TimelineState> {
   return JSON.parse(text ?? "{}") as TimelineState;
 }
 
-/** Egy ujj húzása, több lépésben — egy lépés nem gesztus, hanem ugrás. */
+/** One finger's drag, in several steps — a single step is not a gesture but a jump. */
 async function drag(
   page: Page,
   from: { x: number; y: number },
@@ -138,29 +139,30 @@ async function drag(
   await fingers.detach();
 }
 
-/** Hol van egy elem a képernyőn. A lap maga számolja: egy helyen van az igazság. */
+/** Where an item is on screen. The page computes it itself: the truth lives in one place. */
 async function boxOf(page: Page, id: string, fraction = 0.5): Promise<Point> {
   const point = await page.evaluate(
     ([itemId, at]) => window.tl.boxOf(itemId, at),
     [id, fraction] as const,
   );
-  expect(point, `nincs doboz: ${id}`).toBeTruthy();
+  expect(point, `no box: ${id}`).toBeTruthy();
   return point as Point;
 }
 
 async function handleOf(page: Page, id: string): Promise<Point> {
   const point = await page.evaluate((itemId) => window.tl.handleOf(itemId), id);
-  expect(point, `nincs fogantyú: ${id}`).toBeTruthy();
+  expect(point, `no handle: ${id}`).toBeTruthy();
   return point as Point;
 }
 
 /**
- * Tartás, majd húzás — egy ujjal.
+ * Hold, then drag — with one finger.
  *
- * A tartás alatt SEMMI nem mozdul: egyetlen `touchMove` lefújja a hosszú
- * nyomást, és akkor pásztázást mérnénk. A várakozás itt valódi óra, mert
- * éppen azt bizonyítja, hogy a böngésző-kötés időzítője tényleg lefut — a
- * mag óramentességét a magon mérjük, nem itt.
+ * NOTHING moves during the hold: a single `touchMove` calls off the long
+ * press, and then we would be measuring a pan. The wait here is a real
+ * clock, because that is exactly what it proves: that the browser binding's
+ * timer really fires — the core being clock-free is measured on the core,
+ * not here.
  */
 async function holdThenDrag(
   page: Page,
@@ -186,15 +188,15 @@ async function holdThenDrag(
 }
 
 /**
- * A demó lap megnyitása, és annak BIZONYÍTÁSA, hogy tényleg az a lap.
+ * Opens the demo page, and PROVES that it really is that page.
  *
- * Miért nem elég a `page.goto`. 2026-10-26-án egy másik projekt szervere ült
- * a porton, a Playwright `reuseExistingServer: true`-ja pedig elfogadta a
- * sajátjának. A készlet 15 tesztje egy idegen lapon futott, mind bukott, és
- * a bukás egyetlen szót sem mondott arról, hogy nem a mi lapunk van alatta.
- * A konfiguráció azóta nem fogad el idegen szervert — ez itt a második zár:
- * a `window.tl` a mi demónk kézjegye, és ha nincs ott, a hibaüzenet megmondja
- * hova nézzen az ember.
+ * Why `page.goto` is not enough. On 2026-10-26 another project's server sat
+ * on the port, and Playwright's `reuseExistingServer: true` took it for its
+ * own. The suite's 15 tests ran on a foreign page, all failed, and the
+ * failures said not a word about the page underneath not being ours. The
+ * config has not accepted a foreign server since — this is the second lock:
+ * `window.tl` is our demo's signature, and if it is missing, the error
+ * message says where to look.
  */
 async function openDemo(page: Page, query = ""): Promise<void> {
   await page.goto(`/index.html${query}`);
@@ -204,32 +206,32 @@ async function openDemo(page: Page, query = ""): Promise<void> {
     .catch(() => false);
   if (!mine) {
     throw new Error(
-      `A ${page.url()} nem az SDK demó lapja: nincs rajta window.tl. ` +
-        "Valószínűleg más ül a porton — ne a teszteket javítsd, hanem a szervert.",
+      `${page.url()} is not the SDK demo page: it has no window.tl. ` +
+        "Something else is probably on the port — fix the server, not the tests.",
     );
   }
   await expect(page.getByTestId("timeline")).toBeVisible();
 }
 
-test.describe("valódi érintés egy emulált telefonon", () => {
+test.describe("real touch on an emulated phone", () => {
   test.beforeEach(async ({ page }) => {
     await openDemo(page);
   });
 
-  test("egy ujjas húzás pásztáz, a nagyítás változatlan", async ({ page }) => {
+  test("a one-finger drag pans, and the zoom stays unchanged", async ({ page }) => {
     const before = await stateOf(page);
     await drag(page, { x: 320, y: MIDDLE_Y }, { x: 90, y: MIDDLE_Y });
     const after = await stateOf(page);
-    // Jobbról balra: a tartalom balra megy, tehát az ablak előre az időben.
+    // Right to left: the content moves left, so the window moves forward in time.
     expect(new Date(after.start).getTime()).toBeGreaterThan(new Date(before.start).getTime());
     expect(after.spanDays).toBeCloseTo(before.spanDays, 3);
     expect(after.gestures).toContain("gestureStart:pan");
     expect(after.gestures).toContain("gestureEnd:pan");
   });
 
-  test("a lap NEM görren el a húzás alatt — a touch-action tényleg szól", async ({ page }) => {
-    // Ez a teszt a létjogosultsága az egész böngészős készletnek: a generált
-    // stíluslapról a mag tesztje csak annyit tud, hogy a szöveg benne van.
+  test("the page does NOT scroll during the drag — touch-action really takes effect", async ({ page }) => {
+    // This test is the reason the whole browser suite exists: of the generated
+    // stylesheet, the core's test can only know that the text is in it.
     expect(
       await page.evaluate(() => {
         const svg = document.querySelector("#frame svg");
@@ -240,11 +242,11 @@ test.describe("valódi érintés egy emulált telefonon", () => {
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
     const after = await stateOf(page);
     expect(after.gestures).toContain("gestureStart:pan");
-    // Lefelé húzás nem mozgatja az időt, de sávot sem: nincs mit görgetni.
+    // A downward drag moves neither time nor the lanes: there is nothing to scroll.
     expect(after.crossOffset).toBe(0);
   });
 
-  test("cooperative módban a lap görren, és a böngésző ELVESZI a gesztust", async ({ page }) => {
+  test("in cooperative mode the page scrolls, and the browser TAKES the gesture", async ({ page }) => {
     await openDemo(page, "?touchAction=cooperative");
     expect(
       await page.evaluate(() => {
@@ -254,14 +256,14 @@ test.describe("valódi érintés egy emulált telefonon", () => {
     ).toBe("pan-y");
     await drag(page, { x: 200, y: MIDDLE_Y }, { x: 200, y: MIDDLE_Y - 140 }, 10);
     expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
-    // És itt jön a valódi pointercancel: a böngésző átvette a gesztust, a
-    // könyvtárnak el kell engednie. Ezt szintetikus eseménnyel nem lehet
-    // bizonyítani, csak állítani.
+    // And here comes the real pointercancel: the browser has taken over the
+    // gesture, and the library has to let go. A synthetic event cannot prove
+    // this, only assert it.
     const after = await stateOf(page);
     expect(after.gestures.some((entry) => entry.endsWith(":cancelled"))).toBe(true);
   });
 
-  test("két ujj pinch-el, és a kezdő időpillanatok az ujjak alatt maradnak", async ({ page }) => {
+  test("two fingers pinch, and the starting instants stay under the fingers", async ({ page }) => {
     const before = await stateOf(page);
     const fingers = await fingersFor(page);
     const left = 120;
@@ -287,17 +289,17 @@ test.describe("valódi érintés egy emulált telefonon", () => {
     }
     const movedLeft = left - 60;
     const movedRight = right + 60;
-    // A böngésző aszinkron: az utolsó pointermove feldolgozására VÁRNI kell,
-    // nem feltételezni. A `poll` nem lazítás — ha a várt állapot sosem jön
-    // meg, a teszt bukik; csak nem versenyzünk az eseménysorral.
+    // The browser is asynchronous: the last pointermove has to be WAITED for,
+    // not assumed. The `poll` is not a loosening — if the expected state never
+    // arrives, the test fails; we just don't race the event queue.
     const expectedSpan = (before.spanDays * (right - left)) / (movedRight - movedLeft);
     await expect
       .poll(async () => (await stateOf(page)).spanDays, { timeout: 3000 })
       .toBeCloseTo(expectedSpan, 2);
     const after = await stateOf(page);
-    // Szétfeszítés: a látható szakasz arányosan szűkül.
+    // Spreading: the visible span narrows in proportion.
     expect(after.spanDays).toBeLessThan(before.spanDays);
-    // A horgony: az ujjak alatti időpillanatok nem mozdultak.
+    // The anchor: the instants under the fingers did not move.
     const errors = await page.evaluate(
       ([anchorA, anchorB, mainA, mainB]) => {
         const timeline = window.tl;
@@ -308,14 +310,14 @@ test.describe("valódi érintés egy emulált telefonon", () => {
       },
       [anchors[0], anchors[1], movedLeft, movedRight],
     );
-    // Egy CSS-pixel: a böngészőben a koordináták is pixelre kerekítenek.
+    // One CSS pixel: in the browser the coordinates round to pixels too.
     expect(Math.max(...errors)).toBeLessThan(1);
     await touch(fingers, "touchEnd", []);
     await fingers.detach();
     expect((await stateOf(page)).gestures).toContain("gestureStart:pinch");
   });
 
-  test("dupla koppintás bezoomol a megkoppintott pontra", async ({ page }) => {
+  test("a double tap zooms in on the tapped point", async ({ page }) => {
     const before = await stateOf(page);
     await page.touchscreen.tap(200, MIDDLE_Y);
     await page.touchscreen.tap(200, MIDDLE_Y);
@@ -324,7 +326,7 @@ test.describe("valódi érintés egy emulált telefonon", () => {
     expect(after.gestures).toContain("tap:1x2");
   });
 
-  test("két ujjas koppintás kizoomol", async ({ page }) => {
+  test("a two-finger tap zooms out", async ({ page }) => {
     const before = await stateOf(page);
     const fingers = await fingersFor(page);
     await touch(fingers, "touchStart", [
@@ -338,11 +340,11 @@ test.describe("valódi érintés egy emulált telefonon", () => {
     expect(after.gestures).toContain("tap:2x1");
   });
 
-  test("a futó gesztus látszik az elemen, és utána nem", async ({ page }) => {
+  test("the running gesture shows on the element, and afterwards does not", async ({ page }) => {
     const fingers = await fingersFor(page);
     await touch(fingers, "touchStart", [{ x: 300, y: MIDDLE_Y, id: 1 }]);
     await touch(fingers, "touchMove", [{ x: 200, y: MIDDLE_Y, id: 1 }]);
-    // A konténeren, mert a kötés arra megy — az SVG minden képkockán új.
+    // On the container, because the binding is attached there — the SVG is new every frame.
     await expect(page.locator("#frame")).toHaveAttribute("data-tl-gesture", "pan");
     await touch(fingers, "touchEnd", []);
     await fingers.detach();
@@ -351,39 +353,39 @@ test.describe("valódi érintés egy emulált telefonon", () => {
 });
 
 /**
- * A szerkesztés a böngészőben.
+ * Editing in the browser.
  *
- * Amit a mag tesztjei bizonyítanak: a gép helyesen dönt arról, mikor kezdődik
- * egy húzás. Amit CSAK itt lehet bizonyítani: hogy a böngésző-kötés egyetlen
- * időzítője tényleg lefut, hogy a `touch-action` a szerkesztés alatt is fogja
- * a lapot, és hogy ugyanazon a lapon, ugyanabban a munkamenetben az egér
- * azonnal húz, az ujj pedig tartásra vár. Ez utóbbi a hibrid eszköz állítása
- * — emulált telefonon is van egér, és pont az a kérdés, hogy a kettő nem
- * mossa össze egymást.
+ * What the core's tests prove: the machine decides correctly when a drag
+ * starts. What can ONLY be proved here: that the browser binding's single
+ * timer really fires, that `touch-action` holds the page during an edit as
+ * well, and that on the same page, in the same session, the mouse drags at
+ * once while the finger waits for a hold. The last is the hybrid device's
+ * claim — an emulated phone has a mouse too, and the question is precisely
+ * that the two do not blur into each other.
  */
-test.describe("szerkesztés valódi érintéssel", () => {
+test.describe("editing with real touch", () => {
   test.beforeEach(async ({ page }) => {
     await openDemo(page);
   });
 
-  test("hosszú nyomás után az ujj HÚZZA az elemet, és a lap nem görren el", async ({ page }) => {
+  test("after a long press the finger DRAGS the item, and the page does not scroll", async ({ page }) => {
     const before = await stateOf(page);
     const from = await boxOf(page, "d");
     await holdThenDrag(page, from, { x: from.x + 70, y: from.y });
     const after = await stateOf(page);
-    // Az elem elmozdult...
+    // The item moved...
     expect(after.days.d).toBeGreaterThan(before.days.d);
-    // ...a nézet NEM: egy szerkesztés nem pásztázás.
+    // ...the view did NOT: an edit is not a pan.
     expect(after.start).toBe(before.start);
     expect(after.gestures).toEqual([]);
     expect(after.edits).toContain("editStart:move:long-press");
     expect(after.edits).toContain("editEnd:move");
     expect(after.undoDepth).toBe(1);
-    // A lap a húzás alatt sem görrent el.
+    // The page did not scroll during the drag either.
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   });
 
-  test("ugyanaz a húzás tartás NÉLKÜL pásztáz, nem szerkeszt", async ({ page }) => {
+  test("the same drag WITHOUT a hold pans, it does not edit", async ({ page }) => {
     const before = await stateOf(page);
     const from = await boxOf(page, "d");
     await drag(page, from, { x: from.x + 70, y: from.y });
@@ -393,7 +395,7 @@ test.describe("szerkesztés valódi érintéssel", () => {
     expect(after.gestures).toContain("gestureStart:pan");
   });
 
-  test("az egér ugyanezen a lapon azonnal húz, tartás nélkül", async ({ page }) => {
+  test("the mouse on the same page drags at once, without a hold", async ({ page }) => {
     const before = await stateOf(page);
     const from = await boxOf(page, "d");
     await page.mouse.move(from.x, from.y);
@@ -401,8 +403,8 @@ test.describe("szerkesztés valódi érintéssel", () => {
     for (let step = 1; step <= 6; step += 1) {
       await page.mouse.move(from.x + (70 * step) / 6, from.y);
     }
-    // A futó szerkesztés látszik az elemen — egy húzás, ami nem változtat
-    // kurzort, leállt lapnak olvasódik.
+    // The running edit shows on the element — a drag that does not change
+    // the cursor reads as a frozen page.
     await expect(page.locator("#frame")).toHaveAttribute("data-tl-edit", "move");
     await page.mouse.up();
     await expect(page.locator("#frame")).not.toHaveAttribute("data-tl-edit", "move");
@@ -411,23 +413,23 @@ test.describe("szerkesztés valódi érintéssel", () => {
     expect(after.edits).toContain("editStart:move:pointer");
   });
 
-  test("a fogantyú ujjal is azonnal méretez, tartás nélkül", async ({ page }) => {
+  test("the handle resizes at once by finger too, without a hold", async ({ page }) => {
     const before = await stateOf(page);
     const handle = await handleOf(page, "d");
     await drag(page, handle, { x: handle.x + 40, y: handle.y });
     const after = await stateOf(page);
-    // A fogantyúra célozni már önmagában szándék: nem kell hozzá ceremónia.
+    // Aiming at the handle is intent in itself: it needs no ceremony.
     expect(after.edits).toContain("editStart:resize-end:handle");
     expect(after.edits).toContain("editEnd:resize-end");
-    // A kezdet nem mozdult: a távolabbi él marad, ahol volt.
+    // The start did not move: the far edge stays where it was.
     expect(after.days.d).toBe(before.days.d);
     expect(after.undoDepth).toBe(1);
   });
 
-  test("a hoszt szabálya megállítja a húzást, és nem keletkezik command", async ({ page }) => {
+  test("the host's rule stops the drag, and no command is created", async ({ page }) => {
     const before = await stateOf(page);
     const from = await boxOf(page, "a");
-    // Az „a" a projekt indulásakor kezdődik; balra húzni a szabály tiltja.
+    // "a" starts when the project starts; the rule forbids dragging it left.
     await holdThenDrag(page, from, { x: from.x - 60, y: from.y });
     const after = await stateOf(page);
     expect(after.days.a).toBe(before.days.a);
@@ -435,21 +437,21 @@ test.describe("szerkesztés valódi érintéssel", () => {
     expect(after.undoDepth).toBe(0);
   });
 
-  test("a lezárt elem nem mozdul, a nézet pásztáz helyette", async ({ page }) => {
+  test("the locked item does not move, the view pans instead", async ({ page }) => {
     const before = await stateOf(page);
     const from = await boxOf(page, "e");
     await holdThenDrag(page, from, { x: from.x - 60, y: from.y });
     const after = await stateOf(page);
     expect(after.days.e).toBe(before.days.e);
     expect(after.edits).toEqual([]);
-    // Nincs mit megfogni, tehát a gesztus azt teszi, amit egyébként: pásztáz.
+    // There is nothing to grab, so the gesture does what it otherwise does: it pans.
     expect(after.gestures).toContain("gestureStart:pan");
   });
 
-  test("a visszavonás PONTOSAN visszaállítja a kiindulást", async ({ page }) => {
+  test("undo restores the starting state EXACTLY", async ({ page }) => {
     const before = await stateOf(page);
     const from = await boxOf(page, "d");
-    // Két lépés, kettő a veremben — egy undo-verem LIFO-ban bont.
+    // Two steps, two on the stack — an undo stack unwinds LIFO.
     await holdThenDrag(page, from, { x: from.x + 40, y: from.y });
     const handle = await handleOf(page, "d");
     await drag(page, handle, { x: handle.x + 30, y: handle.y });
@@ -457,16 +459,16 @@ test.describe("szerkesztés valódi érintéssel", () => {
     expect(edited.undoDepth).toBe(2);
     expect(edited.days.d).not.toBe(before.days.d);
 
-    await page.getByRole("button", { name: "Visszavonás" }).click();
-    await page.getByRole("button", { name: "Visszavonás" }).click();
+    await page.getByRole("button", { name: "Undo" }).click();
+    await page.getByRole("button", { name: "Undo" }).click();
     const undone = await stateOf(page);
     expect(undone.undoDepth).toBe(0);
     expect(undone.days).toEqual(before.days);
     expect(undone.lanesOf).toEqual(before.lanesOf);
-    await expect(page.getByRole("button", { name: "Visszavonás" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Undo" })).toBeDisabled();
   });
 
-  test("koppintás kijelöl, és a kijelölt elemek EGY commandként mozdulnak", async ({ page }) => {
+  test("a tap selects, and the selected items move as ONE command", async ({ page }) => {
     await page.getByRole("checkbox").check();
     const first = await boxOf(page, "a");
     await page.touchscreen.tap(first.x, first.y);
@@ -478,7 +480,7 @@ test.describe("szerkesztés valódi érintéssel", () => {
     const from = await boxOf(page, "b");
     await holdThenDrag(page, from, { x: from.x + 40, y: from.y });
     const after = await stateOf(page);
-    // Mindkettő ugyanannyit mozdult, és egyetlen command lett belőle.
+    // Both moved by the same amount, and it became a single command.
     expect(after.days.a - selected.days.a).toBe(after.days.b - selected.days.b);
     expect(after.days.b).toBeGreaterThan(selected.days.b);
     expect(after.undoDepth).toBe(1);

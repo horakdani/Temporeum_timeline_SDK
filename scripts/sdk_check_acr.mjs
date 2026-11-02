@@ -1,32 +1,33 @@
 #!/usr/bin/env node
 /**
- * G-ACR (P28): a megfelelosegi jelentes (packages/docs/site/conformance/
- * wcag22.json) a WCAG 2.2 MINDEN A es AA sikeressegi feltetelet felsorolja,
- * es minden "megfelel" (supports) sorhoz letezo, ZOLD teszt tartozik.
+ * G-ACR: the conformance report (packages/docs/site/conformance/
+ * wcag22.json) lists EVERY A and AA success criterion of WCAG 2.2, and every
+ * "supports" row is backed by an existing, PASSING test.
  *
- *  1. TELJESSEG. A kanonikus lista ITT van (nem az adatfajlban): a WCAG 2.2
- *     32 A es 24 AA feltetele, a 4.1.1-gyel (a 2.2 elavultnak es
- *     eltavolitottnak jeloli, de a szamozasban ott all). Az adatfajlban
- *     pontosan ezek legyenek, ebben a sorrendben, ugyanazzal a szinttel es
- *     nevvel; hianyzo, folosleges vagy ketszer szereplo feltetel BUKAS.
- *  2. ALAK. Az allapot a negy kozul valo; minden sornak van indoklasa; a
- *     "supports" sornak legalabb egy tesztje; a "Not verified by a test"
- *     indoklasu sor nem lehet "supports"; a "not-applicable" sor nem hivatkozik
- *     tesztre (amit teszt mutat, az nem "nem alkalmazhato").
- *  3. LETEZES. Minden hivatkozott tesztfajl letezik, es a hivatkozott
- *     cimreszlet szo szerint benne van a forrasban.
- *  4. ZOLD. A hivatkozott teszteket ez a mero FUTTATJA: a mag fajljait a mag
- *     vitestje, az elemeit az elem (bongeszos) vitestje, a docs e2e-speceit a
- *     sajat Playwright-konfiguraciojuk (a hozzajuk tartozo JSON-riporttal).
- *     Minden hivatkozashoz legalabb egy lefutott teszt kell, amelynek a
- *     cimeben a reszlet szerepel, es mindegyik ilyen zold. Kihagyott,
- *     hianyzo vagy bukott teszt BUKAS; a nem futtathato futas is BUKAS.
- *  5. NEGATIV KONTROLL. Egy kitalalt hivatkozas (letezo fajl, nem letezo
- *     cim) a 3. ponton bukik, es egy "supports" sor teszt nelkul a 2. ponton
- *     — kulonben a mero vak.
+ *  1. COMPLETENESS. The canonical list lives HERE (not in the data file): the
+ *     32 A and 24 AA criteria of WCAG 2.2, including 4.1.1 (2.2 marks it
+ *     obsolete and removed, but it keeps its place in the numbering). The
+ *     data file must hold exactly these, in this order, with the same level
+ *     and name; a missing, extra or duplicated criterion is a FAILURE.
+ *  2. SHAPE. The status is one of the four; every row has remarks; a
+ *     "supports" row has at least one test; a row whose remarks say "Not
+ *     verified by a test" cannot be "supports"; a "not-applicable" row cites
+ *     no test (what a test shows is not "not applicable").
+ *  3. EXISTENCE. Every cited test file exists, and the cited title fragment
+ *     appears verbatim in its source.
+ *  4. PASSING. This checker RUNS the cited tests: the core's files with the
+ *     core's vitest, the element's with the element's (browser) vitest, the
+ *     docs e2e specs with their own Playwright config (and the JSON report
+ *     that goes with it). Every citation needs at least one test that ran
+ *     with the fragment in its title, and every such test must pass. A
+ *     skipped, missing or failed test is a FAILURE; a run that cannot be
+ *     executed is a FAILURE too.
+ *  5. NEGATIVE CONTROL. An invented citation (existing file, non-existent
+ *     title) fails at point 3, and a "supports" row without a test fails at
+ *     point 2 — otherwise the checker is blind.
  *
- * Elofeltetel: nincs; a mero maga epiti a docs-ot (a Playwright-specek a
- * felepitett lapokat merik).
+ * Prerequisite: none; the checker builds the docs itself (the Playwright
+ * specs measure the built pages).
  */
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, rmSync } from "node:fs";
@@ -38,7 +39,7 @@ const dataFile = join(repo, "packages", "docs", "site", "conformance", "wcag22.j
 const failures = [];
 const notes = [];
 
-/** WCAG 2.2, A es AA: azonosito, szint, nev — a W3C Recommendation (2023-10-05, frissitve 2024-12-12) szerint. */
+/** WCAG 2.2, A and AA: id, level, name — per the W3C Recommendation (2023-10-05, updated 2024-12-12). */
 const WCAG22 = [
   ["1.1.1", "A", "Non-text Content"],
   ["1.2.1", "A", "Audio-only and Video-only (Prerecorded)"],
@@ -99,57 +100,57 @@ const WCAG22 = [
 ];
 const STATUSES = new Set(["supports", "partially-supports", "does-not-support", "not-applicable"]);
 
-// --- 1-2. teljesseg es alak ------------------------------------------------------
-/** Egy jelentes alak- es teljessegi hibai. */
+// --- 1-2. completeness and shape ------------------------------------------------
+/** The shape and completeness problems of a report. */
 export function judgeShape(data) {
   const problems = [];
   const criteria = Array.isArray(data?.criteria) ? data.criteria : [];
   const ids = criteria.map((row) => row.id);
   const seen = new Set();
   for (const id of ids) {
-    if (seen.has(id)) problems.push(`${String(id)} ketszer szerepel`);
+    if (seen.has(id)) problems.push(`${String(id)} appears twice`);
     seen.add(id);
   }
   for (const [id, level, name] of WCAG22) {
     const row = criteria.find((each) => each.id === id);
     if (row === undefined) {
-      problems.push(`hianyzik: ${id} ${name} (${level})`);
+      problems.push(`missing: ${id} ${name} (${level})`);
       continue;
     }
-    if (row.level !== level) problems.push(`${id}: a szint ${String(row.level)}, a WCAG 2.2 szerint ${level}`);
-    if (row.name !== name) problems.push(`${id}: a nev ${JSON.stringify(row.name)}, a WCAG 2.2 szerint ${JSON.stringify(name)}`);
+    if (row.level !== level) problems.push(`${id}: the level is ${String(row.level)}, WCAG 2.2 says ${level}`);
+    if (row.name !== name) problems.push(`${id}: the name is ${JSON.stringify(row.name)}, WCAG 2.2 says ${JSON.stringify(name)}`);
   }
-  for (const id of ids) if (!WCAG22.some(([known]) => known === id)) problems.push(`nem WCAG 2.2 A/AA feltetel: ${String(id)}`);
-  if (JSON.stringify(ids) !== JSON.stringify(WCAG22.map(([id]) => id)) && problems.length === 0) problems.push("a feltetelek nem a WCAG sorrendjeben allnak");
+  for (const id of ids) if (!WCAG22.some(([known]) => known === id)) problems.push(`not a WCAG 2.2 A/AA criterion: ${String(id)}`);
+  if (JSON.stringify(ids) !== JSON.stringify(WCAG22.map(([id]) => id)) && problems.length === 0) problems.push("the criteria are not in WCAG order");
   for (const row of criteria) {
-    if (!STATUSES.has(row.status)) problems.push(`${String(row.id)}: ismeretlen allapot ${JSON.stringify(row.status)}`);
-    if (typeof row.remarks !== "string" || row.remarks.trim().length < 10) problems.push(`${String(row.id)}: nincs indoklas`);
+    if (!STATUSES.has(row.status)) problems.push(`${String(row.id)}: unknown status ${JSON.stringify(row.status)}`);
+    if (typeof row.remarks !== "string" || row.remarks.trim().length < 10) problems.push(`${String(row.id)}: no remarks`);
     const tests = Array.isArray(row.tests) ? row.tests : null;
-    if (tests === null) problems.push(`${String(row.id)}: nincs tests lista`);
-    if (row.status === "supports" && (tests ?? []).length === 0) problems.push(`${String(row.id)}: "supports", de nincs teszt, ami mutatja`);
-    if (row.status === "supports" && /^Not verified by a test/i.test(row.remarks ?? "")) problems.push(`${String(row.id)}: "supports", de az indoklas szerint nincs tesztelve`);
-    if (row.status === "not-applicable" && (tests ?? []).length > 0) problems.push(`${String(row.id)}: "not-applicable", megis tesztre hivatkozik`);
+    if (tests === null) problems.push(`${String(row.id)}: no tests list`);
+    if (row.status === "supports" && (tests ?? []).length === 0) problems.push(`${String(row.id)}: "supports", but no test shows it`);
+    if (row.status === "supports" && /^Not verified by a test/i.test(row.remarks ?? "")) problems.push(`${String(row.id)}: "supports", but the remarks say it is not tested`);
+    if (row.status === "not-applicable" && (tests ?? []).length > 0) problems.push(`${String(row.id)}: "not-applicable", yet it cites a test`);
     for (const ref of tests ?? []) {
-      if (typeof ref?.file !== "string" || typeof ref?.test !== "string" || ref.test.length < 3) problems.push(`${String(row.id)}: hibas hivatkozas ${JSON.stringify(ref)}`);
+      if (typeof ref?.file !== "string" || typeof ref?.test !== "string" || ref.test.length < 3) problems.push(`${String(row.id)}: malformed citation ${JSON.stringify(ref)}`);
     }
   }
   return problems;
 }
 
-// --- 3. letezes ---------------------------------------------------------------------
-/** Egy hivatkozas letezesi hibaja, vagy null. */
+// --- 3. existence -------------------------------------------------------------------
+/** The existence problem of a citation, or null. */
 export function judgeExists(ref) {
   const file = join(repo, ref.file);
-  if (!existsSync(file)) return `nincs ilyen tesztfajl: ${ref.file}`;
-  if (!readFileSync(file, "utf8").includes(ref.test)) return `${ref.file}: nincs ilyen cim a forrasban: ${JSON.stringify(ref.test)}`;
+  if (!existsSync(file)) return `no such test file: ${ref.file}`;
+  if (!readFileSync(file, "utf8").includes(ref.test)) return `${ref.file}: no such title in the source: ${JSON.stringify(ref.test)}`;
   return null;
 }
 
 if (!existsSync(dataFile)) {
-  failures.push(`nincs megfelelosegi jelentes: ${relative(repo, dataFile)}`);
+  failures.push(`no conformance report: ${relative(repo, dataFile)}`);
 }
 const data = existsSync(dataFile) ? JSON.parse(readFileSync(dataFile, "utf8")) : { criteria: [] };
-if (data.standard !== "WCAG 2.2") failures.push(`a jelentes szabvanya ${JSON.stringify(data.standard)}, WCAG 2.2 kell`);
+if (data.standard !== "WCAG 2.2") failures.push(`the report's standard is ${JSON.stringify(data.standard)}, WCAG 2.2 is required`);
 failures.push(...judgeShape(data));
 const refs = data.criteria.flatMap((row) => (row.status === "supports" || row.status === "partially-supports" ? row.tests : []).map((ref) => ({ ...ref, id: row.id, status: row.status })));
 for (const ref of refs) {
@@ -157,25 +158,25 @@ for (const ref of refs) {
   if (problem !== null) failures.push(`${ref.id}: ${problem}`);
 }
 const counts = Object.fromEntries([...STATUSES].map((status) => [status, data.criteria.filter((row) => row.status === status).length]));
-notes.push(`${String(data.criteria.length)} feltetel (${WCAG22.filter(([, level]) => level === "A").length} A, ${WCAG22.filter(([, level]) => level === "AA").length} AA): ${JSON.stringify(counts)}; ${String(refs.length)} teszthivatkozas`);
+notes.push(`${String(data.criteria.length)} criteria (${WCAG22.filter(([, level]) => level === "A").length} A, ${WCAG22.filter(([, level]) => level === "AA").length} AA): ${JSON.stringify(counts)}; ${String(refs.length)} test citations`);
 
-// --- 5. negativ kontroll (alak es letezes) ----------------------------------------------
+// --- 5. negative control (shape and existence) ------------------------------------------
 {
   const invented = judgeExists({ file: "packages/core/test/a11y/contrast.test.ts", test: "a title no test has, invented for the control" });
   const bare = judgeShape({ criteria: WCAG22.map(([id, level, name]) => ({ id, level, name, status: "supports", remarks: "Claimed without a test, for the control.", tests: [] })) });
   const short = judgeShape({ criteria: WCAG22.slice(1).map(([id, level, name]) => ({ id, level, name, status: "not-applicable", remarks: "Left out one criterion, for the control.", tests: [] })) });
-  if (invented === null) failures.push("NEGATIV KONTROLL: egy kitalalt teszthivatkozas NEM bukik");
-  if (bare.length === 0) failures.push('NEGATIV KONTROLL: a teszt nelkuli "supports" NEM bukik');
-  if (!short.some((problem) => problem.startsWith("hianyzik: 1.1.1"))) failures.push("NEGATIV KONTROLL: a hianyzo feltetel NEM bukik");
-  else notes.push("negativ kontroll bukik, ahogy kell — kitalalt cim, teszt nelkuli supports, hianyzo feltetel");
+  if (invented === null) failures.push("NEGATIVE CONTROL: an invented test citation does NOT fail");
+  if (bare.length === 0) failures.push('NEGATIVE CONTROL: a "supports" without a test does NOT fail');
+  if (!short.some((problem) => problem.startsWith("missing: 1.1.1"))) failures.push("NEGATIVE CONTROL: a missing criterion does NOT fail");
+  else notes.push("negative control fails, as it should — invented title, supports without a test, missing criterion");
 }
 
-// --- 4. zold --------------------------------------------------------------------------
+// --- 4. passing -----------------------------------------------------------------------
 const RUNNERS = [
   { prefix: "packages/core/test/", kind: "vitest", cwd: join(repo, "packages", "core"), report: ".acr-core-report.json" },
   { prefix: "packages/web-component/test/", kind: "vitest", cwd: join(repo, "packages", "web-component"), report: ".acr-element-report.json" },
 ];
-/** A docs e2e-specek: mindegyik a sajat konfiguraciojaval es riportjaval, ahogy a sajat npm-szkriptje futtatja. */
+/** The docs e2e specs: each with its own config and report, as its own npm script runs it. */
 const SPECS = {
   "packages/docs/e2e/a11y.spec.ts": { config: "playwright.a11y.config.ts", report: ".e2e-a11y-report.json", env: {} },
   "packages/docs/e2e/responsive.spec.ts": { config: "playwright.responsive.config.ts", report: ".e2e-responsive-report.json", env: {} },
@@ -193,7 +194,7 @@ function run(command, args, cwd, env = {}) {
   return result.status;
 }
 
-/** A lefutott tesztek: { file, title, status } — a vitest JSON-riportjabol. */
+/** The tests that ran: { file, title, status } — from the vitest JSON report. */
 function vitestResults(path) {
   const report = JSON.parse(readFileSync(path, "utf8"));
   return (report.testResults ?? []).flatMap((file) =>
@@ -201,7 +202,7 @@ function vitestResults(path) {
   );
 }
 
-/** A lefutott tesztek a Playwright JSON-riportjabol, minden projektben. */
+/** The tests that ran, from the Playwright JSON report, in every project. */
 function playwrightResults(path) {
   const report = JSON.parse(readFileSync(path, "utf8"));
   const out = [];
@@ -226,23 +227,23 @@ for (const runner of RUNNERS) {
   const report = join(runner.cwd, runner.report);
   rmSync(report, { force: true });
   run("npx", ["vitest", "run", ...files, "--reporter=default", "--reporter=json", `--outputFile.json=${runner.report}`], runner.cwd);
-  if (!existsSync(report)) failures.push(`a(z) ${relative(repo, runner.cwd)} vitest-futasa nem irt riportot — nem futtathato, ezert BUKAS`);
+  if (!existsSync(report)) failures.push(`the vitest run of ${relative(repo, runner.cwd)} wrote no report — it cannot be run, so this is a FAILURE`);
   else results.push(...vitestResults(report));
 }
 const specFiles = [...new Set(greenRefs.filter((ref) => ref.file.startsWith("packages/docs/e2e/")).map((ref) => ref.file))];
 if (specFiles.length > 0) {
-  if (run("npm", ["run", "--silent", "build", "-w", "@temporeum/timeline-docs"], repo) !== 0) failures.push("a docs build bukott — az e2e-specek nem futtathatok, ezert BUKAS");
+  if (run("npm", ["run", "--silent", "build", "-w", "@temporeum/timeline-docs"], repo) !== 0) failures.push("the docs build failed — the e2e specs cannot be run, so this is a FAILURE");
   else {
     for (const file of specFiles) {
       const spec = SPECS[file];
       if (spec === undefined) {
-        failures.push(`${file}: nincs hozza futtatasi mod a merokben — nem futtathato, ezert BUKAS`);
+        failures.push(`${file}: the checker has no way to run it — it cannot be run, so this is a FAILURE`);
         continue;
       }
       const report = join(docs, spec.report);
       rmSync(report, { force: true });
       run("npx", ["playwright", "test", "-c", spec.config], docs, spec.env);
-      if (!existsSync(report)) failures.push(`${file}: a Playwright-futas nem irt riportot (${spec.report}) — nem futtathato, ezert BUKAS`);
+      if (!existsSync(report)) failures.push(`${file}: the Playwright run wrote no report (${spec.report}) — it cannot be run, so this is a FAILURE`);
       else results.push(...playwrightResults(report));
     }
   }
@@ -250,17 +251,17 @@ if (specFiles.length > 0) {
 let green = 0;
 for (const ref of greenRefs) {
   const matching = results.filter((result) => result.file === ref.file && result.title.includes(ref.test));
-  if (matching.length === 0) failures.push(`${ref.id}: a hivatkozott teszt nem futott le: ${ref.file} — ${JSON.stringify(ref.test)}`);
-  // A Playwright-teszt, amit a spec egy projektben szandekosan kihagy (a billentyuzet csak
-  // asztalon), csak akkor nem bukas, ha ugyanaz a teszt egy masik projektben zold.
+  if (matching.length === 0) failures.push(`${ref.id}: the cited test did not run: ${ref.file} — ${JSON.stringify(ref.test)}`);
+  // A Playwright test the spec skips on purpose in one project (the keyboard is desktop
+  // only) is not a failure only if the same test passes in another project.
   const passedIn = (title) => matching.some((result) => result.title === title && result.status === "passed");
   const red = matching.filter((result) => result.status !== "passed" && !(result.status === "skipped" && result.project !== undefined && passedIn(result.title)));
-  for (const result of red) failures.push(`${ref.id}: nem zold: ${ref.file} — ${result.title} (${result.status})`);
+  for (const result of red) failures.push(`${ref.id}: not passing: ${ref.file} — ${result.title} (${result.status})`);
   if (matching.length > 0 && red.length === 0) green += 1;
 }
-notes.push(`${String(green)}/${String(greenRefs.length)} "supports"-hivatkozas zold (${String(results.length)} lefutott teszt)`);
+notes.push(`${String(green)}/${String(greenRefs.length)} "supports" citations passing (${String(results.length)} tests ran)`);
 
 for (const note of notes) console.log(`  ok    ${note}`);
-for (const failure of failures) console.log(`  BUKAS ${failure}`);
-console.log(failures.length === 0 ? "G-ACR: atment" : `G-ACR: BUKOTT (${String(failures.length)} hiba)`);
+for (const failure of failures) console.log(`  FAIL  ${failure}`);
+console.log(failures.length === 0 ? "G-ACR: passed" : `G-ACR: FAILED (${String(failures.length)} problems)`);
 process.exit(failures.length === 0 ? 0 : 1);
