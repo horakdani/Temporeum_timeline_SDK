@@ -141,3 +141,35 @@ describe("the template parser", () => {
     expect(all(result.scene).some((node) => node.attrs?.["data-tl-label"] === "a")).toBe(true);
   });
 });
+
+describe("a template from outside (S3)", () => {
+  const depth = (nodes: readonly SceneElement[]): number => Math.max(0, ...nodes.map((node) => 1 + depth(node.children ?? [])));
+  const text = (nodes: readonly SceneElement[]): string => nodes.map((node) => (node.text ?? "") + text(node.children ?? [])).join("");
+
+  it("nests at most 64 deep: deeper tags give their text to the 64th, and the parse never overflows", () => {
+    const nodes = parseTemplate(`${"<b>".repeat(5000)}deep${"</b>".repeat(5000)} after`);
+    expect(depth(nodes)).toBe(64);
+    expect(text(nodes)).toBe("deep after");
+    expect(renderToSvgString({ tag: "div", children: nodes })).toContain("deep");
+  });
+
+  it("skips a dropped tag's content in time proportional to the template, and lands after its own end tag", () => {
+    const began = performance.now();
+    const nodes = parseTemplate(`${"<script>x</script>".repeat(80_000)}end`);
+    expect(performance.now() - began).toBeLessThan(2000);
+    expect(text(nodes)).toBe("end");
+    // A letter whose lower case is longer than itself does not move the end tag.
+    expect(text(parseTemplate(`${"İ".repeat(20)}<script>code</script>after`))).toBe(`${"İ".repeat(20)}after`);
+  }, 120_000);
+
+  it("parses a template string once, however many frames draw it", () => {
+    const hooks = templateHooks<unknown>(() => "<b>Same</b>");
+    const draw = () => renderTimeline({ items, domain: [ORIGIN - DAY, ORIGIN + 14 * DAY], width: 900, height: 200, hooks });
+    const slotOf = (scene: SceneElement) => all(scene).find((node) => node.tag === "div" && node.attrs?.xmlns !== undefined)?.children;
+    const first = slotOf(draw().scene);
+    const second = slotOf(draw().scene);
+    expect(first).toBeDefined();
+    // The same nodes, not an equal copy: the string was not parsed again.
+    expect(second).toBe(first);
+  });
+});

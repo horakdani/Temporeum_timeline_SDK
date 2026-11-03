@@ -15,7 +15,9 @@
  * the astronomical one, so its `-500` is the axis's 501 BC; a `display_date`
  * keeps the story's own wording. An end date's unit is part of the span,
  * as it is for every item with a granularity: 1914 to 1918 runs to the end
- * of 1918. An era has no granularity, so its end is the instant after.
+ * of 1918. Two dates known to different precisions give the item the finer
+ * unit, and each end keeps its own: 1914 to 11 November 1918 ends with that
+ * day. An era has no granularity, so its end is the instant after.
  */
 
 import type { EraDecoration } from "../decorations.js";
@@ -142,11 +144,13 @@ const ENTITIES: Readonly<Record<string, string>> = { amp: "&", lt: "<", gt: ">",
 export function storyPlainText(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, " ")
-    .replace(/<[^>]*>/g, "")
+    // A tag does not hold a `<`: an unclosed one is text, read once.
+    .replace(/<[^<>]*>/g, "")
     .replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (whole, name: string) => {
-      if (name.startsWith("#x") || name.startsWith("#X")) return String.fromCodePoint(Number.parseInt(name.slice(2), 16));
-      if (name.startsWith("#")) return String.fromCodePoint(Number.parseInt(name.slice(1), 10));
-      return ENTITIES[name.toLowerCase()] ?? whole;
+      if (!name.startsWith("#")) return ENTITIES[name.toLowerCase()] ?? whole;
+      const code = name[1] === "x" || name[1] === "X" ? Number.parseInt(name.slice(2), 16) : Number.parseInt(name.slice(1), 10);
+      // A reference to no character — zero, half a surrogate pair, past U+10FFFF — is U+FFFD, as in HTML.
+      return code > 0 && code <= 0x10ffff && (code < 0xd800 || code > 0xdfff) ? String.fromCodePoint(code) : "\uFFFD";
     })
     .replace(/\s+/g, " ")
     .trim();
@@ -183,13 +187,15 @@ interface ReadDate {
 }
 
 /** `undefined`: no year. `null`: a year, but a date that cannot be one. */
+/** The units a TimelineJS date is known to, coarsest first. */
+const UNITS: readonly Granularity[] = ["year", "month", "day", "hour", "minute", "second", "millisecond"];
+
 function readDate(date: TimelineJSDate | undefined): ReadDate | null | undefined {
   if (date === undefined) return undefined;
   const year = field(date.year);
   if (year === undefined) return undefined;
   const parts = [field(date.month), field(date.day), field(date.hour), field(date.minute), field(date.second), field(date.millisecond)];
   if (Number.isNaN(year) || Math.abs(year) > MAX_YEAR || parts.some((part) => part !== undefined && Number.isNaN(part))) return null;
-  const units: readonly Granularity[] = ["year", "month", "day", "hour", "minute", "second", "millisecond"];
   let given = 0;
   // The precision is the last field given in order: a day without a month is not a day.
   while (given < parts.length && parts[given] !== undefined) given += 1;
@@ -199,7 +205,7 @@ function readDate(date: TimelineJSDate | undefined): ReadDate | null | undefined
   at.setUTCHours(hour, minute, second, ms);
   const time = at.getTime();
   if (!Number.isFinite(time)) return null;
-  const granularity = units[given] ?? "millisecond";
+  const granularity = UNITS[given] ?? "millisecond";
   NEXT[granularity]?.(at);
   return { time, granularity, after: at.getTime() };
 }
@@ -277,13 +283,21 @@ export function fromTimelineJS(data: TimelineJSData, options: FromTimelineJSOpti
       );
       return;
     }
-    // The end's own unit is in the span by the item's granularity: the end is the instant its date names.
+    // The end's own unit is in the span by the item's granularity: the end is
+    // the instant its date names. Known to different precisions, the finer
+    // unit is the item's, and the end the last instant of its own unit — so
+    // 1914 to 11 November 1918 ends that day, 16 July 1969 to 1972 with 1972.
     let end: TimeMs | undefined;
+    let granularity = start.granularity;
     if (hasYear(event.end_date)) {
       const read = readDate(event.end_date);
       if (read === null || read === undefined) warnings.push({ code: "out-of-range", index, list: "events", message: "The end date cannot be placed; the event is an instant." });
-      else if (read.time < start.time) warnings.push({ code: "end-before-start", index, list: "events", message: "The end is before the start; the event is an instant." });
-      else end = read.time;
+      else if (read.after <= start.time) warnings.push({ code: "end-before-start", index, list: "events", message: "The end is before the start; the event is an instant." });
+      else if (read.granularity === granularity) end = read.time;
+      else {
+        end = UNITS.indexOf(read.granularity) > UNITS.indexOf(granularity) ? read.time : read.after - 1;
+        granularity = UNITS[Math.max(UNITS.indexOf(read.granularity), UNITS.indexOf(granularity))] as Granularity;
+      }
     }
     let id = event.unique_id?.trim() || `slide-${String(index + 1)}`;
     if (ids.has(id)) {
@@ -313,7 +327,7 @@ export function fromTimelineJS(data: TimelineJSData, options: FromTimelineJSOpti
       id,
       start: start.time,
       ...(end === undefined ? {} : { end }),
-      granularity: start.granularity,
+      granularity,
       ...(label === undefined || label === "" ? {} : { label }),
       ...(laneId === undefined ? {} : { laneId }),
       data: { story },

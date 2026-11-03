@@ -226,6 +226,41 @@ describe("the PDF writer's parts", () => {
     expect(textWidth("漢", 10)).toBeCloseTo(5.56, 2);
   });
 
+  it("measures bold text in Helvetica-Bold's widths, so it centres where it is drawn (M15)", () => {
+    expect(textWidth("Hi", 10)).toBeCloseTo(9.44, 6);
+    expect(textWidth("Hi", 10, "bold")).toBeCloseTo(10, 6);
+    expect(textWidth("Wm'`~", 10, "bold")).toBeCloseTo((944 + 889 + 238 + 333 + 584) / 100, 6);
+    expect(textWidth("ő", 10, "bold")).toBeCloseTo(6.11, 6);
+    const scene: SceneElement = {
+      tag: "svg",
+      attrs: { width: 200, height: 40 },
+      children: [{ tag: "text", attrs: { x: 100, y: 20, "text-anchor": "middle", "font-weight": "bold", "font-size": 10 }, text: "Wide" }],
+    };
+    const source = new TextDecoder("latin1").decode(scenesToPdf([scene]));
+    const left = 100 - textWidth("Wide", 10, "bold") / 2;
+    expect(source).toMatch(new RegExp(`/F2 10 Tf 1 0 0 -1 ${String(Math.round(left * 1000) / 1000).replace(".", "\\.")} `));
+  });
+
+  it("names only glyphs Helvetica has: a comma below where Unicode writes a cedilla, nothing for a pair it lacks (M8)", () => {
+    // Latvian and Romanian: Unicode decomposes these with a cedilla, Helvetica names a comma accent.
+    expect(["ķ", "ļ", "ņ", "ģ", "ŗ", "ţ", "Ķ", "Ļ", "Ņ", "Ģ", "Ŗ", "Ţ"].map(glyphName)).toEqual([
+      "kcommaaccent", "lcommaaccent", "ncommaaccent", "gcommaaccent", "rcommaaccent", "tcommaaccent",
+      "Kcommaaccent", "Lcommaaccent", "Ncommaaccent", "Gcommaaccent", "Rcommaaccent", "Tcommaaccent",
+    ]);
+    expect(["ș", "ț", "ş", "ç", "ą", "ů", "ĺ", "ľ", "ż", "İ", "ā", "Ğ"].map(glyphName)).toEqual([
+      "scommaaccent", "tcommaaccent", "scedilla", "ccedilla", "aogonek", "uring", "lacute", "lcaron", "zdotaccent", "Idotaccent", "amacron", "Gbreve",
+    ]);
+    // A letter and an accent Helvetica has no glyph of together: a question mark, not an invented name.
+    for (const char of ["ǎ", "ẍ", "ẽ", "ḱ", "ẁ", "ǹ", "ǵ"]) expect(glyphName(char), char).toBeUndefined();
+  });
+
+  it("writes a text whose accents come apart as the letters they make (M9)", async () => {
+    const text = "Re\u0301sume\u0301 Ła\u0328ka";
+    const bytes = scenesToPdf([{ tag: "svg", attrs: { width: 200, height: 40 }, children: [{ tag: "text", attrs: { x: 0, y: 20 }, text }] }]);
+    expect((await readPdf(bytes)).pages[0]).toContain("Résumé Łąka");
+    expect(textWidth(text, 10)).toBeCloseTo(textWidth(text.normalize("NFC"), 10), 6);
+  });
+
   it("reads the colours a stylesheet writes", () => {
     expect(parseColor("#fff")).toEqual([1, 1, 1, 1]);
     expect(parseColor("#00000080")?.[3]).toBeCloseTo(0.5, 2);
@@ -250,5 +285,11 @@ describe("the PDF writer's parts", () => {
     expect(pathOps("m1 1 2 2")).toBe("1 1 m 3 3 l");
     expect(pathOps("M0 0 Q10 0 10 10")).toBe("0 0 m 6.667 0 10 3.333 10 10 c");
     expect(pathOps("M0 0 X 1 1")).toBe("0 0 m");
+    // An arc's flags are one digit each, written without a separator or with one (M14).
+    expect(pathOps("M0 0 a5 5 0 015 5")).toBe("0 0 m 5 5 l");
+    expect(pathOps("M0 0 a5 5 0 1 0 5 5")).toBe("0 0 m 5 5 l");
+    expect(pathOps("M0 0A5,5,0,1,1,10,10l1-1")).toBe("0 0 m 10 10 l 11 9 l");
+    expect(pathOps("M0 0 a5 5 0 1110 0 5 5 0 00-10 0")).toBe("0 0 m 10 0 l 0 0 l");
+    expect(pathOps("M1e1 +2")).toBe("10 2 m");
   });
 });

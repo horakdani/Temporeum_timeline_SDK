@@ -44,7 +44,7 @@ import type { KeySample } from "../keyboard.js";
 import type { GanttStrings } from "../strings.js";
 import { toTimeMs } from "../time.js";
 import { edgePoint, milestoneHalf } from "./box.js";
-import type { Item, MainCross, MainCrossRect, Orientation } from "../types.js";
+import type { Item, MainCross, MainCrossRect, Orientation, TimeInput } from "../types.js";
 
 // --- dependencies ------------------------------------------------------------
 
@@ -502,8 +502,10 @@ export function describeDependencies(id: string, links: DependencyLinks, nameOf:
 export function describeBaseline(item: Item<unknown>, say?: GanttSay): string {
   const baseline = item.baseline;
   if (baseline === undefined) return "";
-  const planned = toTimeMs(baseline.end ?? baseline.start);
-  const actual = toTimeMs(item.end ?? item.start);
+  // Like with like: the ends where both have one, the starts where not.
+  const ends = baseline.end !== undefined && item.end !== undefined && item.kind !== "milestone";
+  const planned = toTimeMs(ends ? (baseline.end as TimeInput) : baseline.start);
+  const actual = toTimeMs(ends ? (item.end as TimeInput) : item.start);
   const days = Math.round((actual - planned) / 86_400_000);
   if (say !== undefined) return say(days === 0 ? "onPlan" : days > 0 ? "behindPlan" : "aheadOfPlan", { count: Math.abs(days) });
   return days === 0 ? "on plan" : days > 0 ? `${String(days)} d behind plan` : `${String(-days)} d ahead of plan`;

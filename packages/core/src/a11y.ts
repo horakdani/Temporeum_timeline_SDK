@@ -108,8 +108,9 @@ export function atMidnight(time: number, timeZone: string): boolean {
  * The date range of an item, as a reader would say it.
  *
  * A time of day is given only when it carries information: an item known to
- * the day, or one whose ends fall on midnights, is a date range. An open
- * interval is a start and a dash; an instant is one date.
+ * the day, or one whose ends fall on midnights, is a date range — a
+ * date-granular one from its first day to its last. An open interval is a start and a dash; an instant,
+ * or a range within one day, is one date.
  */
 export function describeSpan(
   item: Item<unknown>,
@@ -124,12 +125,14 @@ export function describeSpan(
       ? !atMidnight(start, timeZone) || (hasEnd && !atMidnight(span.end, timeZone))
       : !DATE_ONLY.has(item.granularity);
   const formatter = dateFormatFor(locale, timeZone, withTime);
+  const from = formatter.format(start);
   if (span.open) {
-    return `${formatter.format(start)} –`;
+    return `${from} –`;
   }
-  return hasEnd && span.end > start
-    ? `${formatter.format(start)} – ${formatter.format(span.end)}`
-    : formatter.format(start);
+  // A date-granular span ends where the next unit begins: the last day it
+  // covers is the one before that. An end without a granularity is an instant.
+  const to = formatter.format(item.granularity === undefined || withTime ? span.end : Math.max(start, span.end - 1));
+  return hasEnd && span.end > start && to !== from ? `${from} – ${to}` : from;
 }
 
 /**

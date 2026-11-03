@@ -1846,7 +1846,10 @@ export function createTimeline<T = unknown>(
     exportSvg() {
       const scene = exportScene();
       if (scene === undefined) return "";
-      const svg = renderToSvgString(scene);
+      // A file of its own is XML: what XML allows nowhere (a C0 control, half
+      // a surrogate pair) leaves the text, as in the core's `standaloneSvg`.
+// eslint-disable-next-line no-control-regex -- these are the characters it is about
+      const svg = renderToSvgString(scene).replace(/[\0-\b\v\f\x0e-\x1f\ufffe\uffff\p{Cs}]/gu, "");
       return svg.includes("xmlns=") ? svg : svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
     },
     exportPng(options) {

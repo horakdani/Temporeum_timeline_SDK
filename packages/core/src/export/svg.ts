@@ -12,11 +12,24 @@
 import { renderToSvgString } from "../scene.js";
 import type { SceneElement } from "../scene.js";
 
-/** A scene as a standalone SVG document. */
+/**
+ * A scene as a standalone SVG document.
+ *
+ * A character XML 1.0 allows nowhere — a C0 control other than tab and the
+ * line ends, U+FFFE, U+FFFF, half a surrogate pair — is left out of the
+ * text and the attribute values: with one, the string is no document, and
+ * no viewer opens it. An HTML page takes the scene's string as it is.
+ */
 export function standaloneSvg(scene: SceneElement, options: { readonly title?: string } = {}): string {
   const titled: SceneElement =
     options.title === undefined ? scene : { ...scene, children: [{ tag: "title", text: options.title }, ...(scene.children ?? [])] };
-  return `<?xml version="1.0" encoding="UTF-8"?>\n${renderToSvgString(titled)}`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n${xmlSafe(renderToSvgString(titled))}`;
+}
+
+// Markup is all printable ASCII, so what this drops is only ever content.
+function xmlSafe(svg: string): string {
+// eslint-disable-next-line no-control-regex -- these are the characters it is about
+  return svg.replace(/[\0-\b\v\f\x0e-\x1f\ufffe\uffff\p{Cs}]/gu, "");
 }
 
 /** What a PNG is made at. */
@@ -42,7 +55,7 @@ export async function svgToPng(doc: Document, svg: string, options: PngOptions =
   const height = size("height");
   const scale = options.scale ?? 2;
   if (!(width > 0 && height > 0 && scale > 0)) throw new RangeError("The SVG needs a width and a height, and the scale must be positive");
-  const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+  const url = URL.createObjectURL(new Blob([xmlSafe(svg)], { type: "image/svg+xml" }));
   try {
     const image = doc.createElement("img");
     image.src = url;

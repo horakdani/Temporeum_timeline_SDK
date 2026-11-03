@@ -40,6 +40,14 @@ const WIDTHS = [
   556, 222, 222, 500, 222, 833, 556, 556, 556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584,
 ];
 
+/** Helvetica-Bold's, the same way. */
+const BOLD_WIDTHS = [
+  278, 333, 474, 556, 556, 889, 722, 238, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556,
+  556, 556, 333, 333, 584, 584, 584, 611, 975, 722, 722, 722, 722, 667, 611, 778, 722, 278, 556, 722, 611, 833, 722, 778,
+  667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 333, 278, 333, 584, 556, 333, 556, 611, 556, 611, 556, 333, 611,
+  611, 278, 278, 556, 278, 889, 611, 611, 611, 611, 389, 556, 333, 611, 556, 778, 556, 556, 500, 389, 280, 389, 584,
+];
+
 /** Glyphs that are not a letter and an accent. */
 const NAMED: Readonly<Record<string, string>> = {
   " ": "space",
@@ -113,28 +121,49 @@ const ACCENTS: Readonly<Record<string, string>> = {
   "̨": "ogonek",
 };
 
+/** The letters Helvetica has a glyph of with each accent: its Latin-1 and Latin-2 sets. */
+const ACCENTED: Readonly<Record<string, string>> = {
+  grave: "AEIOUaeiou",
+  acute: "ACEILNORSUYZaceilnorsuyz",
+  circumflex: "AEIOUaeiou",
+  tilde: "ANOano",
+  macron: "AEIOUaeiou",
+  breve: "AGag",
+  dotaccent: "EIZez",
+  dieresis: "AEIOUYaeiouy",
+  ring: "AUau",
+  hungarumlaut: "OUou",
+  caron: "CDELNRSTZcdelnrstz",
+  commaaccent: "GKLNRSTgklnrst",
+  cedilla: "CScs",
+  ogonek: "AEIUaeiu",
+};
+
 /** A character's glyph name in Helvetica, or `undefined` for one it has no glyph for. */
 export function glyphName(char: string): string | undefined {
   const named = NAMED[char];
   if (named !== undefined) return named;
   const parts = [...char.normalize("NFD")];
   const base = parts[0] ?? "";
-  const accent = parts[1] === undefined ? undefined : ACCENTS[parts[1]];
-  return parts.length === 2 && /^[A-Za-z]$/.test(base) && accent !== undefined ? base + accent : undefined;
+  let accent = parts[1] === undefined ? undefined : ACCENTS[parts[1]];
+  // Unicode writes ķ, ļ, ņ, ģ, ŗ and ţ with a cedilla; the glyph is named for a comma below.
+  if (accent === "cedilla" && "GKLNRTgklnrt".includes(base)) accent = "commaaccent";
+  return parts.length === 2 && accent !== undefined && base !== "" && ACCENTED[accent]?.includes(base) === true ? base + accent : undefined;
 }
 
 /** A character's advance, in thousandths of the size: an accented letter is as wide as its letter. */
-function advance(char: string): number {
+function advance(char: string, widths: readonly number[]): number {
   const code = char.charCodeAt(0);
-  if (code >= 32 && code <= 126) return WIDTHS[code - 32] ?? 556;
+  if (code >= 32 && code <= 126) return widths[code - 32] ?? 556;
   const base = char.normalize("NFD").charCodeAt(0);
-  return base >= 32 && base <= 126 ? (WIDTHS[base - 32] ?? 556) : 556;
+  return base >= 32 && base <= 126 ? (widths[base - 32] ?? 556) : 556;
 }
 
-/** A text's width at a size, in the size's units. */
-export function textWidth(text: string, size: number): number {
+/** A text's width at a size, in the size's units, in Helvetica or Helvetica-Bold. */
+export function textWidth(text: string, size: number, font: "regular" | "bold" = "regular"): number {
+  const widths = font === "bold" ? BOLD_WIDTHS : WIDTHS;
   let total = 0;
-  for (const char of text) total += advance(char);
+  for (const char of text.normalize("NFC")) total += advance(char, widths);
   return (total * size) / 1000;
 }
 
@@ -195,12 +224,36 @@ export function parseTransform(value: string): readonly number[] | undefined {
   return any ? m : undefined;
 }
 
+const PATH_TOKEN = /[\s,]*([a-df-z]|[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?)/iy;
+const ARC_FLAG = /[\s,]*([01])/y;
+
+/** A path's commands and numbers. An arc's two flags are one digit each: `a5 5 0 015 5` is 5 5 0 0 1 5 5. */
+function pathTokens(d: string): string[] {
+  const tokens: string[] = [];
+  let command = "";
+  let arg = 0;
+  for (let at = 0; ; ) {
+    const flag = (command === "a" || command === "A") && (arg % 7 === 3 || arg % 7 === 4);
+    const pattern = flag ? ARC_FLAG : PATH_TOKEN;
+    pattern.lastIndex = at;
+    const found = pattern.exec(d);
+    if (found === null) return tokens;
+    const token = found[1] as string;
+    at = pattern.lastIndex;
+    if (/[a-z]/i.test(token)) {
+      command = token;
+      arg = 0;
+    } else arg += 1;
+    tokens.push(token);
+  }
+}
+
 /**
  * SVG path data as PDF path operators. Lines, cubic and quadratic curves,
  * absolute and relative; an arc is drawn as the straight line to its end.
  */
 export function pathOps(d: string): string {
-  const tokens = d.match(/[a-zA-Z]|-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/gi) ?? [];
+  const tokens = pathTokens(d);
   const out: string[] = [];
   let at = 0;
   let command = "";
@@ -307,7 +360,8 @@ class Fonts {
   /** A text as a hex string of the file's codes. A letter Helvetica lacks is a question mark. */
   encode(text: string): string {
     let hex = "";
-    for (const char of text) {
+    // Composed, so a letter and its accent are one glyph, not a letter and a question mark.
+    for (const char of text.normalize("NFC")) {
       let code = this.codes.get(char);
       if (code === undefined) {
         const ascii = char.charCodeAt(0);
@@ -388,7 +442,7 @@ function drawNode(node: SceneElement, parent: ComputedStyle, sheet: StyleSheet, 
     if (hidden || text === "" || color === undefined) return;
     const bold = style["font-weight"] === "bold" || px(style["font-weight"], 400) >= 600;
     const anchor = style["text-anchor"] ?? "start";
-    const width = textWidth(text, size);
+    const width = textWidth(text, size, bold ? "bold" : "regular");
     const left = anchor === "middle" ? x - width / 2 : anchor === "end" ? x - width : x;
     out.push("q");
     const alpha = color[3] * px(style["fill-opacity"], 1) * opacity;

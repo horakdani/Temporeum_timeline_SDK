@@ -25,7 +25,7 @@ What `fromVis` can put in a configuration, and the plugin each needs:
 | In the converted configuration | Plugin | From |
 |---|---|---|
 | `groups` (from vis-timeline's groups with `nestedGroups`) | `groupsPlugin` | `@temporeum/timeline-element/groups` |
-| item kinds `box` (vis-timeline's kind for an item without an end), `point`, `background`; `template`; `editing.add`, `editing.remove` (`editable: true` sets `remove`) | `itemsPlugin` | `@temporeum/timeline-element/items` |
+| item kinds `box` (vis-timeline's kind for an item without an end), `point`, `background`; `template`; `editing.add`, `editing.remove` (`editable: true` sets both, as in vis-timeline) | `itemsPlugin` | `@temporeum/timeline-element/items` |
 | `hiddenDates`, `rolling`, `tooltip` | `toolsPlugin` | `@temporeum/timeline-element/tools` |
 | `direction: "rtl"` | `intlPlugin` | `@temporeum/timeline-element/intl` |
 

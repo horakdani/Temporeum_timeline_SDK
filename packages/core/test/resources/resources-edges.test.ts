@@ -5,12 +5,15 @@
 
 import { describe, expect, it } from "vitest";
 
+import { standaloneSvg } from "../../src/export/svg.js";
 import { layoutItems } from "../../src/layout.js";
 import type { LayoutItem } from "../../src/layout.js";
+import { renderTimeline } from "../../src/render.js";
 import type { ItemRenderContext } from "../../src/render.js";
 import {
   describeOverload,
   loadLaneId,
+  loadLaneOf,
   loadNodes,
   LOAD_LAYER,
   peakLoad,
@@ -72,6 +75,30 @@ describe("the load lanes and their drawing", () => {
     const empty: SceneElement = { tag: "svg", children: [] };
     expect(withLoadLayer(empty, nodes)).toBe(empty);
     expect(withLoadLayer({ tag: "svg" }, nodes)).toEqual({ tag: "svg" });
+  });
+});
+
+/** The characters XML 1.0 does not allow anywhere in a document. */
+// eslint-disable-next-line no-control-regex -- these are the characters it is about
+const NOT_XML = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]|\p{Cs}/u;
+
+describe("the load lanes in an exported file (M1)", () => {
+  it("are named in XML characters, so a frame with them is a well-formed SVG document", () => {
+    expect(loadLaneId("a")).not.toMatch(NOT_XML);
+    expect(loadLaneOf(loadLaneId("a"))).toBe("a");
+    expect(loadLaneOf("a")).toBeUndefined();
+    const load = resourceLoad(items, resources);
+    const frame = renderTimeline({
+      items,
+      lanes: withLoadLanes(resourceLanes(resources), resources),
+      domain: [BASE - HOUR, BASE + 7 * HOUR],
+      width: 800,
+      height: 400,
+      hooks: resourceHooks({}, { load }),
+    });
+    const svg = standaloneSvg(frame.scene);
+    expect(svg).toContain(`data-tl-lane="${loadLaneId("a")}"`);
+    expect(svg).not.toMatch(NOT_XML);
   });
 });
 

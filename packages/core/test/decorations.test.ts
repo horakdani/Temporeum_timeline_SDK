@@ -6,7 +6,7 @@ import type { DecorationContext } from "../src/decorations.js";
 import { createProjector } from "../src/geometry.js";
 import { estimateTextWidth, labelSpace } from "../src/labels.js";
 import { createTimeScale } from "../src/scale.js";
-import { generateTicks } from "../src/ticks.js";
+import { chooseTickStep, generateTicks } from "../src/ticks.js";
 import type { Domain, Orientation } from "../src/types.js";
 
 const DAY = 86_400_000;
@@ -110,6 +110,27 @@ describe("banding", () => {
         expect(bandIndex(Math.round(start), "day", "UTC") % 2).toBe(1);
       }
     }
+  });
+
+  it("shades every other step when a step is several units: 2 h, 6 h, 12 h, 30 min, 6 months, 2 years (M6)", () => {
+    const HOUR = 3_600_000;
+    const T = Date.UTC(2025, 2, 3);
+    const spans = [40 * 60_000, 6 * HOUR, 30 * HOUR, 3 * DAY, 6 * DAY, 6 * 365 * DAY, 20 * 365 * DAY, 3 * 365 * DAY];
+    const counts = new Set<string>();
+    for (const span of spans) {
+      const ctx = context([T, T + span]);
+      const step = chooseTickStep(ctx.scale.msPerPx, ctx.metrics.tickSpacing);
+      if (step.count > 1) counts.add(`${String(step.count)} ${step.granularity}`);
+      const steps = ctx.ticks.filter((tick) => tick.time > T && tick.time < T + span).length + 1;
+      const nodes = renderDecoration({ kind: "banding" }, ctx);
+      // Every other one of the steps in view, the edges' halves included.
+      expect(nodes.length, `${String(step.count)} ${step.granularity}`).toBeGreaterThanOrEqual(Math.floor(steps / 2));
+      expect(nodes.length).toBeLessThanOrEqual(Math.ceil(steps / 2));
+      for (let i = 1; i < nodes.length; i += 1) {
+        expect(number(nodes[i - 1]?.attrs?.x) + number(nodes[i - 1]?.attrs?.width)).toBeLessThan(number(nodes[i]?.attrs?.x));
+      }
+    }
+    expect(counts.size).toBeGreaterThanOrEqual(4);
   });
 
   it("covers the lanes but not the axis band", () => {

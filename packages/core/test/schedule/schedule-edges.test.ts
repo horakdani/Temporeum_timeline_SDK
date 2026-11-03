@@ -108,6 +108,29 @@ describe("the scheduler at its edges", () => {
     ]);
   });
 
+  it("leaves a moment nothing places where it is, even at the start of a working day (M4)", () => {
+    const saturday = BASE - 2 * DAY;
+    const items = [
+      // At the start of the office day: the same work as Friday 17:00, and its own time.
+      { id: "m", start: MONDAY, kind: "milestone" as const },
+      // At lunch: the same work as 12:00.
+      { id: "lunch", start: MONDAY + 4.5 * HOUR, kind: "milestone" as const },
+      // A range inside the weekend has no work in it, and keeps both its ends.
+      { id: "w", start: saturday + 10 * HOUR, end: saturday + 12 * HOUR },
+      { id: "p", start: MONDAY - 3 * DAY, end: MONDAY - 3 * DAY + 9 * HOUR },
+      { id: "after", start: MONDAY + DAY, kind: "milestone" as const },
+    ];
+    const office = { calendar: {} };
+    const schedule = scheduleTasks(items, [{ from: "p", to: "after" }], office);
+    expect(schedule.tasks.get("m")).toMatchObject({ start: MONDAY, moved: false });
+    expect(schedule.tasks.get("lunch")).toMatchObject({ start: MONDAY + 4.5 * HOUR, moved: false });
+    expect(schedule.tasks.get("w")).toMatchObject({ start: saturday + 10 * HOUR, end: saturday + 12 * HOUR, moved: false });
+    // Placed by its arrow, a moment is where the work before it stopped: Friday 17:00.
+    expect(schedule.tasks.get("after")).toMatchObject({ start: MONDAY - 3 * DAY + 9 * HOUR, moved: true });
+    expect(scheduleCommand(items, schedule)?.after).toEqual([{ id: "after", start: MONDAY - 3 * DAY + 9 * HOUR }]);
+    expect(scheduleCommand(items.slice(0, 3), scheduleTasks(items.slice(0, 3), [], office))).toBeUndefined();
+  });
+
   it("puts an as-late task against the given finish, and refuses a dated constraint with no date", () => {
     const items = [{ id: "a", start: MONDAY, end: MONDAY + HOUR }];
     const late = scheduleTasks(items, [], { projectFinish: MONDAY + 5 * HOUR, constraintOf: () => ({ type: "asLateAsPossible" }) });

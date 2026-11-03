@@ -142,6 +142,21 @@ describe("hidden dates — the warp", () => {
     expect((night[0]?.end ?? 0) - (night[0]?.start ?? 0)).toBe(13 * HOUR);
   });
 
+  it("finds a change of offset in a year that starts, turns and ends on one offset: Casablanca's Ramadan (M12)", () => {
+    // 19:00–09:00 Casablanca. 2024 is UTC+1 but for 10 March – 14 April, UTC+0.
+    const january = Date.UTC(2024, 0, 8, 18);
+    const hidden = createHiddenDates([{ start: january, end: january + 14 * HOUR, repeat: "daily" }], { timeZone: "Africa/Casablanca" });
+    const ramadan = Date.UTC(2024, 2, 20);
+    expect(hidden.isHidden(ramadan + 18.5 * HOUR)).toBe(false);
+    expect(hidden.isHidden(ramadan + 19.5 * HOUR)).toBe(true);
+    expect(hidden.isHidden(ramadan + 8.5 * HOUR)).toBe(true);
+    expect(hidden.isHidden(ramadan + 9.5 * HOUR)).toBe(false);
+    // Before it, on UTC+1, the night is an hour earlier.
+    const before = Date.UTC(2024, 2, 1);
+    expect(hidden.isHidden(before + 18.5 * HOUR)).toBe(true);
+    expect(hidden.isHidden(before + 8.5 * HOUR)).toBe(false);
+  });
+
   it("repeats by calendar months and years, held to a month's last day", () => {
     const start = Date.UTC(2026, 0, 31);
     const monthly = createHiddenDates([{ start, end: start + DAY, repeat: "monthly" }]);

@@ -98,15 +98,37 @@ const rows = <T>(data: VisData<T> | null | undefined): readonly T[] => {
   return (data as { get(): T[] }).get();
 };
 
+/**
+ * The text without its `<script>` or `<style>` blocks, read forward once:
+ * past the first one with no end tag, none has one.
+ */
+function withoutBlocks(text: string, tag: string): string {
+  const open = new RegExp(`<${tag}`, "gi");
+  const close = new RegExp(`</${tag}>`, "gi");
+  let out = "";
+  let at = 0;
+  for (;;) {
+    open.lastIndex = at;
+    const start = open.exec(text);
+    if (start === null) break;
+    close.lastIndex = start.index;
+    const end = close.exec(text);
+    if (end === null) break;
+    out += text.slice(at, start.index);
+    at = close.lastIndex;
+  }
+  return out + text.slice(at);
+}
+
 /** Text without its markup, the way a browser would read it, for the label and the accessible name. */
 export function visText(content: VisItem["content"] | VisGroup["content"]): string {
   if (content === null || content === undefined) return "";
   if (typeof content !== "string") return String(content.textContent ?? "").trim();
   if (!MARKUP.test(content)) return content;
-  return content
-    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, "")
+  return withoutBlocks(withoutBlocks(content, "script"), "style")
     .replace(/<br\s*\/?>/gi, " ")
-    .replace(/<[^>]*>/g, "")
+    // A tag does not hold a `<`: an unclosed one is text, read once.
+    .replace(/<[^<>]*>/g, "")
     .replace(/&nbsp;/g, " ")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
@@ -223,11 +245,15 @@ export function fromVis<T extends VisItem = VisItem>(
     warnings.push({ option, message });
   };
   const timeZone = conversion.timeZone ?? runtimeTimeZone();
-  const time = (value: unknown, where: string): TimeMs | undefined => {
+  const absent = (value: unknown): value is null | undefined => value === undefined || value === null;
+  // A time vis-timeline cannot read either is `null`, warned about with
+  // what happens instead: never a NaN that would stop the whole timeline.
+  const time = (value: unknown, where: string, instead: string): TimeMs | null | undefined => {
     const t = parseVisTime(value as VisTime, { timeZone });
     if (t === null || t === undefined) return undefined;
-    if (Number.isNaN(t)) warn(where, `${JSON.stringify(value)} is not a time vis-timeline reads either.`);
-    return t;
+    if (!Number.isNaN(t)) return t;
+    warn(where, `${JSON.stringify(value)} is not a time vis-timeline reads either; ${instead}.`);
+    return null;
   };
 
   // --- groups ---------------------------------------------------------------
@@ -255,7 +281,7 @@ export function fromVis<T extends VisItem = VisItem>(
   const converted: Item<T>[] = [];
   const selectable = options.selectable !== false;
   const editable = options.editable;
-  const editDefaults = typeof editable === "object" && editable !== null ? (editable as Record<string, unknown>) : { updateTime: editable === true, updateGroup: editable === true, remove: editable === true };
+  const editDefaults = typeof editable === "object" && editable !== null ? (editable as Record<string, unknown>) : { add: editable === true, updateTime: editable === true, updateGroup: editable === true, remove: editable === true };
   for (const [index, raw] of rows(items).entries()) {
     const where = `items[${String(index)}]`;
     const end = raw.end === undefined || raw.end === null ? undefined : raw.end;
@@ -281,14 +307,16 @@ export function fromVis<T extends VisItem = VisItem>(
         if (kind === "background") warn(`${where}.group`, "A background bound to one group is drawn behind every lane.");
       }
     }
-    const start = time(raw.start, `${where}.start`);
+    const start = time(raw.start, `${where}.start`, "the item is left out");
+    if (start === null) continue;
     if (start === undefined) {
       warn(`${where}.start`, "An item needs a start; it is left out.");
       continue;
     }
     const id = raw.id === undefined ? `vis-${String(index + 1)}` : String(raw.id);
     if (raw.id === undefined) warn(`${where}.id`, `No id; it is ${JSON.stringify(id)}.`);
-    const stop = kind === "box" || kind === "point" ? undefined : time(end, `${where}.end`);
+    const stop = kind === "box" || kind === "point" ? undefined : time(end, `${where}.end`, "the item is left out");
+    if (stop === null) continue;
     if (kind === "range" && stop === undefined) warn(`${where}.end`, "vis-timeline needs an end for a range; it is drawn as an instant.");
     const label = visText(raw.content);
     const markup = htmlOf(raw.content);
@@ -336,13 +364,14 @@ export function fromVis<T extends VisItem = VisItem>(
       });
     }
   }
-  const start = time(options.start, "start");
-  const end = time(options.end, "end");
+  const start = time(options.start, "start", "the view fits the items") ?? undefined;
+  const end = time(options.end, "end", "the view fits the items") ?? undefined;
   if (start !== undefined && end !== undefined) config.domain = [start, end];
-  else if (start !== undefined || end !== undefined) warn(start === undefined ? "end" : "start", "Without both `start` and `end`, the view fits the items.");
+  // One given and the other not at all; a time given wrong has had its warning.
+  else if ((start !== undefined && absent(options.end)) || (end !== undefined && absent(options.start))) warn(start === undefined ? "end" : "start", "Without both `start` and `end`, the view fits the items.");
   const limits: Record<string, number> = {};
-  const min = time(options.min, "min");
-  const max = time(options.max, "max");
+  const min = time(options.min, "min", "there is no limit") ?? undefined;
+  const max = time(options.max, "max", "there is no limit") ?? undefined;
   if (min !== undefined) limits.min = min;
   if (max !== undefined) limits.max = max;
   if (typeof options.zoomMin === "number") limits.minSpanMs = options.zoomMin;
@@ -376,9 +405,9 @@ export function fromVis<T extends VisItem = VisItem>(
     const list = (Array.isArray(options.hiddenDates) ? options.hiddenDates : [options.hiddenDates]) as readonly Record<string, unknown>[];
     const hiddenDates: Record<string, unknown>[] = [];
     for (const [index, range] of list.entries()) {
-      const from = time(range.start, `hiddenDates[${String(index)}].start`);
-      const to = time(range.end, `hiddenDates[${String(index)}].end`);
-      if (from === undefined || to === undefined) continue;
+      const from = time(range.start, `hiddenDates[${String(index)}].start`, "the range is not hidden");
+      const to = time(range.end, `hiddenDates[${String(index)}].end`, "the range is not hidden");
+      if (absent(from) || absent(to)) continue;
       const out: Record<string, unknown> = { start: from, end: to };
       if (range.repeat === "daily" || range.repeat === "weekly" || range.repeat === "monthly" || range.repeat === "yearly") out.repeat = range.repeat;
       else if (range.repeat !== undefined) warn(`hiddenDates[${String(index)}].repeat`, `No repeat ${JSON.stringify(range.repeat)}.`);

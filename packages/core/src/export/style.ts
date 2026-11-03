@@ -6,8 +6,10 @@
  * a PDF has to be told each fill and stroke. This reads the rules the core
  * itself writes — a root rule with the theme's tokens, then a class or two
  * under the root — and gives each node its computed style, with SVG's
- * inheritance. It is not a CSS engine: an at-rule, a pseudo-class or an
- * attribute selector below the root is skipped, and of a descendant chain
+ * inheritance. A root rule's attributes (`[data-tl-theme="dark"]`) are
+ * conditions on the node, and on the scene's root for the tokens. It is not
+ * a CSS engine: an at-rule, a pseudo-class or an attribute selector below
+ * the root is skipped, and of a descendant chain
  * only the last step is matched. The rules the core writes need no more,
  * and the frame to export is pinned to one theme, so the `@media` blocks
  * that `auto` adds are not needed either.
@@ -21,6 +23,8 @@ export type ComputedStyle = Readonly<Record<string, string>>;
 interface Rule {
   readonly tag: string | undefined;
   readonly classes: readonly string[];
+  /** Attributes the node has to have: a name, and the value when one is given. */
+  readonly attrs: readonly (readonly [string, string | undefined])[];
   readonly weight: number;
   readonly decls: readonly (readonly [string, string])[];
 }
@@ -60,8 +64,13 @@ function declsOf(body: string): [string, string][] {
   return out;
 }
 
-/** Rules and tokens of a stylesheet's text. */
-export function parseStyleSheet(css: string): StyleSheet {
+type Attrs = NonNullable<SceneElement["attrs"]>;
+
+const hasAttrs = (rule: Pick<Rule, "attrs">, attrs: Attrs): boolean =>
+  rule.attrs.every(([name, value]) => attrs[name] !== undefined && (value === undefined || String(attrs[name]) === value));
+
+/** Rules and tokens of a stylesheet's text; the tokens of the rules that hold on `root`, the scene's root. */
+export function parseStyleSheet(css: string, root: Attrs = {}): StyleSheet {
   const rules: Rule[] = [];
   const vars = new Map<string, string>();
   let at = 0;
@@ -91,10 +100,18 @@ export function parseStyleSheet(css: string): StyleSheet {
       if (steps.some((step) => step.includes(":")) || (steps.length > 1 && last.includes("["))) continue;
       const classes = [...last.matchAll(/\.([\w-]+)/g)].map((match) => match[1] as string);
       const tag = /^[a-zA-Z]+/.exec(last)?.[0];
-      if (steps.length === 1) {
+      const rule: Rule = {
+        tag,
+        classes,
+        attrs: [...last.matchAll(/\[([\w-]+)(?:="([^"]*)")?\]/g)].map((match) => [match[1] as string, match[2]] as const),
+        // An attribute counts as a class does.
+        weight: steps.join(" ").split(/[.[]/).length - 1,
+        decls,
+      };
+      if (steps.length === 1 && hasAttrs(rule, root)) {
         for (const [name, value] of decls) if (name.startsWith("--")) vars.set(name, value);
       }
-      rules.push({ tag, classes, weight: steps.join(" ").split(".").length - 1, decls });
+      rules.push(rule);
     }
   }
   // Specificity, and the source order where it ties: a stable sort.
@@ -109,11 +126,13 @@ export function sheetOf(scene: SceneElement): StyleSheet {
     for (const child of node.children ?? []) walk(child);
   };
   walk(scene);
-  return parseStyleSheet(css);
+  return parseStyleSheet(css, scene.attrs);
 }
 
 function resolveVars(value: string, vars: ReadonlyMap<string, string>): string {
-  return value.replace(/var\((--[\w-]+)\s*(?:,\s*([^)]*))?\)/g, (_, name: string, fallback?: string) => vars.get(name) ?? fallback ?? "");
+  // A fallback without parentheses — the core writes no other — so an unclosed
+  // var() is given up at the next one, not read to the end from every start.
+  return value.replace(/var\((--[\w-]+)\s*(?:,\s*([^()]*))?\)/g, (_, name: string, fallback?: string) => vars.get(name) ?? fallback ?? "");
 }
 
 /** A node's style: what it inherits, its attributes, the rules that match it, its `style`. */
@@ -128,7 +147,7 @@ export function computeStyle(node: SceneElement, parent: ComputedStyle, sheet: S
   const classes = new Set(String(attrs.class ?? "").split(/\s+/));
   for (const rule of sheet.rules) {
     if (rule.tag !== undefined && rule.tag !== node.tag) continue;
-    if (!rule.classes.every((name) => classes.has(name))) continue;
+    if (!rule.classes.every((name) => classes.has(name)) || !hasAttrs(rule, attrs)) continue;
     for (const [name, value] of rule.decls) out[name] = value;
   }
   if (typeof attrs.style === "string") for (const [name, value] of declsOf(attrs.style)) out[name] = value;

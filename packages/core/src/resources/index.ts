@@ -193,8 +193,12 @@ export function overloads(load: ResourceLoad, resourceId: string, start: TimeMs 
 
 // --- lanes -------------------------------------------------------------------
 
-/** The prefix of a load lane's id; what follows is its resource's. */
-export const LOAD_LANE_PREFIX = "\u0000l:";
+/**
+ * The prefix of a load lane's id; what follows is its resource's. A
+ * private-use character, so no id a host writes begins with it, and an XML
+ * one, so a frame that names the lane is still a document when exported.
+ */
+export const LOAD_LANE_PREFIX = "\uE000l:";
 
 /** The id of a resource's load lane. */
 export function loadLaneId(resourceId: string): string {

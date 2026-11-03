@@ -13,6 +13,8 @@ import { bandLayout, contentRange, onBand, paginate } from "../../src/export/pag
 import { printPages, resolvePaper } from "../../src/export/pages.js";
 import { computeStyle, parseStyleSheet, sheetOf } from "../../src/export/style.js";
 import { layoutItems } from "../../src/layout.js";
+import { renderTimeline } from "../../src/render.js";
+import { DARK_THEME, LIGHT_THEME } from "../../src/theme.js";
 import type { Item, Lane } from "../../src/types.js";
 import { makeRandom } from "../property/harness.js";
 
@@ -150,6 +152,26 @@ describe("the stylesheet the PDF reads", () => {
     expect(child.fill).toBe("#111");
     expect(parseStyleSheet("").rules).toEqual([]);
     expect(parseStyleSheet("@media print{.a{fill:red}").rules).toEqual([]);
+  });
+
+  it("takes the tokens of a root rule with an attribute only where the scene's root has it (M7)", () => {
+    const frame = (theme: "auto" | "light" | "dark", instanceId?: string) =>
+      renderTimeline({ items: [{ id: "a", start: T0, end: T0 + DAY }], domain: [T0, T0 + 3 * DAY], width: 400, height: 120, theme, ...(instanceId === undefined ? {} : { instanceId }) }).scene;
+    for (const scope of [undefined, "one"]) {
+      // auto: the light tokens, then the dark ones only under a media query or a dark root.
+      expect(sheetOf(frame("auto", scope)).vars.get("--tl-surface"), String(scope)).toBe(LIGHT_THEME.tokens.surface);
+      expect(sheetOf(frame("light", scope)).vars.get("--tl-surface")).toBe(LIGHT_THEME.tokens.surface);
+      expect(sheetOf(frame("dark", scope)).vars.get("--tl-surface")).toBe(DARK_THEME.tokens.surface);
+    }
+    // An auto frame pinned dark the way the exporters pin it: its root says dark.
+    const pinned = frame("auto");
+    const dark = { ...pinned, attrs: { ...pinned.attrs, "data-tl-theme": "dark" } };
+    expect(sheetOf(dark).vars.get("--tl-surface")).toBe(DARK_THEME.tokens.surface);
+    // A rule with an attribute matches the node that has it.
+    const sheet = parseStyleSheet('.tl{fill:#111}.tl[data-k="v"]{fill:#222}.tl[data-on]{stroke:#333}');
+    expect(computeStyle({ tag: "svg", attrs: { class: "tl" } }, {}, sheet)).toEqual({ fill: "#111" });
+    expect(computeStyle({ tag: "svg", attrs: { class: "tl", "data-k": "v", "data-on": "" } }, {}, sheet)).toEqual({ fill: "#222", stroke: "#333" });
+    expect(computeStyle({ tag: "svg", attrs: { class: "tl", "data-k": "w" } }, {}, sheet)).toEqual({ fill: "#111" });
   });
 
   it("collects every <style> in a scene", () => {

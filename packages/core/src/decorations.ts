@@ -110,6 +110,9 @@ export interface DecorationContext {
 
 const MS_PER_DAY = 86_400_000;
 
+/** The units counted on the local clock: a day of the zone, an hour of it. */
+const LOCAL_UNIT_MS: Partial<Record<Granularity, number>> = { second: 1000, minute: 60_000, hour: 3_600_000, day: MS_PER_DAY };
+
 /**
  * A stable alternation index for an instant at a granularity.
  *
@@ -122,20 +125,12 @@ export function bandIndex(
   granularity: Granularity,
   timeZone: string,
 ): number {
-  if (granularity === "day") {
-    return Math.floor((time + zoneOffsetMs(time, timeZone)) / MS_PER_DAY);
-  }
-  if (granularity === "hour") {
-    return Math.floor((time + zoneOffsetMs(time, timeZone)) / 3_600_000);
-  }
-  if (granularity === "minute") {
-    return Math.floor((time + zoneOffsetMs(time, timeZone)) / 60_000);
-  }
-  if (granularity === "second") {
-    return Math.floor((time + zoneOffsetMs(time, timeZone)) / 1000);
-  }
   if (granularity === "millisecond") {
     return Math.floor(time);
+  }
+  const unit = LOCAL_UNIT_MS[granularity];
+  if (unit !== undefined) {
+    return Math.floor((time + zoneOffsetMs(time, timeZone)) / unit);
   }
   const parts = toCalendarParts(time, timeZone);
   switch (granularity) {
@@ -231,7 +226,9 @@ function renderBanding(
     if (from === undefined || to === undefined) {
       continue;
     }
-    if (bandIndex(from, granularity, ctx.timeZone) % 2 === 0) {
+    // The parity of the step, not of its first unit: a step of two hours
+    // always starts on an even hour, and one of six months in January or July.
+    if (Math.floor(bandIndex(from, granularity, ctx.timeZone) / step.count) % 2 === 0) {
       continue;
     }
     const main = clampMain(ctx.scale.toMain(from), ctx.scale);

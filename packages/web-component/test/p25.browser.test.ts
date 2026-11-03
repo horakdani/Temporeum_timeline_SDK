@@ -70,6 +70,12 @@ describe("export", () => {
     expect([bitmap.width, bitmap.height]).toEqual([1800, 720]);
   });
 
+  it("makes a PNG of a frame whose label holds a character XML does not allow (M1)", async () => {
+    const { timeline } = await mount({ items: [{ id: "odd", label: "Bell\u0007", start: T0 + DAY, end: T0 + 3 * DAY, laneId: "l0" }] });
+    const png = await timeline.exportPng({ scale: 1 });
+    expect(png.type).toBe("image/png");
+  });
+
   it("writes the whole range as a PDF, titled from the label, several pages for a tall plan", async () => {
     const { timeline } = await mount();
     const bytes = await timeline.exportPdf({ size: SHORT_SHEET });

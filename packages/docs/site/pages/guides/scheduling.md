@@ -60,7 +60,7 @@ const constraints = { launch: { type: "finishNoLaterThan", date: Date.UTC(2026, 
 
 **An arrow is never broken to keep a date.** The lower constraints always hold. An upper one that the dependencies push a task past is reported in `conflicts`, with how many working hours it is missed by, and the task's slack goes negative. In the example the launch is four working hours late, and the status line says so.
 
-A task with nothing before it — no predecessor, no lower constraint — stays where it is, moved only onto working time. Give `projectStart` and they all start there instead.
+A task with nothing before it — no predecessor, no lower constraint — stays where it is, moved only onto working time. A milestone, or anything else that takes no working time, is not moved at all: a milestone at Monday 08:00 stays at Monday 08:00, though it is the same working time as Friday 17:00. Give `projectStart` and they all start there instead.
 
 ## Slack and the critical path
 

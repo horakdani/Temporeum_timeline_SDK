@@ -18,6 +18,8 @@ import {
   storyPlainText,
 } from "../../src/story/index.js";
 import type { TimelineJSData } from "../../src/story/index.js";
+import { layoutItems } from "../../src/layout.js";
+import type { Item } from "../../src/types.js";
 
 function utc(year: number, month = 1, day = 1, hour = 0, minute = 0, second = 0, ms = 0): number {
   const date = new Date(0);
@@ -48,6 +50,28 @@ describe("fromTimelineJS", () => {
       ["slide-3", utc(1969, 7, 16), utc(1969, 7, 24), "day"],
       ["slide-4", utc(1969), undefined, "year"],
     ]);
+  });
+
+  it("runs a span to the end of its end's own unit when the two dates are known to different precisions (M5)", () => {
+    const mixed = fromTimelineJS({
+      events: [
+        { start_date: { year: 1914 }, end_date: { year: 1918, month: 11, day: 11 } },
+        { start_date: { year: 1969, month: 7, day: 16 }, end_date: { year: 1972 } },
+        { start_date: { year: 1914 }, end_date: { year: 1918 } },
+      ],
+    });
+    const spans = layoutItems(mixed.items)
+      .items.map((placed) => [placed.item.id, placed.span.start, placed.span.end])
+      .sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+    expect(spans).toEqual([
+      ["slide-1", utc(1914), utc(1918, 11, 12)],
+      ["slide-2", utc(1969, 7, 16), utc(1973)],
+      ["slide-3", utc(1914), utc(1919)],
+    ]);
+    // The finer of the two units is the item's: the span is exact in it.
+    expect(mixed.items.map((item) => item.granularity)).toEqual(["day", "day", "year"]);
+    expect(storyDateText(mixed.items[1] as Item, { locale: "en-GB" }).replace(/\s+/gu, " ")).toBe("16 July 1969 – 31 December 1972");
+    expect(storyDateText(mixed.items[2] as Item, { locale: "en-GB" }).replace(/\s+/gu, " ")).toBe("1914 – 1918");
   });
 
   it("keeps each slide in data.story, and the headline as plain text in the label", () => {
@@ -175,6 +199,14 @@ describe("fromTimelineJS", () => {
 describe("storyPlainText", () => {
   it("drops the tags and reads the character references", () => {
     expect(storyPlainText("<b>Tom</b> &amp; Jerry<br/>&#8211;&#x2014;&nbsp;&lt;3&unknown;  ")).toBe("Tom & Jerry –— <3&unknown;".replace(/\s+/g, " ").trim());
+  });
+});
+
+describe("a character reference to no character (M10, S7)", () => {
+  it("is the replacement character, as in HTML, and the import goes on", () => {
+    expect(storyPlainText("a&#x110000;b&#0;c&#xD800;d&#99999999999;e&#x1F600;")).toBe("a�b�c�d�e\u{1F600}");
+    const story = fromTimelineJS({ events: [{ start_date: { year: 2000 }, text: { headline: "Bad &#x110000; ref" } }, { start_date: { year: 2001 }, text: { headline: "Fine" } }] });
+    expect(story.items.map((item) => item.label)).toEqual(["Bad � ref", "Fine"]);
   });
 });
 

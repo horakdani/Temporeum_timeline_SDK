@@ -94,3 +94,11 @@ it("reads progress and baseline", () => {
   expect(describeBaseline({ id: "a", start: 0, end: DAY, baseline: { start: 0, end: 3 * DAY } })).toBe("2 d ahead of plan");
   expect(describeBaseline({ id: "a", start: 0, end: DAY, baseline: { start: 0, end: DAY } })).toBe("on plan");
 });
+
+it("measures a plan with only a start against the start (M13)", () => {
+  // Jan 1–10, planned to start Jan 1: on plan, not nine days behind it.
+  expect(describeBaseline({ id: "a", start: 0, end: 9 * DAY, baseline: { start: 0 } })).toBe("on plan");
+  expect(describeBaseline({ id: "a", start: 2 * DAY, end: 9 * DAY, baseline: { start: 0 } })).toBe("2 d behind plan");
+  // A milestone against a planned span: its moment against the plan's start.
+  expect(describeBaseline({ id: "m", start: DAY, kind: "milestone", baseline: { start: 0, end: 4 * DAY } })).toBe("1 d behind plan");
+});

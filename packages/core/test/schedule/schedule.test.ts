@@ -280,7 +280,12 @@ describe("G-SCHEDULE: against a reference", () => {
       const index_ = new Map(tasks.map((task, at) => [task.item.id, at]));
       const edgeAt = (at: number, work: number, end: boolean): number => {
         const task = tasks[at] as (typeof tasks)[number];
-        if (task.duration === 0) return task.time.finish(work);
+        if (task.duration === 0) {
+          // A moment where it was keeps its own instants (M4).
+          const own = task.item.start as number;
+          const ownEnd = task.item.kind === "milestone" ? undefined : (task.item.end as number | undefined);
+          return work === task.time.work(own) ? (end ? (ownEnd ?? own) : own) : task.time.finish(work);
+        }
         return end ? task.time.finish(work + task.duration) : task.time.start(work);
       };
       const positions = tasks.map((task) => Array.from({ length: BELOW + ABOVE + 1 }, (_, step) => task.origin + (step - BELOW) * HOUR));

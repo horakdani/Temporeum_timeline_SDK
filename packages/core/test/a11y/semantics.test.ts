@@ -210,6 +210,20 @@ describe("accessible names", () => {
     expect(describeSpan(odd, span(T0 + 1, T0 + 1), "en", "UTC")).toBe("Jan 1, 2026, 12:00 AM");
   });
 
+  it("names the last day a date-granular item covers, not the day after it (M2)", () => {
+    // Known to the day, Jan 1 to Jan 3: the span runs to the start of Jan 4.
+    const days: Item = { id: "d3", start: T0, end: T0 + 2 * DAY, granularity: "day" };
+    expect(describeSpan(days, span(T0, T0 + 3 * DAY), "en", "UTC")).toBe("Jan 1, 2026 – Jan 3, 2026");
+    // One day, given as its own start and end: one date.
+    const one: Item = { id: "d1", start: T0, end: T0, granularity: "day" };
+    expect(describeSpan(one, span(T0, T0 + DAY), "en", "UTC")).toBe("Jan 1, 2026");
+    const months: Item = { id: "m", start: T0, end: Date.UTC(2026, 2, 1), granularity: "month" };
+    expect(describeSpan(months, span(T0, Date.UTC(2026, 3, 1)), "en", "UTC")).toBe("Jan 1, 2026 – Mar 31, 2026");
+    // An hour is a time of day: 10 to 11 is what a reader says.
+    const hour: Item = { id: "h", start: T0 + 10 * 3_600_000, end: T0 + 10 * 3_600_000, granularity: "hour" };
+    expect(describeSpan(hour, span(T0 + 10 * 3_600_000, T0 + 11 * 3_600_000), "en", "UTC")).toBe("Jan 1, 2026, 10:00 AM – Jan 1, 2026, 11:00 AM");
+  });
+
   it("tells a midnight in UTC without Intl, as Intl does", () => {
     // The UTC midnight is arithmetic. The same zone under another name
     // still goes through Intl: both must say the same, before 1970 too.

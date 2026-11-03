@@ -29,6 +29,7 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
+import { renderTimeline } from "../../src/render.js";
 import { fromVis, fromVisItems, parseVisTime, visText } from "../../src/vis-compat/index.js";
 import type { VisCompatConfig, VisGroup, VisItem } from "../../src/vis-compat/index.js";
 
@@ -84,12 +85,14 @@ function untag(value: unknown): unknown {
   return value;
 }
 
-const sameTime = (ours: number | undefined, theirs: number | null | undefined): boolean =>
-  theirs === null ? ours !== undefined && Number.isNaN(ours) : ours === (theirs ?? undefined);
+const sameTime = (ours: number | undefined, theirs: number | null | undefined): boolean => ours === (theirs ?? undefined);
 
 /** Where an item differs from what vis-timeline did with it. */
 function differences(config: VisCompatConfig, placed: Placed): string[] {
   const ours = config.items.find((item) => item.id === placed.id);
+  // vis-timeline keeps an item it reads no start for, at NaN; a NaN would
+  // stop a Temporeum frame, so the configuration leaves it out, with a warning.
+  if (placed.start === null || (placed.kind === "range" && placed.end === null)) return ours === undefined ? [] : ["vis-timeline reads no time, the configuration has it"];
   if (!placed.drawn) return ours === undefined ? [] : ["vis-timeline does not draw it, the configuration has it"];
   if (ours === undefined) return ["vis-timeline draws it, the configuration has not"];
   const problems: string[] = [];
@@ -329,7 +332,7 @@ describe("the compatibility layer at its edges", () => {
     expect(config.items[0]).not.toHaveProperty("movable");
     expect(config.domain).toBeUndefined();
     expect(config.interactions).toEqual({ zoom: false });
-    expect(config.editing).toEqual({ enabled: true, crossLane: true, remove: true });
+    expect(config.editing).toEqual({ enabled: true, crossLane: true, add: true, remove: true });
     expect(config.hiddenDates).toEqual([{ start: Date.UTC(2026, 2, 7), end: Date.UTC(2026, 2, 9) }]);
     expect(config.rolling).toBe(true);
     expect(config.cluster).toBe(true);
@@ -337,6 +340,39 @@ describe("the compatibility layer at its edges", () => {
     expect(fromVis([], null, { end: "2026-03-01" }, { timeZone: "UTC" }).warnings.map((warning) => warning.option)).toEqual(["end"]);
     expect(fromVis([], null, { multiselect: true }).config.editing).toEqual({ multiSelect: true });
     expect(fromVisItems(null as never).config.items).toEqual([]);
+  });
+
+  it("leaves out an item with a time vis-timeline cannot read either, so one bad row does not stop the timeline (M3)", () => {
+    const { config, warnings } = fromVis(
+      [
+        { id: "good", start: "2026-03-02", end: "2026-03-05" },
+        { id: "start", start: "the second of March" },
+        { id: "end", type: "range", start: "2026-03-02", end: "2026-02-30T25:00" },
+        { id: "box", type: "box", start: "2026-03-03", end: "never" },
+      ],
+      null,
+      { start: "soon", end: "2026-03-09", min: "dawn", hiddenDates: [{ start: "x", end: "2026-03-08" }] },
+      { timeZone: "UTC" },
+    );
+    expect(config.items.map((item) => item.id)).toEqual(["good", "box"]);
+    for (const item of config.items) {
+      expect(Number.isFinite(item.start)).toBe(true);
+      if (item.end !== undefined) expect(Number.isFinite(item.end)).toBe(true);
+    }
+    expect(warnings.map((warning) => warning.option)).toEqual(["items[1].start", "items[2].end", "start", "min", "hiddenDates[0].start"]);
+    expect(warnings[0]?.message).toMatch(/is not a time vis-timeline reads either; the item is left out\.$/);
+    expect(warnings[2]?.message).toMatch(/the view fits the items\.$/);
+    expect(config.domain).toBeUndefined();
+    expect(config.limits).toBeUndefined();
+    expect(config.hiddenDates).toEqual([]);
+    // The converted configuration draws.
+    expect(() => renderTimeline({ items: config.items, domain: [Date.UTC(2026, 2, 1), Date.UTC(2026, 2, 9)], width: 800, height: 200 })).not.toThrow();
+  });
+
+  it("takes editable: true for every right vis-timeline gives it, adding items included (M11)", () => {
+    expect(fromVis([], null, { editable: true }).config.editing).toEqual({ enabled: true, crossLane: true, add: true, remove: true });
+    expect(fromVis([], null, { editable: { add: false, updateTime: true } }).config.editing).toEqual({ enabled: true });
+    expect(fromVis([], null, { editable: false }).config.editing).toBeUndefined();
   });
 
   it("groups without a name, a nested group's class and style, an element without text", () => {

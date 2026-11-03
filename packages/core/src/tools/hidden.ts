@@ -116,9 +116,11 @@ function shiftMonths(local: number, months: number): number {
  * A zone's offset as constant pieces, a UTC year at a time.
  *
  * Reading an offset is an `Intl` call, and a nightly repeat needs two a
- * night. A year without a change — every year before daylight saving, and
- * every year in most zones — costs three; a year with changes, the months
- * around them and a search to the minute. After that an offset is a lookup.
+ * night. A year costs one reading every half month, and a search to the
+ * minute around each change; after that an offset is a lookup. Half a month,
+ * not the year's start, middle and end: a zone can change and change back
+ * inside a year — Casablanca leaves UTC+1 for the weeks of Ramadan — and no
+ * stretch between two changes is shorter than that.
  */
 function zoneModel(timeZone: string): (time: TimeMs) => number {
   if (timeZone === "UTC") return () => 0;
@@ -130,13 +132,12 @@ function zoneModel(timeZone: string): (time: TimeMs) => number {
     const first = at(start);
     const from = [-Infinity];
     const offset = [first];
-    if (at(start + (end - start) / 2) === first && at(end) === first) return { from, offset };
     let previous = start;
     let before = first;
-    for (let month = 1; month <= 12; month += 1) {
+    for (let half = 1; half <= 24; half += 1) {
       // The months of the last year past the end of time are no instants: the end stands in.
-      const opening = monthStart(year, month);
-      const next = month === 12 || !(opening < end) ? end : opening;
+      const opening = half % 2 === 0 ? monthStart(year, half / 2) : monthStart(year, (half - 1) / 2) + 15 * 86_400_000;
+      const next = half === 24 || !(opening < end) ? end : opening;
       const value = at(next);
       if (value !== before) {
         // The first minute with the new offset.

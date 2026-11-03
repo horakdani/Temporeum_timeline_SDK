@@ -167,10 +167,16 @@ function matchZone(onsets: readonly Onset[], year: number): string | undefined {
   changes.sort((a, b) => a.at - b.at);
   const first = onsets[0];
   if (first === undefined) return undefined;
+  // The last change at or before `t`, by halves: a daily rule makes thousands.
   const offsetAt = (t: number): number => {
-    let offset = first.from;
-    for (const change of changes) if (change.at <= t) offset = change.to;
-    return offset;
+    let lo = 0;
+    let hi = changes.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if ((changes[mid] as { readonly at: number }).at <= t) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo === 0 ? first.from : (changes[lo - 1] as { readonly to: number }).to;
   };
   const samples: number[] = [];
   for (let y = year - 1; y <= year + 1; y += 1) samples.push(wallMs(y, 1, 15, 12), wallMs(y, 7, 15, 12));
@@ -214,7 +220,12 @@ export function parseICal(text: string, options: ICalParseOptions = {}): ICalCal
       if (line.name === "TZOFFSETFROM") onset.from = offsetMs(line.value);
       else if (line.name === "TZOFFSETTO") onset.to = offsetMs(line.value);
       else if (line.name === "DTSTART") onset.start = wallOfValue(line.value);
-      else if (line.name === "RRULE") onset.rule = parseRRule(line.value);
+      else if (line.name === "RRULE") {
+        const rule = parseRRule(line.value);
+        // No zone changes its clock more often than daily: such a rule would be millions of changes.
+        if (rule.freq === "HOURLY" || rule.freq === "MINUTELY" || rule.freq === "SECONDLY") warnings.push(`A time zone rule of ${JSON.stringify(zoneId ?? "")} that repeats more often than daily is ignored`);
+        else onset.rule = rule;
+      }
       else if (line.name === "RDATE") onset.rdates.push(...line.value.split(",").map(wallOfValue));
     } else if (line.name === "TZID") zoneId = line.value;
     else if (line.name === "X-LIC-LOCATION" && zoneId !== undefined) locations.set(zoneId, line.value);
@@ -226,7 +237,9 @@ export function parseICal(text: string, options: ICalParseOptions = {}): ICalCal
   const zoneOf = (tzid: string, year: number): string => {
     const known = zones.get(tzid);
     if (known !== undefined) return known;
-    const candidates = [tzid, /[A-Za-z_]+\/[A-Za-z_]+(?:\/[A-Za-z_]+)?$/.exec(tzid)?.[0], locations.get(tzid)];
+    // An Area/City is at the end, and no zone's name is longer than 64: the
+    // pattern reads that much, not a hostile file's whole TZID.
+    const candidates = [tzid, /[A-Za-z_]+\/[A-Za-z_]+(?:\/[A-Za-z_]+)?$/.exec(tzid.slice(-64))?.[0], locations.get(tzid)];
     const rules = zoneRules.get(tzid);
     const found = candidates.find((each): each is string => each !== undefined && knownZone(each)) ?? (rules === undefined ? undefined : matchZone(rules, year));
     if (found === undefined) warnings.push(`Unknown time zone ${JSON.stringify(tzid)}, read as UTC`);

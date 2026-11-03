@@ -119,6 +119,10 @@ interface Task {
   readonly duration: number;
   readonly ins: Link[];
   readonly outs: Link[];
+  /** Its own instants, and where its start is in working time: a moment nothing moves keeps them. */
+  readonly startMs: TimeMs;
+  readonly endMs: TimeMs | undefined;
+  readonly origin: number;
   /** Where it starts, in working time. */
   at: number;
   late: number;
@@ -129,9 +133,13 @@ const LOWER_FINISH = new Set<ConstraintType>(["finishNoEarlierThan", "mustFinish
 const UPPER_START = new Set<ConstraintType>(["startNoLaterThan", "mustStartOn"]);
 const UPPER_FINISH = new Set<ConstraintType>(["finishNoLaterThan", "mustFinishOn"]);
 
-/** The instant of an edge of a task starting at `at`. A task with no duration is one moment, where work stopped. */
+/**
+ * The instant of an edge of a task starting at `at`. A task with no duration
+ * is one moment, where work stopped — unless it is where it was: every
+ * instant of a break is the same working time, and its own is the one it has.
+ */
 function edge(task: Task, at: number, end: boolean): TimeMs {
-  if (task.duration === 0) return task.time.finish(at);
+  if (task.duration === 0) return at !== task.origin ? task.time.finish(at) : end ? (task.endMs ?? task.startMs) : task.startMs;
   return end ? task.time.finish(at + task.duration) : task.time.start(at);
 }
 
@@ -216,7 +224,9 @@ export function scheduleTasks<T>(items: readonly Item<T>[], dependencies: readon
       throw new RangeError(`The ${constraint.type} constraint of "${item.id}" needs a date`);
     }
     const hasEnd = item.end !== undefined && item.kind !== "milestone";
-    const start = time.work(toTimeMs(item.start));
+    const startMs = toTimeMs(item.start);
+    const endMs = hasEnd ? toTimeMs(item.end as TimeInput) : undefined;
+    const start = time.work(startMs);
     const task: Task = {
       item: item as Item<unknown>,
       index: tasks.length,
@@ -224,9 +234,12 @@ export function scheduleTasks<T>(items: readonly Item<T>[], dependencies: readon
       constraint,
       date: constraint?.date === undefined ? 0 : time.work(toTimeMs(constraint.date)),
       hasEnd,
-      duration: hasEnd ? Math.max(0, time.work(toTimeMs(item.end as TimeInput)) - start) : 0,
+      duration: endMs === undefined ? 0 : Math.max(0, time.work(endMs) - start),
       ins: [],
       outs: [],
+      startMs,
+      endMs,
+      origin: start,
       at: start,
       late: 0,
     };

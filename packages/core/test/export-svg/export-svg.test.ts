@@ -140,6 +140,20 @@ describe("the standalone SVG", () => {
     expect(standaloneSvg(scene, { title: "A & B" })).toContain("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\"><title>A &amp; B</title><rect/>");
     expect(standaloneSvg({ tag: "svg" }, { title: "t" })).toContain("<title>t</title>");
   });
+
+  it("leaves out the characters XML does not allow, so any label still makes a document a browser parses (M1)", async () => {
+    const scene: SceneElement = {
+      tag: "svg",
+      attrs: { xmlns: "http://www.w3.org/2000/svg", width: 10, height: 10, "data-tl-lane": "\u0000l:a" },
+      children: [{ tag: "text", text: "A\u0001B\u001F\uFFFEC\uD800D\u{1F600}\tE\n" }],
+    };
+    const svg = standaloneSvg(scene, { title: "T\u0007" });
+    expect(svg).toContain('data-tl-lane="l:a"');
+    expect(svg).toContain("<text>ABCD\u{1F600}\tE\n</text>");
+    expect(svg).toContain("<title>T</title>");
+    const errors = await page.evaluate((text) => new DOMParser().parseFromString(text, "image/svg+xml").getElementsByTagName("parsererror").length, svg);
+    expect(errors).toBe(0);
+  });
 });
 
 describe("HTML text as SVG text", () => {

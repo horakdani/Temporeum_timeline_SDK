@@ -163,9 +163,13 @@ function toScene(draft: Draft): SceneElement[] {
   return [node];
 }
 
+/** How deep a template's elements nest; a tag past it is unwrapped, its text kept. */
+const MAX_DEPTH = 64;
+
 /**
  * A template string as scene elements, sanitised unless told otherwise.
  * Deterministic and DOM-free: the server and the browser get the same tree.
+ * Elements nest at most 64 deep.
  */
 export function parseTemplate(html: string, options: TemplateOptions = {}): SceneElement[] {
   const sanitize = options.sanitize !== false;
@@ -217,14 +221,18 @@ export function parseTemplate(html: string, options: TemplateOptions = {}): Scen
       if (keepAttribute(name)) attrs[name] = value;
     }
     const dropped = sanitize && DROPPED.has(tag);
-    const draft: Draft = { tag, attrs, content: [], dropped, kept: !sanitize || (!dropped && tags.has(tag)) };
-    top().content.push(draft);
-    if (DROPPED.has(tag) && sanitize) {
+    if (dropped) {
       // Its content is code, not markup: skip to its own end tag.
-      const end = html.toLowerCase().indexOf(`</${tag}`, at);
-      at = end < 0 ? html.length : html.indexOf(">", end) + 1 || html.length;
+      const end = new RegExp(`</${tag}`, "gi");
+      end.lastIndex = at;
+      const found = end.exec(html);
+      at = found === null ? html.length : html.indexOf(">", found.index) + 1 || html.length;
       continue;
     }
+    // Past the depth, a tag is unwrapped: its content goes on in the deepest element.
+    if (stack.length > MAX_DEPTH) continue;
+    const draft: Draft = { tag, attrs, content: [], dropped, kept: !sanitize || tags.has(tag) };
+    top().content.push(draft);
     if (!VOID.has(tag) && !body.trimEnd().endsWith("/")) stack.push(draft);
   }
   return toScene(root);
@@ -253,6 +261,17 @@ export function templateHooks<T>(
   const hooks = options.hooks ?? {};
   const base = hooks.renderItem ?? defaultItemNode;
   const templated = new Set<string>();
+  // Each string is parsed once: a frame draws every visible item, and a pan draws many frames.
+  const parsed = new Map<string, SceneElement[]>();
+  const nodesOf = (html: string): SceneElement[] => {
+    let nodes = parsed.get(html);
+    if (nodes === undefined) {
+      if (parsed.size >= 1000) parsed.clear();
+      nodes = parseTemplate(html, options);
+      parsed.set(html, nodes);
+    }
+    return nodes;
+  };
   return {
     ...hooks,
     renderItem(context) {
@@ -273,7 +292,7 @@ export function templateHooks<T>(
           {
             tag: "foreignObject",
             attrs: { class: "tl-label tl-template", x: screen.x, y: screen.y, width: screen.width, height: screen.height },
-            children: [{ tag: "div", attrs: { xmlns: XHTML_NS }, children: parseTemplate(html, options) }],
+            children: [{ tag: "div", attrs: { xmlns: XHTML_NS }, children: nodesOf(html) }],
           },
         ],
       };

@@ -58,7 +58,18 @@ export interface OccurrenceData<T = unknown> {
 export interface ExpandOptions {
   /** Ignored for an event that names its own zone. UTC by default. */
   readonly timeZone?: string;
+  /**
+   * At most this many occurrences of one event, the first in the range; the
+   * rest are left out. 10 000 by default: a rule that repeats every second
+   * is 86 400 a day.
+   */
+  readonly limit?: number;
+  /** Called with an event's id when its occurrences in the range were more than `limit`. */
+  readonly onLimit?: (eventId: string, limit: number) => void;
 }
+
+/** The occurrences of one event an expansion gives at most, by default. */
+const OCCURRENCE_LIMIT = 10_000;
 
 const DAY = 86_400_000;
 
@@ -125,10 +136,16 @@ export function expandEvents<T>(events: readonly CalendarEvent<T>[], from: TimeI
     }
     // An occurrence that starts before the range can still reach into it.
     const reach = endOf(event, start, zone) - start + DAY;
+    const limit = options.limit ?? OCCURRENCE_LIMIT;
+    // One past the limit, to know whether there were more.
     const starts = occurrences(
       { start, timeZone: zone, ...(event.rrule === undefined ? {} : { rule: event.rrule }), ...(event.rdates === undefined ? {} : { rdates: event.rdates }), ...(event.exdates === undefined ? {} : { exdates: event.exdates }) },
-      { from: lo - reach, to: hi },
+      { from: lo - reach, to: hi, limit: limit + 1 },
     );
+    if (starts.length > limit) {
+      starts.length = limit;
+      options.onLimit?.(event.id, limit);
+    }
     for (const at of starts) {
       if (!changed.has(`${event.id}\u0000${String(at)}`)) push(event, at, at, zone);
     }

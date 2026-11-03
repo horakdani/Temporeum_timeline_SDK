@@ -43,6 +43,8 @@ createTimeline(document.querySelector("#timeline"), {
 });
 ```
 
+A file is untrusted input, and a rule can repeat every second: both take `limit`, at most that many occurrences of one event in the window (10 000 by default; the rest are left out), and `onLimit(eventId, limit)`, called when an event had more. A `VTIMEZONE` rule that repeats more often than daily is ignored, with a warning in `warnings`.
+
 ## The week and the day
 
 `mountCalendarView(container, options)` shows a week (or, with `view: "day"`, a day): a column per day, the hours down it, the all-day events in a band across the top.

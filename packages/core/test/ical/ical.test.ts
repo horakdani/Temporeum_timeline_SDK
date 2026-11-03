@@ -161,6 +161,64 @@ describe("G-ICAL: zones by other names", () => {
   });
 });
 
+describe("what a hostile calendar cannot do (S1)", () => {
+  const zone = (rule: string): string =>
+    [
+      "BEGIN:VCALENDAR",
+      "BEGIN:VTIMEZONE",
+      "TZID:Odd Standard Time",
+      "BEGIN:STANDARD",
+      "DTSTART:19700101T000000",
+      "TZOFFSETFROM:+0100",
+      "TZOFFSETTO:+0100",
+      "END:STANDARD",
+      "BEGIN:DAYLIGHT",
+      "DTSTART:19700101T000000",
+      `RRULE:${rule}`,
+      "TZOFFSETFROM:+0100",
+      "TZOFFSETTO:+0100",
+      "END:DAYLIGHT",
+      "END:VTIMEZONE",
+      "BEGIN:VEVENT",
+      "UID:x",
+      "DTSTART;TZID=Odd Standard Time:20260601T090000",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+  it("ignores a time zone rule that repeats more often than daily, with a warning, and reads the file at once", () => {
+    for (const freq of ["SECONDLY", "MINUTELY", "HOURLY"]) {
+      const began = performance.now();
+      const calendar = parseICal(zone(`FREQ=${freq}`));
+      expect(performance.now() - began, freq).toBeLessThan(2000);
+      expect(calendar.events[0]?.start).toBe(Date.UTC(2026, 5, 1, 8));
+      expect(calendar.warnings).toEqual([`A time zone rule of "Odd Standard Time" that repeats more often than daily is ignored`]);
+    }
+  }, 20_000);
+
+  it("reads a daily time zone rule — thousands of changes — in well under a second's worth of work per zone", () => {
+    const began = performance.now();
+    const calendar = parseICal(zone("FREQ=DAILY"));
+    expect(performance.now() - began).toBeLessThan(5000);
+    expect(calendar.events[0]?.start).toBe(Date.UTC(2026, 5, 1, 8));
+    expect(calendar.warnings).toEqual([]);
+  }, 20_000);
+
+  it("expands at most a limit of one event's occurrences, 10 000 by default, and says so", () => {
+    const every: CalendarEvent = { id: "tick", start: Date.UTC(2026, 0, 1), rrule: "FREQ=SECONDLY" };
+    const limited: string[] = [];
+    const items = expandEvents([every, { id: "one", start: Date.UTC(2026, 0, 1, 12) }], Date.UTC(2026, 0, 1), Date.UTC(2026, 0, 2), { onLimit: (id, limit) => limited.push(`${id} ${String(limit)}`) });
+    expect(items).toHaveLength(10_001);
+    expect(items.filter((item) => item.id !== "one").at(-1)?.start).toBe(Date.UTC(2026, 0, 1) + 9_999_000);
+    expect(limited).toEqual(["tick 10000"]);
+    expect(expandEvents([every], Date.UTC(2026, 0, 1), Date.UTC(2026, 0, 2), { limit: 100 })).toHaveLength(100);
+    // A rule within the limit says nothing.
+    const quiet: string[] = [];
+    expandEvents([{ id: "daily", start: Date.UTC(2026, 0, 1), rrule: "FREQ=DAILY" }], Date.UTC(2026, 0, 1), Date.UTC(2027, 0, 1), { onLimit: (id) => quiet.push(id) });
+    expect(quiet).toEqual([]);
+  });
+});
+
 describe("G-ICAL: generated calendars", () => {
   const ZONES = ["UTC", "Europe/Budapest", "America/New_York", "Australia/Lord_Howe", "Asia/Kolkata", "America/St_Johns"];
   const RULES = ["FREQ=DAILY;COUNT=5", "FREQ=WEEKLY;BYDAY=MO,WE,FR;UNTIL=20271231T000000Z", "FREQ=MONTHLY;BYDAY=-1FR", "FREQ=YEARLY;BYMONTH=3;BYDAY=2SU", "FREQ=WEEKLY;INTERVAL=2;WKST=SU;BYDAY=TU,SU", "FREQ=MONTHLY;BYMONTHDAY=1,-1;BYSETPOS=1"];

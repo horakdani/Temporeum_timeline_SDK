@@ -96,6 +96,15 @@ describe("the resource view", () => {
     timeline.destroy();
   });
 
+  it("exports a document a browser parses, with the load lanes and a label holding a control character (M1)", async () => {
+    const { timeline } = await mount({ items: [...items, { id: "odd", label: "Bell\u0007 \uD800end", start: T0 + DAY, end: T0 + 2 * DAY, laneId: "dana" }] });
+    const svg = timeline.exportSvg();
+    expect(svg).toContain(`data-tl-lane="${loadLaneId("ana")}"`);
+    expect(svg).toContain("Bell end");
+    expect(new DOMParser().parseFromString(svg, "image/svg+xml").getElementsByTagName("parsererror")).toHaveLength(0);
+    timeline.destroy();
+  });
+
   it("without a histogram keeps the bands and the marks; with lanes or groups, the resources say which are theirs; cull: false draws all time", async () => {
     const { element, timeline } = await mount({ resourceOptions: { histogram: false } });
     expect(laneIds(timeline)).toEqual(["ana", "ben", "dana"]);
