@@ -125,7 +125,7 @@ export function defaultTaskColumns<T>(words: TaskColumnWords = {}): TaskGridColu
         const known = row.items.filter((item) => item.progress !== undefined && Number.isFinite(item.progress));
         if (known.length === 0) return "";
         const mean = known.reduce((sum, item) => sum + Math.min(Math.max(item.progress ?? 0, 0), 1), 0) / known.length;
-        return locale === undefined ? `${String(Math.round(mean * 100))}%` : formatAmount(Math.round(mean * 100) / 100, locale, true);
+        return locale === undefined ? `${String(Math.round(mean * 100))}%` : formatAmount(Math.round(mean * 100) / 100, { locale, percent: true });
       },
     },
   ];
@@ -206,10 +206,10 @@ export function mountTaskGrid<T>(container: HTMLElement, timeline: Timeline<T>, 
   let orientation: Orientation = "horizontal";
   let total = 0;
   let pageRows = 10;
-  let lastLayout = timeline.getLayout();
+  let lastLayout = timeline.layout;
 
   function laneAt(index: number): { readonly lane: Lane; readonly first: LayoutItem<T> | undefined } | undefined {
-    const layout = timeline.getLayout();
+    const layout = timeline.layout;
     const laid = layout?.lanes[index];
     if (layout === undefined || laid === undefined) return undefined;
     return { lane: laid.lane, first: layout.items.find((placed) => placed.laneId === laid.lane.id) };
@@ -247,7 +247,7 @@ export function mountTaskGrid<T>(container: HTMLElement, timeline: Timeline<T>, 
   }
 
   function render(force = false): void {
-    const layout = timeline.getLayout();
+    const layout = timeline.layout;
     const snapshot = timeline.getSnapshot();
     const viewport = snapshot.viewport;
     if (layout === undefined || viewport === undefined) return;
@@ -376,8 +376,8 @@ export function mountTaskGrid<T>(container: HTMLElement, timeline: Timeline<T>, 
     }),
     // A toggle, a reorder or an edit is announced before the frame that shows
     // it: draw after that frame, whose callback was asked for first.
-    timeline.on("groupToggle", afterFrame),
-    timeline.on("groupCommand", afterFrame),
+    timeline.on("groupToggled", afterFrame),
+    timeline.on("groupMoved", afterFrame),
     timeline.on("command", afterFrame),
   ];
   render(true);

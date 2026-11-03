@@ -24,7 +24,7 @@ import { fill } from "../text.js";
 import type { Phrase } from "../text.js";
 
 export { fill, formatAmount } from "../text.js";
-export type { Phrase } from "../text.js";
+export type { AmountOptions, Phrase } from "../text.js";
 
 /** The core's, the tools' and the element's own words. */
 const OWN_STRINGS = {

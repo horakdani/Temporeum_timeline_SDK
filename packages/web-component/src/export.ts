@@ -1,9 +1,9 @@
 /**
  * `@temporeum/timeline-element/export` — export and print, as a plugin.
  *
- * Register it once and an instance's `exportPNG`, `exportPDF` and `print`
+ * Register it once and an instance's `exportPng`, `exportPdf` and `print`
  * work: the frame on screen as a PNG, and the whole range on paper — as a
- * PDF, or through the browser's own print. `exportSVG` needs no plugin: a
+ * PDF, or through the browser's own print. `exportSvg` needs no plugin: a
  * frame is SVG already.
  *
  *     import { registerPlugin } from "@temporeum/timeline-element";
@@ -42,7 +42,7 @@ export interface TimelinePrintOptions extends PrintOptions {
  * Paper is light unless a theme is configured; the overview strip is a
  * control, not content, and does not print.
  */
-export function printScenes<T>(config: TimelineConfig<T>, state: FrameState<T>, layout: Layout<T>, print: TimelinePrintOptions = {}): SceneElement[] {
+function printScenes<T>(config: TimelineConfig<T>, state: FrameState<T>, layout: Layout<T>, print: TimelinePrintOptions = {}): SceneElement[] {
   const paperConfig: TimelineConfig<T> = { ...config, minimap: false, theme: config.theme === undefined || config.theme === "auto" ? "light" : config.theme };
   // Exact frames (the element's frame state holds no scene space): nothing selected, focused or loading.
   const exact: FrameState<T> = { ...state, selectedIds: [], focusedId: null, loading: [], layout };
@@ -83,13 +83,25 @@ function pdf<T>(config: TimelineConfig<T>, state: FrameState<T>, layout: Layout<
   return scenesToPdf(paper, { ...options, ...(title === undefined ? {} : { title }) });
 }
 
-function print<T>(doc: Document, config: TimelineConfig<T>, state: FrameState<T>, layout: Layout<T>, options: TimelinePrintOptions): void {
+function print<T>(doc: Document, config: TimelineConfig<T>, state: FrameState<T>, layout: Layout<T>, options: TimelinePrintOptions): Promise<void> {
   const scenes = printScenes(config, state, layout, options);
   const remove = mountPrintView(doc, scenes, resolvePaper(options));
   const win = doc.defaultView;
-  if (win === null) return;
-  win.addEventListener("afterprint", remove, { once: true });
-  win.print();
+  if (win === null) {
+    remove();
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    win.addEventListener(
+      "afterprint",
+      () => {
+        remove();
+        resolve();
+      },
+      { once: true },
+    );
+    win.print();
+  });
 }
 
 /** Export and print. Register it with `registerPlugin(exportPlugin)`. */

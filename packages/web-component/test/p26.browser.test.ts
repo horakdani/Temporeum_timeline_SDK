@@ -232,7 +232,7 @@ describe("right to left", () => {
     expect(tree.getAttribute("dir")).toBe("rtl");
     const header = element.querySelector("[data-tl-group]") as HTMLElement;
     expect(element.getBoundingClientRect().right - header.getBoundingClientRect().right).toBeLessThan(2);
-    const pdf = new TextDecoder("latin1").decode(timeline.exportPDF());
+    const pdf = new TextDecoder("latin1").decode(await timeline.exportPdf());
     expect(pdf.startsWith("%PDF-")).toBe(true);
     // Each text turned back about its own x: a mirroring matrix right before it.
     expect(pdf).toMatch(/-1 0 0 1 [\d.]+ 0 cm[^]*?BT/);

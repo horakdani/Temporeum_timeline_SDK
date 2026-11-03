@@ -177,14 +177,7 @@ export type {
 export { createNavigator, DEFAULT_KEY_BINDINGS, resolveKey } from "./keyboard.js";
 export type { KeyAction, KeyBinding, KeySample, NavEntry, Navigator, NavigatorOptions } from "./keyboard.js";
 
-export {
-  DEFAULT_BUDGET,
-  DEFAULT_GROWTH,
-  DEFAULT_MAX_SHIFT,
-  DEFAULT_MAX_STRETCH,
-  DEFAULT_OVERSCAN,
-  planSceneSpace,
-} from "./scene-space.js";
+export { planSceneSpace } from "./scene-space.js";
 export type { SceneSpace, SceneSpacePlanOptions, SceneSpaceView } from "./scene-space.js";
 
 export {
@@ -193,7 +186,6 @@ export {
   defaultLabelNode,
   defaultTickLabel,
   renderTimeline,
-  SHORTEN_DENSITY_LIMIT,
 } from "./render.js";
 export type {
   ClusterRenderContext,
@@ -206,13 +198,8 @@ export type {
 
 export {
   DEFAULT_BREAKPOINT,
-  DENSE_MIN_TARGET,
-  DENSITY_HYSTERESIS,
   fitDensity,
-  HIT_SLOP_COARSE,
-  HIT_SLOP_FINE,
   hitSlopFor,
-  ORIENTATION_HYSTERESIS,
   placePopover,
   resolveDensity,
   resolveDetailSurface,
@@ -299,14 +286,11 @@ export type {
   Orientation,
   OrientationSetting,
   PackMode,
-  PluginContext,
   SelectionChangedPayload,
   TimeInput,
   TimeMs,
   TimelineEventMap,
   TimelineEventName,
-  TimelineOptions,
-  TimelinePlugin,
   Viewport,
   ViewportChangeReason,
   ViewportChangedPayload,

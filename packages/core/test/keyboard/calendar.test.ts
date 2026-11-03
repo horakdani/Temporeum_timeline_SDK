@@ -53,7 +53,7 @@ describe("G-KEYBOARD: the calendar views", () => {
     ];
     for (const [key, modifiers, ltr, rtl] of table) {
       expect(resolveCalendarKey({ key, ...modifiers }), `${key} ltr`).toBe(ltr);
-      expect(resolveCalendarKey({ key, ...modifiers }, true), `${key} rtl`).toBe(rtl);
+      expect(resolveCalendarKey({ key, ...modifiers }, { direction: "rtl" }), `${key} rtl`).toBe(rtl);
     }
   });
 
@@ -69,7 +69,7 @@ describe("G-KEYBOARD: the calendar views", () => {
       // The keyboard's path: down from no focus until the event, then Enter.
       let focused = calendarKeyStep(layout, undefined, "next");
       for (let step = 0; focused !== key && step < layout.order.length; step += 1) focused = calendarKeyStep(layout, focused, "next");
-      const action = resolveCalendarKey({ key: "Enter" }, rtl);
+      const action = resolveCalendarKey({ key: "Enter" }, { direction: rtl ? "rtl" : "ltr" });
       expect(action).toBe("activate");
       expect(calendarKeyStep(layout, focused, "activate")).toBe(focused);
       expect(clicked).toBe(key);
@@ -82,7 +82,7 @@ describe("G-KEYBOARD: the calendar views", () => {
     const geometry = calendarGeometry(layout, { width: 900, height: 700, rtl: true });
     // Monday's first event, then the arrow pointing left: in RTL the next day is to the left.
     const first = calendarKeyStep(layout, undefined, "next");
-    const leftward = resolveCalendarKey({ key: "ArrowLeft" }, true);
+    const leftward = resolveCalendarKey({ key: "ArrowLeft" }, { direction: "rtl" });
     expect(leftward).toBe("nextDay");
     const next = calendarKeyStep(layout, first, leftward ?? "next");
     const a = geometry.rects.get(first ?? "");

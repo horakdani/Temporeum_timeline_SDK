@@ -6,6 +6,7 @@ import type { Item } from "@temporeum/timeline-core";
 import { renderTimelineSvg } from "@temporeum/timeline-element";
 
 import { Timeline, useTimelineState } from "../src/index.js";
+import type { TimelineProps } from "../src/index.js";
 
 /**
  * The adapter on a server: Node, no DOM. Importing it, and rendering it with
@@ -56,5 +57,13 @@ describe("the React adapter in Node", () => {
     const html = renderToString(createElement(Timeline, { items, className: "plan", style: { height: 500, margin: 4 } }));
     expect(html).toContain('class="plan"');
     expect(html).toContain("height:500px;margin:4px");
+  });
+});
+
+describe("props", () => {
+  it("take an explicit undefined, as a conditional prop spells it (exactOptionalPropertyTypes)", () => {
+    const narrow = false as boolean;
+    const props: TimelineProps = { items: [], domain: narrow ? [0, 1] : undefined, height: undefined, editing: narrow ? { enabled: true } : undefined };
+    expect(renderToString(createElement(Timeline, props))).toContain("<svg");
   });
 });

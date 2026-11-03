@@ -44,17 +44,17 @@ describeBothOrientations("range selection", (orientation) => {
   });
 
   it("[claim:keyboard] starts with r at the middle, moves its end with the axis arrows and pages, selects with Enter, lets go with Escape", () => {
-    expect(resolveRangeKey(key("r"), orientation, false)).toBe("start");
-    expect(resolveRangeKey(key("R"), orientation, false)).toBe("start");
-    expect(resolveRangeKey(key("r", { ctrlKey: true }), orientation, false)).toBeUndefined();
-    expect(resolveRangeKey(key(later), orientation, false)).toBeUndefined();
-    expect(resolveRangeKey(key(later), orientation, true)).toBe("later");
-    expect(resolveRangeKey(key(earlier), orientation, true)).toBe("earlier");
-    expect(resolveRangeKey(key("PageDown"), orientation, true)).toBe("pageLater");
-    expect(resolveRangeKey(key("PageUp"), orientation, true)).toBe("pageEarlier");
-    expect(resolveRangeKey(key("Home"), orientation, true)).toBeUndefined();
-    expect(resolveRangeKey(key("Enter"), orientation, true)).toBe("commit");
-    expect(resolveRangeKey(key("Escape"), orientation, true)).toBe("cancel");
+    expect(resolveRangeKey(key("r"), orientation, { picking: false })).toBe("start");
+    expect(resolveRangeKey(key("R"), orientation, { picking: false })).toBe("start");
+    expect(resolveRangeKey(key("r", { ctrlKey: true }), orientation, { picking: false })).toBeUndefined();
+    expect(resolveRangeKey(key(later), orientation, { picking: false })).toBeUndefined();
+    expect(resolveRangeKey(key(later), orientation, { picking: true })).toBe("later");
+    expect(resolveRangeKey(key(earlier), orientation, { picking: true })).toBe("earlier");
+    expect(resolveRangeKey(key("PageDown"), orientation, { picking: true })).toBe("pageLater");
+    expect(resolveRangeKey(key("PageUp"), orientation, { picking: true })).toBe("pageEarlier");
+    expect(resolveRangeKey(key("Home"), orientation, { picking: true })).toBeUndefined();
+    expect(resolveRangeKey(key("Enter"), orientation, { picking: true })).toBe("commit");
+    expect(resolveRangeKey(key("Escape"), orientation, { picking: true })).toBe("cancel");
     const options = { domain: DOMAIN, stepMs: 3 * HOUR, snapMs: HOUR };
     let draft: RangeDraft = rangeKeyStep(undefined, "start", options);
     expect(draft).toEqual({ anchor: T0 + 5 * DAY, head: T0 + 5 * DAY });

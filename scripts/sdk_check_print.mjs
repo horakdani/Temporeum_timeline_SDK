@@ -62,7 +62,7 @@ if (!existsSync(logFile)) {
   if (!(browser.found === browser.labels && browser.agreeing === browser.found)) failures.push(`in the browser's print ${String(browser.agreeing)} / ${String(browser.labels)} labels are exactly on their own page`);
   if (log.leaves?.left !== true) failures.push("the print view stayed in the document after afterprint");
   const pdf = log.pdfExport ?? {};
-  if (!(pdf.sheets === one.pages && pdf.agreeing === pdf.found && pdf.found === one.items)) failures.push(`exportPDF does not match the view (${JSON.stringify(pdf)})`);
+  if (!(pdf.sheets === one.pages && pdf.agreeing === pdf.found && pdf.found === one.items)) failures.push(`exportPdf does not match the view (${JSON.stringify(pdf)})`);
   notes.push(`${String(one.items)} items, ${String(one.pages)} pages (${(one.perPage ?? []).join(" + ")}); the browser's print ${String(browser.sheets)} pages, ${String(browser.agreeing)} labels on their own page`);
 }
 finish("G-PRINT", failures, notes);

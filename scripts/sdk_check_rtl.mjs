@@ -42,8 +42,8 @@ const read = (file) => codeOf(readFileSync(join(element, file), "utf8"));
 const needles = [
   ["config.ts", ['directionOf(config, state) === "rtl" ? mirrorScene(scene) : scene']],
   ["timeline.ts", ["direction: () => direction", "mirrorTextNodes(flattenHtmlText(scene))", 'direction === "rtl" ? box.right - event.clientX']],
-  ["tools.ts", ["function setX(", "MIRRORED_KEYS[event.key]", "box.right - event.clientX"]],
-  ["groups.ts", ["mirrorStyle(", "MIRRORED_KEYS[sample.key]", "box.right - event.clientX"]],
+  ["tools/layer.ts", ["function setX(", "MIRRORED_KEYS[event.key]", "box.right - event.clientX"]],
+  ["groups/layer.ts", ["mirrorStyle(", "MIRRORED_KEYS[sample.key]", "box.right - event.clientX"]],
 ];
 for (const [file, list] of needles) {
   const source = read(file);

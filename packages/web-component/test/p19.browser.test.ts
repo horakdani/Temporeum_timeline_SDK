@@ -72,9 +72,9 @@ describe("the group tree", () => {
 
   it("a click collapses a group: its descendants leave the drawing; a second click brings the same layout back", async () => {
     const { element, timeline } = await mount({ items, groups });
-    const before = JSON.stringify(timeline.getLayout());
+    const before = JSON.stringify(timeline.layout);
     const toggles: unknown[] = [];
-    timeline.on("groupToggle", ({ group, collapsed }) => toggles.push([group.id, collapsed]));
+    timeline.on("groupToggled", ({ group, collapsed }) => toggles.push([group.id, collapsed]));
     await userEvent.click(headers(element)[0] as HTMLElement);
     await nextFrame();
     timeline.flush();
@@ -82,14 +82,14 @@ describe("the group tree", () => {
     expect(options(element)).toEqual(["c"]);
     await userEvent.click(headers(element)[0] as HTMLElement);
     timeline.flush();
-    expect(JSON.stringify(timeline.getLayout())).toBe(before);
+    expect(JSON.stringify(timeline.layout)).toBe(before);
     expect(toggles).toEqual([["team", true], ["team", false]]);
   });
 
   it("the keyboard walks, collapses and reorders; the reorder is a command its inverse undoes", async () => {
     const { element, timeline } = await mount({ items, groups });
     const commands: GroupCommand[] = [];
-    timeline.on("groupCommand", ({ command }) => commands.push(command));
+    timeline.on("groupMoved", ({ command }) => commands.push(command));
     (headers(element)[0] as HTMLElement).focus();
     await userEvent.keyboard("{ArrowDown}");
     expect(document.activeElement?.getAttribute("data-tl-group")).toBe("ann");
@@ -111,7 +111,7 @@ describe("the group tree", () => {
   it("a header dragged past its sibling reorders the groups", async () => {
     const { element, timeline } = await mount({ items, groups });
     const commands: GroupCommand[] = [];
-    timeline.on("groupCommand", ({ command }) => commands.push(command));
+    timeline.on("groupMoved", ({ command }) => commands.push(command));
     const ann = headers(element)[1] as HTMLElement;
     const bob = headers(element)[2] as HTMLElement;
     const from = ann.getBoundingClientRect();
@@ -150,7 +150,7 @@ describe("item kinds", () => {
     expect(options(element).sort()).toEqual(["p", "r", "x"]);
     expect(element.querySelector(".tl-item-dot")).not.toBeNull();
     expect(element.querySelector(".tl-background")).not.toBeNull();
-    expect(timeline.getLayout()?.items.map((placed) => placed.item.id)).not.toContain("bg");
+    expect(timeline.layout?.items.map((placed) => placed.item.id)).not.toContain("bg");
   });
 });
 
@@ -159,10 +159,10 @@ describe("adding and removing", () => {
     const { element, timeline } = await mount({ items, groups, editing: { enabled: true, add: true } });
     const added: Command[] = [];
     timeline.on("command", ({ command }) => added.push(command));
-    const ops = timeline.getLayout()?.lanes.find((lane) => lane.lane.id === "ops");
+    const ops = timeline.layout?.lanes.find((lane) => lane.lane.id === "ops");
     const box = element.getBoundingClientRect();
     const svg = element.querySelector("svg") as SVGSVGElement;
-    const axis = Number(svg.querySelector(".tl-lane")?.getAttribute("y") ?? 0) - (timeline.getLayout()?.lanes[0]?.cross ?? 0);
+    const axis = Number(svg.querySelector(".tl-lane")?.getAttribute("y") ?? 0) - (timeline.layout?.lanes[0]?.cross ?? 0);
     await userEvent.dblClick(svg, { position: { x: 700, y: axis + (ops?.cross ?? 0) + 5 } });
     timeline.flush();
     expect(added.map((command) => command.type)).toEqual(["add"]);
@@ -215,7 +215,7 @@ describe("adding and removing", () => {
     expect(timeline.dropItem({ id: "ext", label: "External", durationMs: DAY })).toBe(true);
     timeline.flush();
     expect(options(element)).toContain("ext");
-    const placed = timeline.getLayout()?.items.find((each) => each.item.id === "ext");
+    const placed = timeline.layout?.items.find((each) => each.item.id === "ext");
     expect(Number(placed?.item.start)).toBe((domain[0] + domain[1]) / 2);
     expect(timeline.dropItem({ id: "ext" })).toBe(false);
   });
@@ -257,7 +257,7 @@ describe("the group tree at its edges", () => {
   it("a vertical header drags across, and the drag reorders", async () => {
     const { element, timeline } = await mount({ items, groups, orientation: "vertical" });
     const commands: GroupCommand[] = [];
-    timeline.on("groupCommand", ({ command }) => commands.push(command));
+    timeline.on("groupMoved", ({ command }) => commands.push(command));
     const ann = headers(element)[1] as HTMLElement;
     const bob = headers(element)[2] as HTMLElement;
     const from = ann.getBoundingClientRect();
@@ -273,8 +273,8 @@ describe("the group tree at its edges", () => {
   it("ignores a secondary button, a cancelled press and a stray move; a cancelled drag puts the header back", async () => {
     const { element, timeline } = await mount({ items, groups });
     const events: unknown[] = [];
-    timeline.on("groupToggle", (event) => events.push(event));
-    timeline.on("groupCommand", (event) => events.push(event));
+    timeline.on("groupToggled", (event) => events.push(event));
+    timeline.on("groupMoved", (event) => events.push(event));
     const team = headers(element)[0] as HTMLElement;
     const box = team.getBoundingClientRect();
     press(team, "pointermove", { clientX: box.left + 5, clientY: box.top + 40 });
@@ -294,7 +294,7 @@ describe("the group tree at its edges", () => {
   it("a key the tree does not know, and a key outside a header, reach no group", async () => {
     const { element, timeline } = await mount({ items, groups });
     const events: unknown[] = [];
-    timeline.on("groupToggle", (event) => events.push(event));
+    timeline.on("groupToggled", (event) => events.push(event));
     const team = headers(element)[0] as HTMLElement;
     team.focus();
     await userEvent.keyboard("q");
@@ -320,7 +320,7 @@ describe("the group tree at its edges", () => {
   it("toggleGroup ignores an unknown group and a state it is already in", async () => {
     const { timeline } = await mount({ items, groups });
     const events: unknown[] = [];
-    timeline.on("groupToggle", (event) => events.push(event));
+    timeline.on("groupToggled", (event) => events.push(event));
     timeline.toggleGroup("nobody");
     timeline.toggleGroup("team", false);
     timeline.toggleGroup("team");
@@ -335,7 +335,7 @@ describe("the group tree at its edges", () => {
   it("a press that travels less than the threshold is still a click", async () => {
     const { element, timeline } = await mount({ items, groups });
     const toggles: unknown[] = [];
-    timeline.on("groupToggle", ({ group, collapsed }) => toggles.push([group.id, collapsed]));
+    timeline.on("groupToggled", ({ group, collapsed }) => toggles.push([group.id, collapsed]));
     const ops = headers(element)[3] as HTMLElement;
     const box = ops.getBoundingClientRect();
     press(ops, "pointerdown", { clientX: box.left + 5, clientY: box.top + 5, button: 0 });
@@ -347,7 +347,7 @@ describe("the group tree at its edges", () => {
   it("a header let go in its own place, and the first group moved earlier, give no command", async () => {
     const { element, timeline } = await mount({ items, groups });
     const commands: GroupCommand[] = [];
-    timeline.on("groupCommand", ({ command }) => commands.push(command));
+    timeline.on("groupMoved", ({ command }) => commands.push(command));
     const ann = headers(element)[1] as HTMLElement;
     const box = ann.getBoundingClientRect();
     press(ann, "pointerdown", { clientX: box.left + 5, clientY: box.top + 2, button: 0 });
@@ -416,8 +416,8 @@ describe("dropping in at its edges", () => {
     const { element, timeline } = await mount({ items, groups, editing: { enabled: true, drop: true } });
     const svg = element.querySelector("svg") as SVGSVGElement;
     const box = element.getBoundingClientRect();
-    const ops = timeline.getLayout()?.lanes.find((lane) => lane.lane.id === "ops");
-    const axis = Number(svg.querySelector(".tl-lane")?.getAttribute("y") ?? 0) - (timeline.getLayout()?.lanes[0]?.cross ?? 0);
+    const ops = timeline.layout?.lanes.find((lane) => lane.lane.id === "ops");
+    const axis = Number(svg.querySelector(".tl-lane")?.getAttribute("y") ?? 0) - (timeline.layout?.lanes[0]?.cross ?? 0);
     const at = { x: box.left + 450, y: box.top + axis + (ops?.cross ?? 0) + 5 };
     expect(drag(svg, "dragover", undefined, at).defaultPrevented).toBe(false);
     const over = drag(svg, "dragover", JSON.stringify({ id: "ext" }), at);
@@ -425,7 +425,7 @@ describe("dropping in at its edges", () => {
     expect(drag(svg, "drop", "", at).defaultPrevented).toBe(false);
     expect(drag(svg, "drop", JSON.stringify({ id: "ext", label: "External", durationMs: DAY }), at).defaultPrevented).toBe(true);
     timeline.flush();
-    const placed = timeline.getLayout()?.items.find((each) => each.item.id === "ext");
+    const placed = timeline.layout?.items.find((each) => each.item.id === "ext");
     expect(placed?.laneId).toBe("ops");
   });
 
@@ -450,7 +450,7 @@ describe("dropping in at its edges", () => {
     expect(options(element).sort()).toEqual(["a", "b", "c"]);
     await userEvent.keyboard("n");
     timeline.flush();
-    const added = timeline.getLayout()?.items.find((each) => each.item.id.startsWith("item-"));
+    const added = timeline.layout?.items.find((each) => each.item.id.startsWith("item-"));
     expect(added?.laneId).toBe("ann");
   });
 });

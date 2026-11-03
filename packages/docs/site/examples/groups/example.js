@@ -30,9 +30,9 @@ const timeline = createTimeline(document.querySelector("#timeline"), {
 });
 
 // Collapsing is view state; a reorder is a command with an inverse.
-timeline.on("groupToggle", ({ group, collapsed }) => {
+timeline.on("groupToggled", ({ group, collapsed }) => {
   log.textContent = `${group.label} ${collapsed ? "collapsed" : "expanded"}`;
 });
-timeline.on("groupCommand", ({ command }) => {
+timeline.on("groupMoved", ({ command }) => {
   log.textContent = `Moved ${command.after[0].id} — undo with timeline.applyCommand(command.inverse)`;
 });

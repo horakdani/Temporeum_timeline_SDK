@@ -50,7 +50,8 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
 
 import { sourceHash } from "../packages/core/scripts/fingerprint.mjs";
-import { SHORTEN_DENSITY_LIMIT } from "../packages/core/dist/index.mjs";
+// The limit is the renderer's own, not on the public entry: read from its source.
+const SHORTEN_DENSITY_LIMIT = Number(/export const SHORTEN_DENSITY_LIMIT = ([\d_]+);/.exec(readFileSync(new URL("../packages/core/src/render.ts", import.meta.url), "utf8"))?.[1]?.replaceAll("_", "") ?? NaN);
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const docsDir = join(repoRoot, "packages", "docs");

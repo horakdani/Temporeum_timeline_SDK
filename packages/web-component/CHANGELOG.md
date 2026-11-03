@@ -12,10 +12,10 @@ The first release, on 1.0.0 of `@temporeum/timeline-core`. From here on the pack
   - live data: `addItems`, `updateItems`, `removeItems`, `changeItems`;
   - commands: `applyCommand(command)`, undone with `command.inverse`;
   - focus and scroll: `focusItem`, `scrollLanes`, `revealLane`;
-  - `exportSVG()`.
+  - `exportSvg()`.
   - The instance inherits from a frozen `Timeline` prototype, so a framework's reactive proxy does not wrap it.
 - **Events:** every event the instance emits is listed once in `TIMELINE_EVENTS`; the element and the framework adapters forward these.
-- **`<temporeum-timeline>`**: attributes, properties, a JSON child for configuration, kebab-case DOM events and an open shadow root. `/define` registers it.
+- **`<temporeum-timeline>`**: attributes (the accessible name is `aria-label`), properties, a JSON child for configuration, kebab-case DOM events (the instance's `command` is `timeline-command`, clear of the platform's `command` event) and an open shadow root. `/define` registers it.
 - **Server rendering:** `renderTimelineHtml` and `renderTimelineSvg`, with a declarative shadow root, taken over on the client without drawing again.
 - **The base configuration:**
   - items and lanes, `theme`, `hooks`;
@@ -32,7 +32,7 @@ A plain timeline downloads only what it uses. The rest is a plugin on an entry p
 
 - **`/gantt`** — `ganttPlugin`: the `gantt` option draws dependency arrows, progress, baselines and milestones, and `[` and `]` move the focus to a predecessor and a successor. `mountTaskGrid` is the table beside the chart: a `role="grid"` that keeps only the rows in view in the document.
 - **`/resources`** — `resourcesPlugin`: the `resources` and `resourceOptions` options, with load lanes, overload bands and overbooked assignments. `mountBacklog` holds the unscheduled tasks, placed by a drag or with `Enter`.
-- **`/export`** — `exportPlugin`: `exportPNG`, `exportPDF` (the whole range, paginated) and `print`.
+- **`/export`** — `exportPlugin`: `exportPng`, `exportPdf` (the whole range, paginated) and `print`.
 - **`/tools`** — `toolsPlugin`: `hiddenDates`, `timeBars`, `rolling`, `zoomPresets`, `minimap`, `rangeSelect`, `laneHeaders`, `tooltip`, and the `timeBarMoved` and `rangeSelected` events.
 - **`/groups`** — `groupsPlugin`: nested groups as a `role="tree"` beside the drawing, collapsed and reordered by pointer and by key.
 - **`/items`** — `itemsPlugin`: `box`, `point` and `background` items, `template` (sanitised HTML), and `editing.add`, `editing.remove` and `editing.drop`.
@@ -43,7 +43,7 @@ A plain timeline downloads only what it uses. The rest is a plugin on an entry p
 
 - **`<temporeum-timeline>` styled from the page.** The tokens a page sets on the element reach the drawing (they are declared on `:host` in the shadow root), and every node of the drawing, the group tree and the time tools carries its classes as `part`s: `temporeum-timeline::part(item-selected)`, `::part(urgent)` for an item's `className`. A server-rendered element prints both; an export is drawn with the theme's own stylesheet.
 - **`metrics`** (`SizeOverrides`, `MetricsSetting`): a row's height, the gaps, the type sizes, the corners and the font stack over the density's, as configuration — the layout packs and measures with them, and `density: "auto"` decides with them. An object, or a function of the level's own sizes. A size nothing can be drawn at, or a font stack that would end the stylesheet's rule, is a `RangeError` where it is configured. `timeline.metrics` says what the last frame was drawn with.
-- **`slots`**: an empty box over each item (or those a function picks) for a framework to render into, with the `/items` plugin. `timeline.slots()` and the `slotsChanged` event give each drawn item a host of its own — the same element while the item is drawn, through pans, zooms and live data — announced in the frame that drew it. `ItemSlot`, `SlotsChangedPayload`.
+- **`slots`**: an empty box over each item (or those a function picks) for a framework to render into, with the `/items` plugin. `timeline.slots` and the `slotsChanged` event give each drawn item a host of its own — the same element while the item is drawn, through pans, zooms and live data — announced in the frame that drew it. `ItemSlot`, `SlotsChangedPayload`.
 
 ### Stories (`@temporeum/timeline-element/story`)
 

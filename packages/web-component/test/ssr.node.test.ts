@@ -4,19 +4,16 @@ import { renderTimeline, renderToSvgString } from "@temporeum/timeline-core";
 import type { Item } from "@temporeum/timeline-core";
 
 import * as element from "../src/index.js";
+import { frameOptions, initialDomain, initialSpace, resolveView } from "../src/config.js";
+import { resolvedServerFrame } from "../src/ssr.js";
+import { configFromAttributes, eventNameOf } from "../src/element.js";
 import {
-  configFromAttributes,
   DEFAULT_HEIGHT,
   DEFAULT_SERVER_WIDTH,
   defineTimelineElement,
-  eventNameOf,
-  frameOptions,
-  initialDomain,
-  initialSpace,
   OBSERVED_ATTRIBUTES,
   renderTimelineHtml,
   renderTimelineSvg,
-  resolveView,
   serializeConfig,
   TemporeumTimelineElement,
 } from "../src/index.js";
@@ -60,7 +57,9 @@ describe("importing in Node", () => {
 
 describe("renderTimelineSvg", () => {
   it("draws the frame the renderer draws, at the server width", () => {
-    const frame = renderTimelineSvg({ items, lanes, locale: "hu", timeZone: "UTC" });
+    const frame = resolvedServerFrame({ items, lanes, locale: "hu", timeZone: "UTC" });
+    expect(frame.width).toBe(DEFAULT_SERVER_WIDTH);
+    expect(frame.height).toBe(DEFAULT_HEIGHT);
     expect(frame.view.width).toBe(DEFAULT_SERVER_WIDTH);
     expect(frame.view.height).toBe(DEFAULT_HEIGHT);
     expect(frame.svg.startsWith("<svg")).toBe(true);
@@ -87,15 +86,15 @@ describe("renderTimelineSvg", () => {
   });
 
   it("honours width, height, orientation and selection", () => {
-    const frame = renderTimelineSvg({ items, height: 500, orientation: "vertical", selectedIds: ["a"] }, { width: 360 });
+    const frame = resolvedServerFrame({ items, height: 500, orientation: "vertical", selectedIds: ["a"] }, { width: 360 });
     expect(frame.view).toMatchObject({ width: 360, height: 500, orientation: "vertical", mainSize: 500, crossSize: 360 });
     expect(frame.svg).toContain('data-tl-orientation="vertical"');
     expect(frame.svg).toContain("tl-item--selected");
   });
 
   it("resolves `auto` from the width it draws at", () => {
-    expect(renderTimelineSvg({ items, orientation: "auto" }, { width: 360 }).view.orientation).toBe("vertical");
-    expect(renderTimelineSvg({ items, orientation: "auto" }, { width: 1200 }).view.orientation).toBe("horizontal");
+    expect(renderTimelineSvg({ items, orientation: "auto" }, { width: 360 }).orientation).toBe("vertical");
+    expect(renderTimelineSvg({ items, orientation: "auto" }, { width: 1200 }).orientation).toBe("horizontal");
   });
 
   it("draws nothing it would have to fetch", () => {
@@ -203,7 +202,7 @@ describe("configFromAttributes", () => {
           theme: "dark",
           locale: "hu",
           "time-zone": "Europe/Budapest",
-          label: "Project",
+          "aria-label": "Project",
           start: "2026-01-01T00:00:00Z",
           end: String(T0 + 30 * DAY),
           height: "320",
@@ -248,6 +247,10 @@ describe("eventNameOf", () => {
   it("is the kebab-case of the instance event", () => {
     expect(eventNameOf("itemMoved")).toBe("item-moved");
     expect(eventNameOf("selectionChanged")).toBe("selection-changed");
-    expect(eventNameOf("command")).toBe("command");
+  });
+
+  it("dispatches the instance's command as timeline-command: command is the platform's Invoker Commands event", () => {
+    expect(eventNameOf("command")).toBe("timeline-command");
+    expect(eventNameOf("timeBarMoved")).toBe("time-bar-moved");
   });
 });

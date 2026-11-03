@@ -14,6 +14,7 @@ import { effect, signal } from "@angular/core";
 import type { Signal } from "@angular/core";
 import type { Timeline as TimelineInstance, TimelineSnapshot } from "@temporeum/timeline-element";
 
+/** A read-only signal of the part of the instance's state `selector` picks, following the instance signal; call it in an injection context. */
 export function timelineState<T, S>(
   timeline: Signal<TimelineInstance<T> | null | undefined>,
   selector: (snapshot: TimelineSnapshot) => S,

@@ -40,8 +40,8 @@ What `getSnapshot()` returns: frozen, a new object only when something in it cha
 - `@temporeum/timeline-element/gantt` — `ganttPlugin`; the task table, `mountTaskGrid`.
 - `@temporeum/timeline-element/resources` — `resourcesPlugin`; the unscheduled tasks, `mountBacklog`.
 - `@temporeum/timeline-element/export` — `exportPlugin`.
-- `@temporeum/timeline-element/tools` — `toolsPlugin`; `mountToolsLayer` and the types `ToolsHost`, `ToolsLayer`, `ToolsWord`.
-- `@temporeum/timeline-element/groups` — `groupsPlugin`; `groupHeaderCss`, `groupHeaderMarkup`, `groupLayerAttrs`, `headerPlacements`, `mirrorStyle` and the type `HeaderPlacement`.
+- `@temporeum/timeline-element/tools` — `toolsPlugin`.
+- `@temporeum/timeline-element/groups` — `groupsPlugin`.
 - `@temporeum/timeline-element/items` — `itemsPlugin`.
 - `@temporeum/timeline-element/intl` — `intlPlugin`.
 

@@ -149,7 +149,7 @@ describe("P27: the week view", () => {
 });
 
 describe("P27: the week view, every option and path", () => {
-  it("takes the rest of the options: items beside the events, the hours, a minimum length, theme, density, label, a now line, no toolbar, the week's first day", () => {
+  it("takes the rest of the options: items beside the events, the hours, a minimum length, theme, density, ariaLabel, a now line, no toolbar, the week's first day", () => {
     const { element, view, svg } = mount({
       items: [{ id: "solo", label: "Solo", start: MONDAY + 13 * HOUR, end: MONDAY + 13 * HOUR + 5 * 60_000 }],
       dayStartHour: 8,
@@ -157,7 +157,7 @@ describe("P27: the week view, every option and path", () => {
       minDurationMs: 30 * 60_000,
       theme: "dark",
       density: "compact",
-      label: "Team week",
+      ariaLabel: "Team week",
       now: MONDAY + 10 * HOUR,
       toolbar: false,
     });

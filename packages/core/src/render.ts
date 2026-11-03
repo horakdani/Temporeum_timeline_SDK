@@ -2289,6 +2289,12 @@ function axisContextNodes<T>(
   ];
 }
 
+/**
+ * Draw one frame: lay the items out in their lanes, place the ticks and the
+ * labels, cluster what does not fit, and return the scene with the layout it
+ * was drawn from. Pure — no DOM, no clock: the same options give the same
+ * scene, which is what a server renders and a client hydrates.
+ */
 export function renderTimeline<T = unknown>(options: RenderOptions<T>): RenderResult<T> {
   const orientation: Orientation = options.orientation ?? "horizontal";
   const density: Density = options.density ?? "comfortable";

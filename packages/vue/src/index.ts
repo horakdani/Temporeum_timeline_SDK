@@ -127,7 +127,7 @@ export const Timeline = defineComponent({
       // Vue renders the teleports in its own flush, a microtask after the
       // frame that drew the boxes: before the browser paints it.
       stops.push(instance.on("slotsChanged", ({ slots: next }) => (drawn.value = next)));
-      drawn.value = instance.slots();
+      drawn.value = instance.slots;
       timeline.value = instance;
       emit("ready", instance);
     });

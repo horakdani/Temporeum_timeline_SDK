@@ -54,8 +54,8 @@ import type { defaultTimeBarStep, HiddenDateRange, HiddenDates, MinimapGeometry,
 
 import type { FrameState, TimelineConfig } from "./config.js";
 import type { TimelinePrintOptions } from "./export.js";
-import type { GroupLayer, GroupLayerHost, groupHeaderMarkup, groupLayerAttrs, headerPlacements } from "./groups.js";
-import type { ToolsHost, ToolsLayer } from "./tools.js";
+import type { GroupLayer, GroupLayerHost, groupHeaderMarkup, groupLayerAttrs, headerPlacements } from "./groups/layer.js";
+import type { ToolsHost, ToolsLayer } from "./tools/layer.js";
 
 /** The Gantt chart's part of a frame. See `@temporeum/timeline-element/gantt`. */
 export interface GanttFeature {
@@ -90,7 +90,7 @@ export interface ExportFeature {
   /** The whole range as a PDF, one page at least. */
   pdf<T>(config: TimelineConfig<T>, state: FrameState<T>, layout: Layout<T>, options: TimelinePrintOptions): Uint8Array;
   /** The whole range through the browser's print dialog. */
-  print<T>(doc: Document, config: TimelineConfig<T>, state: FrameState<T>, layout: Layout<T>, options: TimelinePrintOptions): void;
+  print<T>(doc: Document, config: TimelineConfig<T>, state: FrameState<T>, layout: Layout<T>, options: TimelinePrintOptions): Promise<void>;
 }
 
 /** The time tools. See `@temporeum/timeline-element/tools`. */

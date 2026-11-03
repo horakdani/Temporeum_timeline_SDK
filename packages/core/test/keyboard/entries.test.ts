@@ -136,9 +136,9 @@ describeBothOrientations("P19 keyboard parity", (orientation) => {
     const { result } = frame(orientation, ["b"]);
     const handle = findRemove(result.scene);
     expect(handle).toBe("b");
-    const tapped = handle === undefined ? undefined : removeCommand(ITEMS, removeTargets(handle, ["b"], false));
+    const tapped = handle === undefined ? undefined : removeCommand(ITEMS, removeTargets(handle, ["b"], { multiSelect: false }));
     expect(resolveItemKey(key("Delete"))).toBe("remove");
-    const pressed = removeCommand(ITEMS, removeTargets("b", ["b"], false));
+    const pressed = removeCommand(ITEMS, removeTargets("b", ["b"], { multiSelect: false }));
     record("item.remove", orientation, tapped?.after, pressed?.after);
   });
 

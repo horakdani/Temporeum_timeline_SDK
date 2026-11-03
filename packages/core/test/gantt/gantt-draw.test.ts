@@ -5,7 +5,8 @@
 
 import { expect, it } from "vitest";
 
-import { describeBaseline, ganttHooks, milestoneHalf, progressOf, routeDependencies, taskBox } from "../../src/gantt/index.js";
+import { milestoneHalf } from "../../src/gantt/box.js";
+import { describeBaseline, ganttHooks, progressOf, routeDependencies, taskBox } from "../../src/gantt/index.js";
 import { layoutItems } from "../../src/layout.js";
 import { renderTimeline } from "../../src/render.js";
 import { createTimeScale } from "../../src/scale.js";

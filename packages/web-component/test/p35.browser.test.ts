@@ -130,7 +130,7 @@ describe("styling the custom element from the page", () => {
 
   it("exports a file whose stylesheet is not the shadow root's", async () => {
     const el = await place();
-    const svg = el.timeline?.exportSVG() ?? "";
+    const svg = el.timeline?.exportSvg() ?? "";
     expect(svg).not.toContain(":host");
     expect(svg).toMatch(/\.tl(\[[^\]]*\])?\{--tl-surface/);
   });
@@ -242,7 +242,7 @@ describe("metrics", () => {
 describe("slots", () => {
   it("leaves each drawn item an empty box, named by the item, instead of its label", async () => {
     const { timeline, element } = await plain({ slots: true });
-    const slots = timeline.slots();
+    const slots = timeline.slots;
     expect([...slots.keys()].sort()).toEqual(["a", "b", "c"]);
     const slot = slots.get("a") as ItemSlot;
     expect(slot.item).toBe(items[0]);
@@ -258,7 +258,7 @@ describe("slots", () => {
 
   it("keeps what the host rendered through every redraw — a zoom's new tiles too", async () => {
     const { timeline } = await plain({ slots: true });
-    const box = timeline.slots().get("b")?.element as HTMLElement;
+    const box = timeline.slots.get("b")?.element as HTMLElement;
     const content = document.createElement("strong");
     content.textContent = "Build — 60%";
     box.append(content);
@@ -267,7 +267,7 @@ describe("slots", () => {
     timeline.flush();
     await new Promise((resolve) => requestAnimationFrame(resolve));
     timeline.flush();
-    expect(timeline.slots().get("b")?.element).toBe(box);
+    expect(timeline.slots.get("b")?.element).toBe(box);
     expect(box.firstElementChild).toBe(content);
   });
 
@@ -287,7 +287,7 @@ describe("slots", () => {
     const last = seen.at(-1) as SlotsChangedPayload;
     expect([...last.slots.keys()]).toEqual(["c"]);
     expect(inFrame).toBeGreaterThan(0);
-    expect(timeline.slots()).toBe(last.slots);
+    expect(timeline.slots).toBe(last.slots);
     // A redraw with the same boxes says nothing.
     const count = seen.length;
     timeline.select(["c"]);
@@ -298,8 +298,8 @@ describe("slots", () => {
     const box = last.slots.get("c")?.element;
     timeline.updateItems([{ id: "c", label: "Ship it" }]);
     timeline.flush();
-    await vi.waitFor(() => expect(timeline.slots().get("c")?.item.label).toBe("Ship it"));
-    expect(timeline.slots().get("c")?.element).toBe(box);
+    await vi.waitFor(() => expect(timeline.slots.get("c")?.item.label).toBe("Ship it"));
+    expect(timeline.slots.get("c")?.element).toBe(box);
   });
 
   it("moves each host into the box drawn for its item, when a pooled box goes to another", async () => {
@@ -310,7 +310,7 @@ describe("slots", () => {
       timeline.flush();
       await new Promise((resolve) => requestAnimationFrame(resolve));
       timeline.flush();
-      for (const [id, slot] of timeline.slots()) {
+      for (const [id, slot] of timeline.slots) {
         expect(slot.element.parentElement?.getAttribute("data-tl-slot")).toBe(id);
         expect(slot.item.id).toBe(id);
         expect(slot.element.isConnected).toBe(true);
@@ -325,20 +325,20 @@ describe("slots", () => {
 
   it("are the items a function picks, and none once turned off", async () => {
     const { timeline, element } = await plain({ slots: (item: Item) => item.laneId === "l1" });
-    expect([...timeline.slots().keys()].sort()).toEqual(["a", "b"]);
+    expect([...timeline.slots.keys()].sort()).toEqual(["a", "b"]);
     expect(element.querySelector('.tl-label:not(.tl-slot)')?.textContent).toContain("Ship");
     const seen: SlotsChangedPayload[] = [];
     timeline.on("slotsChanged", (payload) => seen.push(payload));
     timeline.update({ slots: false });
     timeline.flush();
-    await vi.waitFor(() => expect(timeline.slots().size).toBe(0));
+    await vi.waitFor(() => expect(timeline.slots.size).toBe(0));
     expect(seen.at(-1)?.slots.size).toBe(0);
     expect(element.querySelector("[data-tl-slot]")).toBeNull();
   });
 
   it("win over a template", async () => {
     const { timeline, element } = await plain({ template: (item: Item) => `<b>${item.label ?? ""}</b>`, slots: true });
-    expect(timeline.slots().size).toBe(3);
+    expect(timeline.slots.size).toBe(3);
     expect(element.querySelector(".tl-template")).toBeNull();
   });
 });

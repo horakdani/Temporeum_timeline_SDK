@@ -11,8 +11,9 @@ import type { Phrase } from "../text.js";
 export { DEFAULT_STRINGS, resolveStrings, sayIn } from "../shared/dictionary.js";
 export type { Strings } from "../shared/dictionary.js";
 
-/** Where a pseudo-translated phrase begins and ends. */
+/** Where a pseudo-translated phrase begins. */
 export const PSEUDO_OPEN = "⟦";
+/** Where a pseudo-translated phrase ends. */
 export const PSEUDO_CLOSE = "⟧";
 
 function pseudo(template: string): string {

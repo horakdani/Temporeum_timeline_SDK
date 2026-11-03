@@ -255,7 +255,7 @@ describeBothOrientations("hidden dates — the frame", (orientation) => {
       const focus = 20 + random() * (mainSize - 40);
       const factor = random() < 0.5 ? 1.25 + random() * 3 : 1 / (1.25 + random() * 3);
       const before = createTimeScale(domain, mainSize, hidden).toTime(focus);
-      const zoomed = zoomDomainAt(domain, mainSize, focus, factor, hidden);
+      const zoomed = zoomDomainAt(domain, mainSize, focus, factor, { warp: hidden });
       const after = createTimeScale(zoomed, mainSize, hidden).toTime(focus);
       // On a seam two instants share the pixel; off one, the instant is the instant.
       if (hidden.isHidden(before)) expect(hidden.toShown(after)).toBeCloseTo(hidden.toShown(before), 0);

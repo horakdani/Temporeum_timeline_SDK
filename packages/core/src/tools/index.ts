@@ -12,9 +12,9 @@
  * of this lives here.
  */
 
-export { createHiddenDates, HIDDEN_BUDGET } from "./hidden.js";
+export { createHiddenDates } from "./hidden.js";
 export type { HiddenDateRange, HiddenDates, HiddenDatesOptions, HiddenRepeat, HiddenStretch } from "./hidden.js";
-export { PAGE_STEPS, resolveAxisKey, snapTime, stepsOf } from "./keys.js";
+export { resolveAxisKey } from "./keys.js";
 export type { AxisKeyAction } from "./keys.js";
 export { defaultTimeBarStep, dragTimeBarTime, moveTimeBar, timeBarKeyTime, timeBarPlacements } from "./time-bars.js";
 export type { TimeBar, TimeBarMovedPayload, TimeBarMoveOptions, TimeBarPlacement } from "./time-bars.js";

@@ -174,7 +174,7 @@ export interface MoveOptions {
  * duration is not a multiple of the grid, which is not what dragging it
  * means.
  */
-export function movePatch<T>(hit: EditHit<T>, options: MoveOptions): ItemPatch {
+export function movePatch<T>(hit: EditHit<T>, options: MoveOptions): ItemPatch<T> {
   const start = rawStart(hit.item);
   const end = rawEnd(hit.item);
   const snapped = snapTime(start + options.deltaMs, options.snapMs, options.snapOrigin);
@@ -214,7 +214,7 @@ export interface ResizeOptions {
  * flipping. A flip is a different edit — the host can express it, the gesture
  * will not do it by accident.
  */
-export function resizePatch<T>(hit: EditHit<T>, options: ResizeOptions): ItemPatch | undefined {
+export function resizePatch<T>(hit: EditHit<T>, options: ResizeOptions): ItemPatch<T> | undefined {
   const start = rawStart(hit.item);
   const end = rawEnd(hit.item);
   const minDuration = options.minDurationMs ?? (options.snapMs !== undefined && options.snapMs > 0 ? options.snapMs : 1);
@@ -247,7 +247,7 @@ export function resizePatch<T>(hit: EditHit<T>, options: ResizeOptions): ItemPat
  * exact rather than approximately right: an inverse that also restored a field
  * nobody changed would overwrite whatever the host did to it in between.
  */
-export function invertPatch<T>(hit: EditHit<T>, patch: ItemPatch): ItemPatch {
+export function invertPatch<T>(hit: EditHit<T>, patch: ItemPatch<T>): ItemPatch<T> {
   const restored: {
     id: string;
     start?: TimeMs;
@@ -267,25 +267,25 @@ export function invertPatch<T>(hit: EditHit<T>, patch: ItemPatch): ItemPatch {
   return restored;
 }
 
-interface CommandFields {
+interface CommandFields<T> {
   type: string;
   label?: string;
-  before: readonly ItemPatch[];
-  after: readonly ItemPatch[];
+  before: readonly ItemPatch<T>[];
+  after: readonly ItemPatch<T>[];
 }
 
 function keysOf(patch: ItemPatch): string {
   return Object.keys(patch).sort().join(",");
 }
 
-function build(
+function build<T>(
   type: string,
   label: string | undefined,
-  before: readonly ItemPatch[],
-  after: readonly ItemPatch[],
-  twin: Command | undefined,
-): Command {
-  const command: CommandFields = { type, before, after };
+  before: readonly ItemPatch<T>[],
+  after: readonly ItemPatch<T>[],
+  twin: Command<T> | undefined,
+): Command<T> {
+  const command: CommandFields<T> = { type, before, after };
   if (label !== undefined) {
     command.label = label;
   }
@@ -295,12 +295,12 @@ function build(
     // recursing forever: the undo stack a host persists is plain JSON.
     enumerable: false,
     configurable: false,
-    get(): Command {
-      inverse ??= build(type, label, after, before, command as unknown as Command);
+    get(): Command<T> {
+      inverse ??= build(type, label, after, before, command as unknown as Command<T>);
       return inverse;
     },
   });
-  return command as unknown as Command;
+  return command as unknown as Command<T>;
 }
 
 /**
@@ -312,12 +312,12 @@ function build(
  * quietly restore the wrong thing, and the cheapest place to find that out is
  * here.
  */
-export function createCommand(
+export function createCommand<T = unknown>(
   type: string,
-  before: readonly ItemPatch[],
-  after: readonly ItemPatch[],
+  before: readonly ItemPatch<T>[],
+  after: readonly ItemPatch<T>[],
   label?: string,
-): Command {
+): Command<T> {
   if (before.length !== after.length) {
     throw new RangeError(
       `A command needs one before-patch per after-patch, got ${String(before.length)} and ${String(after.length)}`,
@@ -352,9 +352,9 @@ export function createCommand(
 export function editCommand<T>(
   type: string,
   hits: readonly EditHit<T>[],
-  after: readonly ItemPatch[],
+  after: readonly ItemPatch<T>[],
   label?: string,
-): Command {
+): Command<T> {
   const before = after.map((patch, index) => {
     const hit = hits[index];
     if (hit === undefined) {

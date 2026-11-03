@@ -114,16 +114,16 @@
             if (event.key === "Enter") window.tl.dropped = timeline.dropItem(JSON.parse(source.dataset.task));
           });
         }
-        const placed = () => timeline.getLayout()?.items ?? [];
+        const placed = () => timeline.layout?.items ?? [];
         window.tl = {
           get ready() {
-            return (timeline.getLayout()?.lanes.length ?? 0) > 0;
+            return (timeline.layout?.lanes.length ?? 0) > 0;
           },
           domain: () => timeline.getSnapshot().domain,
           width: () => element.clientWidth,
           /** A lane's band across, in the element's own pixels. */
           laneBox: (id) => {
-            const lane = timeline.getLayout()?.lanes.find((each) => each.lane.id === id);
+            const lane = timeline.layout?.lanes.find((each) => each.lane.id === id);
             const snapshot = timeline.getSnapshot();
             const axis = densityMetrics(snapshot.density, snapshot.orientation).axisSize;
             return lane === undefined ? undefined : { cross: lane.cross + axis, crossSize: lane.crossSize };

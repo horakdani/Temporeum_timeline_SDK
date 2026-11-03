@@ -4,7 +4,8 @@ import { commands, userEvent } from "vitest/browser";
 import type { Item, Lane, Orientation } from "@temporeum/timeline-core";
 import type { Dependency } from "@temporeum/timeline-core/gantt";
 
-import { createTimeline, frameScene, registerPlugin } from "../src/index.js";
+import { frameScene } from "../src/config.js";
+import { createTimeline, registerPlugin } from "../src/index.js";
 import { defaultTaskColumns, ganttPlugin, mountTaskGrid, taskGridCss } from "../src/gantt.js";
 import { itemsPlugin } from "../src/items.js";
 import type { TemporeumTimelineElement, Timeline, TimelineConfig } from "../src/index.js";
@@ -65,7 +66,7 @@ describe("the arrows", () => {
     timeline.flush();
     expect(arrowIds(element)).toHaveLength(dependencies.length);
     // The picture a host exports has the arrows too.
-    expect(timeline.exportSVG()).toContain("tl-layer--deps");
+    expect(timeline.exportSvg()).toContain("tl-layer--deps");
     timeline.destroy();
   });
 

@@ -8,11 +8,20 @@ import {
   renderTimeline,
 } from "../src/index.js";
 import type { Cluster, ClusterMarker, Clustering, ItemLoader, LoadingRange } from "../src/index.js";
+import { createCommand } from "../src/editing.js";
 import { Emitter } from "../src/emitter.js";
+// @ts-expect-error — the core's dead `new Timeline({ container })` contract is gone.
+import type { TimelineOptions as Gone } from "../src/index.js";
+// @ts-expect-error — and so is its plugin shape, which clashed with the element's `TimelinePlugin`.
+import type { TimelinePlugin as AlsoGone } from "../src/index.js";
+// @ts-expect-error — and its context.
+import type { PluginContext as Context } from "../src/index.js";
+import type { RenderOptions } from "../src/render.js";
 import type {
+  Command,
   Item,
+  ItemPatch,
   TimelineEventMap,
-  TimelineOptions,
   Viewport,
 } from "../src/types.js";
 
@@ -56,22 +65,29 @@ describe("public API types", () => {
     interface Task {
       readonly assignee: string;
     }
-    const options: TimelineOptions<Task> = {
-      container: "#timeline",
+    const options: RenderOptions<Task> = {
       items: [{ id: "a", start: 0, data: { assignee: "dh" } }],
+      domain: [0, 1],
+      width: 800,
+      height: 200,
     };
-    expectTypeOf(options.items).toExtend<readonly Item<Task>[] | unknown>();
+    expectTypeOf(options.items).toEqualTypeOf<readonly Item<Task>[]>();
   });
 
-  it("requires a container and items, and nothing else", () => {
-    // @ts-expect-error — items is not optional.
-    const incomplete: TimelineOptions = { container: "#timeline" };
+  it("requires items, a domain and a size, and nothing else", () => {
+    // @ts-expect-error — the domain and the size are not optional.
+    const incomplete: RenderOptions = { items: [] };
     void incomplete;
 
-    const minimal: TimelineOptions = { container: "#timeline", items: [] };
-    expectTypeOf(minimal.orientation).toEqualTypeOf<
-      "horizontal" | "vertical" | "auto" | undefined
-    >();
+    const minimal: RenderOptions = { items: [], domain: [0, 1], width: 800, height: 200 };
+    expectTypeOf(minimal.orientation).toEqualTypeOf<"horizontal" | "vertical" | undefined>();
+  });
+
+  it("has no instance or plugin contract of its own: those are the element's", async () => {
+    const core = await import("../src/index.js");
+    // Used, so that the only error each import above can have is the missing export.
+    expectTypeOf<[Gone, AlsoGone, Context]>().toBeArray();
+    expectTypeOf(core).not.toHaveProperty("Timeline");
   });
 
   it("carries the host's payload type through a windowed loader", () => {
@@ -107,5 +123,26 @@ describe("public API types", () => {
     expectTypeOf(clusterZoom).returns.toEqualTypeOf<{ readonly factor: number; readonly anchor: number }>();
     // @ts-expect-error — a count is not a setting.
     renderTimeline({ items, domain: [0, 1000], width: 400, height: 200, cluster: 3 });
+  });
+
+  it("carries the host's payload type through patches and commands", () => {
+    interface Task {
+      readonly assignee: string;
+    }
+    const command = createCommand<Task>("add", [{ id: "a", item: null }], [{ id: "a", item: { id: "a", start: 0, data: { assignee: "dh" } } }]);
+    expectTypeOf(command).toEqualTypeOf<Command<Task>>();
+    expectTypeOf(command.inverse).toEqualTypeOf<Command<Task>>();
+    expectTypeOf(command.after).toEqualTypeOf<readonly ItemPatch<Task>[]>();
+    expectTypeOf(command.after[0]?.item?.data).toEqualTypeOf<Task | undefined>();
+    // A typed command is still a command: what takes any command takes it.
+    expectTypeOf(command).toExtend<Command>();
+    const emitter = new Emitter<TimelineEventMap<Task>>();
+    emitter.on("command", ({ command: each }) => {
+      expectTypeOf(each).toEqualTypeOf<Command<Task>>();
+    });
+    emitter.on("itemMoved", ({ to, command: each }) => {
+      expectTypeOf(to.item).toEqualTypeOf<Item<Task> | null | undefined>();
+      expectTypeOf(each.inverse.before[0]?.item?.data).toEqualTypeOf<Task | undefined>();
+    });
   });
 });

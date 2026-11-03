@@ -18,6 +18,7 @@ export interface Readable<V> {
   subscribe(run: (value: V) => void): () => void;
 }
 
+/** A Svelte store of the part of the instance's state `selector` picks: `$selected` in a component. `undefined` while there is no instance. */
 export function timelineState<T, S>(
   timeline: TimelineInstance<T> | null | undefined,
   selector: (snapshot: TimelineSnapshot) => S,

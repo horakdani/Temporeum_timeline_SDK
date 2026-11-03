@@ -17,12 +17,9 @@
  *
  * Importing this module never touches `window` or `document`.
  */
-export { contentOf, DEFAULT_HEIGHT, DEFAULT_SERVER_WIDTH, exportTheme, frameOptions, initialDomain, initialSpace, resolveView, usesSceneSpace } from "./config.js";
-export { directionOf, frameScene, hiddenDatesOf, minimapGeometryOf, minimapSize, wordsOf } from "./config.js";
+export { DEFAULT_HEIGHT, DEFAULT_SERVER_WIDTH } from "./config.js";
 export type {
-  FrameState,
   MetricsSetting,
-  ResolvedView,
   SizeOverrides,
   TimelineConfig,
   TimelineEditingOptions,
@@ -31,21 +28,20 @@ export type {
   TimelineRollingOptions,
   TimelineTimeBarOptions,
   TimelineUpdate,
-  Words,
 } from "./config.js";
-export { configFromAttributes, defineTimelineElement, eventNameOf, OBSERVED_ATTRIBUTES, TemporeumTimelineElement } from "./element.js";
+export { defineTimelineElement, OBSERVED_ATTRIBUTES, TemporeumTimelineElement } from "./element.js";
 export { hasPlugin, registerPlugin } from "./plugins.js";
 export type { PluginName, TimelinePlugin } from "./plugins.js";
 export { HOST_CSS, renderTimelineHtml, renderTimelineSvg, serializeConfig, TAG_NAME } from "./ssr.js";
 export type { ServerFrame, ServerHtmlOptions, ServerRenderOptions } from "./ssr.js";
 export { createTimeline, TIMELINE_EVENTS } from "./timeline.js";
 export type {
-  ClusterOpenPayload,
+  ClusterOpenedPayload,
   CreateTimelineOptions,
   DensityChangedPayload,
-  GroupCommandPayload,
-  GroupTogglePayload,
-  ItemAddedPayload,
+  GroupMovedPayload,
+  GroupToggledPayload,
+  ItemsAddedPayload,
   ItemSlot,
   ItemsChangedPayload,
   ItemsRemovedPayload,

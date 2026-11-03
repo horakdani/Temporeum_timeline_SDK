@@ -25,8 +25,7 @@
  * is registered until {@link defineTimelineElement} is called.
  */
 
-import { toTimeMs } from "@temporeum/timeline-core";
-import type { DensitySetting, Lane, OrientationSetting, PackMode, RenderHooks, ThemeSetting } from "@temporeum/timeline-core";
+import type { DensitySetting, Lane, OrientationSetting, PackMode, RenderHooks, ThemeSetting, TimeInput } from "@temporeum/timeline-core";
 
 import type { TimelineConfig, TimelineUpdate } from "./config.js";
 import { HOST_CSS, TAG_NAME } from "./ssr.js";
@@ -35,8 +34,14 @@ import type { Timeline, TimelineInstanceEventMap, TimelineInstanceEventName } fr
 
 const EVENTS = TIMELINE_EVENTS;
 
-/** `itemMoved` → `item-moved`: the event name the element dispatches. */
+/**
+ * `itemMoved` → `item-moved`: the event name the element dispatches. One
+ * exception: `command` is `timeline-command`, because `command` is the
+ * platform's own event (the Invoker Commands API's `CommandEvent`), which a
+ * `<button commandfor>` fires at its target.
+ */
 export function eventNameOf(type: TimelineInstanceEventName): string {
+  if (type === "command") return "timeline-command";
   return type.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
 }
 
@@ -47,7 +52,7 @@ export const OBSERVED_ATTRIBUTES = [
   "theme",
   "locale",
   "time-zone",
-  "label",
+  "aria-label",
   "start",
   "end",
   "height",
@@ -95,7 +100,7 @@ export function configFromAttributes(read: (name: Attribute) => string | null): 
   set("theme", read("theme") as ThemeSetting | null);
   set("locale", read("locale"));
   set("timeZone", read("time-zone"));
-  set("ariaLabel", read("label"));
+  set("ariaLabel", read("aria-label"));
   set("packMode", read("pack-mode") as PackMode | null);
   set("height", numberAttr(read("height")));
   set("breakpoint", numberAttr(read("breakpoint")));
@@ -295,15 +300,15 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     // as the key with no value — merging would otherwise keep the old one.
     const cleared: Record<string, undefined> = {};
     if (value === null) {
-      const key = ({ "time-zone": "timeZone", label: "ariaLabel", "pack-mode": "packMode", "touch-action": "touchAction", "multi-select": "editing", "snap-ms": "editing", editable: "editing" } as Record<string, string>)[name] ?? name;
+      const key = ({ "time-zone": "timeZone", "aria-label": "ariaLabel", "pack-mode": "packMode", "touch-action": "touchAction", "multi-select": "editing", "snap-ms": "editing", editable: "editing" } as Record<string, string>)[name] ?? name;
       cleared[key] = undefined;
     }
     this.#timeline.update({ ...cleared, ...config, ...this.#props } as TimelineUpdate<T>);
   }
 
-  /** Zoom to a domain. */
-  zoomTo(start: Date | number, end: Date | number): void {
-    this.#timeline?.zoomTo([toTimeMs(start), toTimeMs(end)]);
+  /** Zoom to a domain — the instance's `zoomTo`, with the same argument. */
+  zoomTo(domain: readonly [TimeInput, TimeInput]): void {
+    this.#timeline?.zoomTo(domain);
   }
 }
 

@@ -42,8 +42,8 @@ A group names its parent with `parentId`, and an item names its group with `lane
 
 ::: example groups
 
-- **Collapse and expand:** click or tap a header, or Tab to the groups and press `Enter`, `Space`, or the arrow that points into or out of the tree (right and left in a horizontal timeline, down and up in a vertical one). A collapsed group's items and subgroups are gone from the drawing and from the accessibility tree; expanding it brings back exactly the layout there was. This is view state, like the selection: the timeline reports it (`groupToggle`) and keeps it, and `group.collapsed` is only where it starts.
-- **Reorder:** drag a header along its siblings, or press `Alt` with the arrow along the tree. A reorder changes your data, so it comes out as a `groupCommand` whose `command.inverse` undoes it — `timeline.applyCommand(command.inverse)`.
+- **Collapse and expand:** click or tap a header, or Tab to the groups and press `Enter`, `Space`, or the arrow that points into or out of the tree (right and left in a horizontal timeline, down and up in a vertical one). A collapsed group's items and subgroups are gone from the drawing and from the accessibility tree; expanding it brings back exactly the layout there was. This is view state, like the selection: the timeline reports it (`groupToggled`) and keeps it, and `group.collapsed` is only where it starts.
+- **Reorder:** drag a header along its siblings, or press `Alt` with the arrow along the tree. A reorder changes your data, so it comes out as a `groupMoved` whose `command.inverse` undoes it — `timeline.applyCommand(command.inverse)`.
 - **Walk the tree:** the arrows along the tree, `Home` and `End`. The headers are a `role="tree"` beside the timeline's `listbox`, with each group's level, position and expanded state.
 
 ## Item kinds
@@ -99,4 +99,4 @@ A template draws each item's content as HTML, in place of its label. It is sanit
 
 ## Without the element
 
-The pieces are pure functions on two entry points of the core, for a host that drives the [engine](core-engine.md) itself: `groupView`, `moveGroupCommand` and `groupKeyStep` on `@temporeum/timeline-core/groups`; `itemKindHooks`, `splitBackgrounds`, `addCommand`, `removeCommand`, `applyItemPatches` and `templateHooks` on `@temporeum/timeline-core/items`. The functions that place and write the tree of group headers — `headerPlacements`, `groupHeaderMarkup`, `groupLayerAttrs`, `groupHeaderCss`, `mirrorStyle` — are the element's, on `@temporeum/timeline-element/groups`. See [entry points](../reference/entry-points.md).
+The pieces are pure functions on two entry points of the core, for a host that drives the [engine](core-engine.md) itself: `groupView`, `moveGroupCommand` and `groupKeyStep` on `@temporeum/timeline-core/groups`; `itemKindHooks`, `splitBackgrounds`, `addCommand`, `removeCommand`, `applyItemPatches` and `templateHooks` on `@temporeum/timeline-core/items`. The tree of group headers over them is the element's own, inside `groupsPlugin`. See [entry points](../reference/entry-points.md).

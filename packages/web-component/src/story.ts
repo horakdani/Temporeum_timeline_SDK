@@ -169,7 +169,8 @@ function safeHref(href: string, base: string): string | undefined {
  * attribute of the source but a link's address, an abbreviation's title
  * and a time's datetime. `inline` keeps only what goes in a heading.
  */
-export function storyHtml(doc: Document, html: string, inline = false): DocumentFragment {
+export function storyHtml(doc: Document, html: string, options: { readonly inline?: boolean | undefined } = {}): DocumentFragment {
+  const inline = options.inline === true;
   const template = doc.createElement("template");
   template.innerHTML = html;
   const out = doc.createDocumentFragment();
@@ -346,7 +347,7 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
   function plainHeadline(slide: StorySlide): string {
     if (slide.headline === undefined) return "";
     const holder = doc.createElement("div");
-    holder.append(storyHtml(doc, slide.headline, true));
+    holder.append(storyHtml(doc, slide.headline, { inline: true }));
     return holder.textContent.trim();
   }
 
@@ -439,7 +440,7 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
       if (media.credit !== undefined) {
         const credit = doc.createElement("span");
         credit.className = "tl-story-credit";
-        credit.append(storyHtml(doc, media.credit, true));
+        credit.append(storyHtml(doc, media.credit, { inline: true }));
         caption.append(credit);
       }
       figure.append(caption);
@@ -479,7 +480,7 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
     if (slide.headline !== undefined && slide.headline !== "") {
       const heading = doc.createElement(`h${String(level)}`);
       heading.className = "tl-story-headline";
-      heading.append(storyHtml(doc, slide.headline, true));
+      heading.append(storyHtml(doc, slide.headline, { inline: true }));
       body.append(heading);
     }
     if (slide.text !== undefined && slide.text !== "") {

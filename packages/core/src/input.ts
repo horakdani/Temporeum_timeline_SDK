@@ -185,10 +185,10 @@ export interface EditStartEffect<T = unknown> {
  * host redraws the same place and can say so, instead of having to remember
  * where the drag was allowed to be.
  */
-export interface EditMoveEffect {
+export interface EditMoveEffect<T = unknown> {
   readonly type: "editMove";
   readonly mode: EditMode;
-  readonly patches: readonly ItemPatch[];
+  readonly patches: readonly ItemPatch<T>[];
   readonly vetoed: boolean;
 }
 
@@ -199,10 +199,10 @@ export interface EditMoveEffect {
  * was not taken away. `cancelled` covers both: a drag that came back to where
  * it started leaves nothing behind, and neither does a `pointercancel`.
  */
-export interface EditEndEffect {
+export interface EditEndEffect<T = unknown> {
   readonly type: "editEnd";
   readonly mode: EditMode;
-  readonly command?: Command;
+  readonly command?: Command<T>;
   readonly cancelled: boolean;
 }
 
@@ -275,8 +275,8 @@ export type InputEffect<T = unknown> =
   | PressEffect
   | TapEffect
   | EditStartEffect<T>
-  | EditMoveEffect
-  | EditEndEffect
+  | EditMoveEffect<T>
+  | EditEndEffect<T>
   | ScheduleEffect
   | KeyEffect
   | FocusEffect
@@ -307,7 +307,7 @@ export interface EditingInputOptions<T = unknown> {
   /** Smallest duration a resize may squash an item to. */
   readonly minDurationMs?: number;
   /** Veto a move or resize before it is proposed. */
-  readonly canMove?: (item: Item<T>, next: ItemPatch) => boolean;
+  readonly canMove?: (item: Item<T>, next: ItemPatch<T>) => boolean;
   /** Drag the whole selection when the pointer grabs a selected item. */
   readonly multiSelect?: boolean;
   /** Let a drag across the lanes change the dragged item's lane. */
@@ -516,7 +516,7 @@ interface EditSession<T> {
   readonly grabTime: TimeMs;
   readonly hits: readonly EditHit<T>[];
   /** The last position `canMove` accepted. Empty until something moves. */
-  patches: readonly ItemPatch[];
+  patches: readonly ItemPatch<T>[];
   /** Snapped shift of the last accepted position, for change detection. */
   shift: number | undefined;
   laneId: string | null | undefined;
@@ -793,7 +793,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
     }
     const wantMsPerPx = anchorSeparation / separation;
     const factor = spanOf(domain) / mainSize / wantMsPerPx;
-    const zoomed = zoomDomainAt(domain, mainSize, 0, factor, warp);
+    const zoomed = zoomDomainAt(domain, mainSize, 0, factor, { warp });
     const nextDomain = panTimeTo(a.anchorTime, a.main, zoomed);
     commit(nextDomain, crossMidpointOffset(a, b), "zoom", into);
   }
@@ -910,7 +910,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
     mode: EditMode,
     deltaMs: number,
     laneId: string | null | undefined,
-  ): readonly ItemPatch[] {
+  ): readonly ItemPatch<T>[] {
     const primary = hits[0];
     if (primary === undefined) {
       return [];
@@ -933,7 +933,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
       snapMs: editing.snapMs,
       snapOrigin: editing.snapOrigin,
     });
-    const patches: ItemPatch[] = [first];
+    const patches: ItemPatch<T>[] = [first];
     const shift = (first.start ?? 0) - toTimeMs(primary.item.start);
     for (let index = 1; index < hits.length; index += 1) {
       const other = hits[index];
@@ -951,7 +951,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
    * the arrangement the user grabbed, and they would read the result as a bug
    * in the library rather than as their own rule being enforced.
    */
-  function refused(hits: readonly EditHit<T>[], patches: readonly ItemPatch[]): boolean {
+  function refused(hits: readonly EditHit<T>[], patches: readonly ItemPatch<T>[]): boolean {
     const canMove = editing.canMove;
     if (canMove === undefined) {
       return false;
@@ -966,7 +966,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
   }
 
   /** Whether the proposal actually differs from where the items already are. */
-  function noop(hits: readonly EditHit<T>[], patches: readonly ItemPatch[]): boolean {
+  function noop(hits: readonly EditHit<T>[], patches: readonly ItemPatch<T>[]): boolean {
     for (const patch of patches) {
       const hit = hits.find((candidate) => candidate.item.id === patch.id);
       if (hit === undefined) {
@@ -1460,7 +1460,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
           anchor = createTimeScale(target.domain, mainSize, warp).toMain((from + to) / 2);
         }
         const factor = action === "zoomIn" ? tapZoom : 1 / tapZoom;
-        travel(zoomDomainAt(target.domain, mainSize, anchor, factor, warp), target.cross, "zoom", time, into);
+        travel(zoomDomainAt(target.domain, mainSize, anchor, factor, { warp }), target.cross, "zoom", time, into);
         keepFocusShown(1, into);
         return true;
       }
@@ -1529,14 +1529,14 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
       // Two fingers tapped: the gesture every map has for "out one step".
       lastTap = undefined;
       if (zoomEnabled) {
-        commit(zoomDomainAt(domain, mainSize, at.main, 1 / tapZoom, warp), crossOffset, "zoom", into);
+        commit(zoomDomainAt(domain, mainSize, at.main, 1 / tapZoom, { warp }), crossOffset, "zoom", into);
       }
       return;
     }
     if (isDouble) {
       lastTap = undefined;
       if (zoomEnabled) {
-        commit(zoomDomainAt(domain, mainSize, at.main, tapZoom, warp), crossOffset, "zoom", into);
+        commit(zoomDomainAt(domain, mainSize, at.main, tapZoom, { warp }), crossOffset, "zoom", into);
       }
       return;
     }
@@ -1780,7 +1780,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
         // timeline runs, because that is what the hardware reports.
         if (zoomEnabled) {
           commit(
-            zoomDomainAt(domain, mainSize, at.main, Math.exp(-input.deltaY * wheelZoomRate), warp),
+            zoomDomainAt(domain, mainSize, at.main, Math.exp(-input.deltaY * wheelZoomRate), { warp }),
             crossOffset,
             "zoom",
             effects,
@@ -1835,7 +1835,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
         return effects;
       }
       stopTransition(effects);
-      commit(zoomDomainAt(domain, mainSize, focusMain, factor, warp), crossOffset, "zoom", effects);
+      commit(zoomDomainAt(domain, mainSize, focusMain, factor, { warp }), crossOffset, "zoom", effects);
       reanchor();
       return effects;
     },

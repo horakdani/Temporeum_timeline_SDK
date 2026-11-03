@@ -395,7 +395,7 @@ describe("storyHtml", () => {
 
   it("keeps a heading's inline part only", () => {
     const box = document.createElement("div");
-    box.append(storyHtml(document, "<p><i>The</i> Eagle</p><p>has landed</p><!-- note -->", true));
+    box.append(storyHtml(document, "<p><i>The</i> Eagle</p><p>has landed</p><!-- note -->", { inline: true }));
     expect(box.innerHTML).toBe("<i>The</i> Eagle has landed ");
   });
 

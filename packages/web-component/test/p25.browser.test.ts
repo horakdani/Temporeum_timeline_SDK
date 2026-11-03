@@ -55,16 +55,16 @@ describe("export", () => {
   it("pins an auto theme to what the screen shows, and keeps a configured one", async () => {
     const { timeline } = await mount();
     const dark = matchMedia("(prefers-color-scheme: dark)").matches;
-    const svg = timeline.exportSVG();
+    const svg = timeline.exportSvg();
     expect(svg).toContain(`data-tl-theme="${dark ? "dark" : "light"}"`);
     expect(svg).not.toContain("prefers-color-scheme");
     timeline.update({ theme: "dark" });
-    expect(timeline.exportSVG()).toContain('data-tl-theme="dark"');
+    expect(timeline.exportSvg()).toContain('data-tl-theme="dark"');
   });
 
   it("makes a PNG of the view at the scale asked for", async () => {
     const { timeline } = await mount();
-    const png = await timeline.exportPNG({ scale: 2 });
+    const png = await timeline.exportPng({ scale: 2 });
     expect(png.type).toBe("image/png");
     const bitmap = await createImageBitmap(png);
     expect([bitmap.width, bitmap.height]).toEqual([1800, 720]);
@@ -72,19 +72,22 @@ describe("export", () => {
 
   it("writes the whole range as a PDF, titled from the label, several pages for a tall plan", async () => {
     const { timeline } = await mount();
-    const bytes = timeline.exportPDF({ size: SHORT_SHEET });
+    const bytes = await timeline.exportPdf({ size: SHORT_SHEET });
     const text = latin1(bytes);
     expect(text.startsWith("%PDF-1.4\n")).toBe(true);
     expect(Number(/\/Count (\d+)/.exec(text)?.[1])).toBeGreaterThan(1);
     // "Plan" as UTF-16BE.
     expect(text).toContain("/Title <feff0050006c0061006e>");
-    expect(latin1(timeline.exportPDF({ title: "Other" }))).toContain("/Title <feff004f0074006800650072>");
+    expect(latin1(await timeline.exportPdf({ title: "Other" }))).toContain("/Title <feff004f0074006800650072>");
   });
 
   it("prints through a view of one section a page, each item in exactly one, gone after the print", async () => {
     const { timeline } = await mount();
     const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
-    timeline.print({ size: SHORT_SHEET });
+    let printed = false;
+    const done = timeline.print({ size: SHORT_SHEET }).then(() => {
+      printed = true;
+    });
     expect(print).toHaveBeenCalledOnce();
     const sections = [...document.querySelectorAll("body > [data-tl-print] > section")];
     expect(sections.length).toBeGreaterThan(1);
@@ -96,7 +99,12 @@ describe("export", () => {
       }
     });
     expect([...where.keys()].sort()).toEqual(items.map((item) => item.id).sort());
+    // The promise is the dialog's: it resolves when the print is over, not before.
+    await Promise.resolve();
+    expect(printed).toBe(false);
     window.dispatchEvent(new Event("afterprint"));
+    await done;
+    expect(printed).toBe(true);
     expect(document.querySelector("body > [data-tl-print]")).toBeNull();
   });
 
@@ -104,11 +112,13 @@ describe("export", () => {
     const element = document.createElement("div");
     document.body.append(element);
     const timeline = createTimeline(element, { items, lanes, domain: [T0, T0 + DAY] });
-    expect(timeline.exportSVG()).toBe("");
-    expect(timeline.exportPDF()).toHaveLength(0);
-    await expect(timeline.exportPNG()).rejects.toThrow(/Nothing drawn/);
+    expect(timeline.exportSvg()).toBe("");
+    const pdf = timeline.exportPdf();
+    expect(pdf).toBeInstanceOf(Promise);
+    expect(await pdf).toHaveLength(0);
+    await expect(timeline.exportPng()).rejects.toThrow(/Nothing drawn/);
     const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
-    timeline.print();
+    await expect(timeline.print()).resolves.toBeUndefined();
     expect(print).not.toHaveBeenCalled();
     timeline.destroy();
   });

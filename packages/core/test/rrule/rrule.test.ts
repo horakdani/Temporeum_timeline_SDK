@@ -26,7 +26,8 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import { formatRRule, formatWall, instantOf, occurrences, parseDateValue, parseRRule, utcStamp, wallMs, wallOf } from "../../src/calendar/index.js";
+import { formatRRule, instantOf, occurrences, parseDateValue, parseRRule, utcStamp, wallOf } from "../../src/calendar/index.js";
+import { formatWall, wallMs } from "../../src/calendar/rrule.js";
 
 interface Example {
   readonly name: string;

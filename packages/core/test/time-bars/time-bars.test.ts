@@ -8,7 +8,9 @@ import { describe, expect, it } from "vitest";
 
 import { createTimeScale } from "../../src/scale.js";
 import { createHiddenDates } from "../../src/tools/hidden.js";
-import { PAGE_STEPS, resolveAxisKey, snapTime, stepsOf } from "../../src/tools/keys.js";
+import { snapTime } from "../../src/editing.js";
+import { selectRange } from "../../src/tools/range.js";
+import { PAGE_STEPS, resolveAxisKey, stepsOf } from "../../src/tools/keys.js";
 import { defaultTimeBarStep, dragTimeBarTime, moveTimeBar, timeBarKeyTime, timeBarPlacements } from "../../src/tools/time-bars.js";
 import type { TimeBar } from "../../src/tools/time-bars.js";
 import type { Domain } from "../../src/types.js";
@@ -116,5 +118,11 @@ describe("time bars — a drag over hidden time", () => {
     const grab = { time: T0 + 12 * HOUR, main: scale.toMain(T0 + 12 * HOUR) };
     const target = T0 + DAY + 12 * HOUR;
     expect(dragTimeBarTime(grab, scale.toMain(target), scale)).toBeCloseTo(target, -1);
+  });
+
+  it("a grid that is not finite snaps nothing, in the tools as in the editor (one snapTime)", () => {
+    for (const snapMs of [Infinity, Number.NaN, -HOUR, 0]) {
+      expect(selectRange(T0 + 7, T0 + 3 * HOUR + 11, { snapMs })).toEqual({ start: T0 + 7, end: T0 + 3 * HOUR + 11 });
+    }
   });
 });

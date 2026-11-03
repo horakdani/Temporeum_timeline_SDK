@@ -18,7 +18,7 @@
 
 import { renderTimeline, renderToSvgString } from "@temporeum/timeline-core";
 import { withParts } from "@temporeum/timeline-core/dom";
-import type { RenderResult, TimeMs } from "@temporeum/timeline-core";
+import type { Density, Orientation, RenderResult, TimeMs } from "@temporeum/timeline-core";
 
 import { contentOf, DEFAULT_SERVER_WIDTH, directionOf, frameOptions, frameScene, initialDomain, initialSpace, itemsOf, resolveView, usesSceneSpace, wordsOf } from "./config.js";
 import type { ResolvedView, TimelineConfig } from "./config.js";
@@ -60,17 +60,31 @@ export interface ServerFrame<T = unknown> {
   readonly groups: string;
   /** The domain it shows — hand it to the client, so both start from one. */
   readonly domain: readonly [TimeMs, TimeMs];
-  readonly view: ResolvedView;
+  /** The width it was drawn at, in CSS pixels. */
+  readonly width: number;
+  /** The height it was drawn at, in CSS pixels. */
+  readonly height: number;
+  /** The orientation it was drawn in — `auto` resolved at `width`. */
+  readonly orientation: Orientation;
+  /** The density it was drawn with — `auto` resolved for the rows it fits. */
+  readonly density: Density;
+  /** The frame the renderer returned: the layout, the scene, the clusters. */
   readonly result: RenderResult<T>;
 }
 
 /** Draw a configuration on the server. */
 export function renderTimelineSvg<T>(config: TimelineConfig<T>, options: ServerRenderOptions = {}): ServerFrame<T> {
+  const { svg, groups, domain, width, height, orientation, density, result } = serverFrame(config, options, false);
+  return { svg, groups, domain, width, height, orientation, density, result };
+}
+
+/** The server frame with the view it resolved — for the tests, which compare it with the client's. Not on the public entry. */
+export function resolvedServerFrame<T>(config: TimelineConfig<T>, options: ServerRenderOptions = {}): ServerFrame<T> & { readonly view: ResolvedView } {
   return serverFrame(config, options, false);
 }
 
 /** The frame; `host` for the element's shadow root, with the tokens on `:host` and the classes as parts. */
-function serverFrame<T>(config: TimelineConfig<T>, options: ServerRenderOptions, host: boolean): ServerFrame<T> {
+function serverFrame<T>(config: TimelineConfig<T>, options: ServerRenderOptions, host: boolean): ServerFrame<T> & { readonly view: ResolvedView } {
   // A plugin the client would need is needed here: the server throws where the client would.
   requirePlugins(config);
   const items = itemsOf(config);
@@ -102,7 +116,8 @@ function serverFrame<T>(config: TimelineConfig<T>, options: ServerRenderOptions,
         );
   // The dependency arrows are not the renderer's: the same function adds them here as in the client.
   const scene = frameScene(config, state, result);
-  return { svg: renderToSvgString(host ? withParts(scene) : scene), groups, domain, view, result };
+  const { width, height, orientation, density } = view;
+  return { svg: renderToSvgString(host ? withParts(scene) : scene), groups, domain, width, height, orientation, density, view, result };
 }
 
 /**

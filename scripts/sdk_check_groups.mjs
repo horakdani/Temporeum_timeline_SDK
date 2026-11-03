@@ -24,8 +24,8 @@ const failures = checkReport({
   orientations: true,
 });
 
-const header = codeOf(readFileSync(join(root, "packages", "web-component", "src", "groups.ts"), "utf8"));
+const header = codeOf(readFileSync(join(root, "packages", "web-component", "src", "groups", "layer.ts"), "utf8"));
 for (const needle of ['"tree"', '"treeitem"', '"aria-expanded"', '"aria-level"', "moveGroupCommand", "dropPosition", "groupKeyStep", "resolveGroupKey"]) {
-  if (!header.includes(needle)) failures.push(`the group header layer (web-component/src/groups.ts) does not use: ${needle}`);
+  if (!header.includes(needle)) failures.push(`the group header layer (web-component/src/groups/layer.ts) does not use: ${needle}`);
 }
 finish("G-GROUPS", failures);

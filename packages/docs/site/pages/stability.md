@@ -19,6 +19,16 @@ The public API is exactly what the packages export, with the types they ship:
 - the CSS custom properties (`--tl-*`) and the class names on the drawing's nodes (`tl-item`, `tl-label`, `tl-cluster` …), because hosts style them;
 - the accessible structure: the roles, names and states a screen reader gets. A change that makes them worse is a breaking change even when no type changes.
 
+## How the names are made
+
+One rule, so a name says what it does and the next one can be guessed:
+
+- **Events.** An event that reports a change that happened is in the past tense: `itemMoved`, `selectionChanged`, `groupToggled`, `clusterOpened`. An event that reports what the reader asked for is in the present: `itemClick`, `itemHover`, `jumpRequest`. The plural is the payload's: `itemsAdded` and `itemsRemoved` both carry `items`. On the element an event is its kebab-case name (`item-moved`), with one exception: the instance's `command` is `timeline-command`, because `command` is the platform's own event.
+- **Acronyms** are written as words: `exportSvg`, `exportPng`, `exportPdf`, `renderTimelineHtml`. A product or a format keeps its own spelling: `fromTimelineJS`, `parseICal`, `parseRRule`.
+- **One name, one signature.** `zoomTo([start, end])` is the same on the instance and the element; the accessible name is `ariaLabel` in every configuration, and `aria-label` as an attribute.
+- **Queries.** What costs nothing and changes nothing is a getter (`timeline.items`, `timeline.layout`, `timeline.slots`, `timeline.metrics`); what computes is a method. `getSnapshot()` is a method because the store protocol React's `useSyncExternalStore` reads names it so.
+- **Parameters.** A public function takes at most four positional parameters, then an options object, and never a positional `boolean`: `removeTargets(id, selected, { multiSelect: true })`, not `removeTargets(id, selected, true)`. Every public name carries its documentation in the types. Both are checked on every change (`scripts/sdk_check_api_docs.mjs`).
+
 ## What is not
 
 - **The exact drawing**: pixel positions, the label a frame drops when there is no room, tick placement at a given width. They get better in minor releases. The visual-regression suite pins them for the library, not for hosts.

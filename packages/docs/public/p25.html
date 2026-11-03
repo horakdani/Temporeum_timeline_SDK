@@ -90,10 +90,10 @@
           window.dispatchEvent(new Event("afterprint"));
           return document.querySelector("body > [data-tl-print]") === null;
         },
-        pdf: (options = {}) => [...timeline.exportPDF(options)],
-        svg: () => timeline.exportSVG(),
+        pdf: async (options = {}) => [...(await timeline.exportPdf(options))],
+        svg: () => timeline.exportSvg(),
         async png() {
-          const blob = await timeline.exportPNG({ scale: 1 });
+          const blob = await timeline.exportPng({ scale: 1 });
           const bitmap = await createImageBitmap(blob);
           return { type: blob.type, width: bitmap.width, height: bitmap.height, bytes: blob.size };
         },

@@ -88,7 +88,7 @@ const timeline = createTimeline(document.querySelector("#timeline"), {
   ariaLabel: "Product sprint",
 });
 timeline.on("slotsChanged", ({ slots }) => render(slots));
-render(timeline.slots());
+render(timeline.slots);
 ```
 
 The content is a picture of the item: the pointer and the keyboard act on the item itself, so a drag, a click and a key go where they do without it. Both need the `/items` plugin.

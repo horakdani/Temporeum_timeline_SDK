@@ -15,7 +15,7 @@ element on load — `<script src="https://unpkg.com/@temporeum/timeline-element"
 once the package is on npm, or `dist/timeline-element.umd.js` from the package.
 
 ```html excerpt:example/element-html
-<temporeum-timeline height="280" theme="auto" label="Release plan">
+<temporeum-timeline height="280" theme="auto" aria-label="Release plan">
   <script type="application/json">
     {
       "items": [
@@ -62,10 +62,13 @@ at once.
 Every event is dispatched under its kebab-case name, bubbling out of the
 shadow root, with the payload as `detail`: `item-click`, `item-dbl-click`,
 `selection-changed`, `viewport-changed`, `layout-changed`, `item-moved`,
-`item-resized`, `command`, `density-changed`, `orientation-changed`,
-`cluster-open`, `jump-request`. Kebab-case because it is the spelling Vue's
+`item-resized`, `timeline-command`, `density-changed`, `orientation-changed`,
+`cluster-opened`, `jump-request`. Kebab-case because it is the spelling Vue's
 `@item-moved`, Angular's `(item-moved)` and `addEventListener` all reach. For
-typed listeners, `element.timeline.on("itemMoved", …)` is the instance.
+typed listeners, `element.timeline.on("itemMoved", …)` is the instance. The
+one exception to the rule is the instance's `command`, which is
+`timeline-command` on the element: `command` is the platform's own event (a
+`<button commandfor>` fires it at its target).
 
 The library never saves. An edit is shown while it happens and kept when it
 ends; what to do with `event.detail.command` is yours. Its `inverse` is the
@@ -107,8 +110,8 @@ data needs no plugin — `addItems`, `updateItems`, `removeItems`,
 `changeItems` — and draws the frame a full reload would, packing only the
 lanes a change touched. See the time tools guide.
 
-Exports need no server: `exportSVG()` and `exportPNG()` give the view as a
-file, `exportPDF()` the whole range as a PDF of the library's own (vector,
+Exports need no server: `exportSvg()` and `exportPng()` give the view as a
+file, `exportPdf()` the whole range as a PDF of the library's own (vector,
 selectable text), and `print()` sends the same pages to the browser's print —
 the lanes cut between rows, every item on exactly one page. See the export and
 print guide.
@@ -118,13 +121,13 @@ their own, so a page downloads them only when it imports them:
 
 | Entry point | Plugin | Also exports | Needed for |
 |---|---|---|---|
-| `/tools` | `toolsPlugin` | `mountToolsLayer`, `ToolsHost`, `ToolsLayer`, `ToolsWord` | `hiddenDates`, `timeBars`, `rolling`, `zoomPresets`, `minimap`, `rangeSelect`, `laneHeaders`, `tooltip` |
-| `/groups` | `groupsPlugin` | `groupHeaderCss`, `groupHeaderMarkup`, `groupLayerAttrs`, `headerPlacements`, `mirrorStyle`, `HeaderPlacement` | `groups`: nested groups, collapsing, reordering, the header tree (and its server markup) |
+| `/tools` | `toolsPlugin` | — | `hiddenDates`, `timeBars`, `rolling`, `zoomPresets`, `minimap`, `rangeSelect`, `laneHeaders`, `tooltip` |
+| `/groups` | `groupsPlugin` | — | `groups`: nested groups, collapsing, reordering, the header tree (and its server markup) |
 | `/items` | `itemsPlugin` | — | `box`, `point` and `background` items, `template`, `editing.add`, `editing.remove`, `editing.drop` |
 | `/intl` | `intlPlugin` | — | `strings`, `calendar`, `direction: "rtl"` and `"auto"` |
 | `/gantt` | `ganttPlugin` | `mountTaskGrid` (the task table) | `gantt`: arrows, progress, baselines, milestones |
 | `/resources` | `resourcesPlugin` | `mountBacklog` (the unscheduled tasks) | `resources` |
-| `/export` | `exportPlugin` | — | `exportPNG`, `exportPDF`, `print` |
+| `/export` | `exportPlugin` | — | `exportPng`, `exportPdf`, `print` |
 
 Each imports its part of the core (`/tools`, `/groups`, `/items`, `/intl`,
 `/gantt`, `/resources`, `/export`). Register plugins once, for the page:
@@ -143,8 +146,8 @@ registered throws a `TypeError` where the timeline is created, updated
 (`update`, `setItems`, `addItems` with such an item) or server-rendered, and
 the instance is left as it was — `The tooltip option needs the tools plugin:
 import { toolsPlugin } from "@temporeum/timeline-element/tools" and call
-registerPlugin(toolsPlugin) before the timeline draws`; `exportPNG`,
-`exportPDF` and `print` throw the same way when called. The items of a
+registerPlugin(toolsPlugin) before the timeline draws`; `exportPng`,
+`exportPdf` and `print` throw the same way when called. The items of a
 fetched source are checked when they arrive. The `<script>`-tag build
 registers every plugin on load.
 
@@ -229,7 +232,7 @@ SvelteKit and Angular.
 | `dist/gantt.mjs` / `.cjs` | the `/gantt` subpath | the Gantt plugin (`ganttPlugin`) and the task table (`mountTaskGrid`) |
 | `dist/resources.mjs` / `.cjs` | the `/resources` subpath | the resource view plugin (`resourcesPlugin`) and the backlog (`mountBacklog`) |
 | `dist/export.mjs` / `.cjs` | the `/export` subpath | PNG, PDF and print (`exportPlugin`) |
-| `dist/tools.mjs` / `.cjs` | the `/tools` subpath | the time tools plugin (`toolsPlugin`) and their controls' layer (`mountToolsLayer`) |
+| `dist/tools.mjs` / `.cjs` | the `/tools` subpath | the time tools plugin (`toolsPlugin`) |
 | `dist/groups.mjs` / `.cjs` | the `/groups` subpath | the nested groups plugin (`groupsPlugin`) and the group-header functions |
 | `dist/items.mjs` / `.cjs` | the `/items` subpath | item kinds, templates, adding and removing (`itemsPlugin`) |
 | `dist/intl.mjs` / `.cjs` | the `/intl` subpath | other languages, directions and calendars (`intlPlugin`) |

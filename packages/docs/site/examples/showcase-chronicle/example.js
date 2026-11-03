@@ -341,7 +341,7 @@ timeline = createTimeline(host, {
 // when the view settles, a bar that should now be the other way round redraws the items.
 timeline.on("viewportChanged", () => {
   const [from, to] = timeline.getSnapshot().domain;
-  const drawn = timeline.slots();
+  const drawn = timeline.slots;
   const stale = items.some((item) => item.end !== undefined && item.end > from && item.start < to && roomy(item) !== drawn.has(item.id));
   if (stale) timeline.update({ slots: (item) => roomy(item) });
 });
@@ -364,7 +364,7 @@ function render(slots) {
   }
 }
 timeline.on("slotsChanged", ({ slots }) => render(slots));
-render(timeline.slots());
+render(timeline.slots);
 
 // The bars' fills are gradients of the region's colour, which the page's CSS points to.
 const defs = document.querySelector("#paints defs");
@@ -621,7 +621,7 @@ function down(layout, position) {
   return (row + Math.min(1, Math.max(0, (position - lane.cross) / lane.crossSize))) / layout.lanes.length;
 }
 function frameDown() {
-  const layout = timeline.getLayout();
+  const layout = timeline.layout;
   const { viewport, crossOffset } = timeline.getSnapshot();
   const room = viewport === undefined ? 0 : viewport.crossSize - AXIS;
   const scrolls = layout !== undefined && room > 0 && layout.crossSize > room + 1;
@@ -648,7 +648,7 @@ let rows = 1;
 const sized = (scale) => ({ ...BASE, rowSize: BASE.rowSize * scale, rowGap: BASE.rowGap * scale, laneGap: BASE.laneGap * scale });
 function setRows(want, keepBottom = false) {
   // Zooming out stops where every lane is in view, however small the rows get by then.
-  const layout = timeline.getLayout();
+  const layout = timeline.layout;
   const { viewport, crossOffset: offset } = timeline.getSnapshot();
   const room = viewport === undefined ? 0 : viewport.crossSize - AXIS;
   const fit = layout === undefined ? 0.6 : (room / (layout.crossSize / rows)) * 0.99;
@@ -658,7 +658,7 @@ function setRows(want, keepBottom = false) {
   // A lane is not all rows (headers, padding), so the size the lanes came to settles the last of it.
   if (next <= (fit / 0.99) * 1.001) {
     for (let pass = 0; pass < 3; pass += 1) {
-      const now = timeline.getLayout();
+      const now = timeline.layout;
       if (now === undefined || now.crossSize <= room) break;
       next *= (room / now.crossSize) * 0.995;
       timeline.update({ metrics: sized(next) });
@@ -686,7 +686,7 @@ function hold(event, move) {
 }
 // Drag the lens's top or bottom edge: how much of the lanes is in the lens decides how large their rows are.
 function dragRows(event, edge) {
-  const layout = timeline.getLayout();
+  const layout = timeline.layout;
   const { viewport } = timeline.getSnapshot();
   if (layout === undefined || viewport === undefined) return;
   const room = viewport.crossSize - AXIS;
@@ -749,7 +749,7 @@ track.addEventListener("pointerdown", (event) => {
     timeline.zoomTo([from + shift, to + shift]);
     // Down the strip the lens scrolls the lanes: its height is the strip's share of the lanes' length.
     // (The snapshot catches up a frame later, so the offset asked for last is kept here.)
-    const layout = timeline.getLayout();
+    const layout = timeline.layout;
     const { viewport } = timeline.getSnapshot();
     if (layout !== undefined && viewport !== undefined && overview.hasAttribute("data-scrolls")) {
       const target = Math.min(Math.max(lanesAt + ((next.clientY - grabY) / STRIP) * layout.crossSize, 0), layout.crossSize - (viewport.crossSize - AXIS));
@@ -894,12 +894,12 @@ async function offscreen(theme, domain, width, height, job) {
 const TITLE = "Five thousand years, from the Nile to the Moon";
 document.querySelector("#png").addEventListener("click", async () => {
   // What is on screen — the view you have flown to — as a picture at twice the pixels, with a margin for the lane names.
-  save("chronicle.png", await offscreen(CHRONICLE, timeline.getSnapshot().domain, 1600, 900, (copy) => copy.exportPNG({ scale: 2 })));
+  save("chronicle.png", await offscreen(CHRONICLE, timeline.getSnapshot().domain, 1600, 900, (copy) => copy.exportPng({ scale: 2 })));
   log.textContent = "chronicle.png: the view as it is now, at twice the pixels.";
 });
 document.querySelector("#pdf").addEventListener("click", async () => {
   // The whole five thousand years, cut between rows onto as many pages as it needs.
-  const pdf = await offscreen(PAPER, WHOLE, 1100, 700, (copy) => copy.exportPDF({ size: "a4", orientation: "landscape", title: TITLE, range: marginal(WHOLE) }));
+  const pdf = await offscreen(PAPER, WHOLE, 1100, 700, (copy) => copy.exportPdf({ size: "a4", orientation: "landscape", title: TITLE, range: marginal(WHOLE) }));
   const pages = /\/Count (\d+)/.exec(new TextDecoder("latin1").decode(pdf))?.[1];
   save("chronicle.pdf", new Blob([pdf], { type: "application/pdf" }));
   log.textContent = `chronicle.pdf: all of it, ${pages} ${pages === "1" ? "page" : "pages"}, A4 landscape, on paper.`;

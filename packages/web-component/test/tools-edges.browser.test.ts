@@ -3,7 +3,8 @@ import { commands } from "vitest/browser";
 
 import type { Item, Lane } from "@temporeum/timeline-core";
 
-import { createTimeline, exportTheme, registerPlugin } from "../src/index.js";
+import { exportTheme } from "../src/config.js";
+import { createTimeline, registerPlugin } from "../src/index.js";
 import { exportPlugin } from "../src/export.js";
 import { toolsPlugin } from "../src/tools.js";
 import type { Timeline, TimelineConfig } from "../src/index.js";
@@ -212,7 +213,7 @@ describe("export at its edges", () => {
   it("prints a vertical timeline with every item on exactly one page, and a configured theme on paper", async () => {
     const { timeline } = await mount({ orientation: "vertical", theme: "dark" }, 500, 700);
     const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
-    timeline.print({ size: [300, 200] });
+    const printed = timeline.print({ size: [300, 200] });
     expect(print).toHaveBeenCalledOnce();
     const sections = [...document.querySelectorAll("body > [data-tl-print] > section")];
     expect(sections.length).toBeGreaterThan(0);
@@ -226,7 +227,8 @@ describe("export at its edges", () => {
     });
     expect([...where.keys()].sort()).toEqual(items.map((each) => each.id).sort());
     window.dispatchEvent(new Event("afterprint"));
-    const pdf = new TextDecoder("latin1").decode(timeline.exportPDF({ size: [300, 200] }));
+    await printed;
+    const pdf = new TextDecoder("latin1").decode(await timeline.exportPdf({ size: [300, 200] }));
     expect(pdf.startsWith("%PDF-1.4\n")).toBe(true);
   });
 });
@@ -369,10 +371,10 @@ describe("the tool paths the P24 suite leaves out", () => {
     // A later change in the same lanes builds on the last frame.
     timeline.addItems([{ id: "late", label: "Late", start: T0 + 3 * DAY, end: T0 + 4 * DAY, laneId: "b" }]);
     timeline.flush();
-    const layout = timeline.getLayout();
+    const layout = timeline.layout;
     expect(layout?.items.map((placed) => placed.item.id).sort()).toEqual(["dot", "late", "two"]);
     timeline.flush();
-    expect(timeline.getLayout()).toBe(layout);
+    expect(timeline.layout).toBe(layout);
   });
 });
 

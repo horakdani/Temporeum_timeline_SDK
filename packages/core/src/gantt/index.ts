@@ -43,6 +43,7 @@ import type { Layout, LayoutItem, LayoutLane } from "../layout.js";
 import type { KeySample } from "../keyboard.js";
 import type { GanttStrings } from "../strings.js";
 import { toTimeMs } from "../time.js";
+import { edgePoint, milestoneHalf } from "./box.js";
 import type { Item, MainCross, MainCrossRect, Orientation } from "../types.js";
 
 // --- dependencies ------------------------------------------------------------
@@ -129,11 +130,6 @@ export function layoutIndex<T>(layout: Layout<T>): ReadonlyMap<string, LayoutIte
   return index as ReadonlyMap<string, LayoutItem<T>>;
 }
 
-/** Half the width of a milestone's diamond, for a row of `crossSize`. */
-export function milestoneHalf(crossSize: number): number {
-  return Math.max(crossSize / 2, 3);
-}
-
 /**
  * A placed item's box as drawn, before clipping: its span at the scale,
  * never thinner than the minimum, a milestone as its diamond.
@@ -150,11 +146,6 @@ export function taskBox(placed: LayoutItem, options: RouteOptions): TaskBox {
   }
   const end = placed.span.open ? Math.max(scale.toMain(scale.domain[1]), start) : scale.toMain(placed.span.end);
   return { placed, main: start, mainSize: Math.max(end - start, options.minItemMainSize ?? 0), cross, crossSize: placed.crossSize };
-}
-
-/** The point an arrow leaves or reaches an edge at: the edge, half-way across. */
-export function edgePoint(box: MainCrossRect, edge: "start" | "end"): MainCross {
-  return { main: edge === "start" ? box.main : box.main + box.mainSize, cross: box.cross + box.crossSize / 2 };
 }
 
 /** Drop repeated points and the middle of three on one line. */
@@ -186,7 +177,14 @@ function simplify(points: MainCross[]): MainCross[] {
  * axis — turning back through the gap after the predecessor's row when the
  * successor's edge is behind where the arrow has to go.
  */
-export function routePoints(from: MainCrossRect, to: MainCrossRect, type: DependencyType = "FS", stub = 8, rowGap = 4): MainCross[] {
+export function routePoints(
+  from: MainCrossRect,
+  to: MainCrossRect,
+  options: { readonly type?: DependencyType | undefined; readonly stub?: number | undefined; readonly rowGap?: number | undefined } = {},
+): MainCross[] {
+  const type = options.type ?? "FS";
+  const stub = options.stub ?? 8;
+  const rowGap = options.rowGap ?? 4;
   const edges = dependencyEdges(type);
   const s = edgePoint(from, edges.from);
   const e = edgePoint(to, edges.to);
@@ -275,7 +273,7 @@ export function routeDependencies<T>(layout: Layout<T>, dependencies: readonly D
       const cross1 = Math.max(a.cross + a.crossSize, b.cross + b.crossSize) + gap;
       if (main1 < clip.main[0] || main0 > clip.main[1] || cross1 < clip.cross[0] || cross0 > clip.cross[1]) continue;
     }
-    const points = routePoints(a, b, type, stub, gap);
+    const points = routePoints(a, b, { type, stub, rowGap: gap });
     const bounds = boundsOf(points);
     if (
       clip !== undefined &&
@@ -734,7 +732,7 @@ export interface TaskGridWindow<T = unknown> {
 }
 
 /** Where the grid's rows are measured from. */
-export interface TaskGridOptions {
+export interface TaskGridRowsOptions {
   /** The axis band, which the grid's header row lines up with. */
   readonly crossInset: number;
   /** How far the lanes are scrolled across. */
@@ -770,7 +768,7 @@ function itemsByLane<T>(layout: Layout<T>): Map<string, LayoutItem<T>[]> {
  * and the overscan. The lanes are sorted across, so the window is found by
  * bisection: a grid of 10 000 rows touches the rows it shows.
  */
-export function taskGridRows<T>(layout: Layout<T>, options: TaskGridOptions): TaskGridWindow<T> {
+export function taskGridRows<T>(layout: Layout<T>, options: TaskGridRowsOptions): TaskGridWindow<T> {
   const lanes = options.skip === undefined ? layout.lanes : layout.lanes.filter((lane) => !options.skip?.(lane));
   const total = lanes.length;
   const top = options.crossOffset;

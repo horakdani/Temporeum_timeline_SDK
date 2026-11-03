@@ -33,7 +33,8 @@ for (const needle of ["export interface TimeWarp", "warp?: TimeWarp): TimeScale"
 }
 const input = codeOf(readFileSync(join(core, "src", "input.ts"), "utf8"));
 const calls = [...input.matchAll(/(zoomDomainAt|panDomainBy)\(/g)].length;
-const warped = [...input.matchAll(/(zoomDomainAt|panDomainBy)\((?:[^()]|\([^()]*\))*?, warp\)/g)].length;
+// The pan passes the warp itself, the zoom in its options (`{ warp }`).
+const warped = [...input.matchAll(/(zoomDomainAt|panDomainBy)\((?:[^()]|\([^()]*\))*?, (?:warp|\{ warp \})\)/g)].length;
 if (calls === 0 || calls !== warped) failures.push(`of the machine's ${String(calls)} pan/zoom calls, ${String(warped)} pass the warp on`);
 for (const file of ["scale.ts", "input.ts", "render.ts", "ticks.ts"]) {
   if (codeOf(readFileSync(join(core, "src", file), "utf8")).includes("/tools/")) failures.push(`the core's ${file} imports from /tools`);

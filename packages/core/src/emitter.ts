@@ -46,6 +46,12 @@ function reportUnhandled(error: unknown): void {
   });
 }
 
+/**
+ * A typed event emitter: `M` maps each event name to its payload, so `on`
+ * infers the listener's argument from the name and rejects an unknown one.
+ * A listener that throws does not stop the others; its error goes to the
+ * `onError` handler, or to the environment's error channel.
+ */
 export class Emitter<M extends object> {
   private readonly listeners = new Map<string, Set<ErasedListener>>();
   private readonly onError: EmitterErrorHandler | undefined;

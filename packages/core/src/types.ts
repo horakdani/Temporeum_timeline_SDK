@@ -198,7 +198,7 @@ export interface EditingOptions<T = unknown> {
   readonly enabled?: boolean;
   readonly snapMs?: number;
   /** Veto a move or resize before it is applied. */
-  readonly canMove?: (item: Item<T>, next: ItemPatch) => boolean;
+  readonly canMove?: (item: Item<T>, next: ItemPatch<T>) => boolean;
   readonly multiSelect?: boolean;
   /** Veto an item before it is added. Read by `@temporeum/timeline-core/items`. */
   readonly canAdd?: (item: Item<T>) => boolean;
@@ -207,26 +207,6 @@ export interface EditingOptions<T = unknown> {
    * delete of a selection is atomic.
    */
   readonly canRemove?: (item: Item<T>) => boolean;
-}
-
-/** Everything a timeline instance is configured with. */
-export interface TimelineOptions<T = unknown> {
-  readonly container: Element | string;
-  readonly items: ItemsSource<T>;
-  readonly lanes?: readonly Lane[];
-  readonly domain?: readonly [TimeInput, TimeInput];
-  readonly limits?: DomainLimits;
-  readonly orientation?: OrientationSetting;
-  /** Container width in pixels below which `auto` switches orientation. */
-  readonly breakpoint?: number;
-  readonly density?: DensitySetting;
-  readonly detailSurface?: DetailSurfaceSetting;
-  readonly packMode?: PackMode;
-  readonly interactions?: InteractionOptions;
-  readonly editing?: EditingOptions<T>;
-  readonly locale?: string;
-  readonly timeZone?: string;
-  readonly plugins?: readonly TimelinePlugin<T>[];
 }
 
 /**
@@ -238,7 +218,7 @@ export interface TimelineOptions<T = unknown> {
  * to say "this item had no lane", and the inverse of a drag into a lane would
  * be inexact for every item that started outside one.
  */
-export interface ItemPatch {
+export interface ItemPatch<T = unknown> {
   readonly id: string;
   readonly start?: TimeMs;
   /** `null` clears the end, turning the item into an instant. */
@@ -252,7 +232,7 @@ export interface ItemPatch {
    * `applyPatches` ignores the key; `applyItemPatches` from
    * `@temporeum/timeline-core/items` applies it.
    */
-  readonly item?: Item | null;
+  readonly item?: Item<T> | null;
   /** Where in the item list an added item goes, so an undone remove puts it back in place. */
   readonly index?: number;
 }
@@ -264,60 +244,68 @@ export interface ItemPatch {
  * `after`, store it, and get undo for free from `inverse` — which is why undo
  * is not a feature the host has to reimplement per field.
  */
-export interface Command {
+export interface Command<T = unknown> {
   readonly type: string;
   readonly label?: string;
-  readonly before: readonly ItemPatch[];
-  readonly after: readonly ItemPatch[];
-  readonly inverse: Command;
+  readonly before: readonly ItemPatch<T>[];
+  readonly after: readonly ItemPatch<T>[];
+  readonly inverse: Command<T>;
 }
 
 /** Why the viewport changed. Lets hosts ignore their own API calls. */
 export type ViewportChangeReason = "init" | "pan" | "zoom" | "resize" | "api";
 
+/** `itemClick` and `itemDblClick`: the item, and the pointer event that hit it when there was one. */
 export interface ItemEventPayload<T = unknown> {
   readonly item: Item<T>;
   readonly originalEvent?: PointerEvent;
 }
 
+/** `itemHover`: the item under the pointer, or `null` when it left every item. */
 export interface HoverPayload<T = unknown> {
   /** `null` when the pointer left every item. */
   readonly item: Item<T> | null;
   readonly originalEvent?: PointerEvent;
 }
 
+/** `selectionChanged`: the selected ids after the change, and before it. */
 export interface SelectionChangedPayload {
   readonly ids: readonly string[];
   readonly previousIds: readonly string[];
 }
 
+/** `viewportChanged`: the viewport drawn now, and why it moved. */
 export interface ViewportChangedPayload {
   readonly viewport: Viewport;
   readonly reason: ViewportChangeReason;
 }
 
+/** `layoutChanged`: the counts of the frame just laid out. */
 export interface LayoutChangedPayload {
   readonly laneCount: number;
   readonly visibleItemCount: number;
   readonly crossSize: number;
 }
 
+/** `itemMoved`: the item after the move, the patch it moved from and to, and the move as a reversible command. */
 export interface ItemMovedPayload<T = unknown> {
   readonly item: Item<T>;
-  readonly from: ItemPatch;
-  readonly to: ItemPatch;
-  readonly command: Command;
+  readonly from: ItemPatch<T>;
+  readonly to: ItemPatch<T>;
+  readonly command: Command<T>;
 }
 
+/** `itemResized`: the item after the resize, the patch it changed from and to, and the resize as a reversible command. */
 export interface ItemResizedPayload<T = unknown> {
   readonly item: Item<T>;
-  readonly from: ItemPatch;
-  readonly to: ItemPatch;
-  readonly command: Command;
+  readonly from: ItemPatch<T>;
+  readonly to: ItemPatch<T>;
+  readonly command: Command<T>;
 }
 
-export interface CommandPayload {
-  readonly command: Command;
+/** `command`: an edit the reader made, as a command to keep; `command.inverse` undoes it. */
+export interface CommandPayload<T = unknown> {
+  readonly command: Command<T>;
 }
 
 /** Every event the timeline emits, keyed by name. */
@@ -330,38 +318,8 @@ export interface TimelineEventMap<T = unknown> {
   readonly layoutChanged: LayoutChangedPayload;
   readonly itemMoved: ItemMovedPayload<T>;
   readonly itemResized: ItemResizedPayload<T>;
-  readonly command: CommandPayload;
+  readonly command: CommandPayload<T>;
 }
 
+/** The name of an event of {@link TimelineEventMap}. */
 export type TimelineEventName = keyof TimelineEventMap & string;
-
-/** What a plugin is handed on every lifecycle call. */
-export interface PluginContext<T = unknown> {
-  readonly viewport: Viewport;
-  readonly items: readonly Item<T>[];
-  readonly lanes: readonly Lane[];
-  /** Project internal space to screen pixels. */
-  readonly project: (point: MainCross) => MainCross;
-}
-
-/**
- * The extension boundary.
- *
- * Deliberately narrow: lanes, occupancy, lane rendering, overlays, viewport
- * notifications. A plugin cannot reach into layout internals, which is what
- * keeps the internals free to change without breaking the ecosystem.
- */
-export interface TimelinePlugin<T = unknown> {
-  readonly name: string;
-  readonly provideLanes?: (context: PluginContext<T>) => readonly Lane[];
-  readonly provideOccupancy?: (
-    context: PluginContext<T>,
-  ) => readonly MainCrossRect[];
-  readonly renderLane?: (lane: Lane, context: PluginContext<T>) => void;
-  readonly renderOverlay?: (context: PluginContext<T>) => void;
-  readonly onViewportChanged?: (
-    payload: ViewportChangedPayload,
-    context: PluginContext<T>,
-  ) => void;
-  readonly destroy?: () => void;
-}

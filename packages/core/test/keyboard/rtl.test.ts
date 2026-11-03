@@ -58,7 +58,7 @@ describeBothOrientations("keys right to left", (orientation: Orientation) => {
     const earlier = horizontal ? "ArrowRight" : "ArrowUp";
     expect(resolveAxisKey(sample(mirrored(later)), orientation)).toBe("later");
     expect(resolveAxisKey(sample(mirrored(earlier)), orientation)).toBe("earlier");
-    expect(resolveRangeKey(sample(mirrored(later)), orientation, true)).toBe(resolveRangeKey(sample(horizontal ? "ArrowRight" : "ArrowDown"), orientation, true));
+    expect(resolveRangeKey(sample(mirrored(later)), orientation, { picking: true })).toBe(resolveRangeKey(sample(horizontal ? "ArrowRight" : "ArrowDown"), orientation, { picking: true }));
     // The tree's left and right are expand and collapse as the reading direction has them.
     for (const key of ["ArrowLeft", "ArrowRight"]) {
       expect(resolveGroupKey(sample(mirrored(key)), orientation)).toEqual(resolveGroupKey(sample(key === "ArrowLeft" ? "ArrowRight" : "ArrowLeft"), orientation));

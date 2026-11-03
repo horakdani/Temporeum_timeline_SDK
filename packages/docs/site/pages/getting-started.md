@@ -56,7 +56,7 @@ No bundler, no build. The configuration can travel as a JSON child, where dates 
 With a `<script>` tag instead of a module, use the UMD file, which carries the engine and registers the element when it loads:
 
 ```html excerpt:example/element-html
-<temporeum-timeline height="280" theme="auto" label="Release plan">
+<temporeum-timeline height="280" theme="auto" aria-label="Release plan">
   <script type="application/json">
     {
       "items": [

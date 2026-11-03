@@ -361,8 +361,9 @@ export function calendarHit(geometry: CalendarGeometry, x: number, y: number): s
   return hit;
 }
 
-/** The instant at a point of the body: where a click on an empty slot is, snapped down to `snapMs`. */
-export function calendarTimeAt(layout: DaysLayout<unknown>, geometry: CalendarGeometry, x: number, y: number, snapMs = 15 * MINUTE): TimeMs | undefined {
+/** The instant at a point of the body: where a click on an empty slot is, snapped down to `snapMs` (15 minutes by default). */
+export function calendarTimeAt(layout: DaysLayout<unknown>, geometry: CalendarGeometry, x: number, y: number, options: { readonly snapMs?: number | undefined } = {}): TimeMs | undefined {
+  const snapMs = options.snapMs ?? 15 * MINUTE;
   const index = geometry.columns.findIndex((column) => x >= column.x && x < column.x + column.width && y >= column.y && y < column.y + column.height);
   const day = layout.days[index];
   const column = geometry.columns[index];
@@ -402,7 +403,8 @@ export interface CalendarKey {
  * The action of a key, or `undefined` for one the view leaves alone. Right
  * to left, the arrows move the way they point: the left arrow to the next day.
  */
-export function resolveCalendarKey(key: CalendarKey, rtl = false): CalendarKeyAction | undefined {
+export function resolveCalendarKey(key: CalendarKey, options: { readonly direction?: "ltr" | "rtl" | undefined } = {}): CalendarKeyAction | undefined {
+  const rtl = options.direction === "rtl";
   const mod = key.ctrlKey === true || key.metaKey === true;
   if (key.altKey === true) return undefined;
   switch (key.key) {

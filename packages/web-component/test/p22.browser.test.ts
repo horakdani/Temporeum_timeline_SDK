@@ -92,7 +92,7 @@ describe("the resource view", () => {
     expect(overbooked.sort()).toEqual(["api", "auth"]);
     // Dana's half-time task fills her half capacity: not over.
     expect(overbooked).not.toContain("docs");
-    expect(timeline.exportSVG()).toContain("tl-layer--load");
+    expect(timeline.exportSvg()).toContain("tl-layer--load");
     timeline.destroy();
   });
 
@@ -217,7 +217,7 @@ describe("the backlog", () => {
   it("walks its rows with the keys, and Enter places the active one where the keyboard is, then hands the focus to the timeline", async () => {
     const { element, timeline, list, backlog } = await setup();
     const added: string[] = [];
-    timeline.on("itemAdded", ({ item }) => added.push(item.id));
+    timeline.on("itemsAdded", ({ items }) => added.push(...items.map((item) => item.id)));
     timeline.focusItem("api");
     list.focus();
     await userEvent.keyboard("{ArrowDown}{ArrowRight}");

@@ -117,7 +117,7 @@ describe("calendar edges: the days", () => {
     expect(calendarTimeAt(layout, g, 0, 0)).toBeUndefined();
     const column = g.columns[1];
     expect(column).toBeDefined();
-    if (column !== undefined) expect(calendarTimeAt(layout, g, column.x + 1, column.y, HOUR)).toBe(MONDAY + DAY);
+    if (column !== undefined) expect(calendarTimeAt(layout, g, column.x + 1, column.y, { snapMs: HOUR })).toBe(MONDAY + DAY);
   });
 
   it("starts weeks and days in the zone, on the day asked for", () => {

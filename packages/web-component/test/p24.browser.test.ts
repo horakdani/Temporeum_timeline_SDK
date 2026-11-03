@@ -5,7 +5,8 @@ import type { Item, Lane } from "@temporeum/timeline-core";
 
 import { createTimeline, registerPlugin, renderTimelineSvg, TIMELINE_EVENTS } from "../src/index.js";
 import type { Timeline, TimelineConfig } from "../src/index.js";
-import { mountToolsLayer, toolsPlugin } from "../src/tools.js";
+import { mountToolsLayer } from "../src/tools/layer.js";
+import { toolsPlugin } from "../src/tools.js";
 
 // The parts on entry points of their own (P29, P30), as a page registers them.
 registerPlugin(toolsPlugin);
@@ -308,15 +309,15 @@ describe("live data", () => {
     expect(timeline.getSnapshot().selectedIds).toEqual([]);
     expect(timeline.items.map((item) => item.id)).toEqual(["one", "two", "four"]);
     expect(element.querySelectorAll("svg [role=option]")).toHaveLength(3);
-    const incremental = timeline.exportSVG();
+    const incremental = timeline.exportSvg();
     // A later frame with the same items keeps the live layout.
-    const layout = timeline.getLayout();
+    const layout = timeline.layout;
     timeline.flush();
-    expect(timeline.getLayout()).toBe(layout);
+    expect(timeline.layout).toBe(layout);
     timeline.destroy();
     document.body.replaceChildren();
     const fresh = await mount({ items: [...timeline.items] });
-    expect(fresh.timeline.exportSVG()).toBe(incremental);
+    expect(fresh.timeline.exportSvg()).toBe(incremental);
     expect(() => fresh.timeline.addItems([{ id: "one", start: T0 }])).toThrow(/already there/);
     expect(() => fresh.timeline.updateItems([{ id: "zz", start: T0 }])).toThrow(/no item/);
     fresh.timeline.destroy();

@@ -39,4 +39,4 @@ const timeline = createTimeline(document.querySelector("#timeline"), {
   ariaLabel: "Product sprint",
 });
 timeline.on("slotsChanged", ({ slots }) => render(slots));
-render(timeline.slots());
+render(timeline.slots);

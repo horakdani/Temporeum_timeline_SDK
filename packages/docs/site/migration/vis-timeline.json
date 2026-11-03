@@ -613,7 +613,7 @@
       "vis": "groupOrder",
       "status": "different",
       "temporeum": "the order of `groups`",
-      "note": "Sort the array. A reader can reorder the groups too; that comes out as a `groupCommand`.",
+      "note": "Sort the array. A reader can reorder the groups too; that comes out as a `groupMoved`.",
       "uses": [
         "TimelineConfig.groups"
       ],
@@ -636,12 +636,12 @@
       "vis": "groupEditable (drag to reorder)",
       "status": "different",
       "temporeum": "drag a group header, or Alt + arrow",
-      "note": "Always on; the reorder is reported as a reversible `groupCommand` and the library does not save it.",
+      "note": "Always on; the reorder is reported as a reversible `groupMoved` and the library does not save it.",
       "uses": [
-        "TimelineInstanceEventMap.groupCommand",
+        "TimelineInstanceEventMap.groupMoved",
         "Timeline.applyCommand"
       ],
-      "after": "timeline.on(\"groupCommand\", ({ command }) => console.log(command.after));"
+      "after": "timeline.on(\"groupMoved\", ({ command }) => console.log(command.after));"
     },
     {
       "area": "Groups",

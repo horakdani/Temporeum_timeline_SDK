@@ -66,30 +66,30 @@ import type {
 /** Editing rules, plus whether a drag may carry an item into another lane. */
 export interface TimelineEditingOptions<T = unknown> extends EditingOptions<T> {
   /** Let a move change the item's lane. Off by default. */
-  readonly crossLane?: boolean;
+  readonly crossLane?: boolean | undefined;
   /** Where the snap grid is anchored. The epoch by default. */
-  readonly snapOrigin?: TimeInput;
+  readonly snapOrigin?: TimeInput | undefined;
   /** Smallest duration a resize may squash an item to, in milliseconds. */
-  readonly minDurationMs?: number;
+  readonly minDurationMs?: number | undefined;
   /**
    * Let the reader add items: a double tap on empty lane space, or `n` /
    * `Insert` (with `editing.enabled`). A double tap then adds instead of
    * zooming in; the axis band still zooms. Off by default.
    */
-  readonly add?: boolean;
+  readonly add?: boolean | undefined;
   /**
    * Let the reader remove items: the remove handle drawn on a selected item,
    * or `Delete` / `Backspace` on the focused one. Off by default.
    */
-  readonly remove?: boolean;
+  readonly remove?: boolean | undefined;
   /**
    * Accept items dragged in from outside the timeline (HTML drag and drop
    * with the `application/x-temporeum-item` type). Its keyboard twin is the
    * instance's `dropItem`. Off by default.
    */
-  readonly drop?: boolean;
+  readonly drop?: boolean | undefined;
   /** The item an add makes. A plain range with a free `item-N` id by default. */
-  readonly createItem?: CreateItem<T>;
+  readonly createItem?: CreateItem<T> | undefined;
 }
 
 /** The Gantt chart's part of a configuration. See `@temporeum/timeline-core/gantt`. */
@@ -100,33 +100,33 @@ export interface TimelineGanttOptions {
    * named in each item's accessible name; `[` and `]` go to a predecessor
    * and a successor. The library never moves a task for them.
    */
-  readonly dependencies?: readonly Dependency[];
+  readonly dependencies?: readonly Dependency[] | undefined;
   /**
    * Draw only the arrows that can be seen. On by default; off draws every
    * arrow, every frame — it is the benchmark's control, not a setting a
    * timeline needs.
    */
-  readonly cull?: boolean;
+  readonly cull?: boolean | undefined;
 }
 
 /** How a resource view measures and draws the load. See `@temporeum/timeline-core/resources`. */
 export interface TimelineResourceOptions<T = unknown> {
   /** How much of its resource an assignment takes. 1 by default. */
-  readonly unitsOf?: (item: Item<T>) => number;
+  readonly unitsOf?: ((item: Item<T>) => number) | undefined;
   /**
    * A load lane under each resource's lane, with the load drawn against the
    * capacity. On by default; off keeps the overload bands and the
    * accessible names, and draws no histogram.
    */
-  readonly histogram?: boolean;
+  readonly histogram?: boolean | undefined;
   /** The load lane's size across, in CSS pixels. 24 by default. */
-  readonly loadSize?: number;
+  readonly loadSize?: number | undefined;
   /**
    * Draw only the load that can be seen. On by default; off draws every
    * resource's load over all time, every frame — it is the benchmark's
    * control, not a setting a timeline needs.
    */
-  readonly cull?: boolean;
+  readonly cull?: boolean | undefined;
 }
 
 /**
@@ -141,36 +141,36 @@ export interface TimelineConfig<T = unknown> {
    * is asked for the domain about to be drawn and aborted when the view
    * moves on (`createItemLoader`).
    */
-  readonly items?: ItemsSource<T>;
-  readonly lanes?: readonly Lane[];
+  readonly items?: ItemsSource<T> | undefined;
+  readonly lanes?: readonly Lane[] | undefined;
   /**
    * Nested groups. Each group is a header row — click it, or press `Enter`,
    * to collapse it; drag it, or press `Alt` with an arrow, to reorder it —
    * and the rows of its own items, which name it as their `laneId`. When
    * given, `lanes` is ignored.
    */
-  readonly groups?: readonly Group[];
+  readonly groups?: readonly Group[] | undefined;
   /**
    * Each item's picture as HTML — sanitised: scripts, handlers and anything
    * outside an allow-list are dropped (`templateOptions`). The template
    * replaces the item's label; its accessible name stays the label.
    */
-  readonly template?: (item: Item<T>) => string | null;
-  readonly templateOptions?: TemplateOptions;
+  readonly template?: ((item: Item<T>) => string | null) | undefined;
+  readonly templateOptions?: TemplateOptions | undefined;
   /**
    * Leave each item — or those the function picks — an empty box a framework
    * renders into: a `<div data-tl-slot>` over the item, listed by
-   * `timeline.slots()` and the `slotsChanged` event after each frame that
+   * `timeline.slots` and the `slotsChanged` event after each frame that
    * changed them. What the React and Vue components' `renderItem` and
    * `#item` slot draw with. Needs the `/items` plugin, as `template` does.
    */
-  readonly slots?: boolean | ((item: Item<T>) => boolean);
+  readonly slots?: (boolean | ((item: Item<T>) => boolean)) | undefined;
   /**
    * Draw the timeline as a Gantt chart: dependency arrows, each item's
    * `progress` and `baseline`, and `kind: "milestone"` diamonds. The task
    * table beside it is `mountTaskGrid`.
    */
-  readonly gantt?: TimelineGanttOptions;
+  readonly gantt?: TimelineGanttOptions | undefined;
   /**
    * Draw the timeline as a resource view: the resources are the lanes — or,
    * with `lanes` or `groups`, they say which of those lanes are resources —
@@ -180,83 +180,83 @@ export interface TimelineConfig<T = unknown> {
    * `editing.crossLane`, a drag or `Alt` and an arrow moves work between
    * resources. The unscheduled tasks beside it are `mountBacklog`.
    */
-  readonly resources?: readonly Resource[];
-  readonly resourceOptions?: TimelineResourceOptions<T>;
+  readonly resources?: readonly Resource[] | undefined;
+  readonly resourceOptions?: TimelineResourceOptions<T> | undefined;
   /**
    * The initial view. Without one, the items' extent plus a margin; without
    * items either, the month around the moment the timeline was created.
    */
-  readonly domain?: readonly [TimeInput, TimeInput];
-  readonly limits?: DomainLimits;
-  readonly orientation?: OrientationSetting;
+  readonly domain?: readonly [TimeInput, TimeInput] | undefined;
+  readonly limits?: DomainLimits | undefined;
+  readonly orientation?: OrientationSetting | undefined;
   /** Width below which `orientation: "auto"` turns vertical. */
-  readonly breakpoint?: number;
-  readonly density?: DensitySetting;
+  readonly breakpoint?: number | undefined;
+  readonly density?: DensitySetting | undefined;
   /**
    * Sizes over the density's: a row's height, the type, the corners, the
    * font — `{ rowSize: 36, fontSize: 14, fontFamily: "Inter, sans-serif" }`,
    * or a function of the level's own. Configuration rather than CSS: the
    * layout is measured with them.
    */
-  readonly metrics?: MetricsSetting;
-  readonly packMode?: PackMode;
-  readonly theme?: ThemeSetting;
-  readonly locale?: string;
-  readonly timeZone?: string;
+  readonly metrics?: MetricsSetting | undefined;
+  readonly packMode?: PackMode | undefined;
+  readonly theme?: ThemeSetting | undefined;
+  readonly locale?: string | undefined;
+  readonly timeZone?: string | undefined;
   /**
    * The axis labels' text. The default writes years as ISO does (`-0500`
    * for 501 BC); a chronology writes its own.
    */
-  readonly formatTick?: (tick: Tick, timeZone: string) => string;
+  readonly formatTick?: ((tick: Tick, timeZone: string) => string) | undefined;
   /**
    * The month (or year, or day) the view is in, held at the start of the
    * axis — `formatTick` writes it too, told by `tick.context`. On by
    * default; `false` leaves the axis to its ticks.
    */
-  readonly axisContext?: boolean;
+  readonly axisContext?: boolean | undefined;
   /**
    * Whether the timeline claims every touch gesture (`own`, the default) or
    * leaves the page's vertical scroll to the page (`cooperative`) — for a
    * timeline embedded in an article, which a reader has to be able to
    * scroll past.
    */
-  readonly touchAction?: TouchActionMode;
+  readonly touchAction?: TouchActionMode | undefined;
   /** Ceiling on drawn item labels. */
-  readonly maxLabels?: number;
+  readonly maxLabels?: number | undefined;
   /**
    * A label longer than its room: shortened with an ellipsis (`"ellipsis"`,
    * the default) or given up (`"drop"`). The full text stays the item's
    * accessible name either way.
    */
-  readonly labelOverflow?: LabelOverflow;
+  readonly labelOverflow?: LabelOverflow | undefined;
   /** The accessible name of the listbox. */
-  readonly ariaLabel?: string;
-  readonly decorations?: readonly Decoration[];
-  readonly cluster?: boolean | ClusterOptions;
-  readonly hooks?: RenderHooks<T>;
+  readonly ariaLabel?: string | undefined;
+  readonly decorations?: readonly Decoration[] | undefined;
+  readonly cluster?: boolean | ClusterOptions | undefined;
+  readonly hooks?: RenderHooks<T> | undefined;
   /**
    * The drawing's height in CSS pixels. Without one, the container's own
    * height when it has one (a stylesheet set it), else {@link DEFAULT_HEIGHT}
    * — for a vertical timeline as much as for a horizontal one.
    */
-  readonly height?: number;
+  readonly height?: number | undefined;
   /** Pointer tuning. Read when the timeline is created and on `update()`. */
-  readonly interactions?: InteractionOptions;
-  readonly editing?: TimelineEditingOptions<T>;
+  readonly interactions?: InteractionOptions | undefined;
+  readonly editing?: TimelineEditingOptions<T> | undefined;
   /** The selection, when the host owns it. Changes from the user are still reported. */
-  readonly selectedIds?: readonly string[];
+  readonly selectedIds?: readonly string[] | undefined;
   /**
    * Scope for the embedded stylesheet, for a timeline in the light DOM next
    * to another. The custom element does not need one: its shadow root is
    * the scope.
    */
-  readonly instanceId?: string;
+  readonly instanceId?: string | undefined;
   /**
    * Width of a line of label text. In a browser the instance measures with
    * the page's own font; the server, which has no font, estimates — and the
    * first client frame patches the labels that came out differently.
    */
-  readonly measureText?: MeasureText;
+  readonly measureText?: MeasureText | undefined;
   /**
    * Draw the items in a stable space, mapped onto the view with one
    * transform per layer (`planSceneSpace`), so that a pan or a zoom frame
@@ -272,50 +272,50 @@ export interface TimelineConfig<T = unknown> {
    * frame exact. Before 1.0.0-rc.2 `"auto"` drew exact below 1000 items,
    * because a space at rest could drop a label an exact frame keeps.
    */
-  readonly sceneSpace?: boolean | "auto";
+  readonly sceneSpace?: boolean | "auto" | undefined;
   /**
    * Time the axis does not draw — nights, weekends, a shutdown: fixed and
    * repeating ranges (`createHiddenDates`), repeated in `timeZone`. A pan
    * moves by shown time and a zoom holds the instant under the pointer
    * across a hidden stretch; frames with hidden dates are drawn exactly.
    */
-  readonly hiddenDates?: readonly HiddenDateRange[];
+  readonly hiddenDates?: readonly HiddenDateRange[] | undefined;
   /**
    * The host's own lines across the timeline. Each is a slider: drag it, or
    * focus it with `Tab` and move it with an arrow (`PageUp`/`PageDown` ten
    * steps, `Home`/`End` to the view's ends). A move is `timeBarMoved`; the
    * instance keeps the bar where it was put until `timeBars` changes.
    */
-  readonly timeBars?: readonly TimeBar[];
-  readonly timeBarOptions?: TimelineTimeBarOptions;
+  readonly timeBars?: readonly TimeBar[] | undefined;
+  readonly timeBarOptions?: TimelineTimeBarOptions | undefined;
   /**
    * Follow the clock: the window keeps its span and keeps now at `offset`
    * (the middle by default), re-read every `intervalMs`. A pan or a zoom of
    * the reader's lets go of it until `follow()`.
    */
-  readonly rolling?: boolean | TimelineRollingOptions;
+  readonly rolling?: boolean | TimelineRollingOptions | undefined;
   /** Buttons for named zooms — `true` for a day, a week, a month and a year — and `zoomToPreset(id)`. */
-  readonly zoomPresets?: boolean | readonly ZoomPreset[];
+  readonly zoomPresets?: boolean | readonly ZoomPreset[] | undefined;
   /**
    * The overview strip along the far edge: the whole extent, with the view
    * as a window to drag, press beside, or focus and move with an arrow.
    */
-  readonly minimap?: boolean | { readonly size?: number };
+  readonly minimap?: boolean | { readonly size?: number } | undefined;
   /**
    * Range selection: a drag along the axis band selects a stretch of time
    * instead of panning; with the timeline focused, `r` starts one at the
    * middle of the view, an arrow along the axis moves its end, `Enter`
    * selects and `Escape` lets go. Either is `rangeSelected`.
    */
-  readonly rangeSelect?: boolean | (RangeSelectOptions & { readonly stepMs?: number });
+  readonly rangeSelect?: boolean | (RangeSelectOptions & { readonly stepMs?: number }) | undefined;
   /** Each lane's name held at the start of the view while it is in view. */
-  readonly laneHeaders?: boolean;
+  readonly laneHeaders?: boolean | undefined;
   /**
    * A tooltip on an item — on hover, on keyboard focus, and on a long press —
    * that the pointer can move onto and `Escape` dismisses (WCAG 1.4.13). Its
    * text is the item's label and dates, or what the function returns.
    */
-  readonly tooltip?: boolean | ((item: Item<T>) => string | null);
+  readonly tooltip?: (boolean | ((item: Item<T>) => string | null)) | undefined;
   /**
    * Which way the inline axis runs. `"rtl"` mirrors the timeline: time flows
    * from the right — vertically, the first lane is the rightmost — the
@@ -324,7 +324,7 @@ export interface TimelineConfig<T = unknown> {
    * `direction` (the page's `dir`); a server, which has none, draws `"ltr"`.
    * Left to right by default.
    */
-  readonly direction?: Direction | "auto";
+  readonly direction?: Direction | "auto" | undefined;
   /**
    * The library's words in the host's language: any phrases of
    * `DEFAULT_STRINGS` (`/intl`) — the accessible names of items, clusters,
@@ -332,7 +332,7 @@ export interface TimelineConfig<T = unknown> {
    * label. Dates and numbers are `Intl`'s, in `locale`. Without it, the
    * English the library has always said.
    */
-  readonly strings?: Partial<Strings>;
+  readonly strings?: Partial<Strings> | undefined;
   /**
    * A calendar `Intl` knows — `"hebrew"`, `"islamic-umalqura"`,
    * `"persian"`, `"chinese"`, `"japanese"`, `"buddhist"`, … The axis's
@@ -341,21 +341,21 @@ export interface TimelineConfig<T = unknown> {
    * axis with `Intl` labels. Without one the axis is Gregorian and its labels
    * the deterministic default.
    */
-  readonly calendar?: string;
+  readonly calendar?: string | undefined;
 }
 
 /** How a time bar moves. */
 export interface TimelineTimeBarOptions {
   /** A key's step. A hundredth of the view by default, on the snap grid. */
-  readonly stepMs?: number;
+  readonly stepMs?: number | undefined;
   /** The grid a moved bar lands on. */
-  readonly snapMs?: number;
+  readonly snapMs?: number | undefined;
 }
 
 /** How the window follows the clock. */
 export interface TimelineRollingOptions extends RollingOptions {
   /** How often the clock is read. A second by default. */
-  readonly intervalMs?: number;
+  readonly intervalMs?: number | undefined;
 }
 
 /** Whether frames are drawn in a space. */

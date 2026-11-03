@@ -24,7 +24,8 @@
 
 import { describe, expect, it } from "vitest";
 
-import { calendarGeometry, calendarHit, calendarKeyStep, calendarScene, calendarTimeAt, layoutDays, wallMs, wallOf, weekStartOf, instantOf, CALENDAR_STRINGS } from "../../src/calendar/index.js";
+import { calendarGeometry, calendarHit, calendarKeyStep, calendarScene, calendarTimeAt, layoutDays, wallOf, weekStartOf, instantOf, CALENDAR_STRINGS } from "../../src/calendar/index.js";
+import { wallMs } from "../../src/calendar/rrule.js";
 import type { DaysLayout } from "../../src/calendar/index.js";
 import { pseudoStrings, DEFAULT_STRINGS, PSEUDO_OPEN } from "../../src/intl/index.js";
 import type { SceneElement } from "../../src/scene.js";

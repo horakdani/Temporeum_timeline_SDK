@@ -82,8 +82,8 @@ import type { FrameState, ResolvedView, TimelineConfig, TimelineRollingOptions, 
 import type { TimelinePrintOptions } from "./export.js";
 import { plugin, pluginIf, requireKinds, requirePlugins } from "./plugins.js";
 import type { GanttFeature } from "./plugins.js";
-import type { ToolsHost, ToolsLayer } from "./tools.js";
-import type { GroupLayer } from "./groups.js";
+import type { ToolsHost, ToolsLayer } from "./tools/layer.js";
+import type { GroupLayer } from "./groups/layer.js";
 
 /** The view state a framework renders from. Frozen; a new object only on change. */
 export interface TimelineSnapshot {
@@ -104,40 +104,49 @@ export interface TimelineSnapshot {
   readonly crossOffset: number;
 }
 
+/** `densityChanged`: an `auto` density resolved to another after a resize or a change of the rows. */
 export interface DensityChangedPayload {
   readonly density: Density;
   readonly previous: Density;
 }
 
+/** `orientationChanged`: an `auto` orientation resolved to the other after a resize. */
 export interface OrientationChangedPayload {
   readonly orientation: Orientation;
   readonly previous: Orientation;
 }
 
-export interface ClusterOpenPayload<T = unknown> {
+/** `clusterOpened`: a cluster was opened — the view zooms into its time. */
+export interface ClusterOpenedPayload<T = unknown> {
   readonly cluster: Cluster<T>;
 }
 
+/** `itemsChanged`: the items the instance holds now, after any change to them. */
 export interface ItemsChangedPayload<T = unknown> {
   readonly items: readonly Item<T>[];
 }
 
-export interface ItemAddedPayload<T = unknown> {
-  readonly item: Item<T>;
-  readonly command: Command;
+/** `itemsAdded`: the items added and the add as a reversible command (also emitted as `command`). */
+export interface ItemsAddedPayload<T = unknown> {
+  /** The items added — one for a tap, a key or a drop. */
+  readonly items: readonly Item<T>[];
+  readonly command: Command<T>;
 }
 
+/** `itemsRemoved`: the items removed and the removal as a reversible command (also emitted as `command`). */
 export interface ItemsRemovedPayload<T = unknown> {
   readonly items: readonly Item<T>[];
-  readonly command: Command;
+  readonly command: Command<T>;
 }
 
-export interface GroupTogglePayload {
+/** `groupToggled`: a group was collapsed or expanded. View state: nothing to save. */
+export interface GroupToggledPayload {
   readonly group: Group;
   readonly collapsed: boolean;
 }
 
-export interface GroupCommandPayload {
+/** `groupMoved`: a group was moved among its siblings; `command.inverse` moves it back. */
+export interface GroupMovedPayload {
   readonly command: GroupCommand;
 }
 
@@ -151,11 +160,13 @@ export interface ItemSlot<T = unknown> {
   readonly item: Item<T>;
 }
 
+/** `slotsChanged`: the slots drawn now (`config.slots`), in the frame that drew them. */
 export interface SlotsChangedPayload<T = unknown> {
   /** Every slot drawn now, by item id. */
   readonly slots: ReadonlyMap<string, ItemSlot<T>>;
 }
 
+/** `jumpRequest`: the reader asked to jump to a date (`g`) — the host opens its date picker. */
 export interface JumpRequestPayload {
   /** The middle of the view, where a date picker would start. */
   readonly time: TimeMs;
@@ -169,10 +180,10 @@ export interface JumpRequestPayload {
 export interface TimelineInstanceEventMap<T = unknown> extends TimelineEventMap<T> {
   readonly densityChanged: DensityChangedPayload;
   readonly orientationChanged: OrientationChangedPayload;
-  readonly clusterOpen: ClusterOpenPayload<T>;
+  readonly clusterOpened: ClusterOpenedPayload<T>;
   readonly jumpRequest: JumpRequestPayload;
-  /** An item was added — by a double tap, a key, a drop or `dropItem`. `command` is also emitted. */
-  readonly itemAdded: ItemAddedPayload<T>;
+  /** Items were added — by a double tap, a key, a drop or `dropItem`. `command` is also emitted. */
+  readonly itemsAdded: ItemsAddedPayload<T>;
   /** Items were removed — by a remove handle or a key. `command` is also emitted. */
   readonly itemsRemoved: ItemsRemovedPayload<T>;
   /**
@@ -182,9 +193,9 @@ export interface TimelineInstanceEventMap<T = unknown> extends TimelineEventMap<
    */
   readonly itemsChanged: ItemsChangedPayload<T>;
   /** A group was collapsed or expanded. View state: nothing to save. */
-  readonly groupToggle: GroupTogglePayload;
+  readonly groupToggled: GroupToggledPayload;
   /** The groups were reordered. `command.inverse` undoes it. */
-  readonly groupCommand: GroupCommandPayload;
+  readonly groupMoved: GroupMovedPayload;
   /** A time bar was moved — let go after a drag, or a key step. The instance keeps it there. */
   readonly timeBarMoved: TimeBarMovedPayload;
   /** A range of time was selected — by a drag along the axis band, or `r`, the arrows and `Enter`. */
@@ -197,6 +208,7 @@ export interface TimelineInstanceEventMap<T = unknown> extends TimelineEventMap<
   readonly slotsChanged: SlotsChangedPayload<T>;
 }
 
+/** The name of an event of {@link TimelineInstanceEventMap}. */
 export type TimelineInstanceEventName = keyof TimelineInstanceEventMap & string;
 
 /** Every event name, once: a record over the map, so a new event that is not listed does not compile. */
@@ -212,13 +224,13 @@ const EVENT_NAMES: Record<TimelineInstanceEventName, true> = {
   command: true,
   densityChanged: true,
   orientationChanged: true,
-  clusterOpen: true,
+  clusterOpened: true,
   jumpRequest: true,
-  itemAdded: true,
+  itemsAdded: true,
   itemsRemoved: true,
   itemsChanged: true,
-  groupToggle: true,
-  groupCommand: true,
+  groupToggled: true,
+  groupMoved: true,
   timeBarMoved: true,
   rangeSelected: true,
   slotsChanged: true,
@@ -250,8 +262,22 @@ export interface Timeline<T = unknown> {
   /** Store protocol: called after every frame whose snapshot changed. */
   subscribe(listener: () => void): Unsubscribe;
   getSnapshot(): TimelineSnapshot;
-  /** Change any part of the configuration. Omitted keys keep their value. */
+  /**
+   * Change any part of the configuration. Omitted keys keep their value; a
+   * key present with `undefined` goes back to its default. A value equal to
+   * the one the instance already has is no change — for `items` that means
+   * the same array: a host that re-sends its props after an edit keeps the
+   * edit. To replace the items with the very array given before, call
+   * {@link setItems}.
+   */
   update(config: TimelineUpdate<T>): void;
+  /**
+   * Replace the items — always, the same array included: edits the instance
+   * holds and the host did not write back are dropped, and the array (or the
+   * source) given is what the timeline shows. `update({ items })` with an
+   * array the instance already has is no change; this is the call that says
+   * "these, again".
+   */
   setItems(items: TimelineConfig<T>["items"] | undefined): void;
   /** Apply a command's patches — `command.inverse` is an undo. Group commands reorder the groups. */
   applyCommand(command: Command | GroupCommand): void;
@@ -299,11 +325,11 @@ export interface Timeline<T = unknown> {
   /** Bring a time to the middle of the view, the way the keyboard's jump does. */
   scrollTo(time: TimeInput): void;
   select(ids: readonly string[]): void;
-  getLayout(): Layout<T> | undefined;
+  readonly layout: Layout<T> | undefined;
   /** The sizes the last frame was drawn with — its density's, with `config.metrics` over them. A panel beside the timeline lines up with these. */
   readonly metrics: DensityMetrics | undefined;
   /** The slots drawn now, by item id; empty without `config.slots`. */
-  slots(): ReadonlyMap<string, ItemSlot<T>>;
+  readonly slots: ReadonlyMap<string, ItemSlot<T>>;
   /**
    * Put the keyboard's focus on an item and bring it into view — its time
    * along the axis, its lane across. A task grid's `Enter` calls it. `false`
@@ -317,21 +343,23 @@ export interface Timeline<T = unknown> {
   /** The last frame, for hit testing or export. */
   readonly result: RenderResult<T> | undefined;
   /** The current drawing as a standalone SVG document. An `auto` theme is pinned to what the screen shows. */
-  exportSVG(): string;
+  exportSvg(): string;
   /** The current drawing as a PNG, `scale` device pixels per CSS pixel (2 by default). */
-  exportPNG(options?: PngOptions): Promise<Blob>;
+  exportPng(options?: PngOptions): Promise<Blob>;
   /**
    * The whole range as a PDF, with no server: vector, its text selectable,
    * the lanes cut between rows onto as many pages as they need — each item
-   * on exactly one. No bytes at all before the first frame.
+   * on exactly one. The drawing is the one at the call; no bytes at all
+   * (an empty array) before the first frame. Throws, as `exportPng` does,
+   * when the export plugin is not registered.
    */
-  exportPDF(options?: TimelinePrintOptions): Uint8Array;
+  exportPdf(options?: TimelinePrintOptions): Promise<Uint8Array>;
   /**
    * Print the whole range through the browser's dialog, a page a sheet, cut
-   * as {@link exportPDF} cuts it. The print view leaves the document after
-   * the print.
+   * as {@link exportPdf} cuts it. Resolves when the dialog is closed and the
+   * print view has left the document — at once before the first frame.
    */
-  print(options?: TimelinePrintOptions): void;
+  print(options?: TimelinePrintOptions): Promise<void>;
   /** Draw now instead of on the next animation frame. */
   flush(): void;
   readonly destroyed: boolean;
@@ -793,7 +821,7 @@ export function createTimeline<T = unknown>(
       },
       command: (command) => {
         groups = tree.applyGroupPatches(groups ?? [], command.after);
-        emitter.emit("groupCommand", { command });
+        emitter.emit("groupMoved", { command });
         loop.request();
       },
     });
@@ -836,7 +864,7 @@ export function createTimeline<T = unknown>(
     const command = addCommand(items, item, edit.canAdd === undefined ? {} : { canAdd: edit.canAdd });
     if (command === undefined) return false;
     apply(command.after);
-    emitter.emit("itemAdded", { item, command });
+    emitter.emit("itemsAdded", { items: [item], command });
     emitter.emit("command", { command });
     setSelection([item.id]);
     machine.setFocus(item.id);
@@ -858,7 +886,7 @@ export function createTimeline<T = unknown>(
   function commitRemove(id: string): boolean {
     const edit = config.editing ?? {};
     const { removeTargets, removeCommand } = plugin("items", "The editing.remove option");
-    const ids = removeTargets(id, selectedIds, edit.multiSelect === true);
+    const ids = removeTargets(id, selectedIds, { multiSelect: edit.multiSelect === true });
     const removed = items.filter((item) => ids.includes(item.id));
     const command = removeCommand(items, ids, edit.canRemove === undefined ? {} : { canRemove: edit.canRemove });
     if (command === undefined) return false;
@@ -1423,7 +1451,7 @@ export function createTimeline<T = unknown>(
   function openCluster(cluster: Cluster<T>, anchor?: number): void {
     if (view === undefined) return;
     const zoom = clusterZoom(cluster, scaleOf(view.mainSize), anchor === undefined ? {} : { anchor });
-    emitter.emit("clusterOpen", { cluster });
+    emitter.emit("clusterOpened", { cluster });
     handle(machine.zoom(zoom.factor, zoom.anchor));
   }
 
@@ -1673,7 +1701,7 @@ export function createTimeline<T = unknown>(
       if (value) changed.add(id);
       else changed.delete(id);
       collapsed = changed;
-      emitter.emit("groupToggle", { group, collapsed: value });
+      emitter.emit("groupToggled", { group, collapsed: value });
       if (width > 0) resolve();
       loop.request();
     },
@@ -1735,10 +1763,10 @@ export function createTimeline<T = unknown>(
       setSelection(ids);
       loop.request();
     },
-    getLayout() {
+    get layout() {
       return result?.layout;
     },
-    slots() {
+    get slots() {
       return slotMap;
     },
     get metrics() {
@@ -1771,25 +1799,26 @@ export function createTimeline<T = unknown>(
     get result() {
       return result;
     },
-    exportSVG() {
+    exportSvg() {
       const scene = exportScene();
       if (scene === undefined) return "";
       const svg = renderToSvgString(scene);
       return svg.includes("xmlns=") ? svg : svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
     },
-    exportPNG(options) {
-      const exporter = plugin("export", "exportPNG()");
+    exportPng(options) {
+      const exporter = plugin("export", "exportPng()");
       const scene = exportScene();
       return scene === undefined ? Promise.reject(new Error("Nothing drawn yet to export")) : exporter.png(doc, scene, options);
     },
-    exportPDF(options = {}) {
-      const exporter = plugin("export", "exportPDF()");
-      // No bytes at all before the first frame.
-      return result === undefined || view === undefined ? new Uint8Array(0) : exporter.pdf(config, frameState(view), result.layout, options);
+    exportPdf(options = {}) {
+      const exporter = plugin("export", "exportPdf()");
+      // No bytes at all before the first frame. The pages are cut now, from
+      // the frame the call saw, not from whatever is drawn when it resolves.
+      return Promise.resolve(result === undefined || view === undefined ? new Uint8Array(0) : exporter.pdf(config, frameState(view), result.layout, options));
     },
     print(options = {}) {
       const exporter = plugin("export", "print()");
-      if (result !== undefined && view !== undefined) exporter.print(doc, config, frameState(view), result.layout, options);
+      return result === undefined || view === undefined ? Promise.resolve() : exporter.print(doc, config, frameState(view), result.layout, options);
     },
     flush() {
       loop.request();

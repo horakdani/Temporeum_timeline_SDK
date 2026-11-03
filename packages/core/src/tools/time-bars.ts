@@ -12,7 +12,8 @@
 import type { TimeScale } from "../scale.js";
 import { toTimeMs } from "../time.js";
 import type { Domain, TimeInput, TimeMs } from "../types.js";
-import { snapTime, stepsOf } from "./keys.js";
+import { snapTime } from "../editing.js";
+import { stepsOf } from "./keys.js";
 import type { AxisKeyAction } from "./keys.js";
 
 /** A line at one instant, across every lane, that the reader can move. */

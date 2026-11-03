@@ -81,7 +81,7 @@ describe("ticks at the edges", () => {
 describe("words at the edges", () => {
   it("falls back to `other`, fills percentages, and pseudo-translates plural forms", () => {
     expect(fill({ other: "{count} things" }, { count: 1 })).toBe("1 things");
-    expect(formatAmount(0.25, "en", true)).toBe("25%");
+    expect(formatAmount(0.25, { locale: "en", percent: true })).toBe("25%");
     const pseudo = pseudoStrings({ ...DEFAULT_STRINGS, cluster: { one: "{count} item", other: "{count} items" } });
     expect(pseudo.cluster).toEqual({ one: "⟦{count} item⟧", other: "⟦{count} items⟧" });
     expect(sayIn(pseudo)("cluster", { count: 1 })).toBe("⟦1 item⟧");

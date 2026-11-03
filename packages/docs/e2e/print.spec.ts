@@ -150,7 +150,7 @@ test("[claim:pdf-export] the element's own PDF agrees with the print view, page 
   await open(page);
   const labels = await page.evaluate(() => (window as unknown as { tl: { labels(): Record<string, string> } }).tl.labels());
   const pages = await page.evaluate(() => (window as unknown as { tl: { mountPrint(): { ids: string[] }[] } }).tl.mountPrint());
-  const bytes = await page.evaluate(() => (window as unknown as { tl: { pdf(): number[] } }).tl.pdf());
+  const bytes = await page.evaluate(() => (window as unknown as { tl: { pdf(): Promise<number[]> } }).tl.pdf());
   const sheets = await pdfText(new Uint8Array(bytes));
   const found = pagesOfLabels(sheets, labels);
   const section = new Map<string, number>();

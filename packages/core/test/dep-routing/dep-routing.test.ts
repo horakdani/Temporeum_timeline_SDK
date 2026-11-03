@@ -23,13 +23,13 @@ import {
   dependencyId,
   dependencyNodes,
   dependencyPaths,
-  edgePoint,
   routeDependencies,
   routePath,
   routePoints,
   taskBox,
   withDependencyLayer,
 } from "../../src/gantt/index.js";
+import { edgePoint } from "../../src/gantt/box.js";
 import type { Dependency, DependencyRoute, DependencyType, RouteOptions } from "../../src/gantt/index.js";
 import { densityMetrics } from "../../src/density.js";
 import { layoutItems } from "../../src/layout.js";
@@ -247,7 +247,7 @@ describe("dependency routes, by hand", () => {
   const box = (main: number, mainSize: number, cross: number) => ({ main, mainSize, cross, crossSize: 20 });
 
   it("routes a finish-to-start with room straight down and in", () => {
-    expect(routePoints(box(0, 100, 0), box(200, 50, 40), "FS", 8, 4)).toEqual([
+    expect(routePoints(box(0, 100, 0), box(200, 50, 40), { type: "FS", stub: 8, rowGap: 4 })).toEqual([
       { main: 100, cross: 10 },
       { main: 108, cross: 10 },
       { main: 108, cross: 50 },
@@ -256,7 +256,7 @@ describe("dependency routes, by hand", () => {
   });
 
   it("turns a finish-to-start back through the gap when the successor starts earlier", () => {
-    const points = routePoints(box(0, 100, 0), box(50, 50, 40), "FS", 8, 4);
+    const points = routePoints(box(0, 100, 0), box(50, 50, 40), { type: "FS", stub: 8, rowGap: 4 });
     expect(points).toEqual([
       { main: 100, cross: 10 },
       { main: 108, cross: 10 },
@@ -268,7 +268,7 @@ describe("dependency routes, by hand", () => {
   });
 
   it("does not double a same-row start-to-start back on itself", () => {
-    const points = routePoints(box(100, 50, 0), box(200, 50, 0), "SS", 8, 4);
+    const points = routePoints(box(100, 50, 0), box(200, 50, 0), { type: "SS", stub: 8, rowGap: 4 });
     expect(points[1]).toEqual({ main: 92, cross: 10 });
     expect(points[points.length - 1]).toEqual({ main: 200, cross: 10 });
     expect(points.length).toBeGreaterThan(3);

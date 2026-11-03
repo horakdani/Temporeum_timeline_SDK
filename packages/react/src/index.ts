@@ -46,6 +46,7 @@ export type TimelineHandlers<T = unknown> = {
   readonly [K in TimelineInstanceEventName as HandlerName<K>]?: (payload: TimelineInstanceEventMap<T>[K]) => void;
 };
 
+/** The `<Timeline>` component's props: every `TimelineConfig` field, an `on…` handler for every instance event, and the few that are React's own. */
 export interface TimelineProps<T = unknown> extends TimelineConfig<T>, TimelineHandlers<T> {
   readonly className?: string;
   readonly style?: CSSProperties;
@@ -147,7 +148,7 @@ export function Timeline<T = unknown>(props: TimelineProps<T>): ReactElement {
       if (inEffect.current) setSlots(next);
       else flushSync(() => setSlots(next));
     });
-    setSlots(timeline.slots());
+    setSlots(timeline.slots);
     inEffect.current = false;
     // Through the ref of the latest props: a new callback each render does
     // not resubscribe, and the one that runs is always the current one.

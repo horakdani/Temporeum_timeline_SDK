@@ -83,13 +83,13 @@ describe("add and remove", () => {
     expect(resolveItemKey(key("Delete"))).toBe("remove");
     expect(resolveItemKey(key("Backspace"))).toBe("remove");
     for (const [selected, multi] of [[["b", "c"], true], [["b", "c"], false], [[], true]] as const) {
-      const byHandle = removeCommand(items, removeTargets("b", selected, multi));
-      const byKey = removeCommand(items, removeTargets("b", selected, multi));
+      const byHandle = removeCommand(items, removeTargets("b", selected, { multiSelect: multi }));
+      const byKey = removeCommand(items, removeTargets("b", selected, { multiSelect: multi }));
       expect(byKey).toEqual(byHandle);
     }
-    expect(removeTargets("b", ["b", "c"], true)).toEqual(["b", "c"]);
-    expect(removeTargets("b", ["c"], true)).toEqual(["b"]);
-    expect(removeTargets("b", ["b", "c"], false)).toEqual(["b"]);
+    expect(removeTargets("b", ["b", "c"], { multiSelect: true })).toEqual(["b", "c"]);
+    expect(removeTargets("b", ["c"], { multiSelect: true })).toEqual(["b"]);
+    expect(removeTargets("b", ["b", "c"], { multiSelect: false })).toEqual(["b"]);
   });
 
   it("[claim:inverse-exact] the inverse restores the exact starting list on generated sequences", () => {

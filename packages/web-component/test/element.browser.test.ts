@@ -123,8 +123,15 @@ describe("<temporeum-timeline>", () => {
     el.setAttribute("start", String(T0 + 4 * DAY));
     el.setAttribute("end", String(T0 + 8 * DAY));
     await vi.waitFor(() => expect(el.timeline?.getSnapshot().domain).toEqual([T0 + 4 * DAY, T0 + 8 * DAY]));
-    el.setAttribute("label", "Projekt");
+    el.setAttribute("aria-label", "Projekt");
     await vi.waitFor(() => expect(svgOf(el).getAttribute("aria-label")).toBe("Projekt"));
+    // The platform's own property is the attribute's: ARIA reflection.
+    el.ariaLabel = "Plan";
+    await vi.waitFor(() => expect(svgOf(el).getAttribute("aria-label")).toBe("Plan"));
+    // The earlier spelling is not read.
+    el.setAttribute("label", "Ignored");
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(svgOf(el).getAttribute("aria-label")).toBe("Plan");
   });
 
   it("keeps two themes apart: the shadow root is the scope", async () => {
@@ -199,7 +206,9 @@ describe("<temporeum-timeline>", () => {
       each.setAttribute("snap-ms", String(DAY));
     });
     const moved = record<{ item: Item; from: { start: number }; to: { start: number } }>(el, "item-moved");
-    const commandsSeen = record<{ command: { after: { id: string; start: number }[]; inverse: unknown } }>(el, "command");
+    const commandsSeen = record<{ command: { after: { id: string; start: number }[]; inverse: unknown } }>(el, "timeline-command");
+    // Not the platform's `command` (the Invoker Commands API's CommandEvent).
+    const platformCommands = record<unknown>(el, "command");
     const from = centre(nodeOf(el, "a"));
     const before = nodeOf(el, "a").getBoundingClientRect().left;
     await commands.mouse([
@@ -214,6 +223,7 @@ describe("<temporeum-timeline>", () => {
     // Snapped to whole days.
     expect(((moved[0]?.to.start ?? 1) - T0) % DAY).toBe(0);
     expect(commandsSeen).toHaveLength(1);
+    expect(platformCommands).toHaveLength(0);
     await vi.waitFor(() => expect(nodeOf(el, "a").getBoundingClientRect().left).toBeGreaterThan(before + 50));
     // Undo is the inverse, applied.
     el.timeline?.applyCommand(commandsSeen[0]?.command.inverse as Parameters<Timeline["applyCommand"]>[0]);
@@ -240,7 +250,7 @@ describe("<temporeum-timeline>", () => {
       each.items = dense;
       each.setAttribute("cluster", "");
     });
-    const opened = record<{ cluster: { members: unknown[] } }>(el, "cluster-open");
+    const opened = record<{ cluster: { members: unknown[] } }>(el, "cluster-opened");
     const marker = (el.shadowRoot as ShadowRoot).querySelector("[data-tl-cluster]") as Element;
     expect(marker).not.toBeNull();
     const at = centre(marker);
@@ -289,7 +299,7 @@ describe("<temporeum-timeline>", () => {
     expect(el.items).toHaveLength(1);
     expect(el.lanes).toEqual([]);
     expect(el.config.domain).toEqual(domain);
-    el.zoomTo(new Date(T0), T0 + 2 * DAY);
+    el.zoomTo([new Date(T0), T0 + 2 * DAY]);
     await vi.waitFor(() => expect(el.timeline?.getSnapshot().domain).toEqual([T0, T0 + 2 * DAY]));
   });
 
@@ -454,12 +464,12 @@ describe("createTimeline — the instance and its store", () => {
     timeline.setItems([...items, { id: "d", start: T0 + 22 * DAY, label: "New", laneId: "l2" }]);
     timeline.flush();
     expect(layouts).toEqual([4]);
-    expect(timeline.getLayout()?.items).toHaveLength(4);
-    const svg = timeline.exportSVG();
+    expect(timeline.layout?.items).toHaveLength(4);
+    const svg = timeline.exportSvg();
     expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg"')).toBe(true);
     expect(new DOMParser().parseFromString(svg, "image/svg+xml").querySelectorAll("[data-tl-id]")).toHaveLength(4);
     timeline.destroy();
-    expect(timeline.exportSVG()).toContain("<svg");
+    expect(timeline.exportSvg()).toContain("<svg");
   });
 
   it("fetches a windowed source and reports when it is busy", async () => {
@@ -660,7 +670,7 @@ describe("createTimeline — the instance and its store", () => {
     el.releasePointerCapture(pointerId);
     await commands.mouse([{ type: "up" }]);
     timeline.flush();
-    const placed = timeline.getLayout()?.items.find((each) => each.item.id === "p");
+    const placed = timeline.layout?.items.find((each) => each.item.id === "p");
     expect(placed?.item.start).toBe(T0 + 12 * DAY);
     expect(placed?.item.end).toBeUndefined();
     expect(placed?.item.laneId).toBeUndefined();
@@ -676,7 +686,7 @@ describe("createTimeline — the instance and its store", () => {
     await commands.mouse([{ type: "move", x: from.x, y: from.y }, { type: "down" }, { type: "move", x: from.x - 80, y: from.y, steps: 6 }, { type: "up" }]);
     await vi.waitFor(() => expect(moved).toHaveLength(1));
     timeline.flush();
-    expect(timeline.getLayout()?.items.find((each) => each.item.id === "c")?.item.start).toBe(moved[0]);
+    expect(timeline.layout?.items.find((each) => each.item.id === "c")?.item.start).toBe(moved[0]);
     timeline.destroy();
   });
 
@@ -684,7 +694,7 @@ describe("createTimeline — the instance and its store", () => {
     const dense: Item[] = Array.from({ length: 30 }, (_, index) => ({ id: `k${String(index)}`, start: T0 + 8 * DAY + index * 60_000, laneId: "l1" }));
     const { timeline, el } = await instance({ items: dense, cluster: true });
     const opened: number[] = [];
-    timeline.on("clusterOpen", ({ cluster }) => opened.push(cluster.members.length));
+    timeline.on("clusterOpened", ({ cluster }) => opened.push(cluster.members.length));
     (el.querySelector("svg") as SVGSVGElement).focus();
     await userEvent.keyboard("{ArrowRight}");
     await vi.waitFor(() => expect(el.querySelector("svg")?.getAttribute("aria-activedescendant")).toMatch(/-c-/));
@@ -834,7 +844,7 @@ describe("createTimeline — a large timeline draws in a scene space", () => {
   it("exports the view exactly, without the overscan", async () => {
     const spaced = await large();
     const exact = await large({ sceneSpace: false });
-    expect(spaced.timeline.exportSVG()).toBe(exact.timeline.exportSVG());
+    expect(spaced.timeline.exportSvg()).toBe(exact.timeline.exportSvg());
     spaced.timeline.destroy();
     exact.timeline.destroy();
   });

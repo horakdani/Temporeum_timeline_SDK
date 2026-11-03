@@ -14,11 +14,11 @@
  * Pure functions, Node or browser; nothing is saved and nothing is fetched.
  * The element mounts the views (`mountCalendarView`).
  */
-export { formatRRule, formatWall, instantOf, occurrences, parseDateValue, parseRRule, wallMs, wallOf, WEEKDAYS } from "./rrule.js";
+export { formatRRule, instantOf, occurrences, parseDateValue, parseRRule, wallOf, WEEKDAYS } from "./rrule.js";
 export type { Frequency, OccurrenceRange, Recurrence, RecurrenceRule, WallTime, Weekday, WeekdayNum } from "./rrule.js";
 export { expandEvents, occurrenceId, recurringSource, utcStamp } from "./events.js";
 export type { CalendarEvent, ExpandOptions, OccurrenceData } from "./events.js";
-export { escapeText, foldLine, formatICal, parseICal, unescapeText } from "./ical.js";
+export { formatICal, parseICal } from "./ical.js";
 export type { ICalCalendar, ICalFormatOptions, ICalParseOptions } from "./ical.js";
 export { calendarDays, calendarGeometry, calendarHit, calendarKeyStep, calendarTimeAt, dayStartOf, layoutDays, resolveCalendarKey, weekStartOf } from "./view.js";
 export type {

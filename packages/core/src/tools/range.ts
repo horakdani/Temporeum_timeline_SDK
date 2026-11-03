@@ -12,7 +12,8 @@
 import type { KeySample } from "../keyboard.js";
 import type { TimeScale } from "../scale.js";
 import type { Domain, Orientation, TimeMs } from "../types.js";
-import { resolveAxisKey, snapTime, stepsOf } from "./keys.js";
+import { snapTime } from "../editing.js";
+import { resolveAxisKey, stepsOf } from "./keys.js";
 
 /** A selected stretch of time, `[start, end)`. What `rangeSelected` carries. */
 export interface TimeRange {
@@ -50,9 +51,9 @@ export type RangeKeyAction = "start" | "earlier" | "later" | "pageEarlier" | "pa
  * picked, the axis arrows and pages move its end, `Enter` commits and
  * `Escape` cancels.
  */
-export function resolveRangeKey(sample: KeySample, orientation: Orientation, picking: boolean): RangeKeyAction | undefined {
+export function resolveRangeKey(sample: KeySample, orientation: Orientation, options: { readonly picking?: boolean | undefined } = {}): RangeKeyAction | undefined {
   if (sample.ctrlKey || sample.metaKey || sample.altKey) return undefined;
-  if (!picking) return sample.key === "r" || sample.key === "R" ? "start" : undefined;
+  if (options.picking !== true) return sample.key === "r" || sample.key === "R" ? "start" : undefined;
   if (sample.key === "Enter") return "commit";
   if (sample.key === "Escape") return "cancel";
   const axis = resolveAxisKey(sample, orientation);

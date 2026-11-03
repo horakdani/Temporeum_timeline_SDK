@@ -79,7 +79,7 @@ mountTaskGrid(document.querySelector("#grid"), timeline, { label: "Release tasks
 - **Virtualized.** Only the rows in view, and a few beyond, are in the document. A table of 10 000 rows holds about as many nodes as the view has rows; `aria-rowcount` and `aria-rowindex` still tell a screen reader where it is.
 - **Columns.** `columns: [{ id, header, width?, value(row) }]`, where `row` is `{ lane, items }`. The default is `defaultTaskColumns()`: name, start, end and progress.
 - **Keys and pointer.** Tab into the table; the arrows walk the rows (up and down beside a horizontal timeline, left and right beside a vertical one), `Home`, `End`, `Page Up` and `Page Down` jump, and `Enter` — or a click on a row — moves the timeline's focus to the row's first item and the keyboard to `focusTarget`. The wheel over the table scrolls the lanes.
-- **Your own table.** The rows are `taskGridRows(layout, { crossInset, crossOffset, crossSize })` from the entry point, from `timeline.getLayout()` and the snapshot's `crossOffset`; `timeline.scrollLanes(delta)`, `revealLane(id)` and `focusItem(id)` are what the table calls.
+- **Your own table.** The rows are `taskGridRows(layout, { crossInset, crossOffset, crossSize })` from the entry point, from `timeline.layout` and the snapshot's `crossOffset`; `timeline.scrollLanes(delta)`, `revealLane(id)` and `focusItem(id)` are what the table calls.
 
 ## What it does not do yet
 

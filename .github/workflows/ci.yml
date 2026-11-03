@@ -84,6 +84,8 @@ jobs:
         run: npm run test:migration -w @temporeum/timeline-docs
       - name: exports map, from the packed tarballs
         run: node scripts/sdk_check_exports.mjs
+      - name: every public name documented, no positional booleans
+        run: node scripts/sdk_check_api_docs.mjs
 
   audit:
     name: audit

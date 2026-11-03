@@ -23,4 +23,5 @@ export type { Strings } from "./strings.js";
 export { calendarFields, calendarTickLabel, calendarTicks } from "./calendars.js";
 export type { CalendarFields, CalendarTickOptions } from "./calendars.js";
 export { fill, formatAmount } from "../text.js";
+export type { AmountOptions } from "../text.js";
 export type { Phrase } from "../text.js";

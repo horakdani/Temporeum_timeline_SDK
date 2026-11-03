@@ -255,14 +255,14 @@ export function addCommand<T>(
   items: readonly Item<T>[],
   item: Item<T>,
   options: ItemVetoes<T> & { readonly index?: number; readonly label?: string } = {},
-): Command | undefined {
+): Command<T> | undefined {
   if (items.some((each) => each.id === item.id)) return undefined;
   if (options.canAdd !== undefined && !options.canAdd(item)) return undefined;
   const index = options.index ?? items.length;
-  return createCommand(
+  return createCommand<T>(
     "add",
     [{ id: item.id, item: null, index }],
-    [{ id: item.id, item: item as Item, index }],
+    [{ id: item.id, item, index }],
     options.label,
   );
 }
@@ -280,7 +280,7 @@ export function removeCommand<T>(
   items: readonly Item<T>[],
   ids: readonly string[],
   options: ItemVetoes<T> & { readonly label?: string } = {},
-): Command | undefined {
+): Command<T> | undefined {
   const wanted = new Set(ids);
   const found: { item: Item<T>; index: number }[] = [];
   items.forEach((item, index) => {
@@ -291,9 +291,9 @@ export function removeCommand<T>(
     if (item.removable === false) return undefined;
     if (options.canRemove !== undefined && !options.canRemove(item)) return undefined;
   }
-  return createCommand(
+  return createCommand<T>(
     "remove",
-    found.map(({ item, index }) => ({ id: item.id, item: item as Item, index })),
+    found.map(({ item, index }) => ({ id: item.id, item, index })),
     found.map(({ item, index }) => ({ id: item.id, item: null, index })),
     options.label,
   );
@@ -376,8 +376,8 @@ export function itemForTarget<T>(items: readonly Item<T>[], target: AddTarget, c
  * selection with it when that one is selected and several may be — the
  * rule a drag follows for what it carries.
  */
-export function removeTargets(id: string, selectedIds: readonly string[], multiSelect: boolean): readonly string[] {
-  return multiSelect && selectedIds.includes(id) ? [id, ...selectedIds.filter((each) => each !== id)] : [id];
+export function removeTargets(id: string, selectedIds: readonly string[], options: { readonly multiSelect?: boolean | undefined } = {}): readonly string[] {
+  return options.multiSelect === true && selectedIds.includes(id) ? [id, ...selectedIds.filter((each) => each !== id)] : [id];
 }
 
 /** What a key asks for, in the item layer. */

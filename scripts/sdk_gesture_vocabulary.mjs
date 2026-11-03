@@ -246,14 +246,14 @@ export const ENTRY_FILES = {
   groups: join(CORE, "src", "groups", "index.ts"),
   items: join(CORE, "src", "items", "index.ts"),
   timeline: join(repoRoot, "packages", "web-component", "src", "timeline.ts"),
-  layer: join(repoRoot, "packages", "web-component", "src", "groups.ts"),
+  layer: join(repoRoot, "packages", "web-component", "src", "groups", "layer.ts"),
   // The Gantt keys are in the /gantt entry point, the grid in the web-component.
   gantt: join(CORE, "src", "gantt", "index.ts"),
   grid: join(repoRoot, "packages", "web-component", "src", "task-grid.ts"),
   // The backlog (the unscheduled tasks) is in the web-component.
   backlog: join(repoRoot, "packages", "web-component", "src", "backlog.ts"),
   // The time tools layer (time bars, overview strip, range, tooltip).
-  tools: join(repoRoot, "packages", "web-component", "src", "tools.ts"),
+  tools: join(repoRoot, "packages", "web-component", "src", "tools", "layer.ts"),
 };
 
 /** Key action -> capability. `null`: only tree navigation — the pointer has no such gesture (clicking a header moves the focus there too). */

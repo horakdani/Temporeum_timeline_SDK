@@ -37,11 +37,11 @@ function download(name, blob) {
 
 const exports = {
   // The view on screen, as a standalone file.
-  svg: () => download("plan.svg", new Blob([timeline.exportSVG()], { type: "image/svg+xml" })),
-  png: async () => download("plan.png", await timeline.exportPNG({ scale: 2 })),
+  svg: () => download("plan.svg", new Blob([timeline.exportSvg()], { type: "image/svg+xml" })),
+  png: async () => download("plan.png", await timeline.exportPng({ scale: 2 })),
   // The whole quarter: every lane, cut between rows onto as many pages as it needs.
-  pdf: () => {
-    const pdf = timeline.exportPDF({ size: "a4", orientation: "landscape" });
+  pdf: async () => {
+    const pdf = await timeline.exportPdf({ size: "a4", orientation: "landscape" });
     const pages = /\/Count (\d+)/.exec(new TextDecoder("latin1").decode(pdf))?.[1];
     download("plan.pdf", new Blob([pdf.slice()], { type: "application/pdf" }));
     log.textContent = `plan.pdf: ${pages} ${pages === "1" ? "page" : "pages"}, A4 landscape.`;

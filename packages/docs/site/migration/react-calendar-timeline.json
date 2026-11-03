@@ -338,15 +338,15 @@
       "area": "Editing",
       "vis": "onCanvasDoubleClick(groupId, time)",
       "status": "different",
-      "temporeum": "editing: { add: true }, on(\"itemAdded\")",
+      "temporeum": "editing: { add: true }, on(\"itemsAdded\")",
       "note": "A double tap on empty lane space, or `n`, adds an item; `createItem` says what it is.",
       "uses": [
         "TimelineEditingOptions.add",
         "TimelineEditingOptions.createItem",
-        "TimelineInstanceEventMap.itemAdded"
+        "TimelineInstanceEventMap.itemsAdded"
       ],
       "config": "editing: { enabled: true, add: true }",
-      "after": "timeline.on(\"itemAdded\", ({ item }) => console.log(item.id, item.start));"
+      "after": "timeline.on(\"itemsAdded\", ({ items }) => console.log(items[0]?.id, items[0]?.start));"
     },
     {
       "area": "Events",

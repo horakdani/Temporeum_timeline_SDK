@@ -40,11 +40,11 @@ import {
 import type { AfterViewInit, ElementRef } from "@angular/core";
 import { createTimeline, DEFAULT_HEIGHT, renderTimelineSvg, TIMELINE_EVENTS } from "@temporeum/timeline-element";
 import type {
-  ClusterOpenPayload,
+  ClusterOpenedPayload,
   DensityChangedPayload,
-  GroupCommandPayload,
-  GroupTogglePayload,
-  ItemAddedPayload,
+  GroupMovedPayload,
+  GroupToggledPayload,
+  ItemsAddedPayload,
   ItemsChangedPayload,
   ItemsRemovedPayload,
   JumpRequestPayload,
@@ -74,6 +74,11 @@ export class TimelineIds {
 
 type Payload<T, K extends TimelineInstanceEventName> = TimelineInstanceEventMap<T>[K];
 
+/**
+ * `<tl-timeline>`: every `TimelineConfig` field is an input, every instance
+ * event an output, and the live instance is `timeline` (and the `ready`
+ * output). Server-rendered markup is hydrated, not drawn twice.
+ */
 @Component({
   selector: "tl-timeline",
   template: '<div #container data-tl-angular="" [style.height.px]="height()" style="position: relative; overflow: hidden"></div>',
@@ -110,13 +115,13 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
   @Output() readonly command = new EventEmitter<Payload<T, "command">>();
   @Output() readonly densityChanged = new EventEmitter<DensityChangedPayload>();
   @Output() readonly orientationChanged = new EventEmitter<OrientationChangedPayload>();
-  @Output() readonly clusterOpen = new EventEmitter<ClusterOpenPayload<T>>();
+  @Output() readonly clusterOpened = new EventEmitter<ClusterOpenedPayload<T>>();
   @Output() readonly jumpRequest = new EventEmitter<JumpRequestPayload>();
-  @Output() readonly itemAdded = new EventEmitter<ItemAddedPayload<T>>();
+  @Output() readonly itemsAdded = new EventEmitter<ItemsAddedPayload<T>>();
   @Output() readonly itemsRemoved = new EventEmitter<ItemsRemovedPayload<T>>();
   @Output() readonly itemsChanged = new EventEmitter<ItemsChangedPayload<T>>();
-  @Output() readonly groupToggle = new EventEmitter<GroupTogglePayload>();
-  @Output() readonly groupCommand = new EventEmitter<GroupCommandPayload>();
+  @Output() readonly groupToggled = new EventEmitter<GroupToggledPayload>();
+  @Output() readonly groupMoved = new EventEmitter<GroupMovedPayload>();
   @Output() readonly timeBarMoved = new EventEmitter<Payload<T, "timeBarMoved">>();
   @Output() readonly rangeSelected = new EventEmitter<Payload<T, "rangeSelected">>();
 

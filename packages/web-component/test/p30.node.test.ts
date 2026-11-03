@@ -6,7 +6,9 @@ import { describe, expect, it } from "vitest";
 
 import type { Item, Lane } from "@temporeum/timeline-core";
 
-import { contentOf, hasPlugin, hiddenDatesOf, minimapSize, registerPlugin, renderTimelineHtml, renderTimelineSvg, usesSceneSpace } from "../src/index.js";
+import { contentOf, hiddenDatesOf, minimapSize, usesSceneSpace } from "../src/config.js";
+import { hasPlugin, registerPlugin, renderTimelineHtml, renderTimelineSvg } from "../src/index.js";
+import { resolvedServerFrame } from "../src/ssr.js";
 import type { TimelineConfig } from "../src/index.js";
 import { groupsPlugin } from "../src/groups.js";
 import { intlPlugin } from "../src/intl.js";
@@ -90,7 +92,7 @@ describe("P30: the base does not carry the four new plugins", () => {
       for (const core of Object.values(PLUGINS)) {
         expect(packages.has(`@temporeum/timeline-core${core}`), `${entry} reaches the core's ${core}`).toBe(false);
       }
-      for (const own of ["tools.ts", "groups.ts", "items.ts", "intl.ts"]) expect(files.has(own), `${entry} reaches ${own}`).toBe(false);
+      for (const own of ["tools.ts", "tools/layer.ts", "groups.ts", "groups/layer.ts", "items.ts", "intl.ts"]) expect(files.has(own), `${entry} reaches ${own}`).toBe(false);
       // What it loads instead: live data and the English words.
       expect(packages.has("@temporeum/timeline-core/live")).toBe(true);
       expect(packages.has("@temporeum/timeline-core/words")).toBe(true);
@@ -185,7 +187,7 @@ describe("P30: registered, each plugin draws its part", () => {
     expect(hiddenDatesOf(hidden)).toBe(hiddenDatesOf(hidden));
     expect(minimapSize({ minimap: true })).toBeGreaterThan(0);
     expect(minimapSize({ minimap: { size: 24 } })).toBe(24);
-    const frame = renderTimelineSvg({ ...hidden, minimap: true, laneHeaders: true });
+    const frame = resolvedServerFrame({ ...hidden, minimap: true, laneHeaders: true });
     expect(frame.view.band).toBeGreaterThan(0);
     expect(frame.svg).toContain("tl-layer--minimap");
     expect(frame.svg).toContain("tl-layer--lane-headers");

@@ -135,15 +135,17 @@ function withSpan(start: TimeMs, span: number): Domain {
  *
  * The time under `focusMain` is the same before and after — this is the
  * function behind the rule that zoom anchors to the gesture's focus and never
- * to the middle of the viewport. `factor` above 1 zooms in.
+ * to the middle of the viewport. `factor` above 1 zooms in. With
+ * `options.warp` (hidden dates), the zoom is in the time that is shown.
  */
 export function zoomDomainAt(
   domain: Domain,
   mainSize: number,
   focusMain: number,
   factor: number,
-  warp?: TimeWarp,
+  options: { readonly warp?: TimeWarp | undefined } = {},
 ): Domain {
+  const warp = options.warp;
   if (warp !== undefined) return viaShown(domain, warp, (shown) => zoomDomainAt(shown, mainSize, focusMain, factor));
   assertUsableDomain(domain);
   assertUsableMainSize(mainSize);

@@ -27,7 +27,7 @@ for (const file of ["range.ts"]) {
     if (!/^\.\.?\/[a-z0-9-]+\.js$/.test(match[1])) failures.push(`/tools/${file} imports from outside the base: ${match[1]}`);
   }
 }
-const tools = codeOf(readFileSync(join(root, "packages", "web-component", "src", "tools.ts"), "utf8"));
+const tools = codeOf(readFileSync(join(root, "packages", "web-component", "src", "tools", "layer.ts"), "utf8"));
 for (const needle of ["rangeFromDrag(", "rangeKeyStep(", "commitRange(rangeFromDrag(", "commitRange(selectRange("]) if (!tools.includes(needle)) failures.push(`missing from the tools layer: ${needle}`);
 const timeline = codeOf(readFileSync(join(root, "packages", "web-component", "src", "timeline.ts"), "utf8"));
 if (!timeline.includes('emitter.emit("rangeSelected"')) failures.push("the instance does not emit a rangeSelected event");

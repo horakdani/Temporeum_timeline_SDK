@@ -3,8 +3,8 @@
 A timeline leaves the screen in four ways, and none of them needs a server: the view as a standalone SVG or a PNG, and the whole range as a PDF or on paper through the browser's own print. All four start from the frame the screen draws, so a file is the picture, not a screenshot of it.
 
 ```js excerpt:example/export
-  svg: () => download("plan.svg", new Blob([timeline.exportSVG()], { type: "image/svg+xml" })),
-  png: async () => download("plan.png", await timeline.exportPNG({ scale: 2 })),
+  svg: () => download("plan.svg", new Blob([timeline.exportSvg()], { type: "image/svg+xml" })),
+  png: async () => download("plan.png", await timeline.exportPng({ scale: 2 })),
 ```
 
 ::: example export
@@ -20,22 +20,22 @@ import { ganttPlugin } from "@temporeum/timeline-element/gantt";
 registerPlugin(exportPlugin, ganttPlugin);
 ```
 
-The PNG encoder, the PDF writer and the print view are a plugin on their own entry point, `@temporeum/timeline-element/export`: a page that never exports does not download them. `exportSVG()` needs no plugin — a frame is SVG already. Without the plugin, `exportPNG`, `exportPDF` and `print` throw, naming the import that is missing. Registered once, it serves every timeline on the page. A page that runs the timeline inside a sandboxed `<iframe>` has to allow what the export does: `allow-downloads` to save a file, `allow-modals` for `print()`.
+The PNG encoder, the PDF writer and the print view are a plugin on their own entry point, `@temporeum/timeline-element/export`: a page that never exports does not download them. `exportSvg()` needs no plugin — a frame is SVG already. Without the plugin, `exportPng`, `exportPdf` and `print` throw, naming the import that is missing. Registered once, it serves every timeline on the page. A page that runs the timeline inside a sandboxed `<iframe>` has to allow what the export does: `allow-downloads` to save a file, `allow-modals` for `print()`.
 
 ## The view: SVG and PNG
 
-`exportSVG()` returns the view as a standalone SVG document — its own stylesheet inside, so any viewer shows it as the screen did. A theme of `"auto"` is pinned to the one the screen shows when you export: a file must not change with the colour scheme of whoever opens it.
+`exportSvg()` returns the view as a standalone SVG document — its own stylesheet inside, so any viewer shows it as the screen did. A theme of `"auto"` is pinned to the one the screen shows when you export: a file must not change with the colour scheme of whoever opens it.
 
-`exportPNG({ scale })` draws the same frame into a canvas, `scale` device pixels to a CSS pixel (2 by default), and resolves to a PNG `Blob`. Item labels are HTML on screen, and a browser will not let a canvas that drew HTML be read back, so in a PNG they are set as SVG text in the same place, size and colour.
+`exportPng({ scale })` draws the same frame into a canvas, `scale` device pixels to a CSS pixel (2 by default), and resolves to a PNG `Blob`. Item labels are HTML on screen, and a browser will not let a canvas that drew HTML be read back, so in a PNG they are set as SVG text in the same place, size and colour.
 
 ## The whole range: PDF and print
 
 ```js excerpt:example/export
-  pdf: () => {
-    const pdf = timeline.exportPDF({ size: "a4", orientation: "landscape" });
+  pdf: async () => {
+    const pdf = await timeline.exportPdf({ size: "a4", orientation: "landscape" });
 ```
 
-`exportPDF(options)` returns the bytes of a PDF of the **whole range** — the time the items cover — and `print(options)` sends the same pages to the browser's print dialog. The pages are cut the same way for both:
+`exportPdf(options)` resolves to the bytes of a PDF of the **whole range** — the time the items cover — and `print(options)` sends the same pages to the browser's print dialog, resolving when the dialog is closed. The pages are cut the same way for both:
 
 - **Time is not cut.** Every page shows the whole range across the sheet's width.
 - **Lanes are cut between rows**, where no item spans the break — so every item is on exactly one page, and none is cut in two. The exception is a page with no such place: an item taller than a whole page (the break goes through it, and through nothing else where it can), or rows of overlapping multi-row items that together are taller than a page. Then the cut is at the page's edge, and an item it goes through prints on its first page, up to that edge.

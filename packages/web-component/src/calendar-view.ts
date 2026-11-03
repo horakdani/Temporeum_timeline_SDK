@@ -64,7 +64,7 @@ export interface CalendarViewOptions<T = unknown> {
   /** The view's words: `DEFAULT_STRINGS` keys of `/intl`. */
   readonly strings?: Partial<Strings>;
   /** The drawing's accessible name. "Week of …" by default. */
-  readonly label?: string;
+  readonly ariaLabel?: string;
   /** The current-time line: on (now), off, or at a given moment. On by default. */
   readonly now?: boolean | TimeInput;
   /** The previous / today / next buttons. On by default. */
@@ -206,7 +206,7 @@ export function mountCalendarView<T = unknown>(container: HTMLElement, initial: 
       ...(now === undefined ? {} : { now }),
       ...(options.theme === undefined ? {} : { theme: options.theme }),
       ...(options.density === undefined ? {} : { density: options.density }),
-      ...(options.label === undefined ? {} : { ariaLabel: options.label }),
+      ...(options.ariaLabel === undefined ? {} : { ariaLabel: options.ariaLabel }),
       ...(selectedId === undefined ? {} : { selectedIds: [selectedId] }),
       ...(focusedKey === undefined ? {} : { focusedKey }),
     });
@@ -270,7 +270,7 @@ export function mountCalendarView<T = unknown>(container: HTMLElement, initial: 
   }
 
   function onKey(event: KeyboardEvent): void {
-    const action = resolveCalendarKey(event, rtl());
+    const action = resolveCalendarKey(event, { direction: rtl() ? "rtl" : "ltr" });
     if (action === undefined) return;
     event.preventDefault();
     run(action);

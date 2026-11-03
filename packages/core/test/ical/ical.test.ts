@@ -29,7 +29,9 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import { escapeText, expandEvents, foldLine, formatICal, formatRRule, instantOf, parseICal, parseRRule, unescapeText, wallMs, wallOf } from "../../src/calendar/index.js";
+import { escapeText, foldLine, unescapeText } from "../../src/calendar/ical.js";
+import { expandEvents, formatICal, formatRRule, instantOf, parseICal, parseRRule, wallOf } from "../../src/calendar/index.js";
+import { wallMs } from "../../src/calendar/rrule.js";
 import type { CalendarEvent, RecurrenceRule } from "../../src/calendar/index.js";
 import { makeRandom } from "../property/harness.js";
 

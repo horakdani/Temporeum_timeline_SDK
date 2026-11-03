@@ -35,14 +35,24 @@ export function fill(phrase: Phrase, values: Readonly<Record<string, string | nu
   }
   return template.replace(/\{(\w+)\}/g, (whole, name: string) => {
     const value = values[name];
-    return value === undefined ? whole : typeof value === "number" ? formatAmount(value, locale) : value;
+    return value === undefined ? whole : typeof value === "number" ? formatAmount(value, { locale }) : value;
   });
 }
 
 const numbers = new Map<string, Intl.NumberFormat>();
 
+/** How {@link formatAmount} writes a number. */
+export interface AmountOptions {
+  /** The locale, `"en"` by default. */
+  readonly locale?: string | undefined;
+  /** A fraction written as a percentage (`0.25` → `25%`) instead of a number. */
+  readonly percent?: boolean | undefined;
+}
+
 /** A number as the locale writes it: at most one decimal, or a percentage of a fraction. */
-export function formatAmount(value: number, locale = "en", percent = false): string {
+export function formatAmount(value: number, options: AmountOptions = {}): string {
+  const locale = options.locale ?? "en";
+  const percent = options.percent === true;
   const key = `${locale}\u0000${String(percent)}`;
   let format = numbers.get(key);
   if (format === undefined) {

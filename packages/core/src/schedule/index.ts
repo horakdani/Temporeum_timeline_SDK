@@ -40,12 +40,14 @@ export type ConstraintType =
   | "mustStartOn"
   | "mustFinishOn";
 
+/** A date a task has to keep to — its start or its finish, no earlier, no later or exactly — or "as soon/late as possible". */
 export interface TaskConstraint {
   readonly type: ConstraintType;
   /** Every type but the two "as … as possible" needs one. */
   readonly date?: TimeInput;
 }
 
+/** How `scheduleTasks` reads the items: the working calendars, the constraints, where the project starts and finishes. */
 export interface ScheduleOptions<T = unknown> {
   /** The calendar of every task without its own. None: all time is working time. */
   readonly calendar?: WorkCalendar;
@@ -57,6 +59,7 @@ export interface ScheduleOptions<T = unknown> {
   readonly projectFinish?: TimeInput;
 }
 
+/** One task as the schedule places it: its start and end, its working duration, its slack, and whether it is critical or moved. */
 export interface ScheduledTask {
   readonly id: string;
   readonly start: TimeMs;
@@ -80,6 +83,7 @@ export interface ScheduleConflict {
   readonly byMs: number;
 }
 
+/** What `scheduleTasks` returns: every task placed, the critical path, the conflicts, the cycles found and the dependencies ignored. */
 export interface Schedule {
   /** Every task, by id — none when there is a cycle. */
   readonly tasks: ReadonlyMap<string, ScheduledTask>;
@@ -348,9 +352,9 @@ export function scheduleTasks<T>(items: readonly Item<T>[], dependencies: readon
  * Only the tasks that move are in it, in item order. `undefined` when nothing
  * moves — or the schedule has a cycle, and so places nothing.
  */
-export function scheduleCommand<T>(items: readonly Item<T>[], schedule: Schedule, label?: string): Command | undefined {
-  const before: ItemPatch[] = [];
-  const after: ItemPatch[] = [];
+export function scheduleCommand<T>(items: readonly Item<T>[], schedule: Schedule, label?: string): Command<T> | undefined {
+  const before: ItemPatch<T>[] = [];
+  const after: ItemPatch<T>[] = [];
   for (const item of items) {
     const task = schedule.tasks.get(item.id);
     if (task?.moved !== true) continue;

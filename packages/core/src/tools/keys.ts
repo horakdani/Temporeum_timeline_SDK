@@ -41,8 +41,3 @@ export function stepsOf(action: AxisKeyAction): number | undefined {
   return action === "later" ? 1 : action === "earlier" ? -1 : action === "pageLater" ? PAGE_STEPS : action === "pageEarlier" ? -PAGE_STEPS : undefined;
 }
 
-/** A time snapped to a grid, as the editor snaps: to the nearest step from the origin. */
-export function snapTime(time: number, snapMs: number | undefined, origin = 0): number {
-  if (snapMs === undefined || !(snapMs > 0)) return time;
-  return origin + Math.round((time - origin) / snapMs) * snapMs;
-}
