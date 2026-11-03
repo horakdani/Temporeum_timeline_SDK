@@ -11,7 +11,7 @@
  * reload, frame for frame.
  */
 
-import { DEFAULT_LANE_ID, derivedLanes, firstFit, laneOrder, layoutItems, placeInSublane, resolveSpan, sublaneSpanOf } from "../layout.js";
+import { DEFAULT_LANE_ID, derivedLanes, firstFit, laneOrder, layoutItems, placeInSublane, resolveSpan, sublaneSpanOf, withDefaultLane } from "../layout.js";
 import type { ItemSpan, Layout, LayoutItem, LayoutLane, LayoutOptions } from "../layout.js";
 import type { Item, Lane, PackMode } from "../types.js";
 
@@ -103,7 +103,7 @@ function sameLane(a: Lane, b: Lane): boolean {
  * `layoutItems(items, options)`, only cheaper.
  */
 export function relayout<T>(previous: Layout<T>, items: readonly Item<T>[], touched: ReadonlySet<string>, options: LayoutOptions = {}): Layout<T> {
-  const lanes = laneOrder(options.lanes ?? derivedLanes(items));
+  const lanes = withDefaultLane(laneOrder(options.lanes ?? derivedLanes(items)), items);
   if (lanes.length !== previous.lanes.length || lanes.some((lane, at) => !sameLane(lane, (previous.lanes[at] as LayoutLane).lane))) {
     return layoutItems(items, options);
   }

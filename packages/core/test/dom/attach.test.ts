@@ -255,6 +255,27 @@ describe("the browser binding", () => {
     element.dispatch("pointermove", { ...pointer(2, 325), pointerType: "", timeStamp: 32 });
     expect(machine.phase).toBe("panning");
   });
+
+  it("pans with the primary mouse button only (E11)", () => {
+    const { element, machine } = setup();
+    const mouse = (id: number, x: number, extra: Record<string, unknown>) => ({ ...pointer(id, x), pointerType: "mouse", ...extra });
+    // The middle and the right button press nothing, and capture nothing.
+    for (const button of [1, 2]) {
+      element.dispatch("pointerdown", mouse(button, 320, { button, buttons: 1 << button }));
+      element.dispatch("pointermove", mouse(button, 360, { buttons: 1 << button, timeStamp: 16 }));
+      expect(machine.pointerCount).toBe(0);
+      expect(machine.phase).toBe("idle");
+    }
+    expect(element.captured).toEqual([]);
+    // A left drag that ends with only the right button still held is over,
+    // although no pointerup came.
+    element.dispatch("pointerdown", mouse(3, 320, { button: 0, buttons: 1 }));
+    element.dispatch("pointermove", mouse(3, 340, { buttons: 1, timeStamp: 16 }));
+    expect(machine.phase).toBe("panning");
+    element.dispatch("pointermove", mouse(3, 360, { buttons: 2, timeStamp: 32 }));
+    expect(machine.phase).toBe("idle");
+    expect(machine.pointerCount).toBe(0);
+  });
 });
 
 /**

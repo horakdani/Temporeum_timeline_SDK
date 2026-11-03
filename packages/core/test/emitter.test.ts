@@ -231,3 +231,46 @@ describe("Emitter", () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("Emitter edge cases (E6, E7)", () => {
+  it("clear() during dispatch stops the listeners the event has not reached yet", () => {
+    for (const scope of ["all", "type"] as const) {
+      const emitter = new Emitter<{ ping: { n: number } }>();
+      const later = vi.fn();
+      emitter.on("ping", () => (scope === "all" ? emitter.clear() : emitter.clear("ping")));
+      emitter.on("ping", later);
+      emitter.emit("ping", { n: 1 });
+      expect(later).not.toHaveBeenCalled();
+      expect(emitter.listenerCount()).toBe(0);
+    }
+  });
+
+  it("each handle of a twice-subscribed function removes its own subscription", () => {
+    const emitter = new Emitter<{ ping: { n: number } }>();
+    const listener = vi.fn();
+    const first = emitter.on("ping", listener);
+    const second = emitter.on("ping", listener);
+    // Delivered once per event, as with addEventListener.
+    emitter.emit("ping", { n: 1 });
+    expect(listener).toHaveBeenCalledTimes(1);
+    first();
+    first();
+    emitter.emit("ping", { n: 2 });
+    expect(listener).toHaveBeenCalledTimes(2);
+    second();
+    emitter.emit("ping", { n: 3 });
+    expect(listener).toHaveBeenCalledTimes(2);
+    expect(emitter.listenerCount("ping")).toBe(0);
+  });
+
+  it("a handle left over from before off() does not remove a later subscription", () => {
+    const emitter = new Emitter<{ ping: { n: number } }>();
+    const listener = vi.fn();
+    const stale = emitter.on("ping", listener);
+    emitter.off("ping", listener);
+    emitter.on("ping", listener);
+    stale();
+    emitter.emit("ping", { n: 1 });
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+});

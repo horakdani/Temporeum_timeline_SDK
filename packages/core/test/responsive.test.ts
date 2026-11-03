@@ -370,3 +370,16 @@ describe("popover placement", () => {
     expect(placed.y).toBe(122);
   });
 });
+
+describe("density: auto with the host's own metrics (E13)", () => {
+  it("measures the room along time with them, as it measures the room across", () => {
+    // Items typically 80 px long: room enough for the built-in comfortable
+    // level, not for a host's that asks every level for 200 px.
+    const demanding = (density: Density, orientation: Orientation) => ({ ...densityMetrics(density, orientation), autoMainRoom: 200 });
+    const base = { items: itemsOfLength(4), lanes: LANES, domain: DOMAIN, orientation: "horizontal" as const, ...sizeFor("horizontal", 5000) };
+    const builtIn = fitDensity(base);
+    expect(builtIn.typicalMainSize).toBeLessThan(200);
+    expect(builtIn.byMain).toBe("comfortable");
+    expect(fitDensity({ ...base, metrics: demanding }).byMain).toBe("dense");
+  });
+});

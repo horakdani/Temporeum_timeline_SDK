@@ -449,6 +449,15 @@ export function createHitTester<T>(options: HitTestOptions<T>): HitTester<T> {
     return cross - crossInset + crossOffset;
   }
 
+  /**
+   * Where an item's visible part starts across. The axis band is drawn over
+   * whatever is scrolled under it, and what nobody can see there is not
+   * grabbed there; an item wholly under it is not hit at all.
+   */
+  function visibleCross(placed: LayoutItem<T>): number {
+    return crossInset > 0 ? Math.max(placed.cross, crossOffset) : placed.cross;
+  }
+
   function hitFor(index: number, part: EditPart): EditHit<T> | undefined {
     const placed = layout.items[index];
     return placed === undefined
@@ -465,7 +474,7 @@ export function createHitTester<T>(options: HitTestOptions<T>): HitTester<T> {
       if (placed === undefined || clustered(placed)) {
         continue;
       }
-      if (contentCross < placed.cross || contentCross > placed.cross + placed.crossSize) {
+      if (contentCross < visibleCross(placed) || contentCross > placed.cross + placed.crossSize) {
         continue;
       }
       const rect = itemRect(placed, scale);
@@ -508,17 +517,14 @@ export function createHitTester<T>(options: HitTestOptions<T>): HitTester<T> {
     let bestDistance = Number.POSITIVE_INFINITY;
     for (let index = layout.items.length - 1; index >= 0; index -= 1) {
       const placed = layout.items[index];
-      if (placed === undefined || clustered(placed)) {
+      const top = placed === undefined ? 0 : visibleCross(placed);
+      if (placed === undefined || clustered(placed) || top >= placed.cross + placed.crossSize) {
         continue;
       }
       const rect = itemRect(placed, scale);
       const mainSize = Math.max(rect.mainSize, minMain);
       const offMain = Math.max(rect.main - point.main, point.main - (rect.main + mainSize), 0);
-      const offCross = Math.max(
-        placed.cross - contentCross,
-        contentCross - (placed.cross + placed.crossSize),
-        0,
-      );
+      const offCross = Math.max(top - contentCross, contentCross - (placed.cross + placed.crossSize), 0);
       if (
         offMain > slopForExtent(base, mainSize, density) ||
         offCross > slopForExtent(base, placed.crossSize, density)
@@ -575,6 +581,9 @@ export function createHitTester<T>(options: HitTestOptions<T>): HitTester<T> {
       return best;
     },
     laneAt(cross) {
+      if (crossInset > 0 && cross < crossInset) {
+        return undefined;
+      }
       const contentCross = toContentCross(cross);
       for (const lane of layout.lanes) {
         if (contentCross >= lane.cross && contentCross <= lane.cross + lane.crossSize) {

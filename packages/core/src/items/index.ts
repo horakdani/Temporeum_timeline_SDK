@@ -23,7 +23,6 @@ import { defaultItemNode } from "../render.js";
 import type { ItemRenderContext, RenderHooks } from "../render.js";
 import type { TimeScale } from "../scale.js";
 import type { SceneElement } from "../scene.js";
-import { toTimeMs } from "../time.js";
 import type { Command, Item, ItemPatch, MainCross, MainCrossRect, TimeMs } from "../types.js";
 
 import { withoutId } from "./nodes.js";
@@ -406,11 +405,49 @@ export function resolveItemKey(sample: KeySample): ItemKeyAction | undefined {
 /** The MIME type an external element carries a dropped item in. */
 export const DROP_MIME = "application/x-temporeum-item";
 
+const isBoolean = (value: unknown): boolean => typeof value === "boolean";
+const isString = (value: unknown): boolean => typeof value === "string";
+const oneOf =
+  (...names: string[]) =>
+  (value: unknown): boolean =>
+    names.includes(value as string);
+
+/**
+ * The item fields a drop may carry, each with what makes it valid. The
+ * payload comes from another page or app; a field that would fail the
+ * layout later (`sublaneSpan: 0`, a `progress` of "half") is left out here.
+ */
+const DROP_FIELDS: Readonly<Record<string, (value: unknown) => boolean>> = {
+  id: (value) => isString(value) && value !== "",
+  label: isString,
+  className: isString,
+  open: isBoolean,
+  selectable: isBoolean,
+  movable: isBoolean,
+  resizable: isBoolean,
+  removable: isBoolean,
+  sublaneSpan: (value) => Number.isInteger(value) && (value as number) >= 1,
+  progress: (value) => typeof value === "number" && value >= 0 && value <= 1,
+  granularity: oneOf("millisecond", "second", "minute", "hour", "day", "month", "year", "decade", "century", "millennium"),
+  kind: oneOf("range", "box", "point", "background", "milestone"),
+  data: () => true,
+};
+
+/** A JSON time — epoch milliseconds or a date string — or `undefined`. */
+function dropTime(value: unknown): TimeMs | undefined {
+  const ms = typeof value === "string" ? Date.parse(value) : value;
+  return typeof ms === "number" && Math.abs(ms) <= 8.64e15 ? ms : undefined;
+}
+
 /**
  * A dropped payload as an item at a target: the payload's own fields win,
  * except time and lane, which are where it was dropped. A payload without an
  * id gets one from {@link itemForTarget}, and one without a label `label`.
  * `undefined` for a payload that is not a JSON object.
+ *
+ * The payload's `start` and `end` (epoch milliseconds or date strings) or
+ * its `durationMs` give the length only. Fields the item does not have, or
+ * that are not valid for it, are dropped rather than passed on.
  */
 export function itemFromDrop<T>(items: readonly Item<T>[], payload: string, target: AddTarget, label?: string): Item<T> | undefined {
   let parsed: unknown;
@@ -420,21 +457,23 @@ export function itemFromDrop<T>(items: readonly Item<T>[], payload: string, targ
     return undefined;
   }
   if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return undefined;
-  const fields = parsed as Partial<Item<T>> & { durationMs?: number };
+  const fields = parsed as Record<string, unknown>;
   const base = itemForTarget(items, target, undefined, label) as Item<T>;
   const start = target.start;
-  const end =
-    typeof fields.durationMs === "number"
-      ? start + fields.durationMs
-      : fields.end !== undefined && fields.start !== undefined
-        ? start + (toTimeMs(fields.end) - toTimeMs(fields.start))
-        : target.end;
-  const rest: Record<string, unknown> = { ...fields };
-  delete rest.durationMs;
+  const from = dropTime(fields.start);
+  const to = dropTime(fields.end);
+  const given = fields.durationMs;
+  const duration =
+    typeof given === "number" && given >= 0 && given <= 8.64e15 ? given : from !== undefined && to !== undefined && to >= from ? to - from : undefined;
+  const end = duration === undefined ? target.end : start + duration;
+  const rest: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    if (Object.hasOwn(DROP_FIELDS, key) && DROP_FIELDS[key]?.(value) === true) rest[key] = value;
+  }
   return {
     ...base,
     ...rest,
-    id: typeof fields.id === "string" && fields.id !== "" ? fields.id : base.id,
+    id: rest.id ?? base.id,
     start,
     end,
     ...(target.laneId === null ? {} : { laneId: target.laneId }),

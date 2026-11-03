@@ -244,14 +244,13 @@ describe("G-RESOURCES", () => {
         expect(command.after.map((patch) => patch.id)).toEqual([placed.item.id]);
         const patch = command.after[0];
         if (patch !== undefined && "laneId" in patch) {
-          // Let go between the rows, the item leaves every lane — the
-          // core's crossLane contract ("clears the lane when the pointer
-          // leaves every lane"); on a row, it is that row's resource.
-          expect(patch.laneId).toBe(target ?? null);
-          if (target !== undefined) {
-            expect(loadLaneOf(String(patch.laneId))).toBeUndefined();
-            expect(plan.resources.some((resource) => resource.id === patch.laneId)).toBe(true);
-          }
+          // On a row, it is that row's resource; let go between the rows,
+          // the row it was last over — the core's crossLane contract ("keeps
+          // the lane when the pointer leaves every lane", E3). Never `null`:
+          // that took the item off every row.
+          if (target !== undefined) expect(patch.laneId).toBe(target);
+          expect(loadLaneOf(String(patch.laneId))).toBeUndefined();
+          expect(plan.resources.some((resource) => resource.id === patch.laneId)).toBe(true);
         }
         if (loadLaneOf(tester.laneAt(to) ?? "") !== undefined && target !== placed.laneId) ontoLoadLane += 1;
         const moved = applyPatches(plan.items, command.after) as Item<{ units: number }>[];

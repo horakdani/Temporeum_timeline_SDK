@@ -25,6 +25,7 @@ import {
   removeTargets,
   resolveItemKey,
 } from "../../src/items/index.js";
+import { layoutItems } from "../../src/layout.js";
 import { createTimeScale } from "../../src/scale.js";
 import type { Command, Item } from "../../src/types.js";
 import { makeRandom } from "../property/harness.js";
@@ -185,5 +186,40 @@ describe("add and remove", () => {
     expect(itemFromDrop([], "not json", target)).toBeUndefined();
     expect(itemFromDrop([], "[1]", target)).toBeUndefined();
     expect(itemFromDrop([], "null", target)).toBeUndefined();
+  });
+
+  it("reads a JSON payload's date strings, and leaves out the fields that would break the layout (E9)", () => {
+    const target = { start: ORIGIN, end: ORIGIN + DAY, laneId: "b" };
+    // JSON has no Date: a dragged item's times arrive as strings.
+    const dated = itemFromDrop([], JSON.stringify({ id: "s", start: new Date(ORIGIN), end: new Date(ORIGIN + 3 * DAY) }), target);
+    expect(dated).toEqual({ id: "s", label: "New item", start: ORIGIN, end: ORIGIN + 3 * DAY, laneId: "b" });
+    const hostile = itemFromDrop(
+      [{ id: "a", start: ORIGIN }],
+      JSON.stringify({
+        id: 7,
+        label: "Kept",
+        sublaneSpan: 0,
+        progress: "half",
+        open: "yes",
+        granularity: "fortnight",
+        kind: "box",
+        data: { any: "thing" },
+        durationMs: -5,
+        start: "not a date",
+        end: 9e99,
+        laneId: "elsewhere",
+        onclick: "alert(1)",
+      }),
+      target,
+    );
+    // A number is no id: the item gets a fresh one, as without any.
+    expect(hostile).toEqual({ id: "item-2", label: "Kept", kind: "box", data: { any: "thing" }, start: ORIGIN, end: ORIGIN + DAY, laneId: "b" });
+    // And what is left lays out.
+    expect(() => layoutItems([hostile as Item])).not.toThrow();
+    expect(itemFromDrop([], JSON.stringify({ sublaneSpan: 2, progress: 0.5, durationMs: Infinity }), target)).toMatchObject({
+      sublaneSpan: 2,
+      progress: 0.5,
+      end: ORIGIN + DAY,
+    });
   });
 });

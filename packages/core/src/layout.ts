@@ -167,6 +167,20 @@ export function derivedLanes(items: readonly Item[]): readonly Lane[] {
   return lanes;
 }
 
+/**
+ * The lanes, and the default lane after them when an item names no declared
+ * lane and the host did not declare that one either.
+ *
+ * Such an item goes to the default lane; without this the layout walked the
+ * declared lanes only and the item was never drawn.
+ */
+export function withDefaultLane(lanes: readonly Lane[], items: readonly Item[]): readonly Lane[] {
+  const ids = new Set(lanes.map((lane) => lane.id));
+  return ids.has(DEFAULT_LANE_ID) || items.every((item) => ids.has(item.laneId ?? DEFAULT_LANE_ID))
+    ? lanes
+    : [...lanes, { id: DEFAULT_LANE_ID }];
+}
+
 export function sublaneSpanOf(item: Item): number {
   const span = item.sublaneSpan;
   if (span === undefined) {
@@ -231,7 +245,7 @@ export function layoutItems<T = unknown>(
     throw new RangeError(`rowSize must be a positive number of pixels, got ${String(metrics.rowSize)}`);
   }
   const fallbackMode = options.packMode ?? "pack";
-  const lanes = laneOrder(options.lanes ?? derivedLanes(items));
+  const lanes = withDefaultLane(laneOrder(options.lanes ?? derivedLanes(items)), items);
   const laneById = new Map(lanes.map((lane) => [lane.id, lane]));
   if (laneById.size !== lanes.length) {
     // Two lanes with one id would each claim the same items and place them

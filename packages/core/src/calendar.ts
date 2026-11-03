@@ -110,7 +110,9 @@ export function zoneOffsetMs(t: TimeMs, timeZone: string = DEFAULT_TIME_ZONE): n
   if (timeZone === "UTC") {
     return 0;
   }
-  const parts = offsetFormatterFor(timeZone).formatToParts(t);
+  // `Intl` takes the `Date` range only. Past its edges a zone keeps its
+  // local mean time, which does not change, so the edge's offset holds.
+  const parts = offsetFormatterFor(timeZone).formatToParts(Math.min(Math.max(t, -8.64e15), 8.64e15));
   let name = "";
   for (const part of parts) {
     if (part.type === "timeZoneName") {
@@ -141,21 +143,43 @@ export function daysInMonth(year: number, month: number): number {
   return DAYS_PER_MONTH[month - 1] ?? 30;
 }
 
+/**
+ * Four hundred Gregorian years: 146 097 days, a whole number of weeks.
+ *
+ * `Date` stops at ±8.64e15 ms, but the engine's arithmetic has to step just
+ * past that edge — the aligned tick before the first one in range, the wall
+ * clock of the last instant east of Greenwich. Inside `Date` those came back
+ * as `NaN` and took the frame down. The calendar repeats every 400 years,
+ * weekdays included, so `Date` does the field work on a copy shifted by whole
+ * cycles into the years 0-399, and the cycles are added back.
+ */
+const CYCLE_MS = 146_097 * 86_400_000;
+
 /** Epoch milliseconds for calendar fields read as UTC. Fields may overflow. */
 function instantFromUtcParts(parts: CalendarParts): TimeMs {
   // `Date.UTC` maps years 0-99 onto 1900-1999; `setUTCFullYear` does not, and
   // the engine has to survive year 50 as well as year 2050.
+  const cycles = Math.floor(parts.year / 400);
   const date = new Date(0);
-  date.setUTCFullYear(parts.year, parts.month - 1, parts.day);
+  date.setUTCFullYear(parts.year - cycles * 400, parts.month - 1, parts.day);
   date.setUTCHours(parts.hour, parts.minute, parts.second, parts.millisecond);
-  return date.getTime();
+  return date.getTime() + cycles * CYCLE_MS;
 }
 
-/** Calendar fields of an instant read as UTC. */
+/** A `Date` for the instant's wall fields, and the 400-year cycles taken off it. */
+function shiftedDate(t: TimeMs): readonly [Date, number] {
+  // Truncated first, as `new Date(t)` truncates, so a fractional instant
+  // before the epoch reads the same millisecond it always did.
+  const ms = Math.trunc(t);
+  const cycles = Math.floor(ms / CYCLE_MS);
+  return [new Date(ms - cycles * CYCLE_MS), cycles];
+}
+
+/** Calendar fields of an instant read as UTC, for any finite instant. */
 function utcPartsOf(t: TimeMs): CalendarParts {
-  const date = new Date(t);
+  const [date, cycles] = shiftedDate(t);
   return {
-    year: date.getUTCFullYear(),
+    year: date.getUTCFullYear() + cycles * 400,
     month: date.getUTCMonth() + 1,
     day: date.getUTCDate(),
     hour: date.getUTCHours(),
@@ -179,16 +203,23 @@ export function toCalendarParts(
  * Two passes over the offset: the first guess can land on the far side of a
  * daylight-saving transition, and re-reading the offset at the corrected
  * instant converges for every zone in the database. A wall-clock time that
- * does not exist (inside a spring-forward gap) resolves to the instant the
- * gap ends.
+ * does not exist (inside a spring-forward gap) is read with the offset from
+ * before the gap, so it lands as far past the gap as it was into it: 02:30 on
+ * the night New York springs forward is 03:30 EDT, and so is it in Budapest
+ * (Temporal's "compatible"). West of Greenwich the second pass alone went
+ * back an hour instead — to 01:30, or for a midnight gap to the day before.
  */
 export function fromCalendarParts(
   parts: CalendarParts,
   timeZone: string = DEFAULT_TIME_ZONE,
 ): TimeMs {
   const asUtc = instantFromUtcParts(parts);
-  const firstGuess = asUtc - zoneOffsetMs(asUtc, timeZone);
-  return asUtc - zoneOffsetMs(firstGuess, timeZone);
+  const first = asUtc - zoneOffsetMs(asUtc, timeZone);
+  const offset = zoneOffsetMs(first, timeZone);
+  const second = asUtc - offset;
+  // Neither candidate reads back as this wall clock: a gap, and the later one
+  // is the one with the earlier offset.
+  return first !== second && zoneOffsetMs(second, timeZone) !== offset ? Math.max(first, second) : second;
 }
 
 function floorToMultiple(value: number, step: number): number {
@@ -282,7 +313,6 @@ export function addCalendar(
 
 /** Day of the week of an instant in a zone, 1 = Monday to 7 = Sunday (ISO). */
 export function isoWeekday(t: TimeMs, timeZone: string = DEFAULT_TIME_ZONE): number {
-  const wall = t + zoneOffsetMs(t, timeZone);
-  const sundayFirst = new Date(wall).getUTCDay();
+  const sundayFirst = shiftedDate(t + zoneOffsetMs(t, timeZone))[0].getUTCDay();
   return sundayFirst === 0 ? 7 : sundayFirst;
 }

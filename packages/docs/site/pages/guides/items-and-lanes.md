@@ -11,7 +11,7 @@ An item is a stretch of time, or an instant, with an id. A lane is a block of ro
 | `end` | Omitted for an instant. An instant still covers its `granularity` unit. |
 | `granularity` | What the host knows: `"day"`, `"year"`, `"second"` … An event known to the day covers the whole day, so two same-day events never share a row. |
 | `open` | The end is unknown or ongoing: the item reaches past the view and nothing is packed after it in its row. |
-| `laneId` | The lane it belongs to; without one, the default lane. |
+| `laneId` | The lane it belongs to; without one, or with one that `lanes` does not declare, the default lane, drawn after the declared ones. |
 | `label` | The text drawn on or after it, and the start of its accessible name. |
 | `className` | Added to its node, for [theming](theming.md). |
 | `kind` | `range` (default), `box`, `point` or `background` — see [groups and item kinds](groups-and-item-kinds.md). A `box`, `point` or `background` item needs `itemsPlugin` (`@temporeum/timeline-element/items`) registered, and throws without it; `milestone` is the [Gantt plugin's](gantt.md). |

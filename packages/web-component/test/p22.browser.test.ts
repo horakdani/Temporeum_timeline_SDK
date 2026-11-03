@@ -104,8 +104,10 @@ describe("the resource view", () => {
     const lanes: Lane[] = [{ id: "ben", label: "Ben" }, { id: "room" }];
     timeline.update({ lanes, resourceOptions: { loadSize: 30 } });
     timeline.flush();
-    // Given lanes, the rows are those: Ana's and Dana's work has none here.
-    expect(laneIds(timeline)).toEqual(["ben", loadLaneId("ben"), "room"]);
+    // Given lanes, the resources are those: Ana's and Dana's work has no row
+    // of its own, and is drawn in the default lane after them (E2), without
+    // a load lane.
+    expect(laneIds(timeline)).toEqual(["ben", loadLaneId("ben"), "room", ""]);
     expect(timeline.result?.layout.lanes[1]?.crossSize).toBe(30);
     // The same configuration again: the same lanes array, the same layout.
     const layout = timeline.result?.layout;

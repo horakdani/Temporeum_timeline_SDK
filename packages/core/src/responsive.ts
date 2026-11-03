@@ -251,7 +251,8 @@ export function fitDensity<T>(input: DensityFitInput<T>): DensityFit {
     byMain = "comfortable";
   } else {
     for (const density of DENSITIES) {
-      const room = densityMetrics(density, input.orientation).autoMainRoom;
+      // The host's metrics, as for the cross axis above.
+      const room = (input.metrics ?? densityMetrics)(density, input.orientation).autoMainRoom;
       // Coarser than what is shown has to clear the band; what is shown may
       // sag into it. A denser level is measured plainly: it is never the one
       // being held.

@@ -461,12 +461,14 @@ describe("dragging between lanes", () => {
     );
   });
 
-  it("clears the lane when the pointer leaves every lane", () => {
+  it("keeps the lane when the pointer leaves every lane", () => {
     const machine = machineFor({ crossLane: true, snapMs: DAY });
     const main = surface.mainOf(START + 3 * DAY);
     machine.handle(sample(1, "down", main, surface.crossOf("a"), 0));
     const dragged = machine.handle(sample(1, "move", main + 20, 199, 16));
-    expect((of(dragged, "editMove")[0] as EditMoveEffect).patches[0]?.laneId).toBeNull();
+    // Not `null`: with declared lanes a cleared lane took the item out of
+    // view (E2, E3). Unset keeps the lane it was in.
+    expect("laneId" in ((of(dragged, "editMove")[0] as EditMoveEffect).patches[0] ?? {})).toBe(false);
   });
 });
 

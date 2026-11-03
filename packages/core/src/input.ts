@@ -1028,7 +1028,9 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
     const deltaMs = scale().toTime(pointer.main) - current.grabTime;
     const laneId =
       current.mode === "move" && editing.crossLane === true && editing.laneAt !== undefined
-        ? (editing.laneAt(pointer.cross) ?? null)
+        ? // Between lanes, or past the last one: the lane it was last over
+          // holds, and clearing the lane would have dropped it out of view.
+          (editing.laneAt(pointer.cross) ?? current.laneId)
         : undefined;
     const patches = patchesFor(current.hits, current.mode, deltaMs, laneId);
     if (refused(current.hits, patches)) {
@@ -1750,6 +1752,11 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
     handle(input) {
       const effects: InputEffect<T>[] = [];
       if (!drawable()) {
+        // Nothing to draw, but a pointer that lifts still lifts, as a cancel:
+        // left in the map, the next touch would be a "second finger".
+        if (input.phase === "up" || input.phase === "cancel") {
+          onRelease({ ...input, phase: "cancel" }, effects);
+        }
         return effects;
       }
       switch (input.phase) {

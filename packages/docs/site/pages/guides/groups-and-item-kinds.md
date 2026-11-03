@@ -85,6 +85,8 @@ A box and a point are packed in time like any instant, so their rows do not chan
 | Remove | The remove handle drawn on a selected item. | `Delete` or `Backspace` on the focused item. |
 | Drop in | Drag an element carrying `application/x-temporeum-item` data onto a row. | `timeline.dropItem(payload)`, bound to your list's own key: the focused row, the middle of the view. |
 
+The dropped data is a JSON object with an item's fields. It lands where it was dropped: `start` and `end` (epoch milliseconds or date strings), or a `durationMs`, give only its length, and the row decides its lane. Fields an item does not have, or values that are not valid for them (a `sublaneSpan` of 0, a `progress` outside 0–1), are left out.
+
 Both ways reach the same command. `editing.createItem(target)` makes the item an add creates (by default a range with a free `item-N` id); `canAdd` and `canRemove` veto, and a removal of a selection is refused whole if one item is refused. The command's patches carry the whole item and its place in the list, so the inverse of a removal puts the item back exactly where it was. Adding and removing is not available with a [fetched source](async-data.md): the source owns its items.
 
 ::: example add-remove

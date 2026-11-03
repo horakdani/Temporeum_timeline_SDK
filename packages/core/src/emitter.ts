@@ -12,7 +12,11 @@
  *   nothing happens". With no error handler configured the error goes to the
  *   platform's own channel (`reportError`), never to `/dev/null`.
  * - **Unsubscribing is idempotent.** The function returned by `on` can be
- *   called any number of times.
+ *   called any number of times, and it removes its own subscription only: the
+ *   same function subscribed twice is delivered to once per event, as with
+ *   `addEventListener`, and keeps listening until its last handle is called.
+ *   `off` removes it outright, and so does `clear`, at once — even for the
+ *   listeners an event in flight has still to reach.
  */
 
 /** Receives one event payload. */
@@ -53,7 +57,8 @@ function reportUnhandled(error: unknown): void {
  * `onError` handler, or to the environment's error channel.
  */
 export class Emitter<M extends object> {
-  private readonly listeners = new Map<string, Set<ErasedListener>>();
+  /** Each listener with its live handles, one token per `on`. */
+  private readonly listeners = new Map<string, Map<ErasedListener, Set<object>>>();
   private readonly onError: EmitterErrorHandler | undefined;
 
   /**
@@ -70,18 +75,15 @@ export class Emitter<M extends object> {
     listener: Listener<M[K]>,
   ): Unsubscribe {
     const erased = listener as ErasedListener;
-    let set = this.listeners.get(type);
-    if (set === undefined) {
-      set = new Set<ErasedListener>();
-      this.listeners.set(type, set);
-    }
-    set.add(erased);
-
-    let active = true;
+    const set = this.listeners.get(type) ?? new Map<ErasedListener, Set<object>>();
+    this.listeners.set(type, set);
+    // Its own token, so neither a second handle nor one left over from
+    // before an `off` can take another subscription away.
+    const token = {};
+    const handles = (set.get(erased) ?? new Set<object>()).add(token);
+    set.set(erased, handles);
     return () => {
-      if (!active) return;
-      active = false;
-      this.removeErased(type, erased);
+      if (handles.delete(token) && handles.size === 0) this.removeErased(type, erased, handles);
     };
   }
 
@@ -110,7 +112,7 @@ export class Emitter<M extends object> {
     // what a host expects: a listener added during dispatch does not receive
     // the event in flight, and one removed during dispatch is not called at
     // all — the second is where Node's EventEmitter leaks a surprise.
-    for (const listener of [...set]) {
+    for (const listener of [...set.keys()]) {
       if (!set.has(listener)) continue;
       try {
         listener(payload);
@@ -135,16 +137,23 @@ export class Emitter<M extends object> {
 
   /** Removes every listener, or every listener of one event. */
   clear(type?: keyof M & string): void {
-    if (type !== undefined) {
-      this.listeners.delete(type);
-      return;
+    // Emptied, not only dropped: an event in flight re-checks membership
+    // against the set it started with.
+    for (const [key, set] of this.listeners) {
+      if (type === undefined || key === type) {
+        set.clear();
+        this.listeners.delete(key);
+      }
     }
-    this.listeners.clear();
   }
 
-  private removeErased(type: string, listener: ErasedListener): void {
+  /**
+   * Removes a listener — when `handles` are given, only while they are still
+   * its own, so a handle from before an `off` or a `clear` does nothing.
+   */
+  private removeErased(type: string, listener: ErasedListener, handles?: Set<object>): void {
     const set = this.listeners.get(type);
-    if (set === undefined) return;
+    if (set === undefined || (handles !== undefined && set.get(listener) !== handles)) return;
     set.delete(listener);
     if (set.size === 0) this.listeners.delete(type);
   }

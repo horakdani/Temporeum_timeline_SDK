@@ -15,7 +15,7 @@
  * the same array of ticks as the axis in the browser.
  */
 
-import { addCalendar, DEFAULT_TIME_ZONE, isoWeekday, startOf, toCalendarParts, fromCalendarParts, YEARS_PER_UNIT } from "./calendar.js";
+import { addCalendar, DEFAULT_TIME_ZONE, isoWeekday, startOf, toCalendarParts, fromCalendarParts, YEARS_PER_UNIT, zoneOffsetMs } from "./calendar.js";
 import { createTimeScale } from "./scale.js";
 import type { CalendarParts } from "./calendar.js";
 import type { Domain, Granularity, TimeMs } from "./types.js";
@@ -275,7 +275,14 @@ export function generateTicks(
     }
     const stepped = addCalendar(t, step.granularity, step.count, timeZone);
     const realigned = alignToStep(stepped, step, timeZone);
-    const next = realigned > t ? realigned : stepped;
+    let next = realigned > t ? realigned : stepped;
+    const size = approxStepMs(step);
+    if (next === stepped && size < MS_PER_DAY && (stepped + zoneOffsetMs(stepped, timeZone)) % size !== 0) {
+      // Fixed steps across a fall-back: two hours after 00:00 EDT is 01:00
+      // EST, off a two-hour grid, and aligning it goes back to 00:00. The
+      // next round value after it is 02:00.
+      next = alignToStep(stepped + size, step, timeZone);
+    }
     if (next <= t) {
       // Cannot happen with the ladder above; a step that fails to advance
       // would be an infinite loop, so the axis ends instead.

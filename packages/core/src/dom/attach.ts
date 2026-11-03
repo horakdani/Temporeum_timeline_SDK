@@ -182,6 +182,12 @@ export function attachInput<T>(target: Element, options: AttachInputOptions<T>):
 
   function onPointerDown(event: Event): void {
     const pointerEvent = event as PointerEvent;
+    // The middle and the right button are the browser's (autoscroll, the
+    // context menu), and an eraser is not a pen tip: only the primary button
+    // pans, picks or drags.
+    if (pointerEvent.button > 0) {
+      return;
+    }
     // Keeps the pointer coming to this element even when it leaves it. The
     // call can throw if the pointer is already gone, which is not an error
     // worth propagating into the host's event handler.
@@ -194,7 +200,12 @@ export function attachInput<T>(target: Element, options: AttachInputOptions<T>):
   }
 
   function onPointerMove(event: Event): void {
-    apply(machine.handle(toSample(event as PointerEvent, "move")));
+    const pointerEvent = event as PointerEvent;
+    // A mouse whose primary button is no longer down has let go — of a chord
+    // whose last button is the right one, say, which sends no pointerup.
+    // (An odd `buttons` has the primary bit; a missing one is NaN, not even.)
+    const released = pointerEvent.pointerType === "mouse" && pointerEvent.buttons % 2 === 0;
+    apply(machine.handle(toSample(pointerEvent, released ? "cancel" : "move")));
   }
 
   function onPointerUp(event: Event): void {
