@@ -27,6 +27,7 @@
 
 import type { DensitySetting, Lane, OrientationSetting, PackMode, RenderHooks, ThemeSetting, TimeInput } from "@temporeum/timeline-core";
 
+import { sameValue } from "./config.js";
 import type { TimelineConfig, TimelineUpdate } from "./config.js";
 import { HOST_CSS, TAG_NAME } from "./ssr.js";
 import { createTimeline, TIMELINE_EVENTS } from "./timeline.js";
@@ -53,6 +54,7 @@ export const OBSERVED_ATTRIBUTES = [
   "locale",
   "time-zone",
   "aria-label",
+  "aria-labelledby",
   "start",
   "end",
   "height",
@@ -158,6 +160,18 @@ function scriptConfig(host: HTMLElement): TimelineConfig {
 // SSR helpers must not throw — so it extends a stand-in there.
 const Base = (typeof HTMLElement === "undefined" ? class {} : HTMLElement) as typeof HTMLElement;
 
+/** The element's properties a page may set before the element is defined. */
+const UPGRADED = ["config", "items", "lanes", "groups", "template", "gantt", "resources", "resourceOptions", "hooks", "selectedIds", "orientation", "density", "theme", "height", "editable"] as const;
+
+/** `itemMoved` → `item-moved`, as a type. */
+type Kebab<S extends string> = S extends `${infer Head}${infer Rest}` ? `${Head extends Uppercase<Head> ? (Head extends Lowercase<Head> ? Head : `-${Lowercase<Head>}`) : Head}${Kebab<Rest>}` : S;
+
+/** The DOM event an instance event is dispatched as (`command` is `timeline-command`). */
+export type TimelineElementEventName<K extends TimelineInstanceEventName = TimelineInstanceEventName> = K extends "command" ? "timeline-command" : Kebab<K>;
+
+/** The element's DOM events: every instance event under its kebab-case name, its payload as `detail`. */
+export type TimelineElementEventMap<T = unknown> = { [K in TimelineInstanceEventName as TimelineElementEventName<K>]: CustomEvent<TimelineInstanceEventMap<T>[K]> };
+
 /** The `<temporeum-timeline>` element. Register with {@link defineTimelineElement}. */
 export class TemporeumTimelineElement<T = unknown> extends Base {
   static get observedAttributes(): readonly string[] {
@@ -166,13 +180,30 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   #timeline: Timeline<T> | undefined;
   #props: TimelineConfig<T> = {};
+  /** The fields the last `config` set, and no named property set since. */
+  #fromConfig = new Set<string>();
   #unsubscribe: (() => void)[] = [];
+
+  constructor() {
+    super();
+    // A property set before the element was defined (a framework that sets
+    // `.items` on a tag whose module loads later) is the element's own data
+    // property, which hides the accessor: taken off and set again, it goes
+    // through the setter. `config` first, so the named ones win over it.
+    for (const name of UPGRADED) {
+      if (!Object.hasOwn(this, name)) continue;
+      const value = (this as Record<string, unknown>)[name];
+      delete (this as Record<string, unknown>)[name];
+      (this as Record<string, unknown>)[name] = value;
+    }
+  }
 
   /** The live instance, while the element is connected. */
   get timeline(): Timeline<T> | undefined {
     return this.#timeline;
   }
 
+  /** The items: an array, or a function that fetches the ones in a range. */
   get items(): TimelineConfig<T>["items"] {
     return this.#props.items;
   }
@@ -180,6 +211,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     this.#set({ items });
   }
 
+  /** The lanes the items are in, in order. */
   get lanes(): readonly Lane[] | undefined {
     return this.#props.lanes;
   }
@@ -187,6 +219,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     this.#set({ lanes: lanes ?? [] });
   }
 
+  /** Nested groups of lanes, which the reader collapses and reorders (the `/groups` plugin). */
   get groups(): TimelineConfig<T>["groups"] {
     return this.#props.groups;
   }
@@ -194,6 +227,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     this.#set({ groups });
   }
 
+  /** Each item's content as HTML (the `/items` plugin). */
   get template(): TimelineConfig<T>["template"] {
     return this.#props.template;
   }
@@ -217,6 +251,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     this.#set({ resources });
   }
 
+  /** How the resource view counts and draws the load: the units an assignment takes, the load lane. */
   get resourceOptions(): TimelineConfig<T>["resourceOptions"] {
     return this.#props.resourceOptions;
   }
@@ -224,6 +259,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     this.#set({ resourceOptions });
   }
 
+  /** The render hooks: what is drawn for an item, a cluster, a label or a detail, and how each is described to a screen reader. */
   get hooks(): RenderHooks<T> | undefined {
     return this.#props.hooks;
   }
@@ -231,28 +267,127 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     this.#set({ hooks: hooks ?? {} });
   }
 
+  /** `"horizontal"`, `"vertical"` or `"auto"` — the `orientation` attribute as a property, which wins over it. */
+  get orientation(): OrientationSetting | undefined {
+    return this.#props.orientation ?? this.#config().orientation;
+  }
+  set orientation(orientation: OrientationSetting | undefined) {
+    this.#own("orientation", orientation);
+  }
+
+  /** The `density` attribute as a property, which wins over it. */
+  get density(): DensitySetting | undefined {
+    return this.#props.density ?? this.#config().density;
+  }
+  set density(density: DensitySetting | undefined) {
+    this.#own("density", density);
+  }
+
+  /** The `theme` attribute as a property, which wins over it. */
+  get theme(): ThemeSetting | undefined {
+    return this.#props.theme ?? this.#config().theme;
+  }
+  set theme(theme: ThemeSetting | undefined) {
+    this.#own("theme", theme);
+  }
+
+  /** The height in pixels — the `height` attribute as a property, which wins over it. */
+  get height(): number | undefined {
+    return this.#props.height ?? this.#config().height;
+  }
+  set height(height: number | undefined) {
+    this.#own("height", height);
+    this.#heightStyle(this.height);
+  }
+
+  /** Whether the reader can move and resize items — the `editable` attribute as a property, which wins over it. */
+  get editable(): boolean {
+    return (this.#props.editing ?? this.#config().editing)?.enabled === true;
+  }
+  set editable(editable: boolean) {
+    this.#set({ editing: { ...(this.#props.editing ?? this.#config().editing), enabled: editable } });
+  }
+
   get selectedIds(): readonly string[] {
     return this.#timeline?.getSnapshot().selectedIds ?? this.#props.selectedIds ?? [];
   }
+  /** Setting it selects those items, whatever the reader selected since — as `timeline.select` does. */
   set selectedIds(ids: readonly string[]) {
-    this.#set({ selectedIds: ids });
+    this.#props = { ...this.#props, selectedIds: ids };
+    this.#timeline?.select(ids);
   }
 
-  /** Everything else a configuration can say, as one property. */
+  /**
+   * Everything a configuration can say, as one property. Setting it
+   * replaces what the `config` before it said: a field it leaves out goes
+   * back to what the attributes say, or to its default. A named property
+   * (`items`, `theme`, …) set on its own stays.
+   */
   get config(): TimelineConfig<T> {
     return { ...this.#config(), ...this.#props };
   }
   set config(config: TimelineConfig<T>) {
-    this.#set(config);
+    const attributes = this.#config() as Record<string, unknown>;
+    const props = { ...this.#props, ...config } as Record<string, unknown>;
+    const next: Record<string, unknown> = { ...config };
+    for (const key of this.#fromConfig) {
+      if (key in config) continue;
+      delete props[key];
+      next[key] = attributes[key];
+    }
+    this.#props = props as TimelineConfig<T>;
+    this.#fromConfig = new Set(Object.keys(config));
+    this.#heightStyle(this.height);
+    this.#timeline?.update(next as TimelineUpdate<T>);
   }
 
   #set(next: TimelineUpdate<T>): void {
     this.#props = { ...this.#props, ...next } as TimelineConfig<T>;
+    for (const key of Object.keys(next)) this.#fromConfig.delete(key);
     this.#timeline?.update(next);
   }
 
+  /** A property that is also an attribute: `undefined` hands it back to the attribute. */
+  #own<K extends "orientation" | "density" | "theme" | "height">(key: K, value: TimelineConfig<T>[K]): void {
+    if (value !== undefined) {
+      this.#set({ [key]: value } as TimelineUpdate<T>);
+      return;
+    }
+    const props = { ...this.#props } as Record<string, unknown>;
+    delete props[key];
+    this.#props = props as TimelineConfig<T>;
+    this.#fromConfig.delete(key);
+    this.#timeline?.update({ [key]: this.#config()[key] } as TimelineUpdate<T>);
+  }
+
+  /** The host's height, for the stylesheet: `--tl-height`. */
+  #heightStyle(height: number | undefined): void {
+    if (height === undefined || !(height > 0)) this.style.removeProperty("--tl-height");
+    else this.style.setProperty("--tl-height", `${String(height)}px`);
+  }
+
   #config(): TimelineConfig<T> {
-    return configFromAttributes((name) => this.getAttribute(name)) as TimelineConfig<T>;
+    return this.#fromAttributes((name) => this.getAttribute(name));
+  }
+
+  /**
+   * What the attributes say. The accessible name is `aria-label`, or the
+   * text of the elements `aria-labelledby` names: those are in the page, and
+   * the timeline inside the shadow root cannot point at them by id.
+   */
+  #fromAttributes(read: (name: Attribute) => string | null): TimelineConfig<T> {
+    const config = configFromAttributes(read) as Record<string, unknown>;
+    const ids = read("aria-labelledby");
+    if (config.ariaLabel === undefined && ids !== null) {
+      const root = this.getRootNode() as Document | ShadowRoot;
+      const text = ids
+        .split(/\s+/)
+        .map((id) => (id === "" ? undefined : root.getElementById?.(id)?.textContent?.trim()))
+        .filter((each) => each !== undefined && each !== "")
+        .join(" ");
+      if (text !== "") config.ariaLabel = text;
+    }
+    return config as TimelineConfig<T>;
   }
 
   connectedCallback(): void {
@@ -260,14 +395,15 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     // A declarative shadow root (server-rendered) is already attached, and
     // open: attaching a second would throw.
     const existing = this.shadowRoot;
-    const root = existing ?? this.attachShadow({ mode: "open" });
+    // Delegated: `element.focus()`, a label's click and the tab order reach
+    // the timeline inside.
+    const root = existing ?? this.attachShadow({ mode: "open", delegatesFocus: true });
     if (existing === null || existing.querySelector("style") === null) {
       const style = this.ownerDocument.createElement("style");
       style.textContent = HOST_CSS;
       root.prepend(style);
     }
-    const height = this.getAttribute("height");
-    if (height !== null && numberAttr(height) !== undefined) this.style.setProperty("--tl-height", `${height}px`);
+    this.#heightStyle(this.height);
     const config = { ...scriptConfig(this), ...this.#config(), ...this.#props } as TimelineConfig<T>;
     const timeline = createTimeline<T>(this, config, { root, hydrate: existing !== null });
     this.#timeline = timeline;
@@ -279,31 +415,59 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
   }
 
   disconnectedCallback(): void {
-    for (const stop of this.#unsubscribe) stop();
-    this.#unsubscribe = [];
-    this.#timeline?.destroy();
-    this.#timeline = undefined;
+    // A move is a disconnect and a connect in one task (`append` into
+    // another parent, a framework reordering a list): the instance — its
+    // view, selection, collapsed groups, edits and listeners — stays. Only an
+    // element still out of the document after the task's microtasks lets go.
+    queueMicrotask(() => {
+      if (this.isConnected) return;
+      for (const stop of this.#unsubscribe) stop();
+      this.#unsubscribe = [];
+      this.#timeline?.destroy();
+      this.#timeline = undefined;
+    });
   }
+
+  /** `moveBefore` keeps the element's state, and so does the element: nothing to do. */
+  connectedMoveCallback(): void {}
 
   attributeChangedCallback(name: string, previous: string | null, value: string | null): void {
     if (previous === value || this.#timeline === undefined) return;
-    if (name === "height") {
-      if (value === null || numberAttr(value) === undefined) this.style.removeProperty("--tl-height");
-      else this.style.setProperty("--tl-height", `${value}px`);
-    }
-    const config = this.#config();
+    if (name === "height") this.#heightStyle(this.height);
+    const config = this.#config() as Record<string, unknown>;
     if ((name === "start" || name === "end") && config.domain !== undefined) {
-      this.#timeline.zoomTo(config.domain);
+      this.#timeline.zoomTo(config.domain as readonly [TimeInput, TimeInput]);
       return;
     }
-    // A removed attribute goes back to the default, which `update` spells
-    // as the key with no value — merging would otherwise keep the old one.
-    const cleared: Record<string, undefined> = {};
-    if (value === null) {
-      const key = ({ "time-zone": "timeZone", "aria-label": "ariaLabel", "pack-mode": "packMode", "touch-action": "touchAction", "multi-select": "editing", "snap-ms": "editing", editable: "editing" } as Record<string, string>)[name] ?? name;
-      cleared[key] = undefined;
+    // Only what this attribute changed: the configuration the attributes
+    // said before, against what they say now. A removed attribute goes back
+    // to the default, which `update` spells as the key with no value. A
+    // property set on the element wins over an attribute, as at connect.
+    const was = this.#fromAttributes((each) => (each === name ? previous : this.getAttribute(each))) as Record<string, unknown>;
+    const changed: Record<string, unknown> = {};
+    let any = false;
+    for (const key of new Set([...Object.keys(was), ...Object.keys(config)])) {
+      if (key in this.#props || key === "domain" || sameValue(was[key], config[key])) continue;
+      changed[key] = config[key];
+      any = true;
     }
-    this.#timeline.update({ ...cleared, ...config, ...this.#props } as TimelineUpdate<T>);
+    if (any) this.#timeline.update(changed as TimelineUpdate<T>);
+  }
+
+  /** Listen to one of the timeline's events, typed: `item-moved` hands a `CustomEvent` whose `detail` is the move. */
+  override addEventListener<K extends keyof TimelineElementEventMap<T>>(type: K, listener: (this: this, event: TimelineElementEventMap<T>[K]) => void, options?: boolean | AddEventListenerOptions): void;
+  override addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: this, event: HTMLElementEventMap[K]) => void, options?: boolean | AddEventListenerOptions): void;
+  override addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+  override addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void {
+    super.addEventListener(type, listener, options);
+  }
+
+  /** Stop listening — the counterpart of the typed {@link addEventListener}. */
+  override removeEventListener<K extends keyof TimelineElementEventMap<T>>(type: K, listener: (this: this, event: TimelineElementEventMap<T>[K]) => void, options?: boolean | EventListenerOptions): void;
+  override removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: this, event: HTMLElementEventMap[K]) => void, options?: boolean | EventListenerOptions): void;
+  override removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
+  override removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void {
+    super.removeEventListener(type, listener, options);
   }
 
   /** Zoom to a domain — the instance's `zoomTo`, with the same argument. */
@@ -323,4 +487,10 @@ export function defineTimelineElement(name: string = TAG_NAME, registry?: Custom
   // `getName` answers null for a constructor not yet registered.
   const constructor = (target.getName?.(TemporeumTimelineElement) ?? null) === null ? TemporeumTimelineElement : class extends TemporeumTimelineElement {};
   target.define(name, constructor);
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "temporeum-timeline": TemporeumTimelineElement;
+  }
 }

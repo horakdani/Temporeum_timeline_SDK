@@ -74,7 +74,7 @@ function centre(element: Element): { x: number; y: number } {
 function harness(extra: Record<string, unknown> = {}) {
   const counts = { page: 0, selection: 0, range: 0 };
   const timeline: ShallowRef<TimelineInstance | null> = shallowRef(null);
-  const props = reactive<Record<string, unknown>>({ items, lanes, domain, height: 260, ...extra });
+  const props = reactive<Record<string, unknown>>({ items, lanes, defaultDomain: domain, height: 260, ...extra });
   const Selection = defineComponent({
     setup() {
       const ids = useTimelineState(timeline, (snapshot) => snapshot.selectedIds);
@@ -180,7 +180,7 @@ describe("<Timeline> — attributes and emits", () => {
   });
 
   it("reads kebab-case attributes as the config's camelCase", async () => {
-    const page = harness({ "selected-ids": ["c"] });
+    const page = harness({ "default-selected-ids": ["c"] });
     app = createApp(page.Page);
     app.mount(host());
     const timeline = await ready(page.timeline);
@@ -219,7 +219,7 @@ describe("<Timeline> — attributes and emits", () => {
 
   it("exposes the instance on a template ref", async () => {
     const view = shallowRef<{ timeline: TimelineInstance | null } | null>(null);
-    const Page = defineComponent({ setup: () => () => h(Timeline, { ref: view, items, domain, height: 200 }) });
+    const Page = defineComponent({ setup: () => () => h(Timeline, { ref: view, items, defaultDomain: domain, height: 200 }) });
     app = createApp(Page);
     app.mount(host());
     await vi.waitFor(() => expect(view.value?.timeline?.result).toBeDefined());
@@ -256,6 +256,84 @@ function useTimelineStateIn<S = readonly string[]>(
   return isEqual === undefined ? useTimelineState(source, selector) : useTimelineState(source, selector, isEqual);
 }
 
+describe("<Timeline> — a page that re-renders on every view change (D1)", () => {
+  /** An inline `editing` in the render, and a state set from `@viewport-changed`: every frame of a pan is a render, every render a new object. */
+  function page(): { Page: ReturnType<typeof defineComponent>; renders: () => number; timeline: ShallowRef<TimelineInstance | null>; moved: ReturnType<typeof vi.fn> } {
+    const timeline: ShallowRef<TimelineInstance | null> = shallowRef(null);
+    const view = shallowRef<readonly [number, number] | null>(null);
+    const moved = vi.fn();
+    let renders = 0;
+    const Page = defineComponent({
+      setup: () => () => {
+        renders += 1;
+        return h("div", { "data-view": String(view.value?.[0]) }, [
+          h(Timeline, {
+            items,
+            lanes,
+            defaultDomain: domain,
+            height: 260,
+            editing: { enabled: true, snapMs: DAY },
+            onViewportChanged: ({ viewport }: { viewport: { domain: readonly [number, number] } }) => (view.value = viewport.domain),
+            onItemMoved: moved,
+            onReady: (instance: TimelineInstance | null) => (timeline.value = instance),
+          }),
+        ]);
+      },
+    });
+    return { Page, renders: () => renders, timeline, moved };
+  }
+
+  it("a pan goes all the way, though every frame of it re-rendered the page", async () => {
+    const view = page();
+    const element = host();
+    app = createApp(view.Page);
+    app.mount(element);
+    const timeline = await ready(view.timeline);
+    const before = view.renders();
+    const y = centre(node("c")).y;
+    const left = element.getBoundingClientRect().left;
+    await commands.mouse([
+      { type: "move", x: left + 60, y },
+      { type: "down" },
+      { type: "move", x: left + 260, y, steps: 30 },
+      { type: "up" },
+    ]);
+    await nextFrame();
+    expect(view.renders() - before).toBeGreaterThan(1);
+    expect(Math.abs(timeline.getSnapshot().domain[0] - (domain[0] - 6 * DAY))).toBeLessThan(DAY / 4);
+  });
+
+  it("a drag goes through; defaultDomain and defaultSelectedIds are where it starts, and only that", async () => {
+    const view = page();
+    app = createApp(view.Page);
+    app.mount(host());
+    await ready(view.timeline);
+    const from = centre(node("a"));
+    await commands.mouse([
+      { type: "move", x: from.x, y: from.y },
+      { type: "down" },
+      { type: "move", x: from.x + 100, y: from.y, steps: 8 },
+      { type: "up" },
+    ]);
+    await vi.waitFor(() => expect(view.moved).toHaveBeenCalledTimes(1));
+    expect(view.moved.mock.calls[0]?.[0].to.start).toBe(T0 + 5 * DAY);
+    app.unmount();
+    document.body.replaceChildren();
+    const started = harness({ defaultDomain: [T0, T0 + 4 * DAY], defaultSelectedIds: ["b"] });
+    app = createApp(started.Page);
+    app.mount(host());
+    const timeline = await ready(started.timeline);
+    expect(timeline.getSnapshot().domain).toEqual([T0, T0 + 4 * DAY]);
+    expect(timeline.getSnapshot().selectedIds).toEqual(["b"]);
+    const update = vi.spyOn(timeline, "update");
+    started.props.defaultDomain = [T0, T0 + 8 * DAY];
+    await nextTick();
+    await nextFrame();
+    expect(update).not.toHaveBeenCalled();
+    expect(timeline.getSnapshot().domain).toEqual([T0, T0 + 4 * DAY]);
+  });
+});
+
 describe("<Timeline> — hydration", () => {
   it("hydrates Vue's own server output: the same nodes, no mismatch, and live", async () => {
     const warnings: unknown[] = [];
@@ -268,7 +346,7 @@ describe("<Timeline> — hydration", () => {
         h(Timeline, {
           items,
           lanes,
-          domain,
+          defaultDomain: domain,
           height: 260,
           ssrWidth: 800,
           locale: "hu",

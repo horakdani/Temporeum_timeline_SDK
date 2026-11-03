@@ -176,7 +176,7 @@ describe("serializeConfig and renderTimelineHtml", () => {
   it("puts the drawing in a declarative shadow root and the state beside it", () => {
     const html = renderTimelineHtml({ items, lanes, height: 320 }, { attributes: { id: "plan", style: "margin: 0;" } });
     expect(html.startsWith('<temporeum-timeline id="plan" style="margin: 0;--tl-height:320px">')).toBe(true);
-    expect(html).toContain('<template shadowrootmode="open"><style>:host{');
+    expect(html).toContain('<template shadowrootmode="open" shadowrootdelegatesfocus><style>:host{');
     expect(html).toContain('<script type="application/json" data-tl-config>');
     const state = JSON.parse(html.slice(html.indexOf("data-tl-config>") + 15, html.lastIndexOf("</script>"))) as { domain: number[] };
     // The domain the server chose travels, so the client does not choose again.

@@ -126,7 +126,8 @@ for (const target of targets) {
     expect(html).toContain("tl-layer--minimap");
     expect(html).toContain("data-tl-minimap-window");
     expect(html).toContain("tl-layer--lane-headers");
-    if (target.kind === "element") expect(html).toContain('<template shadowrootmode="open">');
+    // A declarative shadow root that delegates focus, so `element.focus()` reaches the timeline.
+    if (target.kind === "element") expect(html).toContain('<template shadowrootmode="open" shadowrootdelegatesfocus>');
     // Right to left, in Hungarian words — the mirroring group and the dictionary are in the server's drawing.
     expect(html).toContain('dir="rtl"');
     expect(html).toContain("tl-mirror");

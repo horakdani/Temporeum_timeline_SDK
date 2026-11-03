@@ -29,16 +29,20 @@ import { createTimeline, DEFAULT_HEIGHT, renderTimelineSvg, TIMELINE_EVENTS } fr
 import type {
   ItemSlot,
   Timeline as TimelineInstance,
+  TimelineComponentConfig,
   TimelineConfig,
   TimelineInstanceEventMap,
   TimelineInstanceEventName,
   TimelineSnapshot,
   TimelineUpdate,
 } from "@temporeum/timeline-element";
-import { camelize, defineComponent, h, inject, onBeforeUnmount, onMounted, onUpdated, ref, shallowRef, ssrContextKey, Teleport, toValue, useId, watch } from "vue";
-import type { MaybeRefOrGetter, PropType, ShallowRef, StyleValue } from "vue";
+import { defineComponent, h, inject, onBeforeUnmount, onMounted, onUpdated, ref, shallowRef, ssrContextKey, Teleport, toRaw, toValue, useId, watch } from "vue";
+import type { MaybeRefOrGetter, SetupContext, ShallowRef, SlotsType } from "vue";
 
-export type { TimelineConfig, TimelineSnapshot } from "@temporeum/timeline-element";
+export type { TimelineComponentConfig, TimelineConfig, TimelineSnapshot } from "@temporeum/timeline-element";
+/** The element's plugin registry, from the adapter too: an app that installs only the adapter still registers the plugins its configuration needs. */
+export { hasPlugin, registerPlugin } from "@temporeum/timeline-element";
+export type { PluginName, TimelinePlugin } from "@temporeum/timeline-element";
 export type { TimelineInstance };
 
 /** What the component emits: every instance event, by its own name, and `ready` with the instance (`null` on unmount). */
@@ -46,18 +50,94 @@ export type TimelineEmits<T = unknown> = { readonly [K in TimelineInstanceEventN
   readonly ready: (timeline: TimelineInstance<T> | null) => void;
 };
 
-/** The component's own attributes — the rest are {@link TimelineConfig} fields. */
-const OWN = new Set(["class", "style", "ssrWidth"]);
+/** The component's props: every {@link TimelineComponentConfig} field, and the width the server draws at. */
+export type TimelineProps<T = unknown> = TimelineComponentConfig<T> & {
+  /** Width the server draws at; the client redraws at the real one. */
+  readonly ssrWidth?: number | undefined;
+};
+
+/** The `#item` slot: each drawn item's content. */
+export type TimelineSlots<T = unknown> = SlotsType<{ readonly item: { readonly item: Item<T> } }>;
+
+/** An item, as the element's types name it (the adapter depends on the element alone). */
+type Item<T> = ItemSlot<T>["item"];
+
+/**
+ * A prop that may be written as a bare attribute (`<Timeline lane-headers />`)
+ * is a boolean first: Vue reads the empty string as `true` for it. The rest
+ * take any value, and an absent one is `undefined` — not in the
+ * configuration, so the instance's default holds.
+ */
+const ANY = { type: null, default: undefined } as const;
+const FLAG = { type: Boolean, default: undefined } as const;
+const PROPS: { readonly [K in keyof TimelineProps]-?: { readonly type: unknown; readonly default: undefined } } = {
+  items: ANY,
+  lanes: ANY,
+  groups: ANY,
+  template: ANY,
+  templateOptions: ANY,
+  slots: { type: [Boolean, Function], default: undefined },
+  gantt: ANY,
+  resources: ANY,
+  resourceOptions: ANY,
+  defaultDomain: ANY,
+  limits: ANY,
+  orientation: ANY,
+  breakpoint: ANY,
+  density: ANY,
+  metrics: ANY,
+  packMode: ANY,
+  theme: ANY,
+  locale: ANY,
+  timeZone: ANY,
+  formatTick: ANY,
+  axisContext: FLAG,
+  touchAction: ANY,
+  maxLabels: ANY,
+  labelOverflow: ANY,
+  ariaLabel: ANY,
+  decorations: ANY,
+  cluster: { type: [Boolean, Object], default: undefined },
+  hooks: ANY,
+  height: ANY,
+  interactions: ANY,
+  editing: ANY,
+  defaultSelectedIds: ANY,
+  instanceId: ANY,
+  measureText: ANY,
+  sceneSpace: { type: [Boolean, String], default: undefined },
+  hiddenDates: ANY,
+  timeBars: ANY,
+  timeBarOptions: ANY,
+  rolling: { type: [Boolean, Object], default: undefined },
+  zoomPresets: { type: [Boolean, Array], default: undefined },
+  minimap: { type: [Boolean, Object], default: undefined },
+  rangeSelect: { type: [Boolean, Object], default: undefined },
+  laneHeaders: FLAG,
+  tooltip: { type: [Boolean, Function], default: undefined },
+  direction: ANY,
+  strings: ANY,
+  calendar: ANY,
+  ssrWidth: { type: Number, default: undefined },
+};
+
+/** Where the view and the selection start, and the server's width: said once, not configuration that changes. */
+const OWN = new Set(["ssrWidth", "defaultDomain", "defaultSelectedIds"]);
 
 /** `useId` gives `v-0` or `v:0`; a stylesheet scope wants a plain name. */
 const scopeOf = (id: string): string => `tl${id.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-/** The configuration part of the attributes: every key in camelCase, the component's own left out. */
-function configOf(attrs: Record<string, unknown>, scope: string): Record<string, unknown> {
+/**
+ * The configuration part of the props: the ones given, as plain values. A
+ * reactive array or object the host passes is Vue's proxy of it; the
+ * instance holds the object itself, so its identity is the host's and the
+ * frames do not go through the proxy.
+ */
+function configOf(props: Record<string, unknown>, scope: string): Record<string, unknown> {
   const config: Record<string, unknown> = {};
-  for (const key of Object.keys(attrs)) {
-    const name = camelize(key);
-    if (!OWN.has(name)) config[name] = attrs[key];
+  for (const key of Object.keys(PROPS)) {
+    const value = props[key];
+    if (!OWN.has(key) && value !== undefined) config[key] = toRaw(value);
   }
   // Light DOM: two timelines on one page must not share one stylesheet.
   if (config.instanceId === undefined) config.instanceId = scope;
@@ -78,10 +158,11 @@ function changedOf(before: Record<string, unknown>, next: Record<string, unknown
 }
 
 /**
- * The timeline. Every {@link TimelineConfig} field is an attribute
- * (`:items`, `:selected-ids` or `:selectedIds`), every instance event an
- * emit (`@item-moved`, `@selection-changed`, …), and `ready` hands over the
- * live instance; a template ref's `timeline` is the same instance.
+ * The timeline. Every {@link TimelineConfig} field is a prop (`:items`,
+ * `:time-zone` or `:timeZone`, a bare `lane-headers`), every instance event
+ * an emit (`@item-moved`, `@selection-changed`, …), and `ready` hands over
+ * the live instance; a template ref's `timeline` is the same instance.
+ * `class`, `style`, `id` and the rest of the attributes go on the box.
  *
  * The `#item` slot (`<template #item="{ item }">`) is each item's content
  * as Vue, teleported into the box over the item (`slots`): only the items
@@ -89,41 +170,38 @@ function changedOf(before: Record<string, unknown>, next: Record<string, unknown
  * act on the item, and its `label` stays its accessible name. Needs the
  * `/items` plugin, as `template` does.
  */
-export const Timeline = defineComponent({
-  name: "TemporeumTimeline",
-  inheritAttrs: false,
-  props: {
-    /** Width the server draws at; the client redraws at the real one. */
-    ssrWidth: { type: Number as PropType<number>, default: undefined },
-  },
-  emits: [...TIMELINE_EVENTS, "ready"] as unknown as TimelineEmits,
-  setup(props, { attrs, emit, expose, slots }) {
+export const Timeline = defineComponent(
+  <T = unknown>(props: TimelineProps<T>, { emit, expose, slots }: SetupContext<TimelineEmits<T>, TimelineSlots>) => {
     const scope = scopeOf(useId());
     const container = ref<HTMLDivElement | null>(null);
-    const timeline = shallowRef<TimelineInstance | null>(null);
-    const drawn = shallowRef<ReadonlyMap<string, ItemSlot>>(new Map());
+    const timeline = shallowRef<TimelineInstance<T> | null>(null);
+    const drawn = shallowRef<ReadonlyMap<string, ItemSlot<T>>>(new Map());
     // With an `#item` slot every item has a box, unless `slots` picks.
     const configNow = (): Record<string, unknown> => {
-      const config = configOf(attrs, scope);
+      const config = configOf(props as Record<string, unknown>, scope);
       if (slots.item !== undefined && config.slots === undefined) config.slots = true;
       return config;
     };
     let applied = configNow();
+    const initial: Record<string, unknown> = {
+      ...applied,
+      ...(props.defaultDomain === undefined ? {} : { domain: toRaw(props.defaultDomain) }),
+      ...(props.defaultSelectedIds === undefined ? {} : { selectedIds: toRaw(props.defaultSelectedIds) }),
+    };
     // The server's drawing, computed once — on the server only: Vue's
     // server renderer is what provides an SSR context.
     const html =
       inject(ssrContextKey, null) !== null
         ? (() => {
-            const frame = renderTimelineSvg(applied as TimelineConfig, props.ssrWidth === undefined ? {} : { width: props.ssrWidth });
+            const frame = renderTimelineSvg(initial as TimelineConfig<T>, props.ssrWidth === undefined ? {} : { width: props.ssrWidth });
             return frame.svg + frame.groups;
           })()
         : undefined;
     let stops: (() => void)[] = [];
 
     onMounted(() => {
-      const instance = createTimeline(container.value as HTMLDivElement, applied as TimelineConfig, { hydrate: true });
-      const send = emit as (type: string, payload: unknown) => void;
-      stops = TIMELINE_EVENTS.map((type) => instance.on(type, (payload) => send(type, payload)));
+      const instance = createTimeline<T>(container.value as HTMLDivElement, { ...initial, ...applied } as TimelineConfig<T>, { hydrate: true });
+      stops = TIMELINE_EVENTS.map((type) => instance.on(type, (payload) => forward(emit, type, payload)));
       // Vue renders the teleports in its own flush, a microtask after the
       // frame that drew the boxes: before the browser paints it.
       stops.push(instance.on("slotsChanged", ({ slots: next }) => (drawn.value = next)));
@@ -137,7 +215,7 @@ export const Timeline = defineComponent({
       const next = configNow();
       const changed = changedOf(applied, next);
       applied = next;
-      if (changed !== undefined) timeline.value?.update(changed as TimelineUpdate);
+      if (changed !== undefined) timeline.value?.update(changed as TimelineUpdate<T>);
     });
 
     onBeforeUnmount(() => {
@@ -151,28 +229,39 @@ export const Timeline = defineComponent({
     expose({ timeline });
 
     return () => {
-      const height = (attrs.height as number | undefined) ?? DEFAULT_HEIGHT;
+      const height = props.height ?? DEFAULT_HEIGHT;
       const item = slots.item;
       const teleports = item === undefined ? [] : [...drawn.value].map(([id, slot]) => h(Teleport, { key: id, to: slot.element }, item({ item: slot.item })));
       // The teleports are the box's children, as anchors: one root, so the
       // server's markup stays the box alone. Without a teleport the box has
       // no children for Vue — on the server it has the drawing, and while
-      // hydrating Vue must not compare the instance's nodes with any.
+      // hydrating Vue must not compare the instance's nodes with any. The
+      // host's class, style and attributes fall through onto the box.
       return h(
         "div",
         {
-        ref: container,
-        // Only a class the host gave: Vue prints an empty one as `class=""`.
-        ...(attrs.class === undefined ? {} : { class: attrs.class }),
-        style: [{ position: "relative", overflow: "hidden", height: `${String(height)}px` }, attrs.style as StyleValue],
-        "data-tl-vue": "",
-        ...(html === undefined ? {} : { innerHTML: html }),
+          ref: container,
+          style: { position: "relative", overflow: "hidden", height: `${String(height)}px` },
+          "data-tl-vue": "",
+          ...(html === undefined ? {} : { innerHTML: html }),
         },
         html === undefined && teleports.length > 0 ? teleports : undefined,
       );
     };
   },
-});
+  {
+    name: "TemporeumTimeline",
+    // The runtime declaration; the types are the setup function's, generic over the items' data.
+    props: PROPS as never,
+    emits: [...TIMELINE_EVENTS, "ready"],
+    slots: Object as TimelineSlots,
+  },
+);
+
+/** One instance event, emitted under its own name: the payload is that event's. */
+function forward<T, K extends TimelineInstanceEventName>(emit: SetupContext<TimelineEmits<T>>["emit"], type: K, payload: TimelineInstanceEventMap<T>[K]): void {
+  (emit as (type: K, payload: TimelineInstanceEventMap<T>[K]) => void)(type, payload);
+}
 
 /**
  * Subscribe to the part of the instance's state a component renders.

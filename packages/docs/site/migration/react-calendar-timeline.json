@@ -14,7 +14,7 @@
       "vis": "<Timeline groups items defaultTimeStart defaultTimeEnd />",
       "status": "renamed",
       "temporeum": "createTimeline(container, { items, lanes, domain })",
-      "note": "In React the same configuration is `<Timeline items={items} lanes={lanes} domain={domain} />` from `@temporeum/timeline-react`; every key on this page is the same prop, and each event `x` is an `onX` prop.",
+      "note": "In React the same configuration is `<Timeline items={items} lanes={lanes} defaultDomain={domain} />` from `@temporeum/timeline-react`; every key on this page is the same prop, except that `domain` and `selectedIds` are `defaultDomain` and `defaultSelectedIds` there — where the view starts, as `defaultTimeStart` is — and each event `x` is an `onX` prop.",
       "uses": [
         "TimelineConfig.items",
         "TimelineConfig.lanes",

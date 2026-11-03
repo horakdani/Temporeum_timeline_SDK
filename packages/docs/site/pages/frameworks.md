@@ -12,7 +12,9 @@ npm install
 npm run dev
 ```
 
-**Plugins.** The React, Vue, Svelte and Angular components take the same configuration as `createTimeline`, and draw through it, so the same plugins apply: the time tools, nested groups, item kinds and templates, other languages, the Gantt chart, the resource view and export are registered with `registerPlugin` from `@temporeum/timeline-element`, once, in the app's entry module — before the first timeline mounts, and on the server too when the app renders there. A configuration that needs a plugin that is not registered throws, naming the import. See [entry points](reference/entry-points.md#the-elements-entry-points); the React and Vue starters register the items plugin, for their items' content.
+**Plugins.** The React, Vue, Svelte and Angular components take the same configuration as `createTimeline`, and draw through it, so the same plugins apply: the time tools, nested groups, item kinds and templates, other languages, the Gantt chart, the resource view and export are registered with `registerPlugin` — from `@temporeum/timeline-element`, or from the adapter, which hands the same function on — once, in the app's entry module — before the first timeline mounts, and on the server too when the app renders there. A configuration that needs a plugin that is not registered throws, naming the import. The registry is one for the page, even with two copies of the element in it (an ESM and a CJS build, or a bundle that did not dedupe it), and the adapters depend on the element with a caret range (`^1.0.0`), so a package manager installs one. See [entry points](reference/entry-points.md#the-elements-entry-points); the React and Vue starters register the items plugin, for their items' content.
+
+**Where the view starts.** In the four components the view and the selection are *defaults*: `defaultDomain` and `defaultSelectedIds` say where the timeline starts, and a re-render does not move them back — the reader's pan and click stay. To move the view or the selection from the app, call the instance's `zoomTo` and `select`. Every other field is compared by what it says, so an `editing` object written into the render anew each time is no change, and a drag in progress goes on.
 
 ## Plain JavaScript
 
@@ -116,6 +118,8 @@ The custom element works in Vue too: tell the compiler it is one (`isCustomEleme
   <p aria-live="polite">{log} {$selected?.length ?? 0} selected.</p>
 ```
 
+The `item` snippet (`{#snippet item(item)}…{/snippet}` inside `<Timeline>`) is each item's content as Svelte, rendered into the box over the item, with the same rules as React's `renderItem`.
+
 ## Angular
 
 `<tl-timeline>` and `timelineState`, from `@temporeum/timeline-angular` (standalone, `OnPush`, zoneless). `[config]` takes the whole configuration, every event is an output by its own name, and `(ready)` hands over the instance; `timelineState` is a signal.
@@ -127,6 +131,8 @@ import { TimelineComponent, timelineState } from "@temporeum/timeline-angular";
   readonly timeline = signal<TimelineInstance | null>(null);
   readonly selected = timelineState(this.timeline, (state) => state.selectedIds);
 ```
+
+`<ng-template tlItem let-item>…</ng-template>` inside `<tl-timeline>` (with `TimelineItemDirective` imported) is each item's content as an Angular template, rendered into the box over the item, with the same rules as React's `renderItem`.
 
 ## Next, Nuxt, Astro, SvelteKit, Angular SSR
 

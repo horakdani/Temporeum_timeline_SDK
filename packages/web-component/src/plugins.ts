@@ -174,7 +174,21 @@ export type PluginName = keyof Features;
  */
 export type TimelinePlugin = { readonly [K in PluginName]: { readonly name: K; readonly feature: Features[K] } }[PluginName];
 
-const installed: { -readonly [K in PluginName]?: Features[K] } = {};
+/**
+ * The registry, on the global object under a registered symbol: a page with
+ * two copies of this module — the ESM and the CJS build, or a bundle that
+ * did not dedupe — has one registry, so a plugin registered through one is
+ * there for a timeline made by the other.
+ */
+const REGISTRY = Symbol.for("@temporeum/timeline/plugins");
+
+type Registry = { -readonly [K in PluginName]?: Features[K] };
+
+/** Taken when first asked for: importing the module writes nothing. */
+function registry(): Registry {
+  const global = globalThis as { [REGISTRY]?: Registry };
+  return (global[REGISTRY] ??= {});
+}
 
 /**
  * Register plugins for every timeline on the page — the instances, the
@@ -183,23 +197,23 @@ const installed: { -readonly [K in PluginName]?: Features[K] } = {};
  */
 export function registerPlugin(...plugins: readonly TimelinePlugin[]): void {
   for (const plugin of plugins) {
-    (installed as Record<string, unknown>)[plugin.name] = plugin.feature;
+    (registry() as Record<string, unknown>)[plugin.name] = plugin.feature;
   }
 }
 
 /** Whether a plugin is registered. */
 export function hasPlugin(name: PluginName): boolean {
-  return installed[name] !== undefined;
+  return registry()[name] !== undefined;
 }
 
 /** A registered plugin's part, or `undefined`. */
 export function pluginIf<K extends PluginName>(name: K): Features[K] | undefined {
-  return installed[name];
+  return registry()[name];
 }
 
 /** A registered plugin's part; `what` — an option, a method — asked for it and gets named in the error without one. */
 export function plugin<K extends PluginName>(name: K, what: string): Features[K] {
-  const feature = installed[name];
+  const feature = registry()[name];
   if (feature === undefined) {
     throw new TypeError(
       `${what} needs the ${name} plugin: import { ${name}Plugin } from "@temporeum/timeline-element/${name}" and call registerPlugin(${name}Plugin) before the timeline draws`,
@@ -216,7 +230,7 @@ const ITEM_KINDS: ReadonlySet<unknown> = new Set(["box", "point", "background"])
  * would be drawn as a plain range, which is a bug that looks like a feature.
  */
 export function requireKinds<T>(items: readonly Item<T>[]): void {
-  if (installed.items !== undefined) return;
+  if (registry().items !== undefined) return;
   for (const item of items) if (ITEM_KINDS.has(item.kind)) plugin("items", `An item of kind "${String(item.kind)}"`);
 }
 

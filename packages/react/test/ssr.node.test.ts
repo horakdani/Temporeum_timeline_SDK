@@ -63,7 +63,16 @@ describe("the React adapter in Node", () => {
 describe("props", () => {
   it("take an explicit undefined, as a conditional prop spells it (exactOptionalPropertyTypes)", () => {
     const narrow = false as boolean;
-    const props: TimelineProps = { items: [], domain: narrow ? [0, 1] : undefined, height: undefined, editing: narrow ? { enabled: true } : undefined };
+    const props: TimelineProps = { items: [], defaultDomain: narrow ? [0, 1] : undefined, height: undefined, editing: narrow ? { enabled: true } : undefined };
     expect(renderToString(createElement(Timeline, props))).toContain("<svg");
+  });
+});
+
+describe("the plugin registry (W4)", () => {
+  it("is the element's, handed on by the adapter", async () => {
+    const adapter = await import("../src/index.js");
+    const element = await import("@temporeum/timeline-element");
+    expect(adapter.registerPlugin).toBe(element.registerPlugin);
+    expect(adapter.hasPlugin).toBe(element.hasPlugin);
   });
 });

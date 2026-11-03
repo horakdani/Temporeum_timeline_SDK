@@ -43,6 +43,17 @@ and every instance event an `on…` prop (`onItemMoved`, `onSelectionChanged`,
 is what runs. `bind:timeline` hands over the live instance, and `null` after
 the component is destroyed.
 
+Each item's content can be a snippet, `item`:
+`{#snippet item(item)}<b>{item.label}</b>{/snippet}` inside `<Timeline>`. It
+is rendered into the box over the item, only for the items drawn, and keeps
+its state while its item is drawn; it needs the element's `/items` plugin,
+as `template` does.
+
+The view and the selection are where the timeline starts: `defaultDomain`
+and `defaultSelectedIds`. A change of props does not move them back; the
+instance's `zoomTo` and `select` do. Every other prop is compared by what it
+says, so an `editing={{ enabled: true }}` written anew is no change.
+
 ## It does not re-render to draw
 
 The component creates the instance once, on mount, and hands it the props

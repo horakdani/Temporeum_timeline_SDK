@@ -79,7 +79,7 @@ function harness(extra: Partial<TimelineProps> = {}) {
       createElement(
         Profiler,
         { id: "timeline", onRender: () => (counts.timelineCommits += 1) },
-        createElement(Timeline, { items, lanes, domain, height: 260, timelineRef: setTimeline, ...extra, ...props }),
+        createElement(Timeline, { items, lanes, defaultDomain: domain, height: 260, timelineRef: setTimeline, ...extra, ...props }),
       ),
       createElement(Selection, { timeline }),
       createElement(Range, { timeline }),
@@ -234,7 +234,7 @@ describe("<Timeline> — props and callbacks", () => {
   it("lets go of the instance on unmount, and clears an object ref", async () => {
     const ref: { current: TimelineInstance | null } = { current: null };
     root = createRoot(host());
-    root.render(createElement(Timeline, { items, domain, timelineRef: ref }));
+    root.render(createElement(Timeline, { items, defaultDomain: domain, timelineRef: ref }));
     await vi.waitFor(() => expect(ref.current?.result).toBeDefined());
     const timeline = ref.current as TimelineInstance;
     root.unmount();
@@ -246,7 +246,7 @@ describe("<Timeline> — props and callbacks", () => {
   it("survives StrictMode's double effects with one live drawing", async () => {
     const ref: { current: TimelineInstance | null } = { current: null };
     root = createRoot(host());
-    root.render(createElement(StrictMode, null, createElement(Timeline, { items, lanes, domain, timelineRef: ref })));
+    root.render(createElement(StrictMode, null, createElement(Timeline, { items, lanes, defaultDomain: domain, timelineRef: ref })));
     await vi.waitFor(() => expect(ref.current?.result).toBeDefined());
     expect(document.querySelectorAll("svg")).toHaveLength(1);
     await userEvent.click(node("b"));
@@ -266,7 +266,7 @@ describe("<Timeline> — props and callbacks", () => {
     function App(): ReactElement {
       const [timeline, setTimeline] = useState<TimelineInstance | null>(null);
       instance = timeline;
-      return createElement("div", null, createElement(Timeline, { items, domain, timelineRef: setTimeline }), createElement(Probe, { timeline }));
+      return createElement("div", null, createElement(Timeline, { items, defaultDomain: domain, timelineRef: setTimeline }), createElement(Probe, { timeline }));
     }
     root = createRoot(host());
     root.render(createElement(App));
@@ -279,12 +279,83 @@ describe("<Timeline> — props and callbacks", () => {
   });
 });
 
+describe("<Timeline> — a page that re-renders on every view change (D1)", () => {
+  /** The README's timeline, with a state set from `onViewportChanged`: every frame of a pan is a render, every render a new `editing` object. */
+  function page(): { App: () => ReactElement; moved: ReturnType<typeof vi.fn>; renders: () => number; instance: () => TimelineInstance | null } {
+    let instance: TimelineInstance | null = null;
+    let renders = 0;
+    const moved = vi.fn();
+    function App(): ReactElement {
+      const [, setView] = useState<readonly [number, number] | null>(null);
+      renders += 1;
+      return createElement(Timeline, {
+        items,
+        lanes,
+        defaultDomain: domain,
+        height: 260,
+        editing: { enabled: true, snapMs: DAY },
+        onViewportChanged: ({ viewport }) => setView(viewport.domain),
+        onItemMoved: moved,
+        timelineRef: (timeline: TimelineInstance | null) => {
+          instance = timeline;
+        },
+      });
+    }
+    return { App, moved, renders: () => renders, instance: () => instance };
+  }
+
+  it("a pan goes all the way, though every frame of it re-rendered the page", async () => {
+    const view = page();
+    const element = host();
+    root = createRoot(element);
+    root.render(createElement(view.App));
+    const timeline = await ready(view.instance);
+    const before = view.renders();
+    // An empty stretch of the second lane: a press there pans.
+    const y = centre(node("c")).y;
+    const left = element.getBoundingClientRect().left;
+    await commands.mouse([
+      { type: "move", x: left + 60, y },
+      { type: "down" },
+      { type: "move", x: left + 260, y, steps: 30 },
+      { type: "up" },
+    ]);
+    await nextFrame();
+    expect(view.renders() - before).toBeGreaterThan(1);
+    // 200 px of 800 over 24 days: six days earlier.
+    expect(Math.abs(timeline.getSnapshot().domain[0] - (domain[0] - 6 * DAY))).toBeLessThan(DAY / 4);
+  });
+
+  it("a drag goes through, and a new defaultDomain on a later render does not move the view", async () => {
+    const view = page();
+    root = createRoot(host());
+    root.render(createElement(view.App));
+    const timeline = await ready(view.instance);
+    const from = centre(node("a"));
+    await commands.mouse([
+      { type: "move", x: from.x, y: from.y },
+      { type: "down" },
+      { type: "move", x: from.x + 100, y: from.y, steps: 8 },
+      { type: "up" },
+    ]);
+    await vi.waitFor(() => expect(view.moved).toHaveBeenCalledTimes(1));
+    // 100 px of 800 over 24 days: three days.
+    expect(view.moved.mock.calls[0]?.[0].to.start).toBe(T0 + 5 * DAY);
+    const update = vi.spyOn(timeline, "update");
+    root.render(createElement(Timeline, { items, lanes, defaultDomain: [T0, T0 + 4 * DAY], defaultSelectedIds: ["b"], height: 260 }));
+    await nextFrame();
+    expect(update.mock.calls.flatMap((call) => Object.keys(call[0]))).not.toContain("domain");
+    expect(timeline.getSnapshot().domain).toEqual(domain);
+    expect(timeline.getSnapshot().selectedIds).toEqual([]);
+  });
+});
+
 describe("<Timeline> — hydration", () => {
   it("hydrates React's own server output: the same nodes, no mismatch, and live", async () => {
     const errors: unknown[] = [];
     const consoleError = vi.spyOn(console, "error").mockImplementation((...args) => errors.push(args));
     const ref: { current: TimelineInstance | null } = { current: null };
-    const element = (): ReactElement => createElement(Timeline, { items, lanes, domain, height: 260, ssrWidth: 800, locale: "hu", timeZone: "UTC", timelineRef: ref });
+    const element = (): ReactElement => createElement(Timeline, { items, lanes, defaultDomain: domain, height: 260, ssrWidth: 800, locale: "hu", timeZone: "UTC", timelineRef: ref });
     const container = host();
     container.innerHTML = renderToString(element());
     const svg = container.querySelector("svg");

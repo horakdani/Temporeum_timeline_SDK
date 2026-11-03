@@ -187,10 +187,13 @@ export interface TimelineConfig<T = unknown> {
    * items either, the month around the moment the timeline was created.
    */
   readonly domain?: readonly [TimeInput, TimeInput] | undefined;
+  /** How far the reader can pan and zoom: the earliest and latest time, the shortest and longest span. */
   readonly limits?: DomainLimits | undefined;
+  /** `"horizontal"`, `"vertical"`, or `"auto"` — vertical below `breakpoint`. Horizontal by default. */
   readonly orientation?: OrientationSetting | undefined;
   /** Width below which `orientation: "auto"` turns vertical. */
   readonly breakpoint?: number | undefined;
+  /** `"comfortable"`, `"compact"`, `"dense"`, or `"auto"` — the one the visible items have room for. */
   readonly density?: DensitySetting | undefined;
   /**
    * Sizes over the density's: a row's height, the type, the corners, the
@@ -199,9 +202,13 @@ export interface TimelineConfig<T = unknown> {
    * layout is measured with them.
    */
   readonly metrics?: MetricsSetting | undefined;
+  /** How overlapping items share a lane: `"pack"` into rows (the default), `"overlap"`, or `"single"` row. */
   readonly packMode?: PackMode | undefined;
+  /** `"light"`, `"dark"`, `"auto"` (the reader's color scheme), or a theme of your own. */
   readonly theme?: ThemeSetting | undefined;
+  /** The language of the axis, the dates and the words, as a BCP 47 tag. `"en"` by default. */
   readonly locale?: string | undefined;
+  /** The IANA time zone the axis and the dates are in. UTC by default. */
   readonly timeZone?: string | undefined;
   /**
    * The axis labels' text. The default writes years as ISO does (`-0500`
@@ -231,7 +238,9 @@ export interface TimelineConfig<T = unknown> {
   readonly labelOverflow?: LabelOverflow | undefined;
   /** The accessible name of the listbox. */
   readonly ariaLabel?: string | undefined;
+  /** What is drawn besides the items: banding of the periods, the now line, eras, markers. */
   readonly decorations?: readonly Decoration[] | undefined;
+  /** Join items too close to tell apart into one cluster the reader opens; `true`, or the gap and size it joins at. */
   readonly cluster?: boolean | ClusterOptions | undefined;
   readonly hooks?: RenderHooks<T> | undefined;
   /**
@@ -369,6 +378,42 @@ export function usesSceneSpace<T>(config: TimelineConfig<T>): boolean {
  * its default; an absent key keeps its value.
  */
 export type TimelineUpdate<T = unknown> = { readonly [K in keyof TimelineConfig<T>]?: TimelineConfig<T>[K] | undefined };
+
+/**
+ * A framework component's configuration: every {@link TimelineConfig} field,
+ * except that the view and the selection are where they *start*. A
+ * component re-renders with its props; a `domain` prop written back from
+ * `viewportChanged` would move the view under the reader's pointer, so the
+ * view is moved by the instance's `zoomTo`, and the selection by its
+ * `select`, once the component is up.
+ */
+export interface TimelineComponentConfig<T = unknown> extends Omit<TimelineConfig<T>, "domain" | "selectedIds"> {
+  /** The visible range the timeline starts with. */
+  readonly defaultDomain?: readonly [TimeInput, TimeInput] | undefined;
+  /** The selection the timeline starts with. */
+  readonly defaultSelectedIds?: readonly string[] | undefined;
+}
+
+const isPlain = (value: object): value is Record<string, unknown> => {
+  const proto = Object.getPrototypeOf(value) as unknown;
+  return proto === Object.prototype || proto === null;
+};
+
+/**
+ * Whether two configuration values say the same: one value, or plain
+ * objects and arrays whose entries say the same, or dates at one time. A
+ * host that writes `editing={{ enabled: true }}` into its render hands over
+ * a new object each time with nothing new in it.
+ */
+export function sameValue(a: unknown, b: unknown, depth = 4): boolean {
+  if (Object.is(a, b)) return true;
+  if (depth === 0 || typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  if (a instanceof Date) return b instanceof Date && a.getTime() === b.getTime();
+  if (Array.isArray(a)) return Array.isArray(b) && a.length === b.length && a.every((each, index) => sameValue(each, b[index], depth - 1));
+  if (Array.isArray(b) || !isPlain(a) || !isPlain(b)) return false;
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((key) => Object.hasOwn(b, key) && sameValue(a[key], b[key], depth - 1));
+}
 
 /** Height when neither the configuration nor the container says. */
 export const DEFAULT_HEIGHT = 300;

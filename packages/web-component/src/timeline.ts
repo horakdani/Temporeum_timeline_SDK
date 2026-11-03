@@ -77,7 +77,7 @@ import type { AddTarget } from "@temporeum/timeline-core/items";
 import type { Strings } from "@temporeum/timeline-core/words";
 import type { PngOptions } from "@temporeum/timeline-core/export";
 
-import { checkMetrics, contentOf, exportTheme, frameOptions, frameScene, groupViewOf, hiddenDatesOf, initialDomain, itemsOf, metricsOf, minimapGeometryOf, resolveView, sizesOf, slotsOn, usesSceneSpace, wordsOf } from "./config.js";
+import { checkMetrics, contentOf, exportTheme, frameOptions, frameScene, groupViewOf, hiddenDatesOf, initialDomain, itemsOf, metricsOf, minimapGeometryOf, resolveView, sameValue, sizesOf, slotsOn, usesSceneSpace, wordsOf } from "./config.js";
 import type { FrameState, ResolvedView, TimelineConfig, TimelineRollingOptions, TimelineUpdate } from "./config.js";
 import type { TimelinePrintOptions } from "./export.js";
 import { plugin, pluginIf, requireKinds, requirePlugins } from "./plugins.js";
@@ -178,9 +178,13 @@ export interface JumpRequestPayload {
  * a cluster was opened, that the user asked for a date.
  */
 export interface TimelineInstanceEventMap<T = unknown> extends TimelineEventMap<T> {
+  /** The density changed (`density: "auto"`, a resize). */
   readonly densityChanged: DensityChangedPayload;
+  /** The orientation changed (`orientation: "auto"` past the breakpoint). */
   readonly orientationChanged: OrientationChangedPayload;
+  /** A cluster was opened. */
   readonly clusterOpened: ClusterOpenedPayload<T>;
+  /** The reader asked to jump to a date (`g`): the host opens its date picker. */
   readonly jumpRequest: JumpRequestPayload;
   /** Items were added — by a double tap, a key, a drop or `dropItem`. `command` is also emitted. */
   readonly itemsAdded: ItemsAddedPayload<T>;
@@ -268,7 +272,14 @@ export interface Timeline<T = unknown> {
    * the one the instance already has is no change — for `items` that means
    * the same array: a host that re-sends its props after an edit keeps the
    * edit. To replace the items with the very array given before, call
-   * {@link setItems}.
+   * {@link setItems}. The option objects (`editing`, `interactions`,
+   * `limits`, `hiddenDates`, `timeBars`, `rolling`), `domain` and
+   * `selectedIds` are compared by what they say, so `editing: { enabled:
+   * true }` written anew on every render neither restarts a drag nor moves
+   * the view back; a new function in them (`canMove`) is called from then
+   * on. A new fetch function for `items` is the one the next fetch calls,
+   * and what was loaded stays — `setItems` reloads. To move the view the
+   * reader moved, `zoomTo`; to change the selection, `select`.
    */
   update(config: TimelineUpdate<T>): void;
   /**
@@ -535,6 +546,19 @@ function revealOffset(lane: { readonly cross: number; readonly crossSize: number
 }
 
 /** Whether a command places groups rather than items (`isGroupCommand` in `/groups`). */
+/** The keys `update` compares by what they say, not by identity. */
+const SETTLED = ["domain", "selectedIds", "editing", "interactions", "limits", "touchAction", "hiddenDates", "timeZone", "timeBars", "rolling"] as const;
+
+function sameDomain(a: readonly [TimeInput, TimeInput] | undefined, b: readonly [TimeInput, TimeInput]): boolean {
+  return a !== undefined && toTimeMs(a[0]) === toTimeMs(b[0]) && toTimeMs(a[1]) === toTimeMs(b[1]);
+}
+
+/** The editing rules as the input machine is built from them: a callback counts as there, not as which function it is — it is read when it is asked. */
+function rulesOf(editing: object | undefined): unknown {
+  if (editing === undefined) return undefined;
+  return Object.fromEntries(Object.entries(editing).map(([key, value]) => [key, typeof value === "function" ? true : value]));
+}
+
 function isGroupCommand(command: Command | GroupCommand): command is GroupCommand {
   return command.type === "moveGroup";
 }
@@ -673,6 +697,9 @@ export function createTimeline<T = unknown>(
     measure = next === undefined ? measured : spacedMeasure(measured ?? estimateTextWidth, next);
   }
 
+  /** The function a fetched source calls: the latest one the host gave. */
+  let fetcher: Extract<TimelineConfig<T>["items"], (...args: never[]) => unknown> | undefined;
+
   function useSource(source: TimelineConfig<T>["items"]): void {
     // New items from the host: a live layout no longer says anything about them.
     live = undefined;
@@ -682,7 +709,10 @@ export function createTimeline<T = unknown>(
     stopLoader = undefined;
     loader = undefined;
     if (typeof source === "function") {
-      loader = createItemLoader({ source });
+      fetcher = source;
+      // Through the latest function: a host that writes the fetch into its
+      // render hands over a new one each time, and that is no reload.
+      loader = createItemLoader<T>({ source: (range, signal) => (fetcher as typeof source)(range, signal) });
       stopLoader = loader.subscribe(() => {
         items = (loader as ItemLoader<T>).items;
         emitter.emit("itemsChanged", { items });
@@ -715,7 +745,9 @@ export function createTimeline<T = unknown>(
         ...(interactions.moveTrigger === undefined ? {} : { moveTrigger: interactions.moveTrigger }),
         ...(interactions.longPressMs === undefined ? {} : { longPressMs: interactions.longPressMs }),
         ...(edit.snapMs === undefined ? {} : { snapMs: edit.snapMs }),
-        ...(edit.canMove === undefined ? {} : { canMove: edit.canMove }),
+        // Read when it is asked, from the configuration as it is then: a new
+        // function with the same rules is not a new machine.
+        ...(edit.canMove === undefined ? {} : { canMove: (item: Item<T>, next: ItemPatch<T>) => config.editing?.canMove?.(item, next) ?? true }),
         ...(edit.multiSelect === undefined ? {} : { multiSelect: edit.multiSelect }),
         ...(edit.crossLane === undefined ? {} : { crossLane: edit.crossLane }),
         ...(edit.snapOrigin === undefined ? {} : { snapOrigin: toTimeMs(edit.snapOrigin) }),
@@ -1635,8 +1667,18 @@ export function createTimeline<T = unknown>(
       requirePlugins(merged);
       checkMetrics(merged);
       if ("items" in next && typeof next.items !== "function") requireKinds(next.items ?? []);
+      // A value that says what the one before said is no change, and keeps
+      // its identity: what is cached on it (the hidden dates' expansion)
+      // stays. A component hands its props again on every render.
+      for (const key of SETTLED) {
+        if (key in next && sameValue(before[key], next[key])) (merged as Record<string, unknown>)[key] = before[key];
+      }
       config = merged;
-      if ("items" in next && next.items !== before.items) {
+      const changed = (key: keyof TimelineConfig<T>): boolean => key in next && config[key] !== before[key];
+      if (typeof next.items === "function" && typeof before.items === "function") {
+        // Another fetch function: what was loaded stays, the next fetch is the new one's.
+        fetcher = next.items;
+      } else if ("items" in next && next.items !== before.items) {
         useSource(next.items);
       }
       if ("groups" in next && next.groups !== before.groups) {
@@ -1647,13 +1689,13 @@ export function createTimeline<T = unknown>(
           (groups ?? []).filter((group) => (known.has(group.id) ? collapsed.has(group.id) : group.collapsed === true)).map((group) => group.id),
         );
       }
-      if ("domain" in next && next.domain !== undefined && next.domain !== before.domain) {
+      if (next.domain !== undefined && changed("domain") && !sameDomain(before.domain, next.domain)) {
         machine.setDomain([toTimeMs(next.domain[0]), toTimeMs(next.domain[1])]);
         domain = machine.domain;
         reason = "api";
       }
-      if ("timeBars" in next) bars = next.timeBars ?? [];
-      if ("interactions" in next || "limits" in next || "editing" in next || "touchAction" in next || "hiddenDates" in next || "timeZone" in next) {
+      if (changed("timeBars")) bars = next.timeBars ?? [];
+      if (changed("interactions") || changed("limits") || changed("touchAction") || changed("hiddenDates") || changed("timeZone") || (changed("editing") && !sameValue(rulesOf(before.editing), rulesOf(config.editing)))) {
         // The machine reads these once; a new one starts from the current view.
         binding.destroy();
         gesture = false;
@@ -1661,10 +1703,10 @@ export function createTimeline<T = unknown>(
         machine.setSelection(selectedIds);
         binding = attachInput(element, { machine, onEffects: handle, direction: () => direction });
       }
-      if ("selectedIds" in next && next.selectedIds !== undefined) {
+      if (next.selectedIds !== undefined && changed("selectedIds")) {
         setSelection(next.selectedIds);
       }
-      if ("rolling" in next && next.rolling !== before.rolling) {
+      if (changed("rolling")) {
         following = rollingOf(config) !== undefined;
         startRolling();
       }
@@ -1673,10 +1715,12 @@ export function createTimeline<T = unknown>(
     },
     setItems(source) {
       if (destroyed) return;
-      if (source === config.items && typeof source !== "function") {
+      if (typeof source === "function" || source === config.items) {
         // The array it was given again: after an edit the instance holds
         // another, and this one replaces it. (`update` takes the same array
-        // as no news — a host re-sending its props keeps the edits.)
+        // as no news — a host re-sending its props keeps the edits.) A fetch
+        // function loads afresh, which `update` with a new one does not.
+        config = { ...config, items: source };
         useSource(source);
         if (width > 0) resolve();
         loop.request();

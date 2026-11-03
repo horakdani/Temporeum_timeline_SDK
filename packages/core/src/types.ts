@@ -310,14 +310,23 @@ export interface CommandPayload<T = unknown> {
 
 /** Every event the timeline emits, keyed by name. */
 export interface TimelineEventMap<T = unknown> {
+  /** An item was clicked or tapped, or activated with Enter. */
   readonly itemClick: ItemEventPayload<T>;
+  /** An item was double-clicked or double-tapped. */
   readonly itemDblClick: ItemEventPayload<T>;
+  /** The pointer came onto an item, or left it (`item` is then `null`). */
   readonly itemHover: HoverPayload<T>;
+  /** The selection changed: the ids now, and before. */
   readonly selectionChanged: SelectionChangedPayload;
+  /** The visible range changed — by a pan, a zoom, a key or the API — and why. */
   readonly viewportChanged: ViewportChangedPayload;
+  /** The items were laid out again: the lanes, the items in view and the size across. */
   readonly layoutChanged: LayoutChangedPayload;
+  /** An item was moved: where from, where to. */
   readonly itemMoved: ItemMovedPayload<T>;
+  /** An item was resized: its span before and after. */
   readonly itemResized: ItemResizedPayload<T>;
+  /** An edit, as a command the host keeps and undoes with its `inverse`. */
   readonly command: CommandPayload<T>;
 }
 

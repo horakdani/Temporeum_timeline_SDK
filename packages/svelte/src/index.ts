@@ -10,4 +10,7 @@
 export { default as Timeline } from "./Timeline.svelte";
 export { timelineState } from "./state.js";
 export type { Readable } from "./state.js";
-export type { Timeline as TimelineInstance, TimelineConfig, TimelineSnapshot } from "@temporeum/timeline-element";
+export type { Timeline as TimelineInstance, TimelineComponentConfig, TimelineConfig, TimelineSnapshot } from "@temporeum/timeline-element";
+/** The element's plugin registry, from the adapter too: an app that installs only the adapter still registers the plugins its configuration needs. */
+export { hasPlugin, registerPlugin } from "@temporeum/timeline-element";
+export type { PluginName, TimelinePlugin } from "@temporeum/timeline-element";

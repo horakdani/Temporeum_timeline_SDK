@@ -46,12 +46,20 @@ const onMoved = ({ item, to }) => {
 The whole project, with Vite, is the Vue template
 (`packages/docs/templates/vue`); a Nuxt one is beside it.
 
-Every [`TimelineConfig`](../web-component/src/config.ts) field is an
-attribute — in camelCase or kebab-case, `:selected-ids` is `selectedIds` —
+Every [`TimelineConfig`](../web-component/src/config.ts) field is a typed
+prop — in camelCase or kebab-case, `:time-zone` is `timeZone`, and a bare
+`lane-headers` is `true`; `class`, `style`, `id` and other attributes go on
+the box —
 and every instance event an emit by its own name (`@item-moved`,
 `@selection-changed`, `@viewport-changed`, …). `@ready` hands over the live
 instance, and `null` on unmount; a template ref's `timeline` is the same
 instance.
+
+The view and the selection are where the timeline starts:
+`:default-domain` and `:default-selected-ids`. A re-render does not move
+them back; the instance's `zoomTo` and `select` do. Every other attribute
+is compared by what it says, so an `:editing="{ enabled: true }"` object
+written anew on each render is no change.
 
 ## It does not re-render to draw
 

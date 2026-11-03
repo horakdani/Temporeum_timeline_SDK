@@ -53,7 +53,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -111,8 +111,29 @@ function judgeVersions(manifests) {
   const names = new Set(manifests.map((m) => m.name));
   for (const manifest of manifests) {
     for (const [dep, range] of Object.entries({ ...manifest.dependencies, ...manifest.peerDependencies })) {
-      if (names.has(dep) && range !== version) problems.push(`${manifest.name} -> ${dep}: "${String(range)}", the released version ("${String(version)}") is required`);
+      // A caret on the released version: an app that has the element and an
+      // adapter gets one copy of each, not one pinned beside one it chose.
+      if (names.has(dep) && range !== `^${String(version)}`) problems.push(`${manifest.name} -> ${dep}: "${String(range)}", "^${String(version)}" is required`);
     }
+  }
+  return problems;
+}
+
+/** The text of a package's sources: what its imports can be read from. */
+function sourcesOf(dir) {
+  const root = join(repo, "packages", dir, "src");
+  return readdirSync(root, { recursive: true })
+    .filter((path) => /\.(ts|svelte|mts)$/.test(String(path)))
+    .map((path) => readFileSync(join(root, String(path)), "utf8"))
+    .join("\n");
+}
+
+/** A peer dependency the sources never import is one every app is made to install for nothing. */
+export function judgePeers(manifest, sources) {
+  const problems = [];
+  for (const peer of Object.keys(manifest.peerDependencies ?? {})) {
+    const escaped = peer.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+    if (!new RegExp(`from\\s+["']${escaped}(?:/[^"']*)?["']|import\\(\\s*["']${escaped}(?:/[^"']*)?["']`).test(sources)) problems.push(`${manifest.name}: the peer ${peer} is not imported by the sources`);
   }
   return problems;
 }
@@ -192,6 +213,7 @@ for (const [index, pkg] of PACKAGES.entries()) {
   const fileProblems = judgeFiles(run.files, manifest.files ?? []);
   failures.push(...fileProblems.map((problem) => `${pkg.name}: ${problem}`));
   failures.push(...judgeManifest(manifest, pkg.dir));
+  failures.push(...judgePeers(manifest, sourcesOf(pkg.dir)));
   if (fileProblems.length === 0) notes.push(`${pkg.name}@${run.version}: ${String(run.files.length)} files, all from files`);
 }
 failures.push(...judgeVersions(manifests));
@@ -288,6 +310,15 @@ console.log(JSON.stringify(out));
 const prerelease = judgeVersions(manifests.map((m, i) => (i === 0 ? { ...m, version: "1.0.0-rc.9" } : m)));
 if (prerelease.length === 0) failures.push("NEGATIVE CONTROL: a prerelease version does NOT fail — the measure checks nothing");
 else notes.push(`the negative control fails, as it should — prerelease version: ${prerelease[0]}`);
+{
+  const angular = manifests.find((m) => m.name.endsWith("-angular"));
+  const extra = angular === undefined ? [] : judgePeers({ ...angular, peerDependencies: { ...angular.peerDependencies, rxjs: "^7.4.0" } }, sourcesOf("angular"));
+  if (extra.length === 0) failures.push("NEGATIVE CONTROL: a peer the sources do not import does NOT fail");
+  else notes.push(`the negative control fails, as it should — ${extra[0]}`);
+}
+const pinned = judgeVersions(manifests.map((m) => (m.dependencies?.["@temporeum/timeline-core"] === undefined ? m : { ...m, dependencies: { ...m.dependencies, "@temporeum/timeline-core": m.version } })));
+if (pinned.length === 0) failures.push("NEGATIVE CONTROL: an exact pin on the core does NOT fail");
+else notes.push(`the negative control fails, as it should — an exact pin: ${pinned[0]}`);
 {
   const core = manifests[0];
   const files = ["package.json", "README.md", "dist/index.mjs", "dist/index.d.ts", "dist/index.cjs", "dist/index.d.cts"];

@@ -27,9 +27,11 @@ export type {
   TimelineResourceOptions,
   TimelineRollingOptions,
   TimelineTimeBarOptions,
+  TimelineComponentConfig,
   TimelineUpdate,
 } from "./config.js";
 export { defineTimelineElement, OBSERVED_ATTRIBUTES, TemporeumTimelineElement } from "./element.js";
+export type { TimelineElementEventMap, TimelineElementEventName } from "./element.js";
 export { hasPlugin, registerPlugin } from "./plugins.js";
 export type { PluginName, TimelinePlugin } from "./plugins.js";
 export { HOST_CSS, renderTimelineHtml, renderTimelineSvg, serializeConfig, TAG_NAME } from "./ssr.js";

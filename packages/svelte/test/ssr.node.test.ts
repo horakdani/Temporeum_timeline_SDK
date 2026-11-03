@@ -54,3 +54,12 @@ describe("the Svelte adapter in Node", () => {
     expect(body).not.toContain("onItemMoved");
   });
 });
+
+describe("the plugin registry (W4)", () => {
+  it("is the element's, handed on by the adapter", async () => {
+    const adapter = await import("../src/index.js");
+    const element = await import("@temporeum/timeline-element");
+    expect(adapter.registerPlugin).toBe(element.registerPlugin);
+    expect(adapter.hasPlugin).toBe(element.hasPlugin);
+  });
+});

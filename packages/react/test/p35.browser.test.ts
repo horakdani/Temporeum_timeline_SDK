@@ -59,7 +59,7 @@ async function mount(): Promise<TimelineInstance> {
   root.render(
     createElement(Timeline, {
       items,
-      domain,
+      defaultDomain: domain,
       height: 240,
       timeZone: "UTC",
       renderItem: (item: Item) => createElement(Card, { item }),

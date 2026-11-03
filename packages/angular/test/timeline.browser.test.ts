@@ -7,7 +7,7 @@ import { commands, userEvent } from "vitest/browser";
 import type { Item } from "@temporeum/timeline-core";
 
 import { TimelineComponent, timelineState } from "../src/index.js";
-import type { TimelineConfig, TimelineInstance } from "../src/index.js";
+import type { TimelineComponentConfig, TimelineInstance } from "../src/index.js";
 
 /**
  * The adapter in a real Chromium with the real Angular (JIT, zoneless).
@@ -30,7 +30,7 @@ const lanes = [
   { id: "l2", label: "Delivery" },
 ];
 const domain: [number, number] = [T0, T0 + 24 * DAY];
-const base: TimelineConfig = { items, lanes, domain, height: 260 };
+const base: TimelineComponentConfig = { items, lanes, defaultDomain: domain, height: 260 };
 
 let app: ApplicationRef | undefined;
 afterEach(() => {
@@ -72,7 +72,7 @@ function centre(element: Element): { x: number; y: number } {
 }
 
 /** The component in an application of its own, its inputs set as a template would. */
-async function place(config: TimelineConfig = base): Promise<{ ref: ComponentRef<TimelineComponent>; timeline: TimelineInstance }> {
+async function place(config: TimelineComponentConfig = base): Promise<{ ref: ComponentRef<TimelineComponent>; timeline: TimelineInstance }> {
   app = await createApplication({ providers: [provideZonelessChangeDetection()] });
   const hostElement = document.createElement("tl-timeline");
   host().append(hostElement);
@@ -118,6 +118,62 @@ describe("<tl-timeline> — Angular renders from the store, not from events", ()
     expect(ranges.length - 1).toBeLessThanOrEqual(drawn);
     // The pan is the instance's: no input went in.
     expect(update).not.toHaveBeenCalled();
+  });
+});
+
+describe("<tl-timeline> — a config written anew on every view change (D1)", () => {
+  /** What a template with `[config]="{ …, editing: { enabled: true } }"` and the view in a signal does: every view change, a new config object. */
+  async function rewriting(): Promise<{ ref: ComponentRef<TimelineComponent>; timeline: TimelineInstance; writes: () => number }> {
+    let writes = 0;
+    const placed = await place({ ...base, editing: { enabled: true, snapMs: DAY } });
+    placed.ref.instance.viewportChanged.subscribe(() => {
+      writes += 1;
+      placed.ref.setInput("config", { ...base, editing: { enabled: true, snapMs: DAY } });
+      app?.tick();
+    });
+    return { ...placed, writes: () => writes };
+  }
+
+  it("a pan goes all the way, though every frame of it set the config again", async () => {
+    const { timeline, writes } = await rewriting();
+    const y = centre(node("c")).y;
+    const left = (document.querySelector("[data-tl-angular]") as HTMLElement).getBoundingClientRect().left;
+    await commands.mouse([
+      { type: "move", x: left + 60, y },
+      { type: "down" },
+      { type: "move", x: left + 260, y, steps: 30 },
+      { type: "up" },
+    ]);
+    await nextFrame();
+    expect(writes()).toBeGreaterThan(1);
+    expect(Math.abs(timeline.getSnapshot().domain[0] - (domain[0] - 6 * DAY))).toBeLessThan(DAY / 4);
+  });
+
+  it("a drag goes through; defaultDomain and defaultSelectedIds are where it starts, and only that", async () => {
+    const { ref } = await rewriting();
+    const moved = vi.fn();
+    ref.instance.itemMoved.subscribe(moved);
+    const from = centre(node("a"));
+    await commands.mouse([
+      { type: "move", x: from.x, y: from.y },
+      { type: "down" },
+      { type: "move", x: from.x + 100, y: from.y, steps: 8 },
+      { type: "up" },
+    ]);
+    await vi.waitFor(() => expect(moved).toHaveBeenCalledTimes(1));
+    expect(moved.mock.calls[0]?.[0].to.start).toBe(T0 + 5 * DAY);
+    app?.destroy();
+    app = undefined;
+    document.body.replaceChildren();
+    const started = await place({ ...base, defaultDomain: [T0, T0 + 4 * DAY], defaultSelectedIds: ["b"] });
+    expect(started.timeline.getSnapshot().domain).toEqual([T0, T0 + 4 * DAY]);
+    expect(started.timeline.getSnapshot().selectedIds).toEqual(["b"]);
+    const update = vi.spyOn(started.timeline, "update");
+    started.ref.setInput("config", { ...base, defaultDomain: [T0, T0 + 8 * DAY], defaultSelectedIds: ["b"] });
+    (app as ApplicationRef | undefined)?.tick();
+    await nextFrame();
+    expect(update).not.toHaveBeenCalled();
+    expect(started.timeline.getSnapshot().domain).toEqual([T0, T0 + 4 * DAY]);
   });
 });
 
@@ -216,9 +272,10 @@ describe("<tl-timeline> — inputs and outputs", () => {
     ref.setInput("config", null);
     app?.tick();
     expect(ref.instance.config).toEqual({});
-    // Every field the host set goes back to its default; the scope stays.
+    // Every field the host set goes back to its default; the scope stays,
+    // and so does the view, whose start the config only said (D1).
     const changed = update.mock.calls.at(-1)?.[0] ?? {};
-    expect(Object.keys(changed).sort()).toEqual(Object.keys(base).sort());
+    expect(Object.keys(changed).sort()).toEqual(Object.keys(base).filter((key) => key !== "defaultDomain").sort());
     expect(Object.values(changed).every((value) => value === undefined)).toBe(true);
   });
 

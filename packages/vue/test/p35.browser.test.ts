@@ -56,7 +56,7 @@ async function mount(): Promise<TimelineInstance> {
     setup: () => () =>
       h(
         Timeline,
-        { items, domain, height: 240, timeZone: "UTC", onReady: (instance: TimelineInstance | null) => (timeline.value = instance) },
+        { items, defaultDomain: domain, height: 240, timeZone: "UTC", onReady: (instance: TimelineInstance | null) => (timeline.value = instance) },
         { item: ({ item }: { item: Item }) => h(Card, { item }) },
       ),
   });

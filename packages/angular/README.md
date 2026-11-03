@@ -41,6 +41,18 @@ fields that changed reach the instance. Every instance event is an output by
 its own name (`(itemMoved)`, `(selectionChanged)`, `(viewportChanged)`, …),
 and `(ready)` hands over the live instance — `null` on destroy.
 
+Each item's content can be an Angular template:
+`<ng-template tlItem let-item>…</ng-template>` inside `<tl-timeline>`
+(import `TimelineItemDirective`). It is rendered into the box over the item,
+only for the items drawn, and keeps its state while its item is drawn; it
+needs the element's `/items` plugin, as `template` does.
+
+The view and the selection are where the timeline starts: the config's
+`defaultDomain` and `defaultSelectedIds` (a `TimelineComponentConfig`). A
+new config does not move them back; the instance's `zoomTo` and `select` do.
+Every other field is compared by what it says, so an `editing` object
+written anew is no change, and a drag in progress goes on.
+
 ## It does not run change detection to draw
 
 The component creates the instance once, after its first render in the
@@ -49,7 +61,11 @@ Angular does not hear of them. What a template renders from is the
 instance's store: `timelineState(timeline, selector, isEqual?)`, called in
 an injection context, is a signal that changes when the selected part
 does, and at most once per drawn frame, however many pointer events the
-frame held. The component is `OnPush` and works without zone.js.
+frame held. The component is `OnPush` and works without zone.js. With
+zone.js, the instance runs outside Angular's zone — its pointer listeners,
+frames, resize observer and the `rolling` clock do not check the
+application, and the application becomes stable — and an output is emitted
+in the zone, only when something listens to it.
 
 ## Server rendering
 

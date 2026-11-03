@@ -12,10 +12,12 @@ The first release, on 1.0.0 of `@temporeum/timeline-core`. From here on the pack
   - live data: `addItems`, `updateItems`, `removeItems`, `changeItems`;
   - commands: `applyCommand(command)`, undone with `command.inverse`;
   - focus and scroll: `focusItem`, `scrollLanes`, `revealLane`;
-  - `exportSvg()`.
+  - `exportSvg()`;
+  - `update(config)` compares the option objects, `domain` and `selectedIds` by what they say: a host that hands its props again on every render neither restarts a drag nor moves the view back. A new fetch function for `items` is called from the next fetch on; `setItems` reloads.
   - The instance inherits from a frozen `Timeline` prototype, so a framework's reactive proxy does not wrap it.
+- **Plugins are registered once for the page:** the registry lives on the global object under `Symbol.for("@temporeum/timeline/plugins")`, so two copies of the element (its ESM and CJS builds, or two bundles) share it. The core is a `^1.0.0` dependency.
 - **Events:** every event the instance emits is listed once in `TIMELINE_EVENTS`; the element and the framework adapters forward these.
-- **`<temporeum-timeline>`**: attributes (the accessible name is `aria-label`), properties, a JSON child for configuration, kebab-case DOM events (the instance's `command` is `timeline-command`, clear of the platform's `command` event) and an open shadow root. `/define` registers it.
+- **`<temporeum-timeline>`**: moved in the document (an `append` into another parent, `moveBefore`, a framework reordering a list), it keeps its instance — view, selection, edits and listeners; removed, it lets go after the task's microtasks. Properties set before the element is defined go through its setters on upgrade. `orientation`, `density`, `theme`, `height` and `editable` are properties as well as attributes; `config` replaces what the `config` before it said; the tag is in `HTMLElementTagNameMap` and its events are typed (`TimelineElementEventMap`); a Custom Elements Manifest ships as `dist/custom-elements.json`. `element.focus()` reaches the timeline (a delegating shadow root, on the server too), and `aria-labelledby` on the host names it by the text of the elements it points at. Attributes (the accessible name is `aria-label`), properties, a JSON child for configuration, kebab-case DOM events (the instance's `command` is `timeline-command`, clear of the platform's `command` event) and an open shadow root. `/define` registers it.
 - **Server rendering:** `renderTimelineHtml` and `renderTimelineSvg`, with a declarative shadow root, taken over on the client without drawing again.
 - **The base configuration:**
   - items and lanes, `theme`, `hooks`;

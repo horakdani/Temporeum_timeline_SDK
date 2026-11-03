@@ -4,6 +4,16 @@
   an `on…` prop (`onItemMoved`, `onSelectionChanged`, …), and
   `bind:timeline` hands over the live instance (`null` after unmount).
 
+  `item` is each item's content, as a snippet (`{#snippet item(item)}`),
+  rendered into the box over the item (`slots`): only the items drawn have
+  one, and each keeps its state while its item is drawn. The content is a
+  picture — the pointer and the keyboard act on the item, and its `label`
+  stays its accessible name. Needs the `/items` plugin, as `template` does.
+
+  The view and the selection are where the timeline starts (`defaultDomain`,
+  `defaultSelectedIds`): a re-render does not move them; the instance's
+  `zoomTo` and `select` do.
+
   The component is a shell around the shared instance (`createTimeline`,
   from `@temporeum/timeline-element`), as the React one is: it creates the
   instance once, on mount, hands it every prop that changed, and lets go of
@@ -18,11 +28,12 @@
 -->
 <script lang="ts" generics="T = unknown">
   import { createTimeline, DEFAULT_HEIGHT, renderTimelineSvg, TIMELINE_EVENTS } from "@temporeum/timeline-element";
-  import type { Timeline as TimelineInstance, TimelineConfig, TimelineInstanceEventMap, TimelineInstanceEventName, TimelineUpdate } from "@temporeum/timeline-element";
+  import type { ItemSlot, Timeline as TimelineInstance, TimelineComponentConfig, TimelineConfig, TimelineInstanceEventMap, TimelineInstanceEventName, TimelineUpdate } from "@temporeum/timeline-element";
   import { onMount, untrack } from "svelte";
+  import type { Snippet } from "svelte";
 
   type Handlers = { [K in TimelineInstanceEventName as `on${Capitalize<K>}`]?: (payload: TimelineInstanceEventMap<T>[K]) => void };
-  type Props = TimelineConfig<T> &
+  type Props = TimelineComponentConfig<T> &
     Handlers & {
       class?: string;
       style?: string;
@@ -30,12 +41,16 @@
       ssrWidth?: number;
       /** The live instance, after mount; `null` before and after. */
       timeline?: TimelineInstance<T> | null;
+      /** Each drawn item's content, rendered into the box over it. */
+      item?: Snippet<[ItemSlot<T>["item"]]>;
     };
 
-  let { class: className = undefined, style = undefined, ssrWidth = undefined, timeline = $bindable(null), ...rest }: Props = $props();
+  let { class: className = undefined, style = undefined, ssrWidth = undefined, timeline = $bindable(null), defaultDomain = undefined, defaultSelectedIds = undefined, item = undefined, ...rest }: Props = $props();
 
   const handlerOf = (type: TimelineInstanceEventName): string => `on${type.charAt(0).toUpperCase()}${type.slice(1)}`;
   const HANDLERS = new Set(TIMELINE_EVENTS.map(handlerOf));
+  // Where the view and the selection start, not what they are.
+  const STARTS = new Set(["domain", "selectedIds"]);
   // `$props.id()` is the same on the server and the hydrating client; a stylesheet scope wants a plain name.
   const uid = $props.id();
   const scope = `tl${uid.replace(/[^a-zA-Z0-9_-]/g, "")}`;
@@ -44,24 +59,48 @@
   function configOf(source: Record<string, unknown>): Record<string, unknown> {
     const config: Record<string, unknown> = {};
     for (const key of Object.keys(source)) {
-      if (!HANDLERS.has(key)) config[key] = source[key];
+      if (!HANDLERS.has(key) && !STARTS.has(key)) config[key] = source[key];
     }
     // Light DOM: two timelines on one page must not share one stylesheet.
     if (config.instanceId === undefined) config.instanceId = scope;
+    // With an `item` snippet every item has a box, unless `slots` picks.
+    if (item !== undefined && config.slots === undefined) config.slots = true;
     return config;
   }
 
+  /** The boxes drawn now, each with its item. */
+  let drawn: ReadonlyMap<string, ItemSlot<T>> = $state.raw(new Map());
+
+  /** Render where Svelte renders, then live in the item's box: the box is the instance's, the content Svelte's. */
+  function into(node: HTMLElement, box: HTMLElement): { update: (next: HTMLElement) => void; destroy: () => void } {
+    box.append(node);
+    return {
+      update: (next) => next.append(node),
+      destroy: () => node.remove(),
+    };
+  }
+
   let applied = untrack(() => configOf(rest as Record<string, unknown>));
-  // Computed once, on the server and on the client: the string never changes.
+  const initial = untrack(() => ({
+    ...applied,
+    ...(defaultDomain === undefined ? {} : { domain: defaultDomain }),
+    ...(defaultSelectedIds === undefined ? {} : { selectedIds: defaultSelectedIds }),
+  }));
+  // Computed once, on the server and on a client that hydrates the server's
+  // markup (found by the instance scope the drawing carries): the string
+  // never changes. A client-only mount writes no HTML at all — the instance
+  // draws with the DOM, which a Trusted Types policy has no say over.
+  const hydrating = typeof document !== "undefined" && document.querySelector(`svg[data-tl-instance="${String(applied.instanceId)}"]`) !== null;
   const html = untrack(() => {
-    const frame = renderTimelineSvg(applied as TimelineConfig<T>, ssrWidth === undefined ? {} : { width: ssrWidth });
+    if (typeof document !== "undefined" && !hydrating) return "";
+    const frame = renderTimelineSvg(initial as TimelineConfig<T>, ssrWidth === undefined ? {} : { width: ssrWidth });
     return frame.svg + frame.groups;
   });
   const height = $derived((rest.height as number | undefined) ?? DEFAULT_HEIGHT);
   let container: HTMLDivElement;
 
   onMount(() => {
-    const instance = createTimeline<T>(container, applied as TimelineConfig<T>, { hydrate: true });
+    const instance = createTimeline<T>(container, { ...initial, ...applied } as TimelineConfig<T>, { hydrate: true });
     // Through the latest props: a new callback does not resubscribe, and the one that runs is the current one.
     const stops = TIMELINE_EVENTS.map((type) =>
       instance.on(type, (payload) => {
@@ -69,6 +108,8 @@
         if (typeof handler === "function") (handler as (value: unknown) => void)(payload);
       }),
     );
+    stops.push(instance.on("slotsChanged", ({ slots: next }) => (drawn = next)));
+    drawn = instance.slots;
     timeline = instance;
     return () => {
       for (const stop of stops) stop();
@@ -95,4 +136,9 @@
   });
 </script>
 
-<div bind:this={container} class={className} style="position:relative;overflow:hidden;height:{height}px;{style ?? ''}" data-tl-svelte="">{@html html}</div>
+<div bind:this={container} class={className} style="position:relative;overflow:hidden;height:{height}px;{style ?? ''}" data-tl-svelte="">{#if html !== ""}{@html html}{/if}</div>
+{#if item !== undefined}
+  {#each [...drawn] as [id, slot] (id)}
+    <div use:into={slot.element} style="display:contents">{@render item(slot.item)}</div>
+  {/each}
+{/if}

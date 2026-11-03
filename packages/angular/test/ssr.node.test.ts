@@ -56,3 +56,12 @@ describe("the Angular adapter in Node", () => {
     expect(html.match(/role="option"/g)).toHaveLength(4);
   });
 });
+
+describe("the plugin registry (W4)", () => {
+  it("is the element's, handed on by the adapter", async () => {
+    const adapter = await import("../src/index.js");
+    const element = await import("@temporeum/timeline-element");
+    expect(adapter.registerPlugin).toBe(element.registerPlugin);
+    expect(adapter.hasPlugin).toBe(element.hasPlugin);
+  });
+});

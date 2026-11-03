@@ -275,6 +275,8 @@ describe("<temporeum-timeline>", () => {
     const el = await place();
     const first = el.timeline as Timeline;
     el.remove();
+    // After the task's microtasks: a move is a disconnect and a connect in one task.
+    await Promise.resolve();
     expect(first.destroyed).toBe(true);
     expect(el.timeline).toBeUndefined();
     expect(svgOf(el)).toBeNull();

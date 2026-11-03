@@ -24,20 +24,25 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  ContentChild,
   DestroyRef,
+  Directive,
   effect,
   EventEmitter,
   inject,
   Injectable,
   Input,
+  NgZone,
   Output,
   PLATFORM_ID,
   Renderer2,
   signal,
+  TemplateRef,
   untracked,
   ViewChild,
+  ViewContainerRef,
 } from "@angular/core";
-import type { AfterViewInit, ElementRef } from "@angular/core";
+import type { AfterViewInit, ElementRef, EmbeddedViewRef } from "@angular/core";
 import { createTimeline, DEFAULT_HEIGHT, renderTimelineSvg, TIMELINE_EVENTS } from "@temporeum/timeline-element";
 import type {
   ClusterOpenedPayload,
@@ -46,10 +51,13 @@ import type {
   GroupToggledPayload,
   ItemsAddedPayload,
   ItemsChangedPayload,
+  ItemSlot,
   ItemsRemovedPayload,
   JumpRequestPayload,
   OrientationChangedPayload,
+  SlotsChangedPayload,
   Timeline as TimelineInstance,
+  TimelineComponentConfig,
   TimelineConfig,
   TimelineInstanceEventMap,
   TimelineInstanceEventName,
@@ -62,13 +70,45 @@ import type {
  * hydrating client, so the stylesheet scope of each matches.
  */
 @Injectable({ providedIn: "root" })
-export class TimelineIds {
+class TimelineIds {
   #next = 0;
   /** The next scope, `tl-ng0`, `tl-ng1`, … */
   next(): string {
     const id = `tl-ng${String(this.#next)}`;
     this.#next += 1;
     return id;
+  }
+}
+
+/** Where the view and the selection start — said once, and not a change after. */
+const STARTS = new Set(["defaultDomain", "defaultSelectedIds", "domain", "selectedIds"]);
+
+/** An item, as the element's types name it. */
+type Item<T> = ItemSlot<T>["item"];
+
+/** What an item template is rendered with: the item, as `let-item` and as `item`. */
+export interface TimelineItemContext<T = unknown> {
+  readonly $implicit: Item<T>;
+  readonly item: Item<T>;
+}
+
+/**
+ * Each item's content, as an Angular template:
+ * `<ng-template tlItem let-item>…</ng-template>` inside `<tl-timeline>`.
+ * It is rendered into the box over the item (`slots`), only for the items
+ * drawn, and keeps its state while the item is drawn. The content is a
+ * picture — the pointer and the keyboard act on the item, and its `label`
+ * stays its accessible name. Needs the element's `/items` plugin, as
+ * `template` does.
+ */
+@Directive({ selector: "ng-template[tlItem]" })
+export class TimelineItemDirective<T = unknown> {
+  readonly template = inject<TemplateRef<TimelineItemContext<T>>>(TemplateRef);
+
+  /** Types `let-item` in the template. */
+  static ngTemplateContextGuard<T>(directive: TimelineItemDirective<T>, context: unknown): context is TimelineItemContext<T> {
+    // Read by the template compiler for the types; a tlItem's context is always one.
+    return directive instanceof TimelineItemDirective && typeof context === "object" && context !== null;
   }
 }
 
@@ -88,14 +128,19 @@ type Payload<T, K extends TimelineInstanceEventName> = TimelineInstanceEventMap<
 export class TimelineComponent<T = unknown> implements AfterViewInit {
   // Decorated inputs and outputs, not the signal functions: they are what
   // Angular's JIT sees too, so the suite runs on the source.
-  readonly #config = signal<TimelineConfig<T>>({});
+  readonly #config = signal<TimelineComponentConfig<T>>({});
 
-  /** The configuration; a new object with the same field values is no change. */
+  /**
+   * The configuration; a new object with the same field values is no
+   * change. The view and the selection are where the timeline starts
+   * (`defaultDomain`, `defaultSelectedIds`): a new `config` does not move
+   * them; the instance's `zoomTo` and `select` do.
+   */
   @Input()
-  set config(value: TimelineConfig<T> | null | undefined) {
+  set config(value: TimelineComponentConfig<T> | null | undefined) {
     this.#config.set(value ?? {});
   }
-  get config(): TimelineConfig<T> {
+  get config(): TimelineComponentConfig<T> {
     return this.#config();
   }
 
@@ -124,6 +169,10 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
   @Output() readonly groupMoved = new EventEmitter<GroupMovedPayload>();
   @Output() readonly timeBarMoved = new EventEmitter<Payload<T, "timeBarMoved">>();
   @Output() readonly rangeSelected = new EventEmitter<Payload<T, "rangeSelected">>();
+  @Output() readonly slotsChanged = new EventEmitter<SlotsChangedPayload<T>>();
+
+  /** The item template, `<ng-template tlItem let-item>`, if there is one. */
+  @ContentChild(TimelineItemDirective) itemTemplate: TimelineItemDirective<T> | undefined;
 
   /** The live instance; `null` before the first render in the browser and after destroy. */
   timeline: TimelineInstance<T> | null = null;
@@ -137,19 +186,42 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
   readonly #destroyRef = inject(DestroyRef);
   readonly #server = isPlatformServer(inject(PLATFORM_ID));
   readonly #scope = inject(TimelineIds).next();
+  readonly #zone = inject(NgZone);
+  readonly #views = inject(ViewContainerRef);
+  /** The item template's view in each drawn box. */
+  readonly #drawn = new Map<string, { readonly element: HTMLElement; readonly view: EmbeddedViewRef<TimelineItemContext<T>>; item: Item<T> }>();
   #applied: Record<string, unknown> | undefined;
 
   constructor() {
     afterNextRender(() => {
-      const applied = this.#applied ?? this.#configOf(untracked(this.#config));
+      let applied = this.#applied ?? this.#configOf(untracked(this.#config));
+      // With an item template every item has a box, unless `slots` picks.
+      if (this.itemTemplate !== undefined && applied.slots === undefined) applied = { ...applied, slots: true };
       this.#applied = applied;
-      const instance = createTimeline<T>(this.containerRef.nativeElement, applied as TimelineConfig<T>, { hydrate: true });
+      // Outside Angular's zone: a pointer move, a frame, a resize and the
+      // clock of `rolling` are the instance's, and none of them is a reason
+      // to check the application. With zone.js they would each be one, and
+      // `rolling`'s interval would keep the application from ever being stable.
+      const instance = this.#zone.runOutsideAngular(() => createTimeline<T>(this.containerRef.nativeElement, this.#initialOf(applied), { hydrate: true }));
       const outputs = this as unknown as Record<string, EventEmitter<unknown> | undefined>;
-      const stops = TIMELINE_EVENTS.map((type) => instance.on(type, (payload) => outputs[type]?.emit(payload)));
+      // An output is emitted in the zone, and only when something listens to it.
+      const stops = TIMELINE_EVENTS.map((type) =>
+        instance.on(type, (payload) => {
+          const output = outputs[type];
+          if (output?.observed === true) this.#zone.run(() => output.emit(payload));
+        }),
+      );
+      if (this.itemTemplate !== undefined) {
+        const template = this.itemTemplate.template;
+        stops.push(instance.on("slotsChanged", ({ slots }) => this.#zone.run(() => this.#render(template, slots))));
+        this.#render(template, instance.slots);
+      }
       this.timeline = instance;
-      this.ready.emit(instance);
+      this.#zone.run(() => this.ready.emit(instance));
       this.#destroyRef.onDestroy(() => {
         for (const stop of stops) stop();
+        for (const { view } of this.#drawn.values()) view.destroy();
+        this.#drawn.clear();
         instance.destroy();
         this.timeline = null;
         this.ready.emit(null);
@@ -170,7 +242,8 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
             any = true;
           }
         }
-        if (any) this.timeline?.update(changed as TimelineUpdate<T>);
+        const timeline = this.timeline;
+        if (any && timeline !== null) this.#zone.runOutsideAngular(() => timeline.update(changed as TimelineUpdate<T>));
       });
     });
   }
@@ -181,12 +254,49 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
     // hooks run on the server; the after-render ones do not.)
     const config = this.#applied ?? this.#configOf(this.#config());
     const width = this.ssrWidth;
-    const frame = renderTimelineSvg(config as TimelineConfig<T>, width === undefined ? {} : { width });
+    const frame = renderTimelineSvg(this.#initialOf(config), width === undefined ? {} : { width });
     this.#renderer.setProperty(this.containerRef.nativeElement, "innerHTML", frame.svg + frame.groups);
   }
 
-  #configOf(config: TimelineConfig<T>): Record<string, unknown> {
+  /** The item template in each drawn box: a view per item, kept while its item is drawn. */
+  #render(template: TemplateRef<TimelineItemContext<T>>, slots: ReadonlyMap<string, ItemSlot<T>>): void {
+    for (const [id, drawn] of this.#drawn) {
+      if (slots.get(id)?.element === drawn.element) continue;
+      drawn.view.destroy();
+      this.#drawn.delete(id);
+    }
+    for (const [id, slot] of slots) {
+      const drawn = this.#drawn.get(id);
+      if (drawn === undefined) {
+        const view = this.#views.createEmbeddedView(template, { $implicit: slot.item, item: slot.item });
+        slot.element.append(...view.rootNodes);
+        view.detectChanges();
+        this.#drawn.set(id, { element: slot.element, view, item: slot.item });
+      } else if (drawn.item !== slot.item) {
+        drawn.item = slot.item;
+        drawn.view.context = { $implicit: slot.item, item: slot.item };
+        drawn.view.detectChanges();
+      }
+    }
+  }
+
+  /** The configuration the instance is handed changes of: where the view and the selection start is not one. */
+  #configOf(config: TimelineComponentConfig<T>): Record<string, unknown> {
+    const own: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(config)) {
+      if (!STARTS.has(key)) own[key] = value;
+    }
     // Light DOM: two timelines on one page must not share one stylesheet.
-    return config.instanceId === undefined ? { ...config, instanceId: this.#scope } : { ...config };
+    return own.instanceId === undefined ? { ...own, instanceId: this.#scope } : own;
+  }
+
+  /** What the instance starts from: the configuration, with the view and the selection it starts at. */
+  #initialOf(applied: Record<string, unknown>): TimelineConfig<T> {
+    const config = untracked(this.#config);
+    return {
+      ...applied,
+      ...(config.defaultDomain === undefined ? {} : { domain: config.defaultDomain }),
+      ...(config.defaultSelectedIds === undefined ? {} : { selectedIds: config.defaultSelectedIds }),
+    } as TimelineConfig<T>;
   }
 }

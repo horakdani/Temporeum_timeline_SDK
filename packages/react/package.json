@@ -52,7 +52,7 @@
     "node": ">=20.11.0"
   },
   "dependencies": {
-    "@temporeum/timeline-element": "1.0.0"
+    "@temporeum/timeline-element": "^1.0.0"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

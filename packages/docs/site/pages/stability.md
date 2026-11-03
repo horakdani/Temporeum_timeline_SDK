@@ -14,7 +14,8 @@ The six packages follow [semantic versioning](https://semver.org), and they are 
 
 The public API is exactly what the packages export, with the types they ship:
 
-- every export of `@temporeum/timeline-core`, `@temporeum/timeline-core/dom`, `@temporeum/timeline-element`, `@temporeum/timeline-element/define` and `@temporeum/timeline-react`, and of the other [entry points](reference/entry-points.md) of the core and the element — the element's plugins (`/gantt`, `/resources`, `/export`, `/tools`, `/groups`, `/items`, `/intl`) among them. What is inside a plugin object is not: register it, do not call into it;
+- every export of `@temporeum/timeline-core`, `@temporeum/timeline-core/dom`, `@temporeum/timeline-element` and `@temporeum/timeline-element/define`, and of the other [entry points](reference/entry-points.md) of the core and the element — the element's plugins (`/gantt`, `/resources`, `/export`, `/tools`, `/groups`, `/items`, `/intl`) among them. What is inside a plugin object is not: register it, do not call into it;
+- every export of the four framework adapters — `@temporeum/timeline-react`, `@temporeum/timeline-vue`, `@temporeum/timeline-svelte` and `@temporeum/timeline-angular` — with their components' props, events, slots and templates (`renderItem`, `#item`, the `item` snippet, `tlItem`), and their peer ranges;
 - the `<temporeum-timeline>` element: its tag name, attributes, properties and events;
 - the CSS custom properties (`--tl-*`) and the class names on the drawing's nodes (`tl-item`, `tl-label`, `tl-cluster` …), because hosts style them;
 - the accessible structure: the roles, names and states a screen reader gets. A change that makes them worse is a breaking change even when no type changes.

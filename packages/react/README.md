@@ -43,7 +43,17 @@ The whole project, with Vite, is the React template
 Every [`TimelineConfig`](../web-component/src/config.ts) field is a prop, and
 every event an `on…` prop (`onItemMoved`, `onSelectionChanged`,
 `onViewportChanged`, …). A new callback on every render does not
-resubscribe; the latest one is what runs.
+resubscribe; the latest committed one is what runs. `id`, `data-*`,
+`aria-*`, `role`, `title` and, on React 19, `ref` go on the box.
+`timelineRef` may change after mount: the new ref gets the instance, the old
+one `null`.
+
+The view and the selection are where the timeline starts:
+`defaultDomain` and `defaultSelectedIds`. A re-render does not move them
+back, so a state set from `onViewportChanged` is safe; the instance's
+`zoomTo` and `select` move them. Every other prop is compared by what it
+says — `editing={{ enabled: true }}` written anew on each render is no
+change, and a drag in progress goes on.
 
 ## It does not re-render to draw
 

@@ -49,23 +49,34 @@ timeline.addEventListener("item-click", (event) => {
 | `theme` | `light`, `dark`, `auto` |
 | `start`, `end` | the initial view: epoch ms, or anything `Date.parse` reads |
 | `height` | the drawing's height in px (also CSS: `temporeum-timeline { height: 480px }`) |
-| `locale`, `time-zone`, `label` | formatting and the accessible name |
+| `locale`, `time-zone`, `aria-label`, `aria-labelledby` | formatting and the accessible name (`aria-labelledby` names the page's elements whose text it is) |
 | `breakpoint`, `pack-mode` | when `auto` turns vertical; how items share a lane |
 | `cluster` | merge items too small to see one by one |
 | `editable`, `multi-select`, `snap-ms` | editing |
 | `touch-action` | `own` (the default) claims every touch gesture; `cooperative` leaves vertical scrolling to the page, for a timeline inside an article |
 
 Items, lanes, hooks and the selection are **properties** (`items`, `lanes`,
-`hooks`, `selectedIds`), and `config` takes any [`TimelineConfig`](src/config.ts)
-at once.
+`hooks`, `selectedIds`); `orientation`, `density`, `theme`, `height` and
+`editable` are properties too, which win over their attributes (`undefined`
+hands back to the attribute), so Angular's `[theme]` and Lit's `.theme=`
+work. `config` takes any [`TimelineConfig`](src/config.ts) at once and
+replaces what the `config` before it said: a field it leaves out goes back
+to the attribute or the default, and a named property set on its own stays. A property set before the element is defined is
+not lost.
+
+`document.createElement("temporeum-timeline")` is typed as the element, and
+`addEventListener("item-moved", …)` hands a `CustomEvent` typed by its
+payload (`TimelineElementEventMap`). The package ships a
+[Custom Elements Manifest](https://github.com/webcomponents/custom-elements-manifest)
+(`customElements` in its `package.json`) for editors and Storybook.
 
 Every event is dispatched under its kebab-case name, bubbling out of the
 shadow root, with the payload as `detail`: `item-click`, `item-dbl-click`,
 `selection-changed`, `viewport-changed`, `layout-changed`, `item-moved`,
 `item-resized`, `timeline-command`, `density-changed`, `orientation-changed`,
 `cluster-opened`, `jump-request`. Kebab-case because it is the spelling Vue's
-`@item-moved`, Angular's `(item-moved)` and `addEventListener` all reach. For
-typed listeners, `element.timeline.on("itemMoved", …)` is the instance. The
+`@item-moved`, Angular's `(item-moved)` and `addEventListener` all reach.
+`element.timeline.on("itemMoved", …)` is the instance itself. The
 one exception to the rule is the instance's `command`, which is
 `timeline-command` on the element: `command` is the platform's own event (a
 `<button commandfor>` fires it at its target).

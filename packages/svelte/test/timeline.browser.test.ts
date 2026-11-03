@@ -1,4 +1,4 @@
-import { flushSync, hydrate, mount, unmount } from "svelte";
+import { flushSync, hydrate, mount, tick, unmount } from "svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { commands, userEvent } from "vitest/browser";
 
@@ -70,7 +70,7 @@ function centre(element: Element): { x: number; y: number } {
 
 /** Mount with props a test can change; `timeline` is bound back into them. */
 async function place(extra: Record<string, unknown> = {}) {
-  const props = reactiveProps<Record<string, unknown>>({ items, lanes, domain, height: 260, timeline: null, ...extra });
+  const props = reactiveProps<Record<string, unknown>>({ items, lanes, defaultDomain: domain, height: 260, timeline: null, ...extra });
   mounted = mount(Timeline, { target: host(), props });
   await vi.waitFor(() => {
     if ((props.timeline as TimelineInstance | null)?.result === undefined) throw new Error("not drawn yet");
@@ -190,13 +190,68 @@ describe("<Timeline> — props and callbacks", () => {
   });
 });
 
+describe("<Timeline> — props written anew on every view change (D1)", () => {
+  /** What a page that writes `editing={{ … }}` and keeps the view in its state does: every view change hands a new `editing` object. */
+  async function rerendering(): Promise<{ props: Record<string, unknown>; timeline: TimelineInstance; writes: () => number }> {
+    let writes = 0;
+    const placed = await place({ editing: { enabled: true, snapMs: DAY } });
+    placed.props.onViewportChanged = () => {
+      writes += 1;
+      placed.props.editing = { enabled: true, snapMs: DAY };
+    };
+    return { ...placed, writes: () => writes };
+  }
+
+  it("a pan goes all the way, though every frame of it wrote the props again", async () => {
+    const { timeline, writes } = await rerendering();
+    const y = centre(node("c")).y;
+    const left = (document.querySelector("[data-tl-svelte]") as HTMLElement).getBoundingClientRect().left;
+    await commands.mouse([
+      { type: "move", x: left + 60, y },
+      { type: "down" },
+      { type: "move", x: left + 260, y, steps: 30 },
+      { type: "up" },
+    ]);
+    await nextFrame();
+    expect(writes()).toBeGreaterThan(1);
+    expect(Math.abs(timeline.getSnapshot().domain[0] - (domain[0] - 6 * DAY))).toBeLessThan(DAY / 4);
+  });
+
+  it("a drag goes through; defaultDomain and defaultSelectedIds are where it starts, and only that", async () => {
+    const { props } = await rerendering();
+    const moved = vi.fn();
+    props.onItemMoved = moved;
+    const from = centre(node("a"));
+    await commands.mouse([
+      { type: "move", x: from.x, y: from.y },
+      { type: "down" },
+      { type: "move", x: from.x + 100, y: from.y, steps: 8 },
+      { type: "up" },
+    ]);
+    await vi.waitFor(() => expect(moved).toHaveBeenCalledTimes(1));
+    expect(moved.mock.calls[0]?.[0].to.start).toBe(T0 + 5 * DAY);
+    unmount(mounted as Record<string, unknown>);
+    mounted = undefined;
+    document.body.replaceChildren();
+    const started = await place({ defaultDomain: [T0, T0 + 4 * DAY], defaultSelectedIds: ["b"] });
+    expect(started.timeline.getSnapshot().domain).toEqual([T0, T0 + 4 * DAY]);
+    expect(started.timeline.getSnapshot().selectedIds).toEqual(["b"]);
+    const update = vi.spyOn(started.timeline, "update");
+    started.props.defaultDomain = [T0, T0 + 8 * DAY];
+    await tick();
+    await nextFrame();
+    expect(update).not.toHaveBeenCalled();
+    expect(started.timeline.getSnapshot().domain).toEqual([T0, T0 + 4 * DAY]);
+  });
+});
+
 describe("<Timeline> — hydration", () => {
   it("hydrates Svelte's own server output: the same nodes, no mismatch, and live", async () => {
     const warnings: unknown[] = [];
     const warn = vi.spyOn(console, "warn").mockImplementation((...args) => warnings.push(args));
     const errors: unknown[] = [];
     const error = vi.spyOn(console, "error").mockImplementation((...args) => errors.push(args));
-    const base = { items, lanes, domain, height: 260, ssrWidth: 800, locale: "hu", timeZone: "UTC" };
+    const base = { items, lanes, defaultDomain: domain, height: 260, ssrWidth: 800, locale: "hu", timeZone: "UTC" };
     const container = host();
     // The server's markup, as the parser builds it — as a page would deliver it.
     container.innerHTML = await commands.ssr(base);

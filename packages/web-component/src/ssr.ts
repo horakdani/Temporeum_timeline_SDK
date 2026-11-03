@@ -170,7 +170,7 @@ export function renderTimelineHtml<T>(config: TimelineConfig<T>, options: Server
   const state = serializeConfig({ ...config, domain: frame.domain });
   return (
     `<${tag}${printed}>` +
-    `<template shadowrootmode="open"><style>${HOST_CSS}</style>${frame.svg}${frame.groups}</template>` +
+    `<template shadowrootmode="open" shadowrootdelegatesfocus><style>${HOST_CSS}</style>${frame.svg}${frame.groups}</template>` +
     `<script type="application/json" data-tl-config>${state}</script>` +
     `</${tag}>`
   );
