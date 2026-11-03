@@ -6,7 +6,7 @@
   ],
   "product": "@temporeum/timeline-core and @temporeum/timeline-element",
   "version": "1.0.0",
-  "date": "2026-11-02",
+  "date": "2026-11-03",
   "description": "A timeline for the web: a custom element and a live instance over a DOM-free engine, drawn as SVG — items in lanes along an axis of time, to pan, zoom, select and edit by pointer, touch or keyboard.",
   "scope": "The timeline as the library draws it — the element, its views and tools, in the default configuration and with editing on — in Chromium, on the documentation's own pages. The page around it, its title, language, headings, links and help, is the host's.",
   "statuses": {
@@ -262,9 +262,13 @@
       "id": "1.4.12",
       "name": "Text Spacing",
       "level": "AA",
-      "status": "partially-supports",
-      "remarks": "Under WCAG's spacing (line height 1.5, letters 0.12em, words 0.16em, paragraphs 2em, all `!important`) no label is cut through a letter: a label that no longer fits its box ends in an ellipsis, the taller line stays centred in it, nothing runs into the axis, the keys still work, and the item's accessible name keeps the whole label (tested on the demo, horizontal and vertical, and on the element, also after it draws again). What falls short: a label's box is fitted to the text as measured without the reader's spacing, so the spacing shortens labels even where the item has room — all eight of the element's test labels, four of the demo's five — and the whole label is then seen only in the item's native tooltip on hover or in a detail the host opens.",
+      "status": "supports",
+      "remarks": "The element measures each label with the spacing it is drawn with \u2014 the reader's letter and word spacing, read off a drawn label \u2014 and measures and lays out again when that spacing comes or goes after load, with no resize or call: under WCAG's spacing (line height 1.5, letters 0.12em, words 0.16em, paragraphs 2em, all `!important`) every label of the element's test page keeps its whole text in a box that holds it, as without the spacing, also after it draws again at another size; the taller line stays centred in its box, nothing runs into the axis, the keys still work, and the item's accessible name keeps the whole label (tested on the element in its shadow root and on an instance in the page). Where the core's renderer is used directly, labels are measured with what the host passes as `measureText`, or, without one, with a font-free estimate that knows no spacing: a label the spacing widens past its box then ends in an ellipsis and is never cut through a letter, and its whole text stays in the accessible name (tested on the demo, horizontal and vertical). Spacing a reader turns on while transitions are switched off is measured at the next resize.",
       "tests": [
+        {
+          "file": "packages/web-component/test/element.browser.test.ts",
+          "test": "[claim:text-spacing] measures labels with the reader's text spacing"
+        },
         {
           "file": "packages/docs/e2e/a11y.spec.ts",
           "test": "text spacing (1.4.12): on the demo"

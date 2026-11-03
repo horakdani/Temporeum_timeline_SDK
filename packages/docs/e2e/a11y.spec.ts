@@ -487,6 +487,8 @@ interface LabelVerdict {
   readonly overflow: number;
   /** How far the text's line reaches above or below its box, in px. */
   readonly across: number;
+  /** The laid-out text's width, in px. */
+  readonly width: number;
   readonly name: string | null;
   readonly full: string;
 }
@@ -523,6 +525,7 @@ async function judgeSpacing(page: Page): Promise<SpacingVerdict> {
         verdict: (over ? (ellipsis ? "shortened" : "cut") : "whole") as "whole" | "shortened" | "cut",
         overflow: Math.round(overflow * 10) / 10,
         across: Math.round(Math.max(outer.top - text.top, text.bottom - outer.bottom, 0) * 10) / 10,
+        width: Math.round(text.width * 10) / 10,
         name: svg.querySelector(`[role="option"][data-tl-id="${id}"]`)?.getAttribute("aria-label") ?? null,
         full: full[id] ?? "",
       };
@@ -589,19 +592,28 @@ test.describe("beyond axe: spacing, size, forced colours and clipping", () => {
     await expect.poll(async () => (await stateOf(page)).selectedIds).toEqual(["a"]);
   });
 
-  test("text spacing (1.4.12): on the element, measured by canvas, and again after it draws anew under the spacing", async ({ page }) => {
+  test("text spacing (1.4.12): on the element, measured by canvas with the reader's spacing — it draws again by itself when the spacing comes, every label's box holds its text, and again after a resize", async ({ page }) => {
     await page.goto("/a11y.html");
     await page.waitForFunction(() => (window as unknown as { tl?: { ready: boolean } }).tl?.ready === true);
-    expectSpacingHolds(await judgeSpacing(page), "element: as drawn");
+    const plain = await judgeSpacing(page);
+    expect(expectSpacingHolds(plain, "element: as drawn")).toBe(0);
     await page.addStyleTag({ content: TEXT_SPACING });
-    await settle(page);
-    const before = expectSpacingHolds(await judgeSpacing(page), "element: with the spacing");
-    expect(before).toBeGreaterThan(0);
-    // A resize makes the element measure and lay out again, now under the spacing.
+    // No resize and no call: the spacing itself makes the element measure and
+    // lay out again, so no label is left shortened by its box.
+    await expect.poll(async () => (await judgeSpacing(page)).labels.filter((label) => label.verdict !== "whole").map((label) => label.text)).toEqual([]);
+    const spaced = await judgeSpacing(page);
+    expect(expectSpacingHolds(spaced, "element: with the spacing")).toBe(0);
+    // The spacing really did widen the text: otherwise this test measured nothing.
+    const widened = spaced.labels.filter((label) => {
+      const before = plain.labels.find((other) => other.id === label.id && other.text === label.text);
+      return before !== undefined && label.width > before.width + 5;
+    });
+    expect(widened.length).toBeGreaterThan(0);
+    // A resize makes the element measure and lay out again, under the spacing still.
     await page.setViewportSize({ width: 1200, height: 720 });
     await expect.poll(() => page.evaluate(() => document.querySelector("svg.tl")?.getAttribute("width"))).toBe("1200");
     await settle(page);
-    expectSpacingHolds(await judgeSpacing(page), "element: drawn again with the spacing");
+    expect(expectSpacingHolds(await judgeSpacing(page), "element: drawn again with the spacing")).toBe(0);
     await page.locator("svg.tl").focus();
     await page.keyboard.press("Home");
     await expect.poll(() => page.evaluate(() => document.querySelector("svg.tl")?.getAttribute("aria-activedescendant"))).toMatch(/.+/);

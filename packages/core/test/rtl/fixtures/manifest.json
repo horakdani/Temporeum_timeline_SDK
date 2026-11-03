@@ -6,51 +6,51 @@
   "cases": [
     {
       "name": "360-horizontal-light-rtl",
-      "sha256": "7fb6d3126726ec4498232394f4b5a81e51b847f15f46edc9474af058e0fa505f"
+      "sha256": "8ad09bb4235dde05058e7f3743e804562651b8152afaf1ab06240a0cc9567c0a"
     },
     {
       "name": "360-horizontal-dark-rtl",
-      "sha256": "a6bcb0730b92b0efcca9d5ca585fe65964f6e524e56d0ee6484b837c89f25406"
+      "sha256": "ce81d083709d4913e9e5a4343b6cb453bc6ad9143bce70bc2ea2e172b7056f58"
     },
     {
       "name": "360-vertical-light-rtl",
-      "sha256": "ac7e97010b73b1b8876d6c52eed417038dfb4c151c88e3aef125014309d6c306"
+      "sha256": "831482de6ade92fd8e212409fc33cdca5aa6ece86d780ea682eeab2bfd7d053d"
     },
     {
       "name": "360-vertical-dark-rtl",
-      "sha256": "c245e3de8a6a121506cb8fd0f29d96b8cb092dd116d59aa56362be358aa89263"
+      "sha256": "8c8c6c7de0b15e41af7606bc9afb0d47ca2b1c2b1b684a0d391ee33401375aef"
     },
     {
       "name": "768-horizontal-light-rtl",
-      "sha256": "c7e0b985baa139cf26cca91439fc22bedfaa0ff08edde3897e029557d7a0d0fa"
+      "sha256": "e9798d057772fe9392eb3f6f774685b369332cda75f899d66271507e04f50806"
     },
     {
       "name": "768-horizontal-dark-rtl",
-      "sha256": "e9e9c322232d7af632b31b94e958182eef25490b1eec870991486a02c287b3d1"
+      "sha256": "5523925f5d9d91b13d0856afbbe3806ee2b48918848edd645f1fbfcacdfa4d45"
     },
     {
       "name": "768-vertical-light-rtl",
-      "sha256": "99d04a3adf1cb5503c4e756cd4faaa16d83f5d4827a7ed28060228f055c48fd1"
+      "sha256": "461ff60a91eff29d1311ee1f50502da39d504a328b967af4300c401aa6e5df65"
     },
     {
       "name": "768-vertical-dark-rtl",
-      "sha256": "bc1f55d88d2451d97414becddbe2d3f2521aa7d40123ff39a28f1f90b0e35fba"
+      "sha256": "c16d44abc223d203d476b786e5c406a5bfee83801bd963d078e462baf36f7bfd"
     },
     {
       "name": "1440-horizontal-light-rtl",
-      "sha256": "3529f83dd12b11b0c4a9f431bf9229d04bd344a36c5da6fb95ab00a8670114d3"
+      "sha256": "aa04666698a43d4b570776119672bc0f010ec960cb1f4b6517f64b2715cc3d6d"
     },
     {
       "name": "1440-horizontal-dark-rtl",
-      "sha256": "aeaa029cdc6e98f972736ceac7fc5176e4329e6f26e4323225630d09f7fccac8"
+      "sha256": "88aa629fe033472ee23c0d0a25f17e4539446a8be8c5f253d993f2b3fd67cc7b"
     },
     {
       "name": "1440-vertical-light-rtl",
-      "sha256": "a51707c2b85c19ee48b713b8bf5ff0b00c0940dd9fd4dfcf21ac4422f969f3db"
+      "sha256": "6a23a8033ea3e7d31fa291c0a8335a77376c559b0f888c2f3507097478f759d3"
     },
     {
       "name": "1440-vertical-dark-rtl",
-      "sha256": "ec81d35e9fc7593da251945652e75134ecc64fb4a2118fca6df582dd7b8bfe85"
+      "sha256": "4403576ab009e18129f8eaa1fbff0429b5db76779cecc08c4f39a0a7b04a0cda"
     }
   ]
 }

@@ -24,6 +24,7 @@ The first release, on 1.0.0 of `@temporeum/timeline-core`. From here on the pack
   - editing: move, resize, snap, `snapOrigin`, `minDurationMs`, `crossLane`, `canMove`.
 
 - `axisContext` (on by default): the month, year or day the view is in, at the start of the axis.
+- **Text spacing (WCAG 1.4.12):** labels are measured with the reader's letter and word spacing, read off a drawn label, and measured and laid out again when that spacing comes or goes after load, so a label keeps its whole text where its item has room.
 
 ### Plugins
 

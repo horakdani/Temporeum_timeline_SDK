@@ -208,7 +208,10 @@ export function timelineStyleCss(options: StyleOptions): string {
       : `${root}{${tokenBlock(resolved)}}`;
 
   const structure = [
-    `${root}{font-family:${metrics.fontFamily}}`,
+    // A reader's letter or word spacing, set or taken away after load, ends
+    // a transition here: no other event says a stylesheet changed, and the
+    // element listens for it to measure its labels again (WCAG 1.4.12).
+    `${root}{font-family:${metrics.fontFamily};transition:letter-spacing 1ms,word-spacing 1ms;transition-behavior:allow-discrete}`,
     `${root} .tl-surface{fill:var(--tl-surface)}`,
     `${root} .tl-band{fill:var(--tl-surface-alt)}`,
     `${root} .tl-lane{fill:none}`,
@@ -225,9 +228,11 @@ export function timelineStyleCss(options: StyleOptions): string {
     // `color`, and `fill` still for a host's own `<text>` label.
     `${root} .tl-label{fill:var(--tl-item-text);color:var(--tl-item-text);font-size:${metrics.fontSize}px;pointer-events:none}`,
     // The box was fitted to the text as measured. A reader's own spacing
-    // (WCAG 1.4.12: wider letters, words and lines, `!important`) widens the
-    // text past it: it is shortened with an ellipsis then, not cut through a
-    // letter, and a taller line stays centred in the box.
+    // (WCAG 1.4.12: wider letters, words and lines, `!important`) that the
+    // measure did not count — the element counts it; a host's own measurer
+    // or the estimate may not — widens the text past it: it is shortened
+    // with an ellipsis then, not cut through a letter, and a taller line
+    // stays centred in the box.
     `${root} .tl-label>div{white-space:pre;margin:0;padding:0 0 0 ${String(metrics.labelPadding)}px;line-height:${String(metrics.lineHeight)}px;` +
       `height:100%;align-content:unsafe center;overflow:hidden;text-overflow:ellipsis}`,
     `${root} .tl-label--after{fill:var(--tl-text);color:var(--tl-text)}`,

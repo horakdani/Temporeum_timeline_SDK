@@ -12,8 +12,8 @@
       "labelsKept": 9,
       "labelsDropped": 1,
       "ticks": 3,
-      "bytes": 13785,
-      "sha256": "7d5c8f036e6e03ecc2cd443145efded88af872fab4d270f097c0572eb2225c16"
+      "bytes": 13867,
+      "sha256": "f22a0ea08ad54cc3693b120b3f95641af725c909ae6ecff36cc75dec960ab6db"
     },
     {
       "name": "360-horizontal-dark",
@@ -23,8 +23,8 @@
       "labelsKept": 9,
       "labelsDropped": 1,
       "ticks": 3,
-      "bytes": 13725,
-      "sha256": "e7f4431eb39a7a9aaf9cf69eb10c9a8b5fe942d48d70e5cbe79217b847eeb472"
+      "bytes": 13807,
+      "sha256": "f83b62d73311ab11fc2aea7d4a8aeb5b5341cfbda0ed16cfe8aaf51aa17b6f9f"
     },
     {
       "name": "360-vertical-light",
@@ -34,8 +34,8 @@
       "labelsKept": 8,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 12830,
-      "sha256": "9dba966e5993c652ed22e086ea8cc6413e604000c67dfc1a98d90ba535d7d419"
+      "bytes": 12912,
+      "sha256": "499cb78eb8504f3e20bff3536f340a4511b40c0ce521f61128a03e35b402cf33"
     },
     {
       "name": "360-vertical-dark",
@@ -45,8 +45,8 @@
       "labelsKept": 8,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 12772,
-      "sha256": "49228ff4e979576778ed464d7760aedee1211ebcb95397072e1bd3a499f606f0"
+      "bytes": 12854,
+      "sha256": "64d86fc3f31fb4d54f0936f36f2f6d257ee4fad2ea7c2a9fb0848d50972d1b12"
     },
     {
       "name": "768-horizontal-light",
@@ -56,8 +56,8 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 14038,
-      "sha256": "5afb6bb40f43264b2fe6f579f18e95f5d06d1797d4aab75db5f6f01205d81f64"
+      "bytes": 14120,
+      "sha256": "8f0d5d935904d4144a5d412adb4031a261a0fa2a18ce8c7c9561d6b838dae087"
     },
     {
       "name": "768-horizontal-dark",
@@ -67,8 +67,8 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 13978,
-      "sha256": "69cb70da520ccddbab085af7d40c7586ad6f274762dae4ba295a8602cf4a323c"
+      "bytes": 14060,
+      "sha256": "c5688e731a9b64210ca28ea80815b81512293825ac87d4876909d52d5f16405b"
     },
     {
       "name": "768-vertical-light",
@@ -78,8 +78,8 @@
       "labelsKept": 9,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 13779,
-      "sha256": "06cd148e72cc13c8d082dd332fe105318a86863efb5b9d24351c178989efa1b3"
+      "bytes": 13861,
+      "sha256": "99e9c21a742dfc0640f588f0d3887f55d7bf6800617c34638684593d76511748"
     },
     {
       "name": "768-vertical-dark",
@@ -89,8 +89,8 @@
       "labelsKept": 9,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 13719,
-      "sha256": "a495e8c281a8ac0f8af3a6256e15addc173cfe408725e1cf4fac42fd27d2b323"
+      "bytes": 13801,
+      "sha256": "dc81f13fce4fca72e4fd4041e62a69034b7a5126d8706b311b33efe9846ba811"
     },
     {
       "name": "1440-horizontal-light",
@@ -100,8 +100,8 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 15,
-      "bytes": 16776,
-      "sha256": "e7e5499461443bbac0194c6c688371158e69c6b76ed130559d0f8a83a3144907"
+      "bytes": 16858,
+      "sha256": "dc4a4edae80bf649d99ea3284948503e81d3c0ae377c82995921c285f0c2e690"
     },
     {
       "name": "1440-horizontal-dark",
@@ -111,8 +111,8 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 15,
-      "bytes": 16716,
-      "sha256": "af4772c446f06dbd6d0bdc19b9e162b8786fdda1280a32303f0526a56ac0c577"
+      "bytes": 16798,
+      "sha256": "44f5da9b907eb019305ed6e37b876e6f3a41757af9b9c4124141e9d72bb57193"
     },
     {
       "name": "1440-vertical-light",
@@ -122,8 +122,8 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 14140,
-      "sha256": "ad2e46a2e1d538b8505646de1612bbef886f6a3bb3ebbdfc5e5fb0a767ace6a5"
+      "bytes": 14222,
+      "sha256": "d5c8141eb11722ce93bcb5734c6d9b4a5e57ac0b66427beb29ec06d4f6eb3259"
     },
     {
       "name": "1440-vertical-dark",
@@ -133,8 +133,8 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 14080,
-      "sha256": "8fac7563b50e0df621018514f2f00d9267a1d2236b3760bc5172638b3b482ffa"
+      "bytes": 14162,
+      "sha256": "dcec2c0af5222503c738cb64108faffdf84d5136874b6420a32850c8311733e6"
     }
   ]
 }

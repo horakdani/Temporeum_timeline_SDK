@@ -33,6 +33,7 @@ import {
   createTimeScale,
   densityMetrics,
   Emitter,
+  estimateTextWidth,
   planSceneSpace,
   renderTimeline,
   renderToSvgString,
@@ -422,6 +423,72 @@ function canvasMeasure(doc: Document, family: () => string): MeasureText | undef
   };
 }
 
+/**
+ * The letter and word spacing labels are drawn with, in px at `fontSize`:
+ * the reader's own (WCAG 1.4.12's override, a reading extension, a
+ * bookmarklet) or a host's. Nothing when there is none.
+ */
+interface TextSpacing {
+  readonly letter: number;
+  readonly word: number;
+  readonly fontSize: number;
+}
+
+/** The spacing `from` computes, or nothing when it has none. */
+function textSpacingOf(view: Window | null, from: Element): TextSpacing | undefined {
+  const style = view?.getComputedStyle(from);
+  if (style === undefined) return undefined;
+  // "normal" reads as NaN: no spacing.
+  const letter = Number.parseFloat(style.letterSpacing) || 0;
+  const word = Number.parseFloat(style.wordSpacing) || 0;
+  return letter === 0 && word === 0 ? undefined : { letter, word, fontSize: Number.parseFloat(style.fontSize) || 1 };
+}
+
+function sameSpacing(a: TextSpacing | undefined, b: TextSpacing | undefined): boolean {
+  return a === undefined || b === undefined ? a === b : a.letter === b.letter && a.word === b.word && a.fontSize === b.fontSize;
+}
+
+/**
+ * `measure` with the spacing added: the letter spacing after every
+ * character, as the browser adds it, and the word spacing at every space.
+ * The spacing was read at one font size; at another, an `em` spacing scales
+ * and an inherited `px` one does not, and which it was is not known — so it
+ * is taken at whichever is wider. A label is then given its room or a
+ * little more, never less than it is drawn with.
+ */
+function spacedMeasure(measure: MeasureText, spacing: TextSpacing): MeasureText {
+  return (text, fontSize) => {
+    const ratio = fontSize / spacing.fontSize;
+    const at = (value: number): number => value * (value > 0 ? Math.max(1, ratio) : Math.min(1, ratio));
+    let characters = 0;
+    let spaces = 0;
+    for (const character of text) {
+      characters += 1;
+      if (character === " " || character === "\u00a0") spaces += 1;
+    }
+    return measure(text, fontSize) + at(spacing.letter) * characters + at(spacing.word) * spaces;
+  };
+}
+
+/**
+ * Calls `onChange` when the text spacing in `container` changes after load.
+ * No event says a stylesheet came or went, so the theme gives the root a
+ * one-millisecond transition on both spacings, and its end is the event.
+ * The end, not the start: the labels inherit the root's spacing in a shadow
+ * root, and mid-transition they would read a value on its way. A reader who
+ * turned transitions off gets the spacing measured at the next resize.
+ */
+function watchTextSpacing(container: Element | DocumentFragment, onChange: () => void): () => void {
+  const listener = (event: Event): void => {
+    const property = (event as TransitionEvent).propertyName;
+    if (property === "letter-spacing" || property === "word-spacing") onChange();
+  };
+  container.addEventListener("transitionend", listener);
+  return () => {
+    container.removeEventListener("transitionend", listener);
+  };
+}
+
 function restoreOf<T>(item: Item<T>): ItemPatch {
   return {
     id: item.id,
@@ -549,10 +616,34 @@ export function createTimeline<T = unknown>(
   // and the stylesheet declares the tokens on `:host`.
   const inShadow = typeof ShadowRoot !== "undefined" && options.root instanceof ShadowRoot;
   const mount: SceneMount = mountScene(options.root ?? element, { hydrate: options.hydrate === true, parts: inShadow });
-  const measure =
+  const measured =
     options.measureText === false
       ? undefined
       : canvasMeasure(doc, () => (view === undefined ? densityMetrics("comfortable", "horizontal") : sizesOf(view)).fontFamily);
+  // The labels are measured with the spacing they are drawn with (WCAG
+  // 1.4.12): read before the first frame, and again whenever it changes. A
+  // new spacing is a new measurer, and the renderer's caches, keyed by it,
+  // lay the labels out again.
+  let measure = measured;
+  let spacing: TextSpacing | undefined;
+  let spacingStale = true;
+  const stopSpacingWatch = watchTextSpacing(options.root ?? element, () => {
+    spacingStale = true;
+    loop.request();
+  });
+  /**
+   * The spacing a drawn label computes. Before the first label it is the
+   * element's, at the element's font size, and read again on the next frame:
+   * by then there may be a label to read it from.
+   */
+  function readSpacing(): void {
+    const label = (options.root ?? element).querySelector(".tl-label > div");
+    const next = textSpacingOf(doc.defaultView, label ?? element);
+    spacingStale = label === null && next !== undefined;
+    if (sameSpacing(next, spacing)) return;
+    spacing = next;
+    measure = next === undefined ? measured : spacedMeasure(measured ?? estimateTextWidth, next);
+  }
 
   function useSource(source: TimelineConfig<T>["items"]): void {
     // New items from the host: a live layout no longer says anything about them.
@@ -647,6 +738,7 @@ export function createTimeline<T = unknown>(
 
   function frameState(at: ResolvedView): FrameState<T> {
     direction = resolveDirection();
+    if (spacingStale) readSpacing();
     return {
       direction,
       items,
@@ -1486,6 +1578,7 @@ export function createTimeline<T = unknown>(
     width = size.width;
     measuredHeight = size.height;
     if (reason !== "init") reason = "resize";
+    spacingStale = true;
     resolve();
     // A resize is drawn at once: waiting a frame would show the old size
     // stretched for one frame.
@@ -1714,6 +1807,7 @@ export function createTimeline<T = unknown>(
       if (claimedPosition) element.style.position = ownPosition;
       toolsLayer?.destroy();
       sizing.destroy();
+      stopSpacingWatch();
       binding.destroy();
       element.removeEventListener("pointerdown", onPress, true);
       element.removeEventListener("keydown", onKey);

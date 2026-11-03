@@ -75,7 +75,7 @@ describe("metrics: the sizes a frame draws with", () => {
     expect(Number(itemRect(result.scene, "a").attrs?.height)).toBe(44);
     expect(result.contentCrossSize).toBeGreaterThan(plain.contentCrossSize);
     const css = styleOf(result.scene);
-    expect(css).toContain('.tl{font-family:"Iowan Old Style", serif}');
+    expect(css).toContain('.tl{font-family:"Iowan Old Style", serif;');
     expect(css).toContain(".tl-label{fill:var(--tl-item-text);color:var(--tl-item-text);font-size:15px");
     expect(css).toContain(".tl-tick-label{fill:var(--tl-text-muted);font-size:13px}");
   });

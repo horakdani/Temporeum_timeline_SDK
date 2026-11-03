@@ -577,6 +577,47 @@ describe("createTimeline — the instance and its store", () => {
     measured.timeline.destroy();
   });
 
+  it("[claim:text-spacing] measures labels with the reader's text spacing (1.4.12), and again when it comes and when it goes — in the page and in the element's shadow root", async () => {
+    // WCAG's override, as the Understanding document's bookmarklet applies it.
+    const spacing = "* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; }";
+    const spaced = [{ id: "s", start: T0 + 2 * DAY, end: T0 + 12 * DAY, label: "Plan the work", laneId: "l1" }];
+    const padding = 2 * densityMetrics("comfortable", "horizontal").labelPadding;
+    const light = await instance({ items: spaced });
+    const host = await place((el) => {
+      el.items = spaced;
+    });
+    const cases = [
+      { name: "page", root: light.el as ParentNode, result: () => light.timeline.result },
+      { name: "shadow root", root: host.shadowRoot as ParentNode, result: () => host.timeline?.result },
+    ];
+    /** The label's box, its text as the browser lays it out, and whether it was shortened. */
+    const seen = (at: (typeof cases)[number]) => {
+      const kept = at.result()?.labels.kept.find((label) => label.id === "s");
+      const range = document.createRange();
+      range.selectNodeContents(at.root.querySelector(".tl-label > div")?.firstChild as Node);
+      return { box: (kept?.box.mainSize ?? NaN) - padding, text: range.getBoundingClientRect().width, shortened: kept?.shortened === true };
+    };
+    const plain = cases.map(seen);
+    const style = document.createElement("style");
+    style.textContent = spacing;
+    document.head.append(style);
+    for (const [index, at] of cases.entries()) {
+      // No resize, no call: the spacing itself makes the timeline draw again.
+      await vi.waitFor(() => expect(seen(at).box).toBeGreaterThan((plain[index]?.box ?? NaN) + 10));
+      const now = seen(at);
+      // The box holds the text as drawn, whole: it is not shortened, and is at
+      // most a pixel wider than the text.
+      expect(now.shortened, at.name).toBe(false);
+      expect(now.box - now.text, at.name).toBeGreaterThanOrEqual(-0.5);
+      expect(now.box - now.text, at.name).toBeLessThan(1.5);
+    }
+    style.remove();
+    for (const [index, at] of cases.entries()) {
+      await vi.waitFor(() => expect(Math.abs(seen(at).box - (plain[index]?.box ?? NaN))).toBeLessThan(0.5));
+    }
+    light.timeline.destroy();
+  });
+
   it("forwards limits and interaction rules to the machine", async () => {
     const { timeline, el } = await instance({
       limits: { min: T0, max: T0 + 30 * DAY, minSpanMs: DAY },
