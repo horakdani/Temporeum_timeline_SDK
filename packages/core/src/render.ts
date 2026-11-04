@@ -1024,7 +1024,7 @@ function exactEntries<T>(
   for (const placed of placedItems) {
     // A cluster is culled as one unit: its marker spans every member, so it
     // is drawn exactly when any of them would have been.
-    // Without clustering this is the item's own box, as before P10: the
+    // Without clustering this is the item's own box: the
     // fast path allocates nothing a frame did not already allocate.
     const clustered = clustering?.clusterOf(placed.item.id);
     const unit = clustered === undefined ? undefined : clusterUnitOf(placed, clustered, context, measure);
@@ -1101,7 +1101,7 @@ const CLUSTER_LABEL_PRIORITY = Number.MAX_SAFE_INTEGER;
  * item. The budget is measured at two thousand items in view; at ten
  * thousand items, with a shortened label on each of the two thousand, a pan
  * missed a third of its frames in Chromium at a 4x slowdown, and with six
- * hundred of them still a fifth (P17). Up to a thousand items, labels and
+ * hundred of them still a fifth. Up to a thousand items, labels and
  * items together stay within the two thousand the budget holds. Past it,
  * only the labels that fit whole are drawn, as before 1.0.0-rc.5; drawing
  * more needs labels painted off the DOM.
@@ -1243,10 +1243,10 @@ function drawFrame<T>(
  * tile is drawn — items, labels, details — once, then handed back as the
  * same nodes until something it depends on changes. A pan that reaches past
  * what is drawn therefore pays for the tile that came in, not for the whole
- * range (P7: 90 ms of script per such frame at 4x for three viewports of
+ * range (90 ms of script per such frame at 4x for three viewports of
  * items, before tiles). A sixteenth of a viewport keeps that tile small —
- * it is the step a re-anchor refills in, two at a time (P14), and the step
- * a frame at rest grows the overscan by (P15). A frame that redraws more
+ * it is the step a re-anchor refills in, two at a time, and the step
+ * a frame at rest grows the overscan by. A frame that redraws more
  * than a fifth of 2000 items in view misses its vsync at a 4x slowdown, and
  * a frame at rest that brought in an eighth of a viewport of new items —
  * 300 of them, each with its title and its name — still missed it whenever
@@ -1269,7 +1269,7 @@ const ITEM_REACH = 1 << 22;
 /**
  * How far past its own tile a label placed after its item may run, in tiles.
  *
- * Two — an eighth of a viewport, the reach of P14's quarter-viewport tiles'
+ * Two — an eighth of a viewport, the reach of the quarter-viewport tiles'
  * one: the label of an item that ends near a tile's end has the next tiles
  * to run into, and the tile's reservations reach that far, past the range
  * end too, so a tile's labels still depend on the data and not on what else
@@ -1282,7 +1282,7 @@ const LABEL_REACH = 2;
 /**
  * The reach in pixels, at least: a narrow viewport's tiles are narrow too —
  * 21 px at 337 — and two of them took not even a shortened label, so a
- * label the frame at rest showed was gone for the whole of a gesture (P17).
+ * label the frame at rest showed was gone for the whole of a gesture.
  * Wider than any shortest label of the densities, and than two tiles of a
  * desktop-wide view.
  */
@@ -1464,14 +1464,14 @@ function selectionOf(ids: ReadonlySet<string>, selected: ReadonlySet<string>): s
  *   own label starts inside or after B — so the two never meet, whichever
  *   tile placed them. An inside label lies within its own item.
  *
- * Before P14 an after label had to end inside its own tile, which dropped
+ * An after label need not end inside its own tile: that rule dropped
  * the label of an item near a tile's end that an exact frame keeps.
  */
 /**
  * The items of a layout by start, to find the ones near a range of tiles
  * without looking at every item. A frame that draws one tile used to compute
  * the rectangle of all ten thousand to keep the two hundred in it — at a 4x
- * slowdown most of a refill frame's script (P15).
+ * slowdown most of a refill frame's script.
  *
  * Items longer than {@link LONG_SPAN} times the median, and open ones, are
  * listed apart and always looked at: one long item would otherwise widen the
@@ -1558,7 +1558,7 @@ function itemsNear<T>(
     positions.push(index.byStart[at] as number);
   }
   // Culled across before the sort: of 10 000 items over 500 lanes, the few
-  // hundred in the lanes in view (P20).
+  // hundred in the lanes in view.
   const kept = keep === undefined ? positions : positions.filter((position) => keep(layout.items[position] as LayoutItem<T>));
   kept.sort((a, b) => a - b);
   return kept.map((position) => layout.items[position] as LayoutItem<T>);
@@ -1642,7 +1642,7 @@ function drawTiles<T>(
         box,
         labelled: rawEnd > rangeStart && crossBox.cross < crossSize,
         // The same box, mostly: one object per item fewer, for every item a
-        // long pan keeps drawn (P17).
+        // long pan keeps drawn.
         labelBox: labelStart === box.main && labelSize === box.mainSize ? box : { main: labelStart, mainSize: labelSize, ...crossBox },
         rawMain: raw.main,
         rawEnd,
@@ -1668,7 +1668,7 @@ function drawTiles<T>(
     options.maxLabels === undefined ? undefined : Math.ceil(options.maxLabels / TILES_PER_VIEWPORT);
   // The items near a viewport's width from the tile on, at the scale the
   // labels are fitted to — through the start index, as the tile finds its own.
-  // Only the count: no list is built (P20).
+  // Only the count: no list is built.
   const densityAt = (index: number): number => {
     const [start, first, end] = nearRange(layout, itemScale, index * tileSize, (index + TILES_PER_VIEWPORT / fit) * tileSize, metrics.minItemMainSize);
     return start.long.length + Math.max(end - first, 0);
@@ -1787,7 +1787,7 @@ function drawSpaceContent<T>(
   // scale it came from. Showing such a tile costs the browser what drawing
   // it does — every item in it moves back in, at another scale — so while
   // the scale shown instead can stand in, it comes back a budget at a time
-  // too (P15: the last notch of a wheel zoom out, 25 ms at a 4x slowdown).
+  // too (the last notch of a wheel zoom out, 25 ms at a 4x slowdown).
   const settled = cache.shown?.level === level.id ? cache.shown.tiles : new Set<number>();
   const returning: number[] = [];
   for (let index = first; index <= last; index += 1) {
@@ -2179,7 +2179,7 @@ function edgeLabels<T>(
  * view — the items, and the boxes of the tiles' labels — and the view. Keyed
  * by those, not by the entries: when the overscan grows before the view, the
  * items that start there and reach into it move to the new first tile as new
- * entries, and keyed by entry each such frame placed them all again (P15).
+ * entries, and keyed by entry each such frame placed them all again.
  */
 const restCache = new WeakMap<readonly unknown[], { readonly key: readonly unknown[]; readonly value: ReturnType<typeof restLabels> }>();
 

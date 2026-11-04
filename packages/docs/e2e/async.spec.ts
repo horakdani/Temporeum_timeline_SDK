@@ -6,7 +6,7 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 /**
- * G-ASYNC, in a real browser: during a fast zoom, the results of aborted
+ * The async check, in a real browser: during a fast zoom, the results of aborted
  * requests NEVER reach the canvas.
  *
  * The page (public/async.html) queries a fake, delayed server, and every

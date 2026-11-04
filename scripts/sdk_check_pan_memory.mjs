@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * G-PAN-MEMORY: proves that the vis comparison's pan at 10,000 items keeps
+ * The pan-memory check: proves that the vis comparison's pan at 10,000 items keeps
  * the heap growth to at most half of the earlier measured value (+10.4 MB),
  * by the median of three fresh pages, and that during the pan it stays
- * within the G-PERF thresholds (<= 5% missed vsyncs, <= 100 ms longest
+ * within the perf check's thresholds (<= 5% missed vsyncs, <= 100 ms longest
  * frame, by median).
  *
  * The earlier value is from the published benchmark run (1.0.0-rc.3): heap
@@ -71,5 +71,5 @@ if (!existsSync(reportFile)) {
 
 for (const note of notes) console.log(`  ok    ${note}`);
 for (const failure of failures) console.log(`  FAIL  ${failure}`);
-console.log(failures.length === 0 ? "G-PAN-MEMORY: passed" : "G-PAN-MEMORY: FAILED");
+console.log(failures.length === 0 ? "pan-memory: passed" : "pan-memory: FAILED");
 process.exit(failures.length === 0 ? 0 : 1);

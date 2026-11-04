@@ -14,11 +14,11 @@ import { itemsPlugin } from "../src/items.js";
 import { toolsPlugin } from "../src/tools.js";
 import type { Timeline, TimelineConfig } from "../src/index.js";
 
-// The parts on entry points of their own (P29, P30), as a page registers them.
+// The parts on entry points of their own, as a page registers them.
 registerPlugin(exportPlugin, ganttPlugin, resourcesPlugin, toolsPlugin, groupsPlugin, itemsPlugin, intlPlugin);
 
 /**
- * P26 through the live instance, in a real Chromium: every word the element
+ * Languages, directions and calendars through the live instance, in a real Chromium: every word the element
  * says comes from the dictionary (a pseudo-translation leaves nothing
  * unmarked), right to left mirrors what is drawn and what the pointer, the
  * wheel and the arrows do, and a calendar's months are the axis's.

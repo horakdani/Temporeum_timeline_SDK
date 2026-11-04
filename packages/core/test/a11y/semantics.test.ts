@@ -13,7 +13,7 @@ import type { Item } from "../../src/types.js";
  * An interactive frame is a listbox of options. The checks below are the
  * contract a screen reader relies on, stated against the scene the renderer
  * returns — the same object the DOM mount writes, so nothing here depends on
- * a browser. `axe` checks the result in a real one (G-AXE).
+ * a browser. `axe` checks the result in a real one (the axe check).
  */
 
 const DAY = 86_400_000;
@@ -210,7 +210,7 @@ describe("accessible names", () => {
     expect(describeSpan(odd, span(T0 + 1, T0 + 1), "en", "UTC")).toBe("Jan 1, 2026, 12:00 AM");
   });
 
-  it("names the last day a date-granular item covers, not the day after it (M2)", () => {
+  it("names the last day a date-granular item covers, not the day after it", () => {
     // Known to the day, Jan 1 to Jan 3: the span runs to the start of Jan 4.
     const days: Item = { id: "d3", start: T0, end: T0 + 2 * DAY, granularity: "day" };
     expect(describeSpan(days, span(T0, T0 + 3 * DAY), "en", "UTC")).toBe("Jan 1, 2026 – Jan 3, 2026");

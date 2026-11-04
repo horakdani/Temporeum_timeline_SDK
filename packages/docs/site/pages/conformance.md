@@ -1,6 +1,6 @@
 # Accessibility conformance report
 
-This is the library's accessibility conformance report (ACR) against **WCAG 2.2, levels A and AA**: every success criterion of those levels, what the timeline does about it, and the test that shows it. A criterion marked "Supports" names at least one test, and the release check runs every one of them and fails if any is not green; the table on this page and that check read the same file, `site/conformance/wcag22.json`, so the two cannot drift apart. The same report, in the layout procurement asks for — the ITI VPAT® 2.5, International Edition, with the Revised Section 508 and EN 301 549 — is the [VPAT](vpat.md), generated from the same file.
+This is the library's accessibility conformance report (ACR) against **WCAG 2.2, levels A and AA**: every success criterion of those levels, what the timeline does about it, and the test that shows it. A criterion marked "Supports" names at least one test, and the conformance check (`node scripts/sdk_check_acr.mjs`, run before each release) runs every one of them and fails if any is not green; the table on this page and that check read the same file, `site/conformance/wcag22.json`, so the two cannot drift apart. The same report, in the layout procurement asks for — the ITI VPAT® 2.5, International Edition, with the Revised Section 508 and EN 301 549 — is the [VPAT](vpat.md), generated from the same file.
 
 ## Scope
 

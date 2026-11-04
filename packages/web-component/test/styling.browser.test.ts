@@ -16,7 +16,7 @@ registerPlugin(groupsPlugin);
 registerPlugin(toolsPlugin);
 
 /**
- * P35 through the live instance, in a real Chromium: a page styles the
+ * Styling through the live instance, in a real Chromium: a page styles the
  * custom element from outside its shadow root — the tokens it sets on the
  * element, `::part()` for any node — sizes are configuration the layout
  * measures with, and slots are boxes a framework renders into, handed over

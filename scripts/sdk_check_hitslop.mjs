@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-HITSLOP: proves that with a coarse pointer even a 2 px item can be
+ * The hitslop check: proves that with a coarse pointer even a 2 px item can be
  * hit — and that this is down to the POINTER, not a large zone handed out
  * to everyone.
  *
@@ -158,7 +158,7 @@ if (failures.length > 0) {
   for (const failure of failures) {
     console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-HITSLOP FAILED: ${String(failures.length)} failure(s).`);
+  console.error(`\nhitslop FAILED: ${String(failures.length)} failure(s).`);
   process.exit(1);
 }
-console.log("\nG-HITSLOP passed: with a coarse pointer even a 2 px item can be hit, and a mouse does not steal.");
+console.log("\nhitslop passed: with a coarse pointer even a 2 px item can be hit, and a mouse does not steal.");

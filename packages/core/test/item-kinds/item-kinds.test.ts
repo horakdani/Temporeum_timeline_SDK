@@ -1,5 +1,5 @@
 /**
- * G-ITEM-KINDS: box, point and background items, in both orientations.
+ * The item-kinds check: box, point and background items, in both orientations.
  *
  * A box and a point are drawn — the shape and a line to the axis — are hit
  * by the hit tester like any item, and are options with an accessible name.

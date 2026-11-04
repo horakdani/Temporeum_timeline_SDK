@@ -17,8 +17,8 @@ import { requireKinds, requirePlugins } from "../src/plugins.js";
 import { toolsPlugin } from "../src/tools.js";
 
 /**
- * P30: the time tools, the group tree, the item kinds and the other
- * languages are plugins too. The same two claims as P29's, for the four new
+ * The time tools, the group tree, the item kinds and the other
+ * languages are plugins too. The same two claims as `plugin-split.node.test.ts`'s, for the four new
  * ones: the base does not import them — the core's `/tools`, `/groups`,
  * `/items` and `/intl` are not in its graph, and neither are the plugins'
  * own files — and an option that needs one says which import is missing.
@@ -85,7 +85,7 @@ function missing(run: () => unknown, name: string, what: string): void {
 
 const PLUGINS = { tools: "/tools", groups: "/groups", items: "/items", intl: "/intl" } as const;
 
-describe("P30: the base does not carry the four new plugins", () => {
+describe("the base does not carry the four new plugins", () => {
   it("the base entry reaches none of the core's /tools, /groups, /items or /intl, nor the plugins' own files", () => {
     for (const entry of ["index.ts", "define.ts"]) {
       const { files, packages } = reach(entry);
@@ -106,7 +106,7 @@ describe("P30: the base does not carry the four new plugins", () => {
   });
 });
 
-describe("P30: a missing plugin is named, not ignored", () => {
+describe("a missing time-tool plugin is named, not ignored", () => {
   it("starts with none of them", () => {
     for (const name of ["tools", "groups", "items", "intl"] as const) expect(hasPlugin(name)).toBe(false);
   });
@@ -175,7 +175,7 @@ describe("P30: a missing plugin is named, not ignored", () => {
   });
 });
 
-describe("P30: registered, each plugin draws its part", () => {
+describe("registered, each time-tool plugin draws its part", () => {
   it("the tools: hidden dates drawn exactly, the overview strip and the lane headers in the frame", () => {
     registerPlugin(toolsPlugin);
     registerPlugin(toolsPlugin);

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * G-RRULE: the output matches the RFC 5545 examples and test vectors
+ * The rrule check: the output matches the RFC 5545 examples and test vectors
  * produced by an independent reference implementation exactly, across
  * daylight-saving transitions too.
  *
  * From the vitest report: every claim has a passing test, and each of the
  * RFC's 42 examples passes as a test of its own. From the vector file: it was
- * written by dateutil (the generator is scripts/sdk_rrule_vectors.py), it
+ * written by dateutil (the generator is packages/core/scripts/rrule-vectors.py), it
  * holds at least 800 cases, and at least 100 cross a clock change — otherwise
  * "across transitions too" is not a claim. Statically: RRULE is /calendar's
  * own code, not a dependency.
@@ -47,4 +47,4 @@ const source = codeOf(readFileSync(join(core, "src", "calendar", "rrule.ts"), "u
 for (const line of source.split("\n").filter((each) => /^\s*import /.test(each))) {
   if (!/from "\.\.?\//.test(line)) failures.push(`RRULE imports from outside its own code: ${line.trim()}`);
 }
-finish("G-RRULE", failures, notes);
+finish("rrule", failures, notes);

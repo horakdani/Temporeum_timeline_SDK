@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Timeline SDK — P19: drop and templates</title>
+    <title>Temporeum Timeline — drop and templates</title>
     <style>
       body { margin: 0; font-family: system-ui, sans-serif; }
       #sources { display: flex; gap: 12px; padding: 8px; margin: 0; list-style: none; }
@@ -39,7 +39,7 @@
     <div id="timeline"></div>
     <script type="module">
       /*
-       * G-DROP and G-TEMPLATE, in a real browser, through the shipped bundles.
+       * The drop check and the template check, in a real browser, through the shipped bundles.
        *
        * ?mode=drop      createTimeline with editing.drop, two lanes and two
        *                 external sources: one dragged in, one added with the
@@ -51,7 +51,7 @@
       import { densityMetrics } from "@temporeum/timeline-core";
       import { createTimeline, registerPlugin, renderTimelineSvg } from "@temporeum/timeline-element";
       import { itemsPlugin } from "@temporeum/timeline-element/items";
-      // Templates and dropping are the items plugin's (P30).
+      // Templates and dropping are the items plugin's.
       registerPlugin(itemsPlugin);
 
       const params = new URLSearchParams(location.search);

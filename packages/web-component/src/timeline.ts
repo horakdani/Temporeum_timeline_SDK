@@ -1,7 +1,7 @@
 /**
  * `createTimeline` — the one live timeline the wrappers share.
  *
- * Until P11 every page in the docs wired the same dozen pieces by hand: a
+ * Without it, every page would wire the same dozen pieces by hand: a
  * machine, a mount, a binding, a hit tester rebuilt per frame, a navigator,
  * a size observer, the effects loop. This is that wiring, once. The custom
  * element is a shell around it, and so is the React component — neither of
@@ -447,8 +447,8 @@ function canvasMeasure(doc: Document, family: () => string): MeasureText | undef
   }
   // One table per font. A frame measures thousands of labels in one or two
   // fonts, so the font is looked up once per change of font, not once per
-  // label: before P15 every call built the density's metrics and a key
-  // holding the whole font stack, which was most of what measuring cost.
+  // label: building the density's metrics and a key holding the whole font
+  // stack on every call would be most of what measuring costs.
   const fonts = new Map<string, Map<string, number>>();
   let last: { family: string; fontSize: number; font: string; widths: Map<string, number> } | undefined;
   return (text, fontSize) => {

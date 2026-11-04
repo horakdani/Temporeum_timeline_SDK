@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-CLUSTER: proves that the sum of the clusters' counts ALWAYS equals the
+ * The cluster check: proves that the sum of the clusters' counts ALWAYS equals the
  * number of visible items — no item is lost.
  *
  * Two independent proofs, both required — a missing report is a FAILURE:
@@ -223,8 +223,8 @@ for (const needle of ['from "/core/index.mjs"', "mountScene(", "cluster: true", 
 
 for (const note of notes) console.log(`  · ${note}`);
 if (failures.length > 0) {
-  console.error("\nG-CLUSTER FAILED:");
+  console.error("\ncluster FAILED:");
   for (const failure of failures) console.error(`  ✗ ${failure}`);
   process.exit(1);
 }
-console.log("\nG-CLUSTER: in every frame the sum of the clusters' counts is the number of visible items (with the far members of a cluster straddling the culling edge) — in the core and in the live DOM alike, no item was lost and none showed twice; the checkers can see (the negative controls fail).");
+console.log("\ncluster: in every frame the sum of the clusters' counts is the number of visible items (with the far members of a cluster straddling the culling edge) — in the core and in the live DOM alike, no item was lost and none showed twice; the checkers can see (the negative controls fail).");

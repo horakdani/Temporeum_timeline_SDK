@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-NODOM: the core works without a DOM — proven on the BUILT package.
+ * The nodom check: the core works without a DOM — proven on the BUILT package.
  *
  * Vitest's `node` environment runs the source; this script runs the shipped
  * bundle. The two are not the same claim: the server-side path stands or
@@ -24,7 +24,7 @@ try {
   execFileSync("npm", ["run", "--silent", "build"], { cwd: packageDir, stdio: "inherit" });
 } catch {
   console.error("  FAIL the package did not build — the server-side probe cannot run");
-  console.error("\nG-NODOM FAILED: without a build there is nothing to measure.");
+  console.error("\nnodom FAILED: without a build there is nothing to measure.");
   process.exit(1);
 }
 
@@ -34,4 +34,4 @@ try {
   process.exit(1);
 }
 
-console.log("\nG-NODOM passed: the built ESM and CJS packages run even with booby-trapped DOM globals.");
+console.log("\nnodom passed: the built ESM and CJS packages run even with booby-trapped DOM globals.");

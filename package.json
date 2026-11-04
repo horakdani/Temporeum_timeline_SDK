@@ -1,5 +1,5 @@
 {
-  "name": "temporeum-timeline-sdk",
+  "name": "temporeum-timeline",
   "version": "0.0.0",
   "private": true,
   "description": "An editable, accessible, responsive timeline for the web — zero runtime dependencies.",
@@ -9,7 +9,7 @@
     "type": "git",
     "url": "git+https://github.com/horakdani/Temporeum_timeline_SDK.git"
   },
-  "homepage": "https://github.com/horakdani/Temporeum_timeline_SDK#readme",
+  "homepage": "https://horakdani.github.io/Temporeum_timeline_SDK/",
   "bugs": {
     "url": "https://github.com/horakdani/Temporeum_timeline_SDK/issues"
   },

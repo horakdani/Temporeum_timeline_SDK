@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-RANGE-SELECT: range selection by gesture and by keyboard emits the same event (selectRange on both paths). Statically: the tools layer routes both the drag (rangeFromDrag) and the keys (rangeKeyStep) into commitRange, and the instance emits rangeSelected.
+ * The range-select check: range selection by gesture and by keyboard emits the same event (selectRange on both paths). Statically: the tools layer routes both the drag (rangeFromDrag) and the keys (rangeKeyStep) into commitRange, and the instance emits rangeSelected.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -32,4 +32,4 @@ for (const needle of ["rangeFromDrag(", "rangeKeyStep(", "commitRange(rangeFromD
 const timeline = codeOf(readFileSync(join(root, "packages", "web-component", "src", "timeline.ts"), "utf8"));
 if (!timeline.includes('emitter.emit("rangeSelected"')) failures.push("the instance does not emit a rangeSelected event");
 
-finish("G-RANGE-SELECT", failures);
+finish("range-select", failures);

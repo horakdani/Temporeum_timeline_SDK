@@ -1,5 +1,5 @@
 /**
- * G-KEYBOARD, right to left: the binding hands every key resolver the other
+ * The keyboard check, right to left: the binding hands every key resolver the other
  * arrow, so each arrow does what the arrow pointing the same way on screen
  * does left to right — the timeline's own keys, the tools' axis keys, the
  * range's and the group tree's. Every capability a gesture has keeps its key.

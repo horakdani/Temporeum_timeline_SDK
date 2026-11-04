@@ -6,7 +6,7 @@ import { eventNameOf, OBSERVED_ATTRIBUTES } from "../src/element.js";
 import { TIMELINE_EVENTS } from "../src/timeline.js";
 
 /**
- * The Custom Elements Manifest (W8 of the quality round): what an editor,
+ * The Custom Elements Manifest: what an editor,
  * Storybook or a framework's tooling reads to know `<temporeum-timeline>`.
  * It is made from the source at build time; here it has to say everything
  * the element does — every attribute, every property, every event — each

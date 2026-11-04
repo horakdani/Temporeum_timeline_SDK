@@ -8,11 +8,11 @@ import type { Timeline, TimelineConfig } from "../src/index.js";
 import { mountToolsLayer } from "../src/tools/layer.js";
 import { toolsPlugin } from "../src/tools.js";
 
-// The parts on entry points of their own (P29, P30), as a page registers them.
+// The parts on entry points of their own, as a page registers them.
 registerPlugin(toolsPlugin);
 
 /**
- * P24 through the live instance, in a real Chromium: hidden dates through
+ * The time tools through the live instance, in a real Chromium: hidden dates through
  * the machine and the renderer, a time bar dragged and keyed, the overview
  * strip's window dragged, pressed beside and keyed, a range dragged and
  * keyed, the zoom presets, the sticky lane headers, the tooltip, the clock

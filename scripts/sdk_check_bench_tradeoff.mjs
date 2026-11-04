@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-BENCH-TRADEOFF: the field benchmark page states the trade-off — we load
+ * The bench-tradeoff check: the field benchmark page states the trade-off — we load
  * more bytes, but on large data we are often faster —, and every number in
  * the trade-off section is a median from results.json.
  *
@@ -23,7 +23,7 @@
  *     FAIL on this same checker.
  *
  * Prerequisite: the docs build ran after results.json (`npm run
- * bench:field` runs them in this order; in the gate, G-DOCS does too).
+ * bench:field` runs them in this order; in the gate, the docs check does too).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -170,5 +170,5 @@ else {
 
 for (const note of notes) console.log(`  ok    ${note}`);
 for (const failure of failures.slice(0, 40)) console.log(`  FAIL  ${failure}`);
-console.log(failures.length === 0 ? "G-BENCH-TRADEOFF: passed" : `G-BENCH-TRADEOFF: FAILED (${String(failures.length)} problems)`);
+console.log(failures.length === 0 ? "bench-tradeoff: passed" : `bench-tradeoff: FAILED (${String(failures.length)} problems)`);
 process.exit(failures.length === 0 ? 0 : 1);

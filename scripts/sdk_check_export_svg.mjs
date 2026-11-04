@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-EXPORT-SVG: in every case of the visual matrix the exported standalone
+ * The export-svg check: in every case of the visual matrix the exported standalone
  * SVG is pixel for pixel the same as the frame drawn on screen.
  *
  * Two sources: the vitest JSON report (every test passes, the
@@ -45,4 +45,4 @@ if (!existsSync(logFile)) {
   }
   notes.push(`${String(names.size)} cases, all with 0 differences: ${String(cases.every((each) => each.differing === 0))}`);
 }
-finish("G-EXPORT-SVG", failures, notes);
+finish("export-svg", failures, notes);

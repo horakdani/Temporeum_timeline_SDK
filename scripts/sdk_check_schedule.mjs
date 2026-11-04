@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-SCHEDULE: on generated projects, scheduling honours every dependency,
+ * The schedule check: on generated projects, scheduling honours every dependency,
  * constraint and working calendar, is idempotent, matches an exhaustive
  * reference solver on small cases, and the critical path is exactly the
  * chain of zero-slack tasks.
@@ -33,4 +33,4 @@ const source = codeOf(readFileSync(join(core, "src", "schedule", "index.ts"), "u
 for (const line of source.split("\n").filter((each) => each.includes("gantt/index.js"))) {
   if (!/^\s*(import|export) type /.test(line)) failures.push(`/schedule takes more than types from /gantt: ${line.trim()}`);
 }
-finish("G-SCHEDULE", failures);
+finish("schedule", failures);

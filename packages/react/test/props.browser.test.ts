@@ -10,7 +10,7 @@ import { Timeline, useTimelineState } from "../src/index.js";
 import type { TimelineInstance, TimelineSnapshot } from "../src/index.js";
 
 /**
- * The React component's props and refs (W10 of the quality round): the
+ * The React component's props and refs: the
  * latest props were taken during render, so a render React threw away left
  * its callbacks behind; a new `timelineRef` after mount was never called,
  * nor the old one cleared; `useTimelineState` cached by the snapshot alone,
@@ -43,7 +43,7 @@ function host(): HTMLElement {
 
 const nextFrame = (): Promise<void> => new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
-describe("<Timeline> props and refs (W10)", () => {
+describe("<Timeline> props and refs", () => {
   it("a render React throws away does not leave its callback behind", async () => {
     const first = vi.fn();
     const second = vi.fn();
@@ -120,7 +120,7 @@ describe("<Timeline> props and refs (W10)", () => {
   });
 });
 
-describe("a client-only render writes no HTML (W13)", () => {
+describe("a client-only render writes no HTML", () => {
   it("sets no innerHTML on the box: the instance draws with the DOM", async () => {
     const descriptor = Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML") as PropertyDescriptor;
     const writes: Element[] = [];

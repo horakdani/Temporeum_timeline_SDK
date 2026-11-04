@@ -7,7 +7,7 @@
  * change only ever moves the items of the lanes it touches; every other lane
  * keeps its sublanes and only slides across if a lane before it grew or
  * shrank. {@link relayout} does exactly that, and promises the layout a full
- * `layoutItems` would give — the claim G-LIVE-DATA checks against a full
+ * `layoutItems` would give — the claim the live-data tests check against a full
  * reload, frame for frame.
  */
 

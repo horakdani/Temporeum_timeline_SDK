@@ -7,8 +7,7 @@ import { createTimeline, defineTimelineElement } from "../src/index.js";
 import type { TemporeumTimelineElement, Timeline, TimelineElementEventMap, TimelineInstanceEventMap } from "../src/index.js";
 
 /**
- * `update` and a host that hands its props again on every render (W1 of the
- * quality round). A component writes `editing={{ enabled: true }}` into its
+ * `update` and a host that hands its props again on every render. A component writes `editing={{ enabled: true }}` into its
  * render: every render is a new object that says nothing new. The instance
  * used to take the key's presence as a change and build a new input
  * machine — the press under the reader's pointer was dropped mid-drag.
@@ -145,7 +144,7 @@ describe("the element's selectedIds property is a command", () => {
   });
 });
 
-describe("an attribute change hands the instance that change only (W2)", () => {
+describe("an attribute change hands the instance that change only", () => {
   it("a theme switch does not move the view back, rebuild the input or take back the selection", async () => {
     defineTimelineElement();
     const element = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
@@ -178,7 +177,7 @@ describe("an attribute change hands the instance that change only (W2)", () => {
   });
 });
 
-describe("properties set before the element is defined (W3)", () => {
+describe("properties set before the element is defined", () => {
   it("are taken through the setters on upgrade, not left hiding them", async () => {
     const tag = "temporeum-timeline-early";
     const element = document.createElement(tag) as TemporeumTimelineElement;
@@ -198,7 +197,7 @@ describe("properties set before the element is defined (W3)", () => {
   });
 });
 
-describe("moving the element keeps the instance (W7)", () => {
+describe("moving the element keeps the instance", () => {
   async function placed(): Promise<TemporeumTimelineElement> {
     defineTimelineElement();
     const element = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
@@ -251,7 +250,7 @@ describe("moving the element keeps the instance (W7)", () => {
   });
 });
 
-describe("the element's property model (W8)", () => {
+describe("the element's property model", () => {
   async function placed(): Promise<TemporeumTimelineElement> {
     defineTimelineElement();
     const element = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
@@ -313,7 +312,7 @@ describe("the element's property model (W8)", () => {
   });
 });
 
-describe("the host's accessible name and focus (W9)", () => {
+describe("the host's accessible name and focus", () => {
   it("names the timeline by the elements aria-labelledby points at, and focus() reaches the timeline", async () => {
     defineTimelineElement();
     const caption = document.createElement("h2");

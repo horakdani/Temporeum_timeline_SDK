@@ -15,7 +15,7 @@ import type { StoryChange } from "../src/story.js";
 registerPlugin(itemsPlugin);
 
 /**
- * P34 through the live instance, in a real Chromium: the story panel tells
+ * Storytelling through the live instance, in a real Chromium: the story panel tells
  * the items' slides in time order and moves the timeline with it; the
  * timeline's selection opens a slide; the keys page; the address names the
  * slide and is followed; a provider's player loads only when asked and
@@ -197,7 +197,7 @@ describe("the story panel", () => {
     const frame = panel.querySelector("iframe");
     expect(frame?.src).toBe("https://www.youtube-nocookie.com/embed/abcdefghijk");
     expect(frame?.title).toBe("The launch, filmed");
-    // Sandboxed (S14): the player plays and opens its own links, but cannot navigate the page or reach it.
+    // Sandboxed: the player plays and opens its own links, but cannot navigate the page or reach it.
     expect(frame?.sandbox.value.split(" ").sort()).toEqual(["allow-popups", "allow-popups-to-escape-sandbox", "allow-presentation", "allow-same-origin", "allow-scripts"]);
     expect(document.activeElement).toBe(frame);
     // Another item moves: the slide stays as drawn, the player with it.

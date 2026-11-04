@@ -1,4 +1,4 @@
-/** Daylight-saving gaps and folds, west and east of Greenwich (E4, E12). */
+/** Daylight-saving gaps and folds, west and east of Greenwich. */
 import { describe, expect, it } from "vitest";
 
 import { fromCalendarParts, startOf, toCalendarParts } from "../../src/calendar.js";
@@ -17,7 +17,7 @@ const wall = (year: number, month: number, day: number, hour = 0, minute = 0) =>
   millisecond: 0,
 });
 
-describe("a wall-clock time inside a spring-forward gap (E4)", () => {
+describe("a wall-clock time inside a spring-forward gap", () => {
   it("lands as far past the gap as it was into it, west and east", () => {
     // New York, 2024-03-10: 02:00 EST jumps to 03:00 EDT at 07:00Z.
     expect(fromCalendarParts(wall(2024, 3, 10, 2, 30), "America/New_York")).toBe(Date.UTC(2024, 2, 10, 7, 30));
@@ -72,7 +72,7 @@ describe("a wall-clock time inside a spring-forward gap (E4)", () => {
   });
 });
 
-describe("fixed-length ticks across a fall-back (E12)", () => {
+describe("fixed-length ticks across a fall-back", () => {
   const zone = "America/New_York";
   // 2024-11-03: 02:00 EDT falls back to 01:00 EST at 06:00Z.
   const from = Date.UTC(2024, 10, 3, 4); // 00:00 EDT

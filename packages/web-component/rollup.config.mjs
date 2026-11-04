@@ -22,7 +22,7 @@ const ts = () =>
   typescript({
     tsconfig: "./tsconfig.build.json",
     include: ["src/**/*.ts"],
-    compilerOptions: { declaration: false, declarationMap: false, sourceMap: true, outDir: undefined, rootDir: undefined },
+    compilerOptions: { declaration: false, declarationMap: false, sourceMap: true, inlineSources: true, outDir: undefined, rootDir: undefined },
   });
 
 export default [

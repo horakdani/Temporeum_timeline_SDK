@@ -1,5 +1,5 @@
 /**
- * The G-CLUSTER meter: what a frame shows, read back from its scene.
+ * The cluster check's meter: what a frame shows, read back from its scene.
  *
  * A clustered frame is compared with the frame the same renderer draws for
  * the same view with clustering off — its item set is "what is visible",

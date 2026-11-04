@@ -316,7 +316,7 @@ describe("mountScene", () => {
   });
 
   it("without a pool creates nodes for as long as the pan goes on", () => {
-    // The negative control of the test above, and of the G-MEMORY benchmark:
+    // The negative control of the test above, and of the memory check's benchmark:
     // if this did not grow, the pool test would not be measuring the pool.
     const { container } = fakeContainer();
     const mount = mountScene(container as unknown as Element, { poolLimit: 0 });

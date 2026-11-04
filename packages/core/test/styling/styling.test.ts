@@ -17,7 +17,7 @@ import { FakeElement, fakeContainer, resetLedger } from "../dom/fake-dom.js";
 import type { FakeDocument } from "../dom/fake-dom.js";
 
 /**
- * P35 in the engine: the sizes a frame draws with, the drawing's classes as
+ * Styling in the engine: the sizes a frame draws with, the drawing's classes as
  * `part`s, and the boxes a framework renders into.
  */
 

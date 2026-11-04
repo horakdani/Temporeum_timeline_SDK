@@ -10,7 +10,7 @@
  *
  * Without arguments it drops EVERY report, which is right before a full
  * property run. With suite names it drops only those — a check that runs a
- * single suite (G-INVERSE) must not make the other reports stale, because
+ * single suite (the inverse check) must not make the other reports stale, because
  * then the order of the two checks would decide which one fails.
  */
 import { readdirSync, rmSync } from "node:fs";

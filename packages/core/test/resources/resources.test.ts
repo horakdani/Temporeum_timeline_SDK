@@ -1,5 +1,5 @@
 /**
- * G-RESOURCES: on generated assignments, the load at every moment is the
+ * The resources check: on generated assignments, the load at every moment is the
  * sum of the assignments running then, the overload is marked exactly where
  * the load is above the capacity, and a move between resources is one
  * reversible command — by a drag and by a key.
@@ -82,7 +82,7 @@ function walk(node: SceneElement, visit: (node: SceneElement) => void): void {
   for (const child of node.children ?? []) walk(child, visit);
 }
 
-describe("G-RESOURCES", () => {
+describe("resources", () => {
   it("[claim:load-sum] is the sum of the assignments running at every moment, in stretches that cover exactly the time with work", () => {
     const random = makeRandom(SEED);
     let checked = 0;
@@ -246,7 +246,7 @@ describe("G-RESOURCES", () => {
         if (patch !== undefined && "laneId" in patch) {
           // On a row, it is that row's resource; let go between the rows,
           // the row it was last over — the core's crossLane contract ("keeps
-          // the lane when the pointer leaves every lane", E3). Never `null`:
+          // the lane when the pointer leaves every lane"). Never `null`:
           // that took the item off every row.
           if (target !== undefined) expect(patch.laneId).toBe(target);
           expect(loadLaneOf(String(patch.laneId))).toBeUndefined();

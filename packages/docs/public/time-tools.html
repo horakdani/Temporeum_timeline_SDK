@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Timeline SDK — P24: time tools</title>
+    <title>Temporeum Timeline — time tools</title>
     <style>
       body { margin: 0; font-family: system-ui, sans-serif; }
       #timeline { position: relative; height: 360px; width: 1000px; }
@@ -36,14 +36,14 @@
     </main>
     <script type="module">
       /*
-       * G-TOOLTIP (and the time tools for G-AXE), in a real browser, through
+       * The tooltip check (and the time tools for the axe check), in a real browser, through
        * the shipped bundles: a tooltip on hover, on focus and on a long press,
        * over hidden nights, with a time bar, the overview strip and range
        * selection on — every tool a reader can meet at once.
        */
       import { createTimeline, registerPlugin } from "@temporeum/timeline-element";
       import { toolsPlugin } from "@temporeum/timeline-element/tools";
-      // The time tools are a plugin (P30).
+      // The time tools are a plugin.
       registerPlugin(toolsPlugin);
 
       const hour = 3_600_000;

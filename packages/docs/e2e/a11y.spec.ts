@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test";
 import type { Frame, Page, TestInfo } from "@playwright/test";
 
 /**
- * G-AXE: the pages' accessibility in a real browser, and the keyboard path.
+ * The axe check: the pages' accessibility in a real browser, and the keyboard path.
  *
  * It measures two things, because each catches a different kind of bug:
  *
@@ -175,7 +175,7 @@ async function stateOf(page: Page): Promise<DemoState> {
 async function openDemo(page: Page, query = ""): Promise<void> {
   await page.goto(`/index.html${query}`);
   await expect(page.getByTestId("timeline")).toBeVisible();
-  await expect(page).toHaveTitle(/Timeline SDK/);
+  await expect(page).toHaveTitle(/Temporeum Timeline/);
 }
 
 /** Tab from the top of the page onto the timeline. */
@@ -247,7 +247,7 @@ test.describe("axe: WCAG 2.2 AA", () => {
   });
 
   // The async page's states: while loading (aria-busy, the mark on the axis)
-  // and with a failed window. Not required G-AXE states, but whatever can
+  // and with a failed window. Not states the axe check requires, but whatever can
   // reach the user, axe should see too.
   test("the async page while loading", async ({ page }, info) => {
     await page.goto("/async.html?latency=1500");

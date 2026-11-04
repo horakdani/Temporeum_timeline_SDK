@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Timeline SDK — performance measurement (G-PERF, G-MEMORY)</title>
+    <title>Temporeum Timeline — performance measurement</title>
     <style>
       body {
         margin: 0;
@@ -34,9 +34,9 @@
        * ?mode=space   (default) the recommended path: item space + patcher
        * ?mode=exact   negative control: no item space, every frame exact
        * ?pool=0       negative control for memory: a patcher without a pool
-       * ?levels=0     negative control for deep zoom (G-PERF-DEEP): re-anchoring
+       * ?levels=0     negative control for deep zoom (the perf-deep check): re-anchoring
        *               during the gesture in one frame, without steps
-       * ?run=0        negative control for wheel zoom (G-PERF-WHEEL): the page
+       * ?run=0        negative control for wheel zoom (the perf-wheel check): the page
        *               does not treat the wheel burst as a gesture (the earlier
        *               machine), so it comes to rest after every wheel step
        * ?overscan=, ?maxStretch=, ?growth=   planner tuning, for experiments; the
@@ -58,7 +58,7 @@
       }
 
       // The data and the starting view come from the shared kit (bench-kit.mjs):
-      // the G-PERF-PUBLIC page measures the same.
+      // the perf-public check's page measures the same.
       const items = benchItems();
       const total = items[items.length - 1].end - START;
 
@@ -189,7 +189,7 @@
       async function swipe() {
         await performGesture(400, (u) => [{ x: 1000 - 240 * u, y: height() / 2 }]);
         await sleep(30);
-        // The live label nodes: G-MEMORY does not charge the pool for creation
+        // The live label nodes: the memory check does not charge the pool for creation
         // that grows with their number (it cannot hand back a label while none
         // has been released), and it subtracts them from the live DOM too.
         // A label is a foreignObject and an HTML row: two elements

@@ -1,5 +1,5 @@
 /**
- * P30: the two small entry points the element's base loads instead of
+ * The two small entry points the element's base loads instead of
  * `/tools` and `/intl` — `/live` and `/words`.
  *
  * Each is the same code as before, not a copy: `/tools` still exports live

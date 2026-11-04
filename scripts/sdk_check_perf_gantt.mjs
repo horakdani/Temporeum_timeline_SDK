@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * G-PERF-GANTT: with 10,000 tasks and 10,000 dependencies, pan and wheel
- * zoom are within the G-PERF thresholds (<= 5% missed vsyncs, <= 100 ms
+ * The perf-gantt check: with 10,000 tasks and 10,000 dependencies, pan and wheel
+ * zoom are within the perf check's thresholds (<= 5% missed vsyncs, <= 100 ms
  * longest frame, by the median of three fresh pages) — and without arrow
  * culling (`gantt.cull: false`, the negative control) it FAILS: the pan or
  * the zoom is over the threshold.
@@ -78,5 +78,5 @@ if (!existsSync(reportFile)) {
 
 for (const note of notes) console.log(`  ok    ${note}`);
 for (const failure of failures) console.log(`  FAIL  ${failure}`);
-console.log(failures.length === 0 ? "G-PERF-GANTT: passed" : "G-PERF-GANTT: FAILED");
+console.log(failures.length === 0 ? "perf-gantt: passed" : "perf-gantt: FAILED");
 process.exit(failures.length === 0 ? 0 : 1);

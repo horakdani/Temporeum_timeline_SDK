@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-EXAMPLES — EVERY documented example really runs.
+ * The examples check — EVERY documented example really runs.
  *
  * It has three parts, because an example can go stale in three different ways:
  *
@@ -40,6 +40,10 @@ const notes = [];
 
 /** The READMEs of the shipped packages: their npm page, the first thing a user reads. */
 const READMES = [
+  // The repo's own README: the first thing a visitor on GitHub reads.
+  [
+    "README.md",
+  ][0],
   "packages/core/README.md",
   "packages/web-component/README.md",
   "packages/react/README.md",
@@ -186,8 +190,8 @@ try {
 
 for (const note of notes) console.log(`  ok  ${note}`);
 if (problems.length > 0) {
-  console.error(`\nG-EXAMPLES FAILED — ${String(problems.length)} problems:`);
+  console.error(`\nexamples FAILED — ${String(problems.length)} problems:`);
   for (const problem of problems) console.error(`  ✗ ${problem}`);
   process.exit(1);
 }
-console.log("\nG-EXAMPLES: every code block is part of a running example, every live example runs, every template builds and draws.");
+console.log("\nexamples: every code block is part of a running example, every live example runs, every template builds and draws.");

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-DEP-ROUTE: on generated projects, in both orientations and after every
+ * The dep-route check: on generated projects, in both orientations and after every
  * packing — every arrow leaves and arrives at the edge its type calls for,
  * is orthogonal, is drawn under the items, and culling never drops a visible
  * arrow (while, per the control, it does drop invisible ones: culling is not
@@ -28,11 +28,11 @@ const failures = checkReport({
 
 const wc = (file) => codeOf(readFileSync(join(root, "packages", "web-component", "src", file), "utf8"));
 const config = wc("config.ts");
-// A path per look since G-PERF-GANTT: the element draws through dependencyPaths
+// A path per look since the perf-gantt check: the element draws through dependencyPaths
 // and routePath, and the under-items claim is tested on both drawings.
 for (const needle of ["routeDependencies(", "dependencyPaths(", "routePath(", "withDependencyLayer("]) {
   if (!config.includes(needle)) failures.push(`frameScene (web-component/src/config.ts) does not use: ${needle}`);
 }
 if (!wc("timeline.ts").includes("frameScene(config, state, result)")) failures.push("createTimeline does not draw through frameScene");
 if (!wc("ssr.ts").includes("frameScene(config, state, result)")) failures.push("SSR does not draw through frameScene");
-finish("G-DEP-ROUTE", failures);
+finish("dep-route", failures);

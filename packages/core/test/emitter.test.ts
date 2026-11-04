@@ -232,7 +232,7 @@ describe("Emitter", () => {
   });
 });
 
-describe("Emitter edge cases (E6, E7)", () => {
+describe("Emitter edge cases", () => {
   it("clear() during dispatch stops the listeners the event has not reached yet", () => {
     for (const scope of ["all", "type"] as const) {
       const emitter = new Emitter<{ ping: { n: number } }>();

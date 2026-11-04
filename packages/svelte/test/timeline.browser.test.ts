@@ -190,7 +190,7 @@ describe("<Timeline> — props and callbacks", () => {
   });
 });
 
-describe("<Timeline> — props written anew on every view change (D1)", () => {
+describe("<Timeline> — props written anew on every view change", () => {
   /** What a page that writes `editing={{ … }}` and keeps the view in its state does: every view change hands a new `editing` object. */
   async function rerendering(): Promise<{ props: Record<string, unknown>; timeline: TimelineInstance; writes: () => number }> {
     let writes = 0;

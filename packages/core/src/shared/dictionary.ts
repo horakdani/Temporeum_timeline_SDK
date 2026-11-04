@@ -13,8 +13,8 @@
  * (`{ one: "{count} item", other: "{count} items" }`); see `fill`. Dates and
  * numbers are never in a phrase: they are the locale's, from `Intl`.
  *
- * In `src/shared/` since P32: outside both entry points' own directories, so that neither
- * carries the other's own code (G-TREESHAKE): `/words` re-exports it, and so
+ * In `src/shared/`: outside both entry points' own directories, so that neither
+ * carries the other's own code (the tree-shaking check): `/words` re-exports it, and so
  * does `/intl`, which adds what another language, direction or calendar
  * needs.
  */

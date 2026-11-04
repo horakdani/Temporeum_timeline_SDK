@@ -12,7 +12,7 @@ import { reactiveProps } from "./props.svelte.js";
 registerPlugin(itemsPlugin);
 
 /**
- * The `item` snippet (W11 of the quality round): React has `renderItem`,
+ * The `item` snippet: React has `renderItem`,
  * Vue the `#item` slot, and Svelte had neither — its content for an item was
  * a `template` string or nothing. Each drawn item's content is now the
  * snippet's, in the box over the item, and it stays mounted while the item
@@ -33,7 +33,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-describe("<Timeline> item snippet (W11)", () => {
+describe("<Timeline> item snippet", () => {
   it("renders each drawn item's content in the box over it, and keeps it mounted through a zoom", async () => {
     let mounts = 0;
     const item = createRawSnippet((get: () => Item) => ({
@@ -64,7 +64,7 @@ describe("<Timeline> item snippet (W11)", () => {
   });
 });
 
-describe("a client-only mount writes no HTML (W13)", () => {
+describe("a client-only mount writes no HTML", () => {
   it("computes no server drawing and sets no innerHTML: the instance draws with the DOM", async () => {
     const descriptor = Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML") as PropertyDescriptor;
     let writes = 0;

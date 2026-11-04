@@ -11,7 +11,7 @@ import { Timeline } from "../src/index.js";
 import type { TimelineInstance } from "../src/index.js";
 
 /**
- * The adapter under Trusted Types (C4). The server's drawing reaches the
+ * The adapter under Trusted Types. The server's drawing reaches the
  * page as markup; on the client React compares nothing against it while
  * hydrating, and a client-only render writes no HTML at all — so neither
  * hands a string to `innerHTML`, which this page's policy would refuse.

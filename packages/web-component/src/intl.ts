@@ -9,7 +9,7 @@
  *     import { intlPlugin } from "@temporeum/timeline-element/intl";
  *     registerPlugin(intlPlugin);
  *
- * Its own entry point since P30: these are the core's `/intl`, and a
+ * Its own entry point: these are the core's `/intl`, and a
  * timeline in English, left to right, on the Gregorian axis does not
  * download it. The English words themselves are not here — they are the
  * base's (`@temporeum/timeline-core/words`), and the Gantt chart, the

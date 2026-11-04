@@ -1,5 +1,5 @@
 /**
- * G-RTL: right to left is the mirror image of left to right — in both
+ * The rtl check: right to left is the mirror image of left to right — in both
  * orientations, for what is drawn, what a pointer and a wheel do, and what
  * the arrows do — and the visual matrix's right-to-left cases are the
  * committed fixtures.

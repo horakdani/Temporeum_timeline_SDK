@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-TIME-BARS: a custom time bar can be moved by gesture and by keyboard, and the same move emits the same event (moveTimeBar on both paths). Statically: the element's tools layer routes both the drag (dragTimeBarTime) and the key (timeBarKeyTime) into host.moveBar, and the instance emits timeBarMoved.
+ * The time-bars check: a custom time bar can be moved by gesture and by keyboard, and the same move emits the same event (moveTimeBar on both paths). Statically: the element's tools layer routes both the drag (dragTimeBarTime) and the key (timeBarKeyTime) into host.moveBar, and the instance emits timeBarMoved.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -32,4 +32,4 @@ for (const needle of ["dragTimeBarTime(", "timeBarKeyTime(", "host.moveBar("]) i
 const timeline = codeOf(readFileSync(join(root, "packages", "web-component", "src", "timeline.ts"), "utf8"));
 if (!timeline.includes('emitter.emit("timeBarMoved"')) failures.push("the instance does not emit a timeBarMoved event");
 
-finish("G-TIME-BARS", failures);
+finish("time-bars", failures);

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-ASYNC: proves that during fast zooming the results of cancelled requests
+ * The async check: proves that during fast zooming the results of cancelled requests
  * NEVER reach the canvas.
  *
  * Two independent proofs, both required — a missing report is a FAILURE:
@@ -196,8 +196,8 @@ if (!page.includes('from "/core/index.mjs"') || !page.includes("createItemLoader
 
 for (const note of notes) console.log(`  · ${note}`);
 if (failures.length > 0) {
-  console.error("\nG-ASYNC FAILED:");
+  console.error("\nasync FAILED:");
   for (const failure of failures) console.error(`  ✗ ${failure}`);
   process.exit(1);
 }
-console.log("\nG-ASYNC: during fast zoom no item of a cancelled request reached the canvas — neither in the core nor in a real browser, and both checkers can see (the negative controls leak).");
+console.log("\nasync: during fast zoom no item of a cancelled request reached the canvas — neither in the core nor in a real browser, and both checkers can see (the negative controls leak).");

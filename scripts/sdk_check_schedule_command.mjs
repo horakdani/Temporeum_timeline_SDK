@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-SCHEDULE-CMD: auto-scheduling is a single command, its inverse restores
+ * The schedule-cmd check: auto-scheduling is a single command, its inverse restores
  * the exact starting point, and the core saves nothing while scheduling.
  *
  * At runtime: one 'schedule' command, covering only the moved tasks, with an
@@ -32,4 +32,4 @@ for (const file of readdirSync(dir).filter((name) => name.endsWith(".ts"))) {
   for (const needle of FORBIDDEN) if (text.includes(needle)) failures.push(`/schedule (${file}) reaches out: ${needle}`);
 }
 if (!code.includes('createCommand("schedule"')) failures.push("scheduleCommand does not build the 'schedule' command with the core's createCommand");
-finish("G-SCHEDULE-CMD", failures);
+finish("schedule-cmd", failures);

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-COMPAT: the vis-timeline documentation's examples, run through the
+ * The compat check: the vis-timeline documentation's examples, run through the
  * compatibility layer, put the same items at the same time and in the same
  * group.
  *
@@ -57,4 +57,4 @@ for (const file of ["index.ts", "convert.ts", "time.ts"]) {
 }
 const entries = JSON.parse(readFileSync(join(core, "entries.json"), "utf8")).entries;
 if (!entries.some((entry) => entry.name === "vis-compat" && entry.input === "src/vis-compat/index.ts")) failures.push("/vis-compat is not among the entry points (entries.json)");
-finish("G-COMPAT", failures, notes);
+finish("compat", failures, notes);

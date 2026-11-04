@@ -4,7 +4,7 @@ import { ganttPlugin } from "../src/gantt.js";
 import type * as Plugins from "../src/plugins.js";
 
 /**
- * One plugin registry for the page (W4 of the quality round, D5). A page can
+ * One plugin registry for the page. A page can
  * hold two copies of the element's module — the ESM and the CJS build of one
  * version, or two bundles that did not dedupe it — and a plugin registered
  * through one copy has to be there for a timeline the other makes.

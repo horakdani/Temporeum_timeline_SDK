@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-TOOLTIP: the tooltip appears on mouse hover, on focus and on long press,
+ * The tooltip check: the tooltip appears on mouse hover, on focus and on long press,
  * disappears on Esc (focus and selection do not change), and the pointer can
  * be moved onto it — WCAG 1.4.13: dismissible, hoverable, persistent.
  *
@@ -58,4 +58,4 @@ if (!existsSync(logFile)) {
   if (!(Number(log.hoverable?.heldMs) >= 1000)) failures.push("persistence is not measured (at least 1 s on the tooltip)");
   notes.push(`hover: ${JSON.stringify(log.hover?.text ?? "")}; focus: ${String(log.focus?.focused)}; long press: ${JSON.stringify(log.longPress?.text ?? "")}`);
 }
-finish("G-TOOLTIP", failures, notes);
+finish("tooltip", failures, notes);

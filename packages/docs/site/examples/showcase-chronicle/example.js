@@ -496,7 +496,7 @@ function setPlaying(on) {
   else story.next();
 }
 play.addEventListener("click", () => setPlaying(!playing));
-// On a desktop the wheel zooms, around the pointer. The SDK reads ctrl + wheel as a zoom (that is what a pinch is), so a plain
+// On a desktop the wheel zooms, around the pointer. The timeline reads ctrl + wheel as a zoom (that is what a pinch is), so a plain
 // wheel step is handed back to it as one; a sideways swipe and shift + wheel stay a pan.
 let relaying = false;
 host.addEventListener(

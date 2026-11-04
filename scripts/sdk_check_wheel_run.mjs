@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-WHEEL-RUN: proves that a run of wheel steps is ONE gesture in the
+ * The wheel-run check: proves that a run of wheel steps is ONE gesture in the
  * machine — on generated runs, with the browser binding's single wake-up
  * timer, the way attachInput drives it.
  *
@@ -79,5 +79,5 @@ if (control !== undefined) {
 
 for (const note of notes) console.log(`  ok    ${note}`);
 for (const failure of failures) console.log(`  FAIL  ${failure}`);
-console.log(failures.length === 0 ? "G-WHEEL-RUN: passed" : "G-WHEEL-RUN: FAILED");
+console.log(failures.length === 0 ? "wheel-run: passed" : "wheel-run: FAILED");
 process.exit(failures.length === 0 ? 0 : 1);

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { adoptCss, writeAttr } from "../src/css.js";
 import { trustedHtml, TRUSTED_TYPES_POLICY } from "../src/trusted.js";
 
-/** The two helpers under C1–C4, at their edges. */
+/** The two style helpers for a strict CSP, at their edges. */
 
 afterEach(() => {
   document.body.replaceChildren();

@@ -13,7 +13,7 @@
  * both terms with `import *`, with the same meter: a rolldown bundle of the
  * shipped ESM, minify, gzip 9. It prints the standalone size too, for information.
  *
- * Why not the standalone size (a budget decision recorded in sdk/state.json):
+ * Why not the standalone size (a budget decision):
  * in the chunked build the /dom code is byte-identical to the earlier one
  * (9712 B minified), only the order of the functions differs, and that makes
  * the gzip 41 B larger — the standalone measurement measured the order, not

@@ -255,7 +255,7 @@ describe("eventNameOf", () => {
   });
 });
 
-describe("the server's markup under a strict Content-Security-Policy (C2)", () => {
+describe("the server's markup under a strict Content-Security-Policy", () => {
   it("gives every <style> the nonce, puts it on the element, and keeps it out of the JSON", async () => {
     const { registerPlugin } = await import("../src/index.js");
     const { groupsPlugin } = await import("../src/groups.js");

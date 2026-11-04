@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* global window, document -- the page.evaluate callbacks run on the page */
 /**
- * G-MIGRATION (now covering all three guides): every mapping row of the
+ * The migration check: every mapping row of the
  * vis-timeline, frappe-gantt and react-calendar-timeline guides is a running
  * example, and the "not yet" rows really are absent from the configuration —
  * an invented mapping FAILS.
@@ -90,7 +90,7 @@ const HARNESSES = { "vis-timeline": HARNESS_ITEMS, "react-calendar-timeline": HA
  * The harness registers every plugin, as a migrating page would: the
  * source library draws everything, and the rows' examples use the Gantt, the
  * group tree, the time tools, the item kinds and the dictionary too. The
- * error without a plugin is measured by G-PLUGINS and G-PLUGINS-2, not here.
+ * error without a plugin is measured by the plugins check and the plugins-2 check, not here.
  */
 const PLUGINS = ["gantt", "resources", "export", "tools", "groups", "items", "intl"];
 const REGISTER = [
@@ -331,5 +331,5 @@ await runInBrowser();
 
 for (const note of notes) console.log(`  ok    ${note}`);
 for (const failure of failures) console.log(`  FAIL  ${failure}`);
-console.log(failures.length === 0 ? "G-MIGRATION: passed" : `G-MIGRATION: FAILED (${String(failures.length)} failure(s))`);
+console.log(failures.length === 0 ? "migration: passed" : `migration: FAILED (${String(failures.length)} failure(s))`);
 process.exit(failures.length === 0 ? 0 : 1);

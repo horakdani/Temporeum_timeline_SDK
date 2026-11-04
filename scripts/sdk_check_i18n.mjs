@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-I18N: in a pseudo-locale there is not a single hard-coded string; in at
+ * The i18n check: in a pseudo-locale there is not a single hard-coded string; in at
  * least five locales and three non-Gregorian calendars the ticks align
  * with the calendar's units.
  *
@@ -17,10 +17,10 @@
  *     matches the built-in one letter for letter (english-equal); plurals
  *     follow the locale's rules (plurals); with hidden dates too
  *     (hidden-calendar);
- *  2. the element's browser report (p26.browser.test.ts): the toolbar, the
+ *  2. the element's browser report (intl.browser.test.ts): the toolbar, the
  *     group tree, the task table and the waiting list also take their words
  *     from the dictionary (pseudo-element). This check runs it itself, on a
- *     fresh build — it runs before G-ALL, and a stale dist would be a false
+ *     fresh build — it runs before the full suite (`npm run test:all`), and a stale dist would be a false
  *     green.
  */
 import { execFileSync } from "node:child_process";
@@ -47,10 +47,10 @@ rmSync(elementReport, { force: true });
 try {
   execFileSync("npm", ["run", "--silent", "build", "-w", "@temporeum/timeline-core"], { cwd: root, stdio: "pipe" });
   execFileSync("npm", ["run", "--silent", "build", "-w", "@temporeum/timeline-element"], { cwd: root, stdio: "pipe" });
-  execFileSync("npx", ["vitest", "run", "--project", "browser", "test/p26.browser.test.ts", "--reporter=json", `--outputFile.json=${elementReport}`], { cwd: element, stdio: "pipe" });
+  execFileSync("npx", ["vitest", "run", "--project", "browser", "test/intl.browser.test.ts", "--reporter=json", `--outputFile.json=${elementReport}`], { cwd: element, stdio: "pipe" });
 } catch (error) {
   if (!existsSync(elementReport)) failures.push(`the element's i18n suite did not run: ${String(error).split("\n")[0]}`);
 }
 failures.push(...checkReport({ file: elementReport, label: "element-i18n", minTests: 5, claims: ["pseudo-element", "rtl-element", "calendar-element"] }));
 
-finish("G-I18N", failures);
+finish("i18n", failures);

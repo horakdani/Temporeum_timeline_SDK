@@ -1,7 +1,7 @@
 # @temporeum/timeline-svelte
 
 The timeline as a Svelte 5 component, built on the shared instance of
-[`@temporeum/timeline-element`](../web-component/README.md).
+[`@temporeum/timeline-element`](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/web-component#readme).
 
 ```bash
 npm install @temporeum/timeline-svelte
@@ -15,6 +15,17 @@ libraries do: your compiler builds it with the rest of your app.
 <script>
   import { Timeline, timelineState } from "@temporeum/timeline-svelte";
 
+  const DAY = 86_400_000;
+  const t = Date.UTC(2026, 2, 2);
+  const items = [
+    { id: "design", label: "Design", laneId: "work", start: t, end: t + 7 * DAY },
+    { id: "launch", label: "Launch", laneId: "ship", start: t + 25 * DAY, end: t + 32 * DAY },
+  ];
+  const lanes = [
+    { id: "work", label: "Work" },
+    { id: "ship", label: "Shipping" },
+  ];
+
   let timeline = $state(null);
   const selected = $derived(timelineState(timeline, (state) => state.selectedIds));
   let log = $state("Drag an item.");
@@ -27,17 +38,16 @@ libraries do: your compiler builds it with the rest of your app.
     height={320}
     ariaLabel="Release plan"
     editing={{ enabled: true, snapMs: DAY }}
-    onItemMoved={({ item, to }) => (log = `${item.label} moved to ${new Date(to.start).toDateString()}`)}
+    onItemMoved={({ item, to }) => (log = `${item.label} moved to ${new Date(to.start ?? item.start).toDateString()}`)}
     bind:timeline
   />
   <p aria-live="polite">{log} {$selected?.length ?? 0} selected.</p>
 </main>
 ```
 
-The whole project, with Vite, is the Svelte template
-(`packages/docs/templates/svelte`).
+The whole project, with Vite, is the [Svelte template](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/docs/templates/svelte).
 
-Every [`TimelineConfig`](../web-component/src/config.ts) field is a prop,
+Every [`TimelineConfig`](https://horakdani.github.io/Temporeum_timeline_SDK/reference/api.html#configuration) field is a prop,
 and every instance event an `on…` prop (`onItemMoved`, `onSelectionChanged`,
 `onViewportChanged`, …); a new callback does not resubscribe, the latest one
 is what runs. `bind:timeline` hands over the live instance, and `null` after
@@ -75,6 +85,13 @@ again. Nothing else is needed.
 The drawing is a `{@html}` of one string, computed once — on the server, and
 again on the client: while hydrating, Svelte takes the server's nodes for it,
 and since the string never changes, Svelte never writes it again.
+
+## Documentation
+
+Guides, recipes and the API reference with live examples are on the
+[docs site](https://horakdani.github.io/Temporeum_timeline_SDK/) — the Svelte page is [Frameworks](https://horakdani.github.io/Temporeum_timeline_SDK/frameworks.html). Every
+code block in this README is checked against a running template in CI
+(`npm run test:examples -w @temporeum/timeline-docs`).
 
 ## Licence
 

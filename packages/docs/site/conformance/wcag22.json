@@ -400,7 +400,7 @@
       "remarks": "Rolling mode, the one thing that moves on its own, stops as soon as the reader pans or zooms, and resumes only on `follow()`; transitions are short and arrive in one frame under reduced motion.",
       "tests": [
         {
-          "file": "packages/web-component/test/p24.browser.test.ts",
+          "file": "packages/web-component/test/time-tools.browser.test.ts",
           "test": "keeps now in the view, lets go when the reader pans"
         },
         {
@@ -826,7 +826,7 @@
       "remarks": "Changes the reader did not cause by focus are announced politely: the calendar's period, the tools' announcements, through a polite live region.",
       "tests": [
         {
-          "file": "packages/web-component/test/p27.browser.test.ts",
+          "file": "packages/web-component/test/calendar-view.browser.test.ts",
           "test": "the period keys and the buttons page the same way, and say so"
         }
       ]

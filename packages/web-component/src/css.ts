@@ -1,5 +1,5 @@
 /**
- * Styles under a strict Content-Security-Policy (C1, C3).
+ * Styles under a strict Content-Security-Policy.
  *
  * A `style-src` without `'unsafe-inline'` blocks the text of a `<style>` and
  * a `style` attribute written with `setAttribute`, and allows the two things

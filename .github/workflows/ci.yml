@@ -51,6 +51,8 @@ jobs:
         run: npm run test:coverage -w packages/core
       - name: size budgets
         run: npm run size -w packages/core
+      - name: tree-shaking and entry-point isolation
+        run: npm run test:treeshake -w packages/core
       - name: zero runtime dependencies
         run: npm run deps
 
@@ -86,6 +88,10 @@ jobs:
         run: node scripts/sdk_check_exports.mjs
       - name: every public name documented, no positional booleans
         run: node scripts/sdk_check_api_docs.mjs
+      - name: no core option dropped silently, no gesture-only capability
+        run: |
+          npm run test:passthrough -w @temporeum/timeline-element
+          npm run test:gesture-parity -w @temporeum/timeline-element
 
   audit:
     name: audit

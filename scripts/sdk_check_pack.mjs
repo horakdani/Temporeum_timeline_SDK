@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-PACK: `npm publish --dry-run` of the packages to be released passes, and
+ * The pack check: `npm publish --dry-run` of the packages to be released passes, and
  * what the registry would receive is exactly what it should be.
  *
  * Per package (core, element, react, vue, svelte, angular — the docs package
@@ -21,8 +21,7 @@
  *     tarball; repository/homepage/bugs as in packages/docs/site/project.json,
  *     repository.directory the package's own directory; publishConfig.access
  *     "public" and publishConfig.provenance true; the release workflow
- *     (.github/workflows/release.yml in the standalone repo, under
- *     sdk/standalone/ here) publishes with the `id-token: write`
+ *     (.github/workflows/release.yml) publishes with the `id-token: write`
  *     permission and with `--provenance`.
  *  5. NEGATIVE CONTROL: a copy of a manifest with a prerelease version, and
  *     a `files` that also packs a source file, FAIL with the same measure.
@@ -44,7 +43,7 @@
  *     must load without errors). The Svelte and Angular adapters are
  *     ESM-only, and their source is processed by the framework's compiler:
  *     for them the probe is the resolution (`import.meta.resolve`) and the
- *     file existing, while loading is up to G-SSR and G-TEMPLATES.
+ *     file existing, while loading is up to the ssr check and the templates check.
  *  9. NEGATIVE CONTROL for 6-7: an exports branch pointing to a file that
  *     does not exist, a branch without types, and a workflow that leaves out
  *     a package FAIL.
@@ -56,7 +55,7 @@ import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -97,6 +96,31 @@ function judgeFiles(files, allowed) {
     if (ALWAYS.test(path)) continue;
     if (FORBIDDEN.test(path)) problems.push(`forbidden file in the tarball: ${path}`);
     else if (!allowed.some((entry) => path === entry || path.startsWith(`${entry.replace(/\/$/, "")}/`))) problems.push(`file outside files: ${path}`);
+  }
+  return problems;
+}
+
+/**
+ * The packed source maps: each source a map names is either in the map
+ * (`sourcesContent`) or in the tarball. A map that points at a file the
+ * tarball does not carry sends an editor's "go to definition" nowhere.
+ */
+function judgeMaps(dir, files) {
+  const problems = [];
+  const packed = new Set(files);
+  for (const path of files.filter((file) => file.endsWith(".map"))) {
+    let map;
+    try {
+      map = JSON.parse(readFileSync(join(dir, path), "utf8"));
+    } catch {
+      problems.push(`${path}: not a readable source map`);
+      continue;
+    }
+    for (const [index, source] of (map.sources ?? []).entries()) {
+      if (typeof map.sourcesContent?.[index] === "string") continue;
+      const target = posix.normalize(posix.join(posix.dirname(path), map.sourceRoot ?? "", source));
+      if (!packed.has(target)) problems.push(`${path}: names ${source}, which is neither in the map nor in the tarball`);
+    }
   }
   return problems;
 }
@@ -212,6 +236,8 @@ for (const [index, pkg] of PACKAGES.entries()) {
   failures.push(...judgeExports(manifest, run.files));
   const fileProblems = judgeFiles(run.files, manifest.files ?? []);
   failures.push(...fileProblems.map((problem) => `${pkg.name}: ${problem}`));
+  const mapProblems = judgeMaps(join(repo, "packages", pkg.dir), run.files);
+  failures.push(...mapProblems.map((problem) => `${pkg.name}: ${problem}`));
   failures.push(...judgeManifest(manifest, pkg.dir));
   failures.push(...judgePeers(manifest, sourcesOf(pkg.dir)));
   if (fileProblems.length === 0) notes.push(`${pkg.name}@${run.version}: ${String(run.files.length)} files, all from files`);
@@ -220,9 +246,10 @@ failures.push(...judgeVersions(manifests));
 const versionTs = readFileSync(join(repo, "packages", "core", "src", "version.ts"), "utf8").match(/VERSION = "([^"]+)"/)?.[1];
 if (versionTs !== manifests[0].version) failures.push(`the VERSION constant is "${String(versionTs)}", the manifest says "${manifests[0].version}"`);
 
-// Under sdk/standalone/ in the monorepo, at the root in the standalone repo.
-const workflow = [join(repo, ".github", "workflows", "release.yml"), join(repo, "sdk", "standalone", ".github", "workflows", "release.yml")].find((path) => existsSync(path) && readFileSync(path, "utf8").includes("npm publish"));
-if (workflow === undefined) failures.push("no release workflow (.github/workflows/release.yml or sdk/standalone/.github/workflows/release.yml)");
+const workflow = [
+  join(repo, ".github", "workflows", "release.yml"),
+].find((path) => existsSync(path) && readFileSync(path, "utf8").includes("npm publish"));
+if (workflow === undefined) failures.push("no release workflow that runs npm publish (.github/workflows/release.yml)");
 else {
   const text = readFileSync(workflow, "utf8");
   if (!/id-token:\s*write/.test(text)) failures.push("the release workflow lacks id-token: write — it would publish without provenance");
@@ -337,6 +364,13 @@ try {
   const leak = judgeFiles(dryRun(scratch).files, ["dist"]);
   if (leak.length === 0) failures.push("NEGATIVE CONTROL: a files that packs the source does NOT fail");
   else notes.push(`the negative control fails, as it should — source in the tarball: ${leak[0]}`);
+  // a declaration map whose source is not packed, and one that carries it
+  mkdirSync(join(scratch, "dist"), { recursive: true });
+  writeFileSync(join(scratch, "dist", "a.d.ts.map"), JSON.stringify({ version: 3, sources: ["../src/a.ts"], mappings: "" }));
+  writeFileSync(join(scratch, "dist", "b.js.map"), JSON.stringify({ version: 3, sources: ["../src/b.ts"], sourcesContent: ["export {};"], mappings: "" }));
+  const maps = judgeMaps(scratch, ["dist/a.d.ts.map", "dist/b.js.map"]);
+  if (maps.length !== 1 || !maps[0].startsWith("dist/a.d.ts.map")) failures.push(`NEGATIVE CONTROL: the source-map measure is blind (${maps.join("; ") || "no problems"})`);
+  else notes.push(`the negative control fails, as it should — ${maps[0]}`);
 } catch (error) {
   failures.push(`NEGATIVE CONTROL did not run — ${String(error.message).split("\n")[0]}`);
 } finally {
@@ -345,5 +379,5 @@ try {
 
 for (const note of notes) console.log(`  ok    ${note}`);
 for (const failure of failures) console.log(`  FAIL  ${failure}`);
-console.log(failures.length === 0 ? "G-PACK: passed" : `G-PACK: FAILED (${String(failures.length)} failure(s))`);
+console.log(failures.length === 0 ? "pack: passed" : `pack: FAILED (${String(failures.length)} failure(s))`);
 process.exit(failures.length === 0 ? 0 : 1);

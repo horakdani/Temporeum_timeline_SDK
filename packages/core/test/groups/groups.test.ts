@@ -1,5 +1,5 @@
 /**
- * G-GROUPS: nested groups, generated trees, both orientations.
+ * The groups check: nested groups, generated trees, both orientations.
  *
  * Three claims, each on generated group trees with items spread over them:
  *

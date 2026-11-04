@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-RTL: in RTL, horizontal time flows right to left, gestures and keys
+ * The rtl check: in RTL, horizontal time flows right to left, gestures and keys
  * work mirrored, and the visual matrix's RTL cases pass.
  *
  * The vitest report (test/rtl/) proves in both orientations: the mirrored
@@ -54,4 +54,4 @@ for (const needle of ["xOf(event.clientX, box)", "-wheelEvent.deltaX", "MIRRORED
   if (!attach.includes(needle)) failures.push(`missing from attachInput: ${needle}`);
 }
 
-finish("G-RTL", failures);
+finish("rtl", failures);

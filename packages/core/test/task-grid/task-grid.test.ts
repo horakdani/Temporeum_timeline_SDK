@@ -1,5 +1,5 @@
 /**
- * G-TASK-GRID: the task grid's rows line up with the lanes, and only the
+ * The task-grid check: the task grid's rows line up with the lanes, and only the
  * rows in view are made.
  *
  * Three claims:

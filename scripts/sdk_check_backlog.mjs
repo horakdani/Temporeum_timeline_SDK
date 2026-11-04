@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-BACKLOG: an unscheduled task reaches the canvas by gesture and by
+ * The backlog check: an unscheduled task reaches the canvas by gesture and by
  * keyboard alike, with the same command.
  *
  * At runtime (in the core): the gesture's target (the time and lane under the
@@ -73,4 +73,4 @@ for (const [code, head, call, message] of expectations) {
 for (const needle of ["addCommand(", "createCommand(", "applyItemPatches("]) {
   if (backlog.includes(needle)) failures.push(`the backlog builds the command itself (${needle})`);
 }
-finish("G-BACKLOG", failures);
+finish("backlog", failures);

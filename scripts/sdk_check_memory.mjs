@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-MEMORY: proves that after a long pan the node count does not grow
+ * The memory check: proves that after a long pan the node count does not grow
  * monotonically — that is, that the pool REALLY recycles, and does not merely
  * exist.
  *
@@ -180,7 +180,7 @@ for (const failure of failures) {
   console.log(`  FAIL  ${failure}`);
 }
 if (failures.length > 0) {
-  console.log(`G-MEMORY: FAILED (${String(failures.length)} failure(s))`);
+  console.log(`memory: FAILED (${String(failures.length)} failure(s))`);
   process.exit(1);
 }
-console.log("G-MEMORY: passed");
+console.log("memory: passed");

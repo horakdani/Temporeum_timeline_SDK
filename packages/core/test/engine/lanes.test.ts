@@ -1,4 +1,4 @@
-/** Items and lanes that do not line up (E2, E3). */
+/** Items and lanes that do not line up. */
 import { describe, expect, it } from "vitest";
 
 import { createHitTester } from "../../src/editing.js";
@@ -19,7 +19,7 @@ const ITEMS: readonly Item[] = [
   { id: "no-lane", start: START + 8 * DAY, end: START + 9 * DAY },
 ];
 
-describe("items outside the declared lanes (E2)", () => {
+describe("items outside the declared lanes", () => {
   it("are laid out in a default lane after the declared ones", () => {
     const layout = layoutItems(ITEMS, { lanes: LANES });
     expect(layout.items.map((placed) => placed.item.id).sort()).toEqual(["declared", "no-lane", "unknown-lane"]);
@@ -58,7 +58,7 @@ describe("items outside the declared lanes (E2)", () => {
   });
 });
 
-describe("a drag released between lanes or past the last one (E3)", () => {
+describe("a drag released between lanes or past the last one", () => {
   const items: readonly Item[] = [
     { id: "a", start: START + 2 * DAY, end: START + 6 * DAY, laneId: "plan" },
     { id: "b", start: START + 4 * DAY, end: START + 8 * DAY, laneId: "build" },
@@ -112,7 +112,7 @@ describe("a drag released between lanes or past the last one (E3)", () => {
   });
 });
 
-describe("the axis band (E8)", () => {
+describe("the axis band", () => {
   const items: readonly Item[] = [
     { id: "a", start: START + 2 * DAY, end: START + 6 * DAY, laneId: "plan" },
     { id: "b", start: START + 4 * DAY, end: START + 8 * DAY, laneId: "build" },
@@ -150,7 +150,7 @@ describe("the axis band (E8)", () => {
   });
 });
 
-describe("the axis band and a finger (E8)", () => {
+describe("the axis band and a finger", () => {
   it("still lets a finger in the band reach an item drawn right below it", () => {
     const layout = layoutItems([{ id: "a", start: START + 2 * DAY, end: START + 6 * DAY, laneId: "plan" }], { lanes: LANES });
     const scale = createTimeScale(DOMAIN, 600);
@@ -160,7 +160,7 @@ describe("the axis band and a finger (E8)", () => {
   });
 });
 
-describe("a container that collapses to 0 px mid-gesture (E10)", () => {
+describe("a container that collapses to 0 px mid-gesture", () => {
   const touch = (pointerId: number, phase: "down" | "move" | "up" | "cancel", x: number, time: number) =>
     ({ pointerId, phase, x, y: 10, time, pointerType: "touch" }) as const;
 

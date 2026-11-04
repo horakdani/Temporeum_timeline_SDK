@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-GESTURE: proves that the gesture suite really ran, and that what it
+ * The gesture check: proves that the gesture suite really ran, and that what it
  * measures is the REAL pipeline.
  *
  * The check's `proof` field claims four things: pan, pinch, pointercancel,
@@ -169,8 +169,8 @@ if (failures.length > 0) {
   for (const failure of failures) {
     console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-GESTURE FAILED: ${String(failures.length)} problems.`);
+  console.error(`\ngesture FAILED: ${String(failures.length)} problems.`);
   process.exit(1);
 }
 
-console.log("\nG-GESTURE passed: synthetic pointer sequences drive the SINGLE pipeline.");
+console.log("\ngesture passed: synthetic pointer sequences drive the SINGLE pipeline.");

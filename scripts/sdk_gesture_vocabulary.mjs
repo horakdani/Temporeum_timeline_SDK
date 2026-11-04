@@ -1,7 +1,7 @@
 /**
  * The gesture vocabulary — derived from the input machine's OWN types.
  *
- * Two checks share it: G-NO-GESTURE-ONLY (static) and G-KEYBOARD (runtime).
+ * Two checks share it: the no-gesture-only check (static) and the keyboard check (runtime).
  * Both ask the same question — "is there a capability that can only be
  * reached with a gesture?" —, and the question is only honest if the list of
  * capabilities is NOT a hand-written list. A hand-written list is worth
@@ -290,12 +290,12 @@ export const ENTRY_ROUTES = {
   "group.reorder": { file: "layer", gesture: ["dropPosition(", "moveGroupCommand("], key: ["groupKeyStep("], shared: "host.command(" },
   "item.add": { file: "timeline", gesture: ["addAt(addTargetAt(point"], key: ["addAt(addTargetFromFocus("], shared: "addAt(" },
   "item.remove": { file: "timeline", gesture: ['closest("[data-tl-remove]")'], key: ['action === "remove"'], shared: "commitRemove(" },
-  "item.drop": { file: "timeline", gesture: ["commitAdd(itemFromDrop(items, payload, target))"], key: ["dropItem(payload)"], shared: "commitAdd(" },
+  "item.drop": { file: "timeline", gesture: ["commitAdd(itemFromDrop(items, payload, target, newItemLabel()))"], key: ["dropItem(payload)"], shared: "commitAdd(" },
   "grid.open": { file: "grid", gesture: ["open(index)"], key: ["open(focusedIndex)"], shared: "open(" },
   // A backlog row gets onto the canvas by dragging (one pointer path for
   // mouse, pen and finger) and by Enter/Space; both drop from the same
   // payloadOf, and in the instance both run into the same commitAdd (the
-  // G-BACKLOG check reads that from timeline.ts).
+  // the backlog check reads that from timeline.ts).
   "backlog.place": { file: "backlog", gesture: ["timeline.dropItemAt(payloadOf(task)"], key: ["timeline.dropItem(payloadOf(task))"], shared: "payloadOf(task)" },
   // The time tools. Every gesture and its key run into the same host
   // function (host.moveBar, host.setDomain, commitRange); the tooltip appears

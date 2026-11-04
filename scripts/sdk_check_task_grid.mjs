@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-TASK-GRID: after every scroll and collapse the grid rows line up with
+ * The task-grid check: after every scroll and collapse the grid rows line up with
  * the lanes (measured against the lanes of the rendered frame), and on
  * 10 000 rows too it is virtualised: only the rows in view plus the overscan
  * go into the DOM.
@@ -28,4 +28,4 @@ const grid = codeOf(readFileSync(join(root, "packages", "web-component", "src", 
 for (const needle of ["taskGridRows(", "resolveGridKey(", "gridKeyStep(", '"grid"', '"aria-rowcount"', '"aria-rowindex"']) {
   if (!grid.includes(needle)) failures.push(`the task grid (web-component/src/task-grid.ts) does not use: ${needle}`);
 }
-finish("G-TASK-GRID", failures);
+finish("task-grid", failures);

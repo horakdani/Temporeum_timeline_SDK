@@ -154,7 +154,7 @@ describe("the stylesheet the PDF reads", () => {
     expect(parseStyleSheet("@media print{.a{fill:red}").rules).toEqual([]);
   });
 
-  it("takes the tokens of a root rule with an attribute only where the scene's root has it (M7)", () => {
+  it("takes the tokens of a root rule with an attribute only where the scene's root has it", () => {
     const frame = (theme: "auto" | "light" | "dark", instanceId?: string) =>
       renderTimeline({ items: [{ id: "a", start: T0, end: T0 + DAY }], domain: [T0, T0 + 3 * DAY], width: 400, height: 120, theme, ...(instanceId === undefined ? {} : { instanceId }) }).scene;
     for (const scope of [undefined, "one"]) {

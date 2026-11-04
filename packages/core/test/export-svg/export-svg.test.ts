@@ -1,5 +1,5 @@
 /**
- * G-EXPORT-SVG: the standalone SVG a frame exports to is, pixel for pixel,
+ * The export-svg check: the standalone SVG a frame exports to is, pixel for pixel,
  * the frame on screen — in every case of the visual matrix (three widths,
  * two orientations, two themes).
  *
@@ -141,7 +141,7 @@ describe("the standalone SVG", () => {
     expect(standaloneSvg({ tag: "svg" }, { title: "t" })).toContain("<title>t</title>");
   });
 
-  it("leaves out the characters XML does not allow, so any label still makes a document a browser parses (M1)", async () => {
+  it("leaves out the characters XML does not allow, so any label still makes a document a browser parses", async () => {
     const scene: SceneElement = {
       tag: "svg",
       attrs: { xmlns: "http://www.w3.org/2000/svg", width: 10, height: 10, "data-tl-lane": "\u0000l:a" },

@@ -5,7 +5,7 @@ Thank you for considering a contribution. This file explains how the repository 
 ## Before you write code
 
 - **Bugs:** open an issue with a minimal reproduction. A failing example in a fork of one of the [starter templates](packages/docs/templates) is ideal. Say which package and version you use, and which browser.
-- **Features:** open an issue or a discussion before a pull request. The public API follows semantic versioning ([stability policy](packages/docs/site/pages/stability.md)), so every new option has to be kept until the next major version. We would rather agree on its shape first.
+- **Features:** open an issue or a discussion before a pull request. The public API follows semantic versioning ([stability policy](https://horakdani.github.io/Temporeum_timeline_SDK/stability.html)), so every new option has to be kept until the next major version. We would rather agree on its shape first.
 - **Security issues:** never in a public issue. See [SECURITY.md](SECURITY.md).
 
 ## Setting up
@@ -26,15 +26,19 @@ npm run test:examples -w @temporeum/timeline-docs
 npm run test:a11y -w @temporeum/timeline-docs
 ```
 
+### When a visual fixture fails
+
+`npm run test:visual -w packages/core` and `npm run test:rtl -w packages/core` compare the drawing with committed SVG files byte for byte. If your change alters the drawing on purpose, write the fixtures again (`node scripts/sdk_visual_snapshots.mjs`, `node scripts/sdk_rtl_snapshots.mjs`), look at them (`node scripts/sdk_visual_snapshots.mjs --html /tmp/visual.html` puts every one on a page), and commit them with the change: the diff is part of the review.
+
 ## The repository
 
 | Path | What it holds |
 |---|---|
 | `packages/core` | The engine. DOM-free: everything except `src/dom/` must run in Node. |
 | `packages/web-component` | `createTimeline`, `<temporeum-timeline>`, server rendering. |
-| `packages/react` | The React wrapper. |
+| `packages/react`, `packages/vue`, `packages/svelte`, `packages/angular` | The framework components, each a thin shell around the element's instance. |
 | `packages/docs` | The documentation site, its live examples, the starter templates and the benchmark. |
-| `scripts` | The checks CI runs on top of the unit tests. |
+| `scripts` | The checks behind the documentation's claims, the benchmarks and the release tools — [scripts/README.md](scripts/README.md) lists each one. |
 
 ## What a pull request needs
 
@@ -54,7 +58,7 @@ The repository's ESLint and TypeScript settings are the style guide. Comments ex
 
 ## Conduct
 
-Be kind and assume good faith. Criticise code, not people. A maintainer may lock a thread, delete a comment or ban an account for harassment, insults or discrimination, and will say which rule was broken. Report conduct problems the same private way as security issues ([SECURITY.md](SECURITY.md)).
+The project follows the [code of conduct](CODE_OF_CONDUCT.md) (the Contributor Covenant 2.1). Report a conduct problem privately, as it says.
 
 ## Licence
 

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 
 /**
- * The browser half of G-TEMPLATE: a template holding a script, an `onerror`
+ * The browser half of the template check: a template holding a script, an `onerror`
  * and an `onclick`, with the shipped bundle, in a real Chromium.
  *
  *  - By default nothing runs (`window.__ran` stays empty), and the server
@@ -29,7 +29,7 @@ test.afterAll(() => {
 });
 
 test("a sanitised template runs nothing, keeps the names, and matches the server", async ({ page }) => {
-  await page.goto("/p19.html?mode=template");
+  await page.goto("/drop-template.html?mode=template");
   await page.waitForFunction(() => (window as unknown as { tl?: Tl }).tl?.ready === true);
   // Long enough for a failed image to fire its error handler, had it one.
   await page.waitForTimeout(1000);
@@ -48,7 +48,7 @@ test("a sanitised template runs nothing, keeps the names, and matches the server
 });
 
 test("the negative control: with sanitize false the same template does run", async ({ page }) => {
-  await page.goto("/p19.html?mode=template&unsafe=1");
+  await page.goto("/drop-template.html?mode=template&unsafe=1");
   await page.waitForFunction(() => (window as unknown as { tl?: Tl }).tl?.ready === true);
   const ran = await page
     .waitForFunction(() => (window as unknown as { __ran?: string }).__ran, undefined, { timeout: 3000 })

@@ -11,11 +11,11 @@ import { itemsPlugin } from "../src/items.js";
 import type { TemporeumTimelineElement, Timeline, TimelineConfig } from "../src/index.js";
 import "../src/define.js";
 
-// The parts on entry points of their own (P29, P30), as a page registers them.
+// The parts on entry points of their own, as a page registers them.
 registerPlugin(ganttPlugin, itemsPlugin);
 
 /**
- * P20 through the live instance, in a real Chromium: the arrows, their
+ * The Gantt chart through the live instance, in a real Chromium: the arrows, their
  * stand-in during a zoom, `[` and `]`, the instance's focus and scroll
  * calls, and the task grid beside it.
  */

@@ -14,7 +14,7 @@ import type { TimelineInstance } from "../src/index.js";
 registerPlugin(itemsPlugin);
 
 /**
- * P35's `renderItem`, with the real React DOM: each drawn item's content is
+ * `renderItem`, with the real React DOM: each drawn item's content is
  * a React tree in the box over the item, keeps its state while the item is
  * in view — through a zoom that builds new tiles — and is unmounted when
  * the item leaves.

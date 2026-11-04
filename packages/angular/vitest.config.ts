@@ -39,7 +39,7 @@ const mouse: BrowserCommand<[steps: readonly MouseStep[]]> = async (context, ste
  *   reached for the DOM on import, this suite would not even load.
  * - `browser`: the component in a real Chromium (Playwright), with real Angular
  *   (JIT, zoneless): createApplication, createComponent, setInput, and mouse
- *   and keyboard input sent over CDP. The G-SSR check measures hydration on a
+ *   and keyboard input sent over CDP. The ssr check measures hydration on a
  *   real @angular/ssr application — the server output needs Node.
  *
  * Coverage is the union of the two, with a 90% threshold per file, as in the core.

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The G-PERF-RESOURCES measurement: 500 resources and 10 000 assignments on
+ * The perf-resources check's measurement: 500 resources and 10 000 assignments on
  * the public path (packages/docs/bench/resources.html, the shipped dist), with
  * load bands, pan and wheel zoom, with 4x CPU throttling, on fresh pages — and
  * the same without load culling (`?cull=0`, for the record: culling is not

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * The touch-action measurement in real Mobile Safari (half of the
- * G-E2E-TOUCH-WEBKIT check).
+ * e2e-touch-webkit check).
  *
  * Why it is needed. Playwright's WebKit runs on macOS, without iOS's UIKit
  * layer: there a touch does not scroll the page — with `touch-action: none`,

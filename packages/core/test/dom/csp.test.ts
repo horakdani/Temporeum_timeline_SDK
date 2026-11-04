@@ -6,7 +6,7 @@ import { FakeDocument, FakeElement, freshLedger } from "./fake-dom.js";
 
 /**
  * A scene's stylesheet and its `style` attributes under a strict
- * Content-Security-Policy (C1–C3): a `style-src` without 'unsafe-inline'
+ * Content-Security-Policy: a `style-src` without 'unsafe-inline'
  * blocks a `<style>`'s text and a written `style` attribute, and allows a
  * constructed sheet in `adoptedStyleSheets` and the CSSOM. The browser half
  * — the policy itself — is the web component's CSP test.
@@ -50,7 +50,7 @@ const scene = (css: string, extra: SceneElement[] = []): SceneElement => ({
 
 const styleOf = (container: FakeElement): StyledElement => (container.childNodes[0] as FakeElement).childNodes[0] as StyledElement;
 
-describe("a scene's styles under a strict CSP (C1–C3)", () => {
+describe("a scene's styles under a strict CSP", () => {
   it("puts a `<style>` into the root's adoptedStyleSheets, not into the element", () => {
     const { container, root } = setup();
     const mount = mountScene(container as unknown as Element);

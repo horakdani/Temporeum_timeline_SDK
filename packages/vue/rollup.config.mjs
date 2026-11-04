@@ -14,7 +14,7 @@ export default {
   plugins: [
     typescript({
       tsconfig: "./tsconfig.build.json",
-      compilerOptions: { declaration: false, declarationMap: false, sourceMap: true, outDir: undefined, rootDir: undefined },
+      compilerOptions: { declaration: false, declarationMap: false, sourceMap: true, inlineSources: true, outDir: undefined, rootDir: undefined },
     }),
   ],
 };

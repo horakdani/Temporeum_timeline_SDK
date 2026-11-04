@@ -9,7 +9,7 @@
     "url": "git+https://github.com/horakdani/Temporeum_timeline_SDK.git",
     "directory": "packages/svelte"
   },
-  "homepage": "https://github.com/horakdani/Temporeum_timeline_SDK#readme",
+  "homepage": "https://horakdani.github.io/Temporeum_timeline_SDK/",
   "bugs": {
     "url": "https://github.com/horakdani/Temporeum_timeline_SDK/issues"
   },
@@ -41,6 +41,7 @@
   "files": [
     "dist",
     "!dist/**/*.test.*",
+    "!dist/**/*.d.ts.map",
     "README.md",
     "CHANGELOG.md"
   ],

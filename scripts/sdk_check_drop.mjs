@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-DROP: in a real browser an external item lands at the time and lane under
+ * The drop check: in a real browser an external item lands at the time and lane under
  * the pointer (within 2 px), and it has a keyboard equivalent that places it
  * in the focused lane, at the middle of the view.
  *
@@ -57,4 +57,4 @@ if (!existsSync(logFile)) {
     notes.push(`keyboard: lane ${String(keyboard.laneId)}, off by ${String(keyboard.errorMs)} ms`);
   }
 }
-finish("G-DROP", failures, notes);
+finish("drop", failures, notes);

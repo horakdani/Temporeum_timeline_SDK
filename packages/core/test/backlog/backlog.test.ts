@@ -1,5 +1,5 @@
 /**
- * G-BACKLOG: an unscheduled task goes onto the timeline by a gesture and by
+ * The backlog check: an unscheduled task goes onto the timeline by a gesture and by
  * a key, with the same command.
  *
  * The browser binding (`mountBacklog` of the element) only decides where:
@@ -81,7 +81,7 @@ function expectedItem(task: BacklogTask, target: AddTarget): Record<string, unkn
   };
 }
 
-describe("G-BACKLOG", () => {
+describe("backlog", () => {
   it("[claim:same-command] places a task by a gesture and by a key with the same add command", () => {
     const random = makeRandom(SEED);
     let gestures = 0;

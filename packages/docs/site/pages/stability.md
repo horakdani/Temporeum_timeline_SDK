@@ -35,7 +35,7 @@ One rule, so a name says what it does and the next one can be guessed:
 - **The exact drawing**: pixel positions, the label a frame drops when there is no room, tick placement at a given width. They get better in minor releases. The visual-regression suite pins them for the library, not for hosts.
 - **The markup structure** beyond the classes above: the order and nesting of SVG groups.
 - **Anything underscored or undocumented**, and the file layout of `dist/`: import through the entry points.
-- **Performance numbers** are measured, not promised; budgets are CI gates on the engine and listed in its README.
+- **Performance numbers** are measured, not promised: the frame and memory budgets are measured before each release, on a quiet machine, and listed with the CI-checked ones in the core's README.
 
 ## Deprecation
 

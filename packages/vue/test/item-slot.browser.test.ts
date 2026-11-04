@@ -12,7 +12,7 @@ import type { TimelineInstance } from "../src/index.js";
 registerPlugin(itemsPlugin);
 
 /**
- * P35's `#item` slot, with the real Vue: each drawn item's content is a
+ * The `#item` slot, with the real Vue: each drawn item's content is a
  * Vue tree teleported into the box over the item, keeps its state while
  * the item is in view — through a zoom that builds new tiles — and is
  * unmounted when the item leaves.

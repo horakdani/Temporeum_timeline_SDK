@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-REST-LABELS: proves that at rest the item area shows every label the
+ * The rest-labels check: proves that at rest the item area shows every label the
  * exact frame keeps — on generated data, in both orientations.
  *
  * Two independent checks:
@@ -75,5 +75,5 @@ if (control !== undefined) {
 
 for (const note of notes) console.log(`  ok    ${note}`);
 for (const failure of failures) console.log(`  FAIL  ${failure}`);
-console.log(failures.length === 0 ? "G-REST-LABELS: passed" : "G-REST-LABELS: FAILED");
+console.log(failures.length === 0 ? "rest-labels: passed" : "rest-labels: FAILED");
 process.exit(failures.length === 0 ? 0 : 1);

@@ -29,7 +29,7 @@
  *    thirds. What is drawn during a gesture is drawn at that scale and then
  *    shown stretched; drawn at a coarser one, an item has less room in the
  *    space than on the screen, and a label that fits on the screen does not
- *    fit in the tile — until P17 a zoom out lost, for its last frames, every
+ *    fit in the tile — before 1.0 a zoom out lost, for its last frames, every
  *    label that fitted its item tightly, and they came back at rest.
  * 3. **Shifted past `maxShift` pixels** → re-anchor, keeping the scale. Item
  *    coordinates grow with the distance travelled, and the browser stores SVG
@@ -72,7 +72,7 @@ import { toTimeMs } from "./time.js";
  * every zoom step rewrites the geometry of every visible item and label — at
  * 2000 items that is not the script's cost but the browser's, which
  * recomputes 2000 SVG shapes per frame, and with a thousand labels it
- * re-lays out every line of text (P7: 50 ms per frame at a 4x CPU slowdown,
+ * re-lays out every line of text (50 ms per frame at a 4x CPU slowdown,
  * with 3 ms of it script). With one, the frame is drawn at
  * `(time - origin) / msPerPx`, for the whole extent, and a single `transform`
  * per layer maps that space onto the viewport. A frame inside the extent
@@ -117,8 +117,8 @@ export interface SceneSpace {
    * is on screen. For a host that would rather spend nothing on labels
    * while the view moves; at rest the space is exact again and the frame
    * shows every label an exact frame does. Kept through the gesture by
-   * {@link planSceneSpace}, which no longer sets it itself: from P14 to
-   * 1.0.0-rc.4 a stepped re-anchor did, because the browser lays SVG text
+   * {@link planSceneSpace}, which no longer sets it itself: before 1.0
+   * a stepped re-anchor did, because the browser lays SVG text
    * out again whenever its scale changes, and the labels of what was drawn
    * anew blinked out until the gesture ended. A label is a line of HTML
    * since rc.5, which the browser does not lay out again.
@@ -297,7 +297,7 @@ export function planSceneSpace(
   // one the user waits for, and it draws only what the viewport needs.
   if (atRest && current.atRest === true) {
     // One side a frame: two strips of new items in one frame at rest were
-    // the frame a wheel run, ending, missed (P15).
+    // the frame a wheel run, ending, missed.
     const step = span * growth;
     if (end + pad - high >= low - (start - pad)) {
       high = Math.min(high + step, end + pad);

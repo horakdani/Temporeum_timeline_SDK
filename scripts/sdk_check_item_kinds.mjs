@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-ITEM-KINDS: box, point and background items are drawn, box and point
+ * The item-kinds check: box, point and background items are drawn, box and point
  * items can be hit and get an accessible name, a background cannot be hit
  * and never covers an item — in both orientations.
  *
@@ -26,4 +26,4 @@ const config = codeOf(readFileSync(join(root, "packages", "web-component", "src"
 for (const needle of ["splitBackgrounds", "itemKindHooks"]) {
   if (!config.includes(needle)) failures.push(`the web-component config.ts does not use: ${needle} — the server and the client would draw by different paths`);
 }
-finish("G-ITEM-KINDS", failures);
+finish("item-kinds", failures);

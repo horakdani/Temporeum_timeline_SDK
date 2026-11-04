@@ -53,8 +53,7 @@
   },
   "libraries": {
     "temporeum": {
-      "version": "1.0.0",
-      "commit": "c444c9c5"
+      "version": "1.0.0"
     },
     "vis-timeline": {
       "version": "8.5.6",

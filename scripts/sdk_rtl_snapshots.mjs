@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * The visual half of G-RTL: the visual matrix right-to-left, on the SHIPPED bundle.
+ * The visual half of the rtl check: the visual matrix right-to-left, on the SHIPPED bundle.
  *
- * The same matrix as G-VISUAL's (the widths from matrix.json, the core's
+ * The same matrix as the visual check's (the widths from matrix.json, the core's
  * ORIENTATIONS and THEMES), the same scenario — and every case goes through
  * `mirrorScene` (/intl), from dist. In a separate directory
- * (test/rtl/fixtures/), because G-VISUAL treats every file in its own
+ * (test/rtl/fixtures/), because the visual check treats every file in its own
  * directory that has no case as stale.
  *
  * The same three decisions as in sdk_visual_snapshots.mjs: it measures the
@@ -36,7 +36,7 @@ const time = (value) => {
   return parsed;
 };
 
-/** The scenario, read the way G-VISUAL reads it: ISO strings to epoch ms. */
+/** The scenario, read the way the visual check reads it: ISO strings to epoch ms. */
 export function hydrateScenario(scenario) {
   return {
     timeZone: scenario.timeZone,
@@ -79,7 +79,7 @@ export function rtlCases(core, matrix) {
   return cases;
 }
 
-/** One case: drawn the same way as G-VISUAL's, then mirrored. */
+/** One case: drawn the same way as the visual check's, then mirrored. */
 export function renderRtlCase(core, intl, scenario, entry) {
   const result = core.renderTimeline({
     items: scenario.items,
@@ -109,7 +109,7 @@ async function main() {
   const cases = rtlCases(core, JSON.parse(matrixSource));
   const rendered = new Map(cases.map((entry) => [`${entry.name}.svg`, renderRtlCase(core, intl, scenario, entry)]));
   const manifest = {
-    note: "G-RTL's visual provenance: the G-VISUAL matrix, mirrored. The sha256 of the scenario, the matrix and every fixture.",
+    note: "The rtl check's visual provenance: the visual check's matrix, mirrored. The sha256 of the scenario, the matrix and every fixture.",
     core: core.VERSION,
     scenarioSha256: sha256(scenarioSource),
     matrixSha256: sha256(matrixSource),
@@ -141,10 +141,10 @@ async function main() {
   }
   if (failures.length > 0) {
     for (const failure of failures) console.error(`  ERROR ${failure}`);
-    console.error(`\nG-RTL (fixtures) FAILED: ${String(failures.length)} errors.`);
+    console.error(`\nrtl (fixtures) FAILED: ${String(failures.length)} errors.`);
     process.exit(1);
   }
-  console.log(`G-RTL fixtures: all ${String(rendered.size)} RTL cases match byte for byte.`);
+  console.log(`rtl fixtures: all ${String(rendered.size)} RTL cases match byte for byte.`);
 }
 
 if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

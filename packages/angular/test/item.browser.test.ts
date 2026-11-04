@@ -14,7 +14,7 @@ import type { TimelineComponentConfig, TimelineInstance } from "../src/index.js"
 registerPlugin(itemsPlugin);
 
 /**
- * Parity with the other adapters (W11 of the quality round): React has
+ * Parity with the other adapters: React has
  * `renderItem` and Vue the `#item` slot, and the Angular component had no
  * item template; its outputs lacked `slotsChanged`; and it exported
  * `TimelineIds`, an injectable of its own internals.
@@ -50,7 +50,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-describe("<tl-timeline> item template and outputs (W11)", () => {
+describe("<tl-timeline> item template and outputs", () => {
   it("renders each drawn item's content from the tlItem template, in the box over it", async () => {
     app = await createApplication({ providers: [provideZonelessChangeDetection()] });
     const hostElement = document.createElement("tl-host");

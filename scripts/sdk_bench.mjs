@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-PERF and G-MEMORY: the measurement. In real Chromium, on the docs
+ * The perf check and the memory check: the measurement. In real Chromium, on the docs
  * package's bench.html page, along the page's OWN path (attachInput -> machine
  * -> frame loop -> element space -> patcher). The script does not judge: it
  * writes the raw measurement to a report, and sdk_check_perf.mjs /
@@ -13,7 +13,7 @@
  *   node scripts/sdk_bench.mjs deep     -> packages/docs/.bench-deep.json
  *   node scripts/sdk_bench.mjs wheel    -> packages/docs/.bench-wheel.json
  *
- * `wheel` (G-PERF-WHEEL) measures the vis comparison's zoom on BOTH paths,
+ * `wheel` (the perf-wheel check) measures the vis comparison's zoom on BOTH paths,
  * the same way: a FRESH, quiet page (on the public path still untouched, no
  * extras), Control held down, a real `page.mouse.wheel` in the middle of the
  * view, 8 notches in and 8 out, every 50 ms, 1.2x per notch (deltaY 45.6:
@@ -24,13 +24,13 @@
  * paths, and on the core page without a wheel run (?run=0: the host settles
  * after every notch).
  *
- * `deep` (G-PERF-DEEP) measures the 4x pinch (zoom-deep) on BOTH paths: on
+ * `deep` (the perf-deep check) measures the 4x pinch (zoom-deep) on BOTH paths: on
  * the core page (bench.html) with the recommended path, without stepped
  * re-anchoring (?levels=0) and without element space — the two negative
  * controls —, and on the public page (bench-public.html) with createTimeline
  * and without element space.
  *
- * `public` (G-PERF-PUBLIC) runs the same measurement on the bench-public.html
+ * `public` (the perf-public check) runs the same measurement on the bench-public.html
  * page: there `createTimeline` draws from the shipped element bundle, so the
  * page walks the user's path instead of hand-wiring the core. The freshness
  * check there covers both the core AND the element source.

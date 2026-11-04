@@ -1,5 +1,5 @@
 /**
- * The P24 helpers the element draws and moves the view with: sticky lane
+ * The time-tool helpers the element draws and moves the view with: sticky lane
  * headers, the clock's window and the named zooms.
  */
 

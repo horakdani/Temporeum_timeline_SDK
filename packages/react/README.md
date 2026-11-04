@@ -1,7 +1,7 @@
 # @temporeum/timeline-react
 
 The timeline as a React component, built on the shared
-instance of [`@temporeum/timeline-element`](../web-component/README.md).
+instance of [`@temporeum/timeline-element`](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/web-component#readme).
 
 ```bash
 npm install @temporeum/timeline-react
@@ -13,6 +13,17 @@ The peer range is `react >=18` (everything it uses — `useSyncExternalStore`,
 ```jsx excerpt:template/react/src/App.jsx
 import { Timeline, useTimelineState } from "@temporeum/timeline-react";
 import { useState } from "react";
+
+const DAY = 86_400_000;
+const t = Date.UTC(2026, 2, 2);
+const items = [
+  { id: "design", label: "Design", laneId: "work", start: t, end: t + 7 * DAY, data: { owner: "Ana" } },
+  { id: "launch", label: "Launch", laneId: "ship", start: t + 25 * DAY, end: t + 32 * DAY, data: { owner: "Dev" } },
+];
+const lanes = [
+  { id: "work", label: "Work" },
+  { id: "ship", label: "Shipping" },
+];
 
 export default function App() {
   const [timeline, setTimeline] = useState(null);
@@ -26,7 +37,7 @@ export default function App() {
         height={320}
         ariaLabel="Release plan"
         editing={{ enabled: true, snapMs: DAY }}
-        onItemMoved={({ item, to }) => setLog(`${item.label} moved to ${new Date(to.start).toDateString()}`)}
+        onItemMoved={({ item, to }) => setLog(`${item.label} moved to ${new Date(to.start ?? item.start).toDateString()}`)}
         timelineRef={setTimeline}
       />
       <p aria-live="polite">
@@ -37,10 +48,10 @@ export default function App() {
 }
 ```
 
-The whole project, with Vite, is the React template
-(`packages/docs/templates/react`); a Next.js one is beside it.
+The whole project, with Vite, is the [React template](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/docs/templates/react); a
+[Next.js one](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/docs/templates/next) is beside it.
 
-Every [`TimelineConfig`](../web-component/src/config.ts) field is a prop, and
+Every [`TimelineConfig`](https://horakdani.github.io/Temporeum_timeline_SDK/reference/api.html#configuration) field is a prop, and
 every event an `on…` prop (`onItemMoved`, `onSelectionChanged`,
 `onViewportChanged`, …). A new callback on every render does not
 resubscribe; the latest committed one is what runs. `id`, `data-*`,
@@ -82,7 +93,7 @@ pass functions (callbacks, `timelineRef`) from a client component.
 
 ## Documentation
 
-Guides, recipes and the API reference with live examples are on the docs site
-(`npm run build -w @temporeum/timeline-docs`, then `packages/docs/dist`). Every
+Guides, recipes and the API reference with live examples are on the
+[docs site](https://horakdani.github.io/Temporeum_timeline_SDK/) — the React page is [Frameworks](https://horakdani.github.io/Temporeum_timeline_SDK/frameworks.html). Every
 code block in this README is checked against a running template in CI
 (`npm run test:examples -w @temporeum/timeline-docs`).

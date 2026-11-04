@@ -1,5 +1,5 @@
 /**
- * G-RANGE-SELECT: a range selected by a gesture and by the keys gives the
+ * The range-select check: a range selected by a gesture and by the keys gives the
  * same event. Both orientations: the keys are axis-relative.
  */
 

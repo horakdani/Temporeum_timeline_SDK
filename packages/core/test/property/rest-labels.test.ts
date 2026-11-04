@@ -5,7 +5,7 @@
  * knowing only the items around it — which is what makes a pan cheap, and
  * what used to cost labels: the label of an item that starts before the
  * viewport sat where the item starts, off-screen, and a label after an item
- * near a tile's end was given up. Before P14 that was why the element drew
+ * near a tile's end was given up. Once that was why the element drew
  * small timelines exactly. The renderer now lets a label run into the next
  * tile and, at rest, places the viewport's labels the way the exact frame
  * does and adds the ones the tiles do not show. This checks the outcome
@@ -15,7 +15,7 @@
  * exact frame's labels: a ceiling is the whole frame's, not a tile's.
  *
  * The control: the same frames during a gesture — the same tiles, without
- * what the frame at rest adds (`bare`: since P17 a gesture's frame pins the
+ * what the frame at rest adds (`bare`: a gesture's frame pins the
  * edges' labels as well) — must miss some of those labels. If they did
  * not, the property would hold without the addition and prove nothing
  * about it.
@@ -108,7 +108,7 @@ function check(generated: GeneratedCase<View>, record: boolean): string | undefi
   ];
   const exact = renderTimeline(base);
   const rest = renderTimeline({ ...base, space: { origin, msPerPx, extent, atRest: true } });
-  // The tiles alone: since P17 a frame during a gesture pins the edges'
+  // The tiles alone: a frame during a gesture pins the edges'
   // labels too, and `bare` is the frame that adds nothing to its tiles.
   const moving = renderTimeline({ ...base, space: { origin, msPerPx, extent, atRest: false, bare: true } });
 

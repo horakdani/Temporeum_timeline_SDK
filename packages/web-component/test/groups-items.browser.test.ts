@@ -13,11 +13,11 @@ import { itemsPlugin } from "../src/items.js";
 import "../src/define.js";
 import { normalisedHtml } from "./sheets.js";
 
-// The parts on entry points of their own (P29, P30), as a page registers them.
+// The parts on entry points of their own, as a page registers them.
 registerPlugin(groupsPlugin, itemsPlugin, intlPlugin);
 
 /**
- * P19 through the live instance, in a real Chromium: the group tree, item
+ * Groups, item kinds, adding, templates and dropping through the live instance, in a real Chromium: the group tree, item
  * kinds, adding and removing, dropping in, and templates.
  */
 
@@ -132,7 +132,7 @@ describe("the group tree", () => {
     expect(server.groups).toContain('role="tree"');
     const { element } = await mount(config);
     const parsed = new DOMParser().parseFromString(`<div>${server.groups}</div>`, "text/html");
-    // A `style` as the CSSOM writes it on both sides: the client writes it through the CSSOM (C3).
+    // A `style` as the CSSOM writes it on both sides: the client writes it through the CSSOM.
     const serverHeaders = [...parsed.querySelectorAll("[role=treeitem]")].map(normalisedHtml);
     expect(headers(element).map(normalisedHtml)).toEqual(serverHeaders);
     expect(renderTimelineHtml(config)).toContain('class="tl-groups');
@@ -457,7 +457,7 @@ describe("dropping in at its edges", () => {
   });
 });
 
-describe("the element's P19 properties", () => {
+describe("the element's group and item properties", () => {
   it("groups, template and hooks are properties that reach the drawing", async () => {
     const el = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
     el.style.cssText = "display:block;width:800px;height:400px";
@@ -478,7 +478,7 @@ describe("the element's P19 properties", () => {
   });
 });
 
-describe("P26: the group tree right to left", () => {
+describe("the group tree right to left", () => {
   it("a collapsed group's toggle points left, the way the labels read, and the arrows trade places: ← opens, → closes", async () => {
     const { element } = await mount({ items, groups: groups.map((group) => (group.id === "team" ? { ...group, collapsed: true } : group)), direction: "rtl" });
     const team = (): HTMLElement => element.querySelector('[data-tl-group="team"]') as HTMLElement;

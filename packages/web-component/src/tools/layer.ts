@@ -761,7 +761,7 @@ function geometry<T>(config: TimelineConfig<T>, state: FrameState<T>, result: Re
 }
 
 /**
- * The P24 layers: the sticky lane headers over the labels, and the overview
+ * The two frame layers: the sticky lane headers over the labels, and the overview
  * strip across the frame's far edge — the root grown to the container to
  * hold it. Both are drawn in the frame (`frameScene`), so the server draws
  * them too.

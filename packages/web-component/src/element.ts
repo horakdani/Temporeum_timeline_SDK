@@ -405,7 +405,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     // once the element is in the document, and keeps it in the property.
     if (config.nonce === undefined && this.nonce) config = { ...config, nonce: this.nonce };
     // Adopted, or — where it cannot be — a `<style>` with the nonce, unless
-    // the server's is there (C1).
+    // the server's is there.
     const unstyle = adoptCss(root, HOST_CSS, config.nonce);
     const timeline = createTimeline<T>(this, config, { root, hydrate: existing !== null });
     this.#timeline = timeline;

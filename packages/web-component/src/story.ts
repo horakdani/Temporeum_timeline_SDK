@@ -192,7 +192,7 @@ export interface StoryHtmlOptions {
 export function storyHtml(doc: Document, html: string, options: StoryHtmlOptions = {}): DocumentFragment {
   const inline = options.inline === true;
   const template = doc.createElement("template");
-  // An inert parse: a template's content runs nothing (C4).
+  // An inert parse: a template's content runs nothing.
   template.innerHTML = trustedHtml(doc.defaultView, html, options.trustedTypesPolicy);
   const out = doc.createDocumentFragment();
   const copy = (from: Node, to: Node): void => {

@@ -4,7 +4,7 @@ One starter project per framework. Each lives in the repository under `packages/
 
 {{templates}}
 
-The **Open in StackBlitz** links point at the templates in the repository. They open once the packages are published to npm and the repository is public; until then, copy the folder, or run it in place from the repository root.
+The **Open in StackBlitz** links open each template in the browser, straight from the repository. To run one on your own machine, copy its folder, or run it in place from the repository root.
 
 ```bash
 cd packages/docs/templates/react

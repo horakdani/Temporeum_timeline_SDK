@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * G-AXE: the browser half of accessibility.
+ * The axe check: the browser half of accessibility.
  *
  * Its own port, so that even alongside the touch suite neither sits on the
  * other's server (a suite running on a foreign page is worse than a missing

@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * G-EXAMPLES, the browser half: every live example of the docs site runs.
+ * The examples check, the browser half: every live example of the docs site runs.
  *
  * Its own port, like every suite here (an idle server of another suite would
  * be measured instead). Desktop Chromium only: the examples are code, not

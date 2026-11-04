@@ -8,7 +8,7 @@
  *     import { itemsPlugin } from "@temporeum/timeline-element/items";
  *     registerPlugin(itemsPlugin);
  *
- * Its own entry point since P30: the kinds, the template's sanitiser and
+ * Its own entry point: the kinds, the template's sanitiser and
  * the add and remove commands are the core's `/items`, and a timeline of
  * ranges — a Gantt chart's tasks among them — does not download it. Moving
  * and resizing are not here: they are the base's, as they always were.

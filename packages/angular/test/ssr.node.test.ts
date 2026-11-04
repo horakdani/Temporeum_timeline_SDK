@@ -57,7 +57,7 @@ describe("the Angular adapter in Node", () => {
   });
 });
 
-describe("an own __proto__ key in the configuration (S13)", () => {
+describe("an own __proto__ key in the configuration", () => {
   it("is read as nothing, not as the configuration's prototype", async () => {
     const { Component, provideZonelessChangeDetection } = await import("@angular/core");
     const { bootstrapApplication } = await import("@angular/platform-browser");
@@ -76,7 +76,7 @@ describe("an own __proto__ key in the configuration (S13)", () => {
   });
 });
 
-describe("the plugin registry (W4)", () => {
+describe("the plugin registry", () => {
   it("is the element's, handed on by the adapter", async () => {
     const adapter = await import("../src/index.js");
     const element = await import("@temporeum/timeline-element");

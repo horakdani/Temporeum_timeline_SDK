@@ -371,7 +371,7 @@ describe("popover placement", () => {
   });
 });
 
-describe("density: auto with the host's own metrics (E13)", () => {
+describe("density: auto with the host's own metrics", () => {
   it("measures the room along time with them, as it measures the room across", () => {
     // Items typically 80 px long: room enough for the built-in comfortable
     // level, not for a host's that asks every level for 200 px.

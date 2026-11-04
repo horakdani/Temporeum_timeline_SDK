@@ -1,7 +1,7 @@
 /**
  * A run of wheel steps is one gesture.
  *
- * A wheel has no lift. Before P15 every notch ended where it began, so a host
+ * A wheel has no lift. Without runs every notch would end where it began, so a host
  * that keeps a scene space while a gesture runs — the README's loop:
  * `settle: !gesture` — settled after every notch: it re-anchored, redrew the
  * view and started filling its overscan between two notches, and a 4.3x

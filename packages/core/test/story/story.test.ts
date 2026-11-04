@@ -1,5 +1,5 @@
 /**
- * G-STORY (core half): a TimelineJS story — its JSON and its Google Sheets
+ * The story check (core half): a TimelineJS story — its JSON and its Google Sheets
  * template — becomes items, lanes and eras with the dates TimelineJS means,
  * every slide's content in `data.story`, and a warning for what does not
  * carry over; a media link is sorted by its address; a slide's date is
@@ -52,7 +52,7 @@ describe("fromTimelineJS", () => {
     ]);
   });
 
-  it("runs a span to the end of its end's own unit when the two dates are known to different precisions (M5)", () => {
+  it("runs a span to the end of its end's own unit when the two dates are known to different precisions", () => {
     const mixed = fromTimelineJS({
       events: [
         { start_date: { year: 1914 }, end_date: { year: 1918, month: 11, day: 11 } },
@@ -202,7 +202,7 @@ describe("storyPlainText", () => {
   });
 });
 
-describe("a character reference to no character (M10, S7)", () => {
+describe("a character reference to no character", () => {
   it("is the replacement character, as in HTML, and the import goes on", () => {
     expect(storyPlainText("a&#x110000;b&#0;c&#xD800;d&#99999999999;e&#x1F600;")).toBe("a�b�c�d�e\u{1F600}");
     const story = fromTimelineJS({ events: [{ start_date: { year: 2000 }, text: { headline: "Bad &#x110000; ref" } }, { start_date: { year: 2001 }, text: { headline: "Fine" } }] });
@@ -280,7 +280,7 @@ describe("the Google Sheets template", () => {
     expect(sheetCsvUrl("not a url")).toBeUndefined();
   });
 
-  it("keeps a gid only when it is a sheet's number, and adds nothing else to the address (S14)", () => {
+  it("keeps a gid only when it is a sheet's number, and adds nothing else to the address", () => {
     // `%26output%3Dhtml` decodes to `&output=html`: appended as it was, it would be a second parameter.
     expect(sheetCsvUrl("https://docs.google.com/spreadsheets/d/1AbC/edit?gid=1%26output%3Dhtml")).toBe("https://docs.google.com/spreadsheets/d/1AbC/export?format=csv");
     expect(sheetCsvUrl("https://docs.google.com/spreadsheets/d/e/2PACX/pubhtml?gid=7%23x")).toBe("https://docs.google.com/spreadsheets/d/e/2PACX/pub?output=csv");

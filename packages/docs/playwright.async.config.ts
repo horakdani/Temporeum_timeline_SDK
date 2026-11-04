@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * The browser half of G-ASYNC: a fast zoom in a real browser, with real
+ * The browser half of the async check: a fast zoom in a real browser, with real
  * timers and a real DOM.
  *
  * Its own port (a suite running on a foreign page is worse than a missing

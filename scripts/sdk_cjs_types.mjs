@@ -14,7 +14,7 @@
  * CJS-style extension and relative specifiers rewritten `.js` → `.cjs`, so
  * that a `.d.cts` points to its sibling `.d.cts`, not back to the ESM type.
  *
- * G-EXPORTS (scripts/sdk_check_exports.mjs) checks the result with attw and a
+ * The exports check (scripts/sdk_check_exports.mjs) checks the result with attw and a
  * real node16 CJS consumer project — if this script missed something, it
  * fails there; you do not have to trust it here.
  *

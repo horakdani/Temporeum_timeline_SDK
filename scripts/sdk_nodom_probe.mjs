@@ -29,7 +29,7 @@ const domCjsBundle = join(packageDir, "dist", "dom.cjs");
 for (const bundle of [esmBundle, cjsBundle, domEsmBundle, domCjsBundle]) {
   if (!existsSync(bundle)) {
     console.error(`  ERROR no built package: ${bundle}`);
-    console.error("\nG-NODOM FAILED: the server-side probe did NOT run.");
+    console.error("\nnodom FAILED: the server-side probe did NOT run.");
     process.exit(1);
   }
 }
@@ -160,6 +160,6 @@ try {
   console.log(`  ok   booby-trapped globals: ${armed.join(", ")}`);
 } catch (error) {
   console.error(`  ERROR ${error instanceof Error ? error.message : String(error)}`);
-  console.error("\nG-NODOM FAILED: the built package does not run without a DOM.");
+  console.error("\nnodom FAILED: the built package does not run without a DOM.");
   process.exit(1);
 }

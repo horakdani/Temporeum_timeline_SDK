@@ -2,7 +2,7 @@
  * The engine at the edges of its own range and of the wall clock.
  *
  * Each case here was a reproduced crash or a wrong answer found in the
- * quality round before 1.0 (the E-items in `sdk/quality/PLAN.md`).
+ * review before 1.0.
  */
 import { describe, expect, it } from "vitest";
 
@@ -16,7 +16,7 @@ import type { Domain } from "../../src/types.js";
 const DAY = 86_400_000;
 const ZONES = ["UTC", "America/New_York", "Asia/Tokyo", "Pacific/Kiritimati", "Pacific/Pago_Pago"];
 
-describe("the edge of the representable range (E1)", () => {
+describe("the edge of the representable range", () => {
   const edges: readonly (readonly [string, Domain])[] = [
     ["all of it", [-MAX_TIME_MS, MAX_TIME_MS]],
     ["the last 400 days", [MAX_TIME_MS - 400 * DAY, MAX_TIME_MS]],
@@ -103,7 +103,7 @@ describe("the edge of the representable range (E1)", () => {
   });
 });
 
-describe("an instant past the Date range (E5)", () => {
+describe("an instant past the Date range", () => {
   it("is rejected where it enters, with a message that names the range", () => {
     for (const start of [9e15, -9e15]) {
       expect(() => renderTimeline({ items: [{ id: "far", start }], domain: [0, DAY], width: 900, height: 300 })).toThrow(

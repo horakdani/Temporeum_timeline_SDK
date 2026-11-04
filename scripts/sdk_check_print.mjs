@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-PRINT: with print media, every item of the full range appears on
+ * The print check: with print media, every item of the full range appears on
  * exactly one page.
  *
  * Two sources: the Playwright JSON report (every claim test ran and is
@@ -65,4 +65,4 @@ if (!existsSync(logFile)) {
   if (!(pdf.sheets === one.pages && pdf.agreeing === pdf.found && pdf.found === one.items)) failures.push(`exportPdf does not match the view (${JSON.stringify(pdf)})`);
   notes.push(`${String(one.items)} items, ${String(one.pages)} pages (${(one.perPage ?? []).join(" + ")}); the browser's print ${String(browser.sheets)} pages, ${String(browser.agreeing)} labels on their own page`);
 }
-finish("G-PRINT", failures, notes);
+finish("print", failures, notes);

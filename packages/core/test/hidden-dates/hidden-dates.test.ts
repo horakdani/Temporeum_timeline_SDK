@@ -1,5 +1,5 @@
 /**
- * G-HIDDEN-DATES: on generated hidden ranges, in both orientations, hidden
+ * The hidden-dates check: on generated hidden ranges, in both orientations, hidden
  * time is not on the axis, an item across it is drawn without it, and the
  * zoom anchor holds across it.
  *
@@ -142,7 +142,7 @@ describe("hidden dates — the warp", () => {
     expect((night[0]?.end ?? 0) - (night[0]?.start ?? 0)).toBe(13 * HOUR);
   });
 
-  it("finds a change of offset in a year that starts, turns and ends on one offset: Casablanca's Ramadan (M12)", () => {
+  it("finds a change of offset in a year that starts, turns and ends on one offset: Casablanca's Ramadan", () => {
     // 19:00–09:00 Casablanca. 2024 is UTC+1 but for 10 March – 14 April, UTC+0.
     const january = Date.UTC(2024, 0, 8, 18);
     const hidden = createHiddenDates([{ start: january, end: january + 14 * HOUR, repeat: "daily" }], { timeZone: "Africa/Casablanca" });

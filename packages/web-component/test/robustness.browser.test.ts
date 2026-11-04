@@ -7,7 +7,7 @@ import type { InputSkippedPayload, TemporeumTimelineElement } from "../src/index
 import { sceneCss } from "./sheets.js";
 
 /**
- * One bad item or option does not take the whole frame (S9). An item from
+ * One bad item or option does not take the whole frame. An item from
  * an attribute, a JSON script, a fetched window or a host's typo — a start
  * in words, NaN, ±1e20, a fractional `sublaneSpan`, no id — is left out; a
  * `locale` or `timeZone` the platform cannot read falls back to the
@@ -40,7 +40,7 @@ function host(): HTMLDivElement {
   return element;
 }
 
-describe("a bad item or option is left out, and said (S9)", () => {
+describe("a bad item or option is left out, and said", () => {
   it("at creation: the good item is drawn, each bad one is reported once, after the host can listen", async () => {
     const skipped: InputSkippedPayload[] = [];
     const timeline = createTimeline(host(), { items: [good, ...bad] as Item[], domain, locale: "not a locale!!", timeZone: "Mars/Olympus" });
@@ -99,7 +99,7 @@ describe("a bad item or option is left out, and said (S9)", () => {
   });
 });
 
-describe("two timelines in the light DOM (S12)", () => {
+describe("two timelines in the light DOM", () => {
   it("each gets a stylesheet scope of its own, and a server drawing taken over keeps the server's", async () => {
     const { renderTimelineSvg } = await import("../src/index.js");
     const first = createTimeline(host(), { items: [good], domain });
@@ -120,7 +120,7 @@ describe("two timelines in the light DOM (S12)", () => {
   });
 });
 
-describe("a story destroyed before the timeline's first frame (S12)", () => {
+describe("a story destroyed before the timeline's first frame", () => {
   it("lets go of its wait for that frame", async () => {
     const { mountStory } = await import("../src/story.js");
     const element = document.createElement("div");

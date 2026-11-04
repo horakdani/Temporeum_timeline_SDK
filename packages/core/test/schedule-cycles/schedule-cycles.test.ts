@@ -1,5 +1,5 @@
 /**
- * G-CYCLE: a dependency graph with a cycle is reported, with the members of
+ * The cycle check: a dependency graph with a cycle is reported, with the members of
  * every cycle, in finite time, and nothing is changed.
  *
  *  - on generated graphs with cycles, the reported groups are exactly the
@@ -57,7 +57,7 @@ function referenceCycles(count: number, dependencies: readonly Dependency[]): st
   return groups;
 }
 
-describe("G-CYCLE", () => {
+describe("cycle", () => {
   it("[claim:cycle-members] reports exactly the groups of tasks that reach each other, and every task that depends on itself", () => {
     const random = makeRandom(SEED);
     let groups = 0;

@@ -112,7 +112,7 @@ describe("banding", () => {
     }
   });
 
-  it("shades every other step when a step is several units: 2 h, 6 h, 12 h, 30 min, 6 months, 2 years (M6)", () => {
+  it("shades every other step when a step is several units: 2 h, 6 h, 12 h, 30 min, 6 months, 2 years", () => {
     const HOUR = 3_600_000;
     const T = Date.UTC(2025, 2, 3);
     const spans = [40 * 60_000, 6 * HOUR, 30 * HOUR, 3 * DAY, 6 * DAY, 6 * 365 * DAY, 20 * 365 * DAY, 3 * 365 * DAY];

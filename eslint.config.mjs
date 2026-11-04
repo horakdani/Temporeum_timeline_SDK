@@ -1,6 +1,5 @@
-// Lint config for the timeline SDK. It DELIBERATELY looks only at packages/
-// and scripts/sdk_*.mjs: the rest of the repo is out of scope, and linting
-// it would give false failures in CI.
+// Lint config. It DELIBERATELY looks only at packages/, the scripts/sdk_*.mjs
+// tools and the root config files: anything else at the root is not source.
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 
@@ -10,14 +9,15 @@ export default [
       "**/node_modules/**",
       "**/dist/**",
       "**/coverage/**",
-      "static/**",
-      "templates/**",
-      ".venv/**",
-      "demo/**",
-      "fix/**",
-      "qa/**",
-      "sdk/reports/**",
-      // The G-SSR smoke test's working directory: installed frameworks and
+      // Everything at the root but packages/, scripts/sdk_*.mjs and the
+      // root config files.
+      "*",
+      "!packages/",
+      "!scripts/",
+      "scripts/*",
+      "!scripts/sdk_*.mjs",
+      "!*.config.mjs",
+      // The SSR smoke test's working directory: installed frameworks and
       // their build output, not SDK source.
       "**/.ssr-work/**",
       // The templates' and the benchmark's working directories: installed

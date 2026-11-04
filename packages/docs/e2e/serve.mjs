@@ -7,7 +7,7 @@
  *
  *   /            -> packages/docs/public
  *   /core/...    -> packages/core/dist   (the SHIPPED bundle, not the source)
- *   /element/... -> packages/web-component/dist (G-PERF-PUBLIC measures this)
+ *   /element/... -> packages/web-component/dist (the perf-public check measures this)
  *   /site/...    -> packages/docs/dist   (the built docs site)
  *
  * `/core/` points at dist on purpose: what runs in the browser is what we publish.

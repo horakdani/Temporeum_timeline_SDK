@@ -8,10 +8,10 @@ import type { Page } from "@playwright/test";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 /**
- * G-PRINT, in a real browser, through the shipped bundles: with print media,
+ * The print check, in a real browser, through the shipped bundles: with print media,
  * every item of the whole range is on exactly one page.
  *
- * The page (`p25.html`) is a quarter's plan, two weeks of it on screen. The
+ * The page (`print.html`) is a quarter's plan, two weeks of it on screen. The
  * print view is what `print()` mounts — the dialog stubbed — and it is read
  * twice: as the DOM the browser lays out for print media, one section a
  * sheet; and as the PDF the browser itself prints from that media
@@ -42,7 +42,7 @@ interface Section {
 }
 
 async function open(page: Page): Promise<void> {
-  await page.goto("/p25.html");
+  await page.goto("/print.html");
   await page.waitForFunction(() => (window as unknown as { tl?: { ready: boolean } }).tl?.ready === true);
 }
 

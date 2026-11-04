@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-ADD-REMOVE: adding and removing issue the same command by gesture and by
+ * The add-remove check: adding and removing issue the same command by gesture and by
  * keyboard, the inverse restores the exact starting point, and the host's
  * veto is atomic.
  *
@@ -33,4 +33,4 @@ for (const needle of ["addTargetAt(", "addTargetFromFocus(", "resolveItemKey(", 
 if (count("addCommand(") !== 1) failures.push(`addCommand must be called exactly ONCE in createTimeline (now ${String(count("addCommand("))}): the gesture, the keyboard and the drop take one path`);
 if (count("removeCommand(") !== 1) failures.push(`removeCommand must be called exactly ONCE (now ${String(count("removeCommand("))})`);
 if (count("removeTargets(") < 1) failures.push("createTimeline does not pick the items to remove with removeTargets");
-finish("G-ADD-REMOVE", failures);
+finish("add-remove", failures);

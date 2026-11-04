@@ -68,7 +68,7 @@ With a `<script>` tag instead of a module, use the UMD file, which carries the e
 </temporeum-timeline>
 ```
 
-The script tag is `<script src="https://unpkg.com/@temporeum/timeline-element"></script>`, once the package is on npm. Items, lanes, hooks and the selection are properties (`timeline.items = …`); every event is dispatched under its kebab-case name (`item-moved`, `selection-changed`) with the payload as `detail`, which is the spelling Vue's `@item-moved` and Angular's `(item-moved)` reach.
+The script tag is `<script src="https://unpkg.com/@temporeum/timeline-element@1"></script>`: the `@1` keeps a page on 1.x, so a 2.0 cannot change it unasked. Items, lanes, hooks and the selection are properties (`timeline.items = …`); every event is dispatched under its kebab-case name (`item-moved`, `selection-changed`) with the payload as `detail`, which is the spelling Vue's `@item-moved` and Angular's `(item-moved)` reach.
 
 ## React
 
@@ -86,7 +86,7 @@ import { useState } from "react";
         items={items}
         lanes={lanes}
         editing={{ enabled: true, snapMs: DAY }}
-        onItemMoved={({ item, to }) => setLog(`${item.label} moved to ${new Date(to.start).toDateString()}`)}
+        onItemMoved={({ item, to }) => setLog(`${item.label} moved to ${new Date(to.start ?? item.start).toDateString()}`)}
         timelineRef={setTimeline}
       />
 ```

@@ -27,7 +27,7 @@
     height={320}
     ariaLabel="Release plan"
     editing={{ enabled: true, snapMs: DAY }}
-    onItemMoved={({ item, to }) => (log = `${item.label} moved to ${new Date(to.start).toDateString()}`)}
+    onItemMoved={({ item, to }) => (log = `${item.label} moved to ${new Date(to.start ?? item.start).toDateString()}`)}
     bind:timeline
   />
   <p aria-live="polite">{log} {$selected?.length ?? 0} selected.</p>

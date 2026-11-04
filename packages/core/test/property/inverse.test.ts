@@ -25,7 +25,7 @@ import type { GeneratedCase } from "./harness.js";
 /**
  * The one promise the editing layer cannot keep approximately.
  *
- * Every command the SDK produces has to restore the **exact** starting state
+ * Every command the library produces has to restore the **exact** starting state
  * when inverted — not a state that looks the same, and not only for the cases
  * I thought to write by hand. These properties generate the edits instead: a
  * random item set, then a random sequence of moves and resizes applied to it,
@@ -447,7 +447,7 @@ describe("inverse properties", () => {
     expect(gestures).toBeGreaterThan(50);
   });
 
-  // P19: adds, removes and group reorders are commands too, and their
+  // Adds, removes and group reorders are commands too, and their
   // inverses have to be exact in the same sense — order and identity.
   it("inverts adds and removes exactly, in sequences", () => {
     let applied = 0;
@@ -515,7 +515,7 @@ describe("inverse properties", () => {
     );
     expect(applied).toBeGreaterThan(CASES / 4);
   });
-  // P21: an automatic schedule is one command, and undoing it — alone or
+  // An automatic schedule is one command, and undoing it — alone or
   // after the next one — puts every task back exactly.
   it("inverts schedules exactly, in sequences", () => {
     let applied = 0;

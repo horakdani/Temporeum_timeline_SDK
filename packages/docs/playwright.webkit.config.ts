@@ -4,8 +4,8 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = Number(process.env.TL_E2E_PORT ?? 41738);
 
 /**
- * G-E2E-TOUCH-WEBKIT: the same gesture suite (`e2e/touch.spec.ts`) as
- * Chromium's G-E2E-TOUCH, in Playwright's WebKit — the iOS Safari engine —
+ * The e2e-touch-webkit check: the same gesture suite (`e2e/touch.spec.ts`) as
+ * the Chromium e2e-touch check, in Playwright's WebKit — the iOS Safari engine —
  * on an emulated iPhone and iPad.
  *
  * What this suite does NOT measure, and why: Playwright's WebKit runs on

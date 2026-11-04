@@ -196,7 +196,7 @@ export interface Navigator {
  * Per layout (or clustering), one navigator per cross inset. The renderer
  * asks for one without an inset, for the listbox's positions, and a host for
  * its own: kept as one per layout, the two evicted each other, and every
- * frame sorted every item twice (P15).
+ * frame sorted every item twice.
  */
 const navigators = new WeakMap<object, Map<number, Navigator>>();
 

@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * The browser half of G-SSR. The servers are started by scripts/sdk_check_ssr.mjs
+ * The browser half of the ssr check. The servers are started by scripts/sdk_check_ssr.mjs
  * (Next, Nuxt, Astro, SvelteKit, Angular, all with the packed tarballs), which passes
  * their addresses in TL_SSR_TARGETS; this config only runs the measurement.
  */

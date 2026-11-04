@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 /**
- * G-CLUSTER, in a real browser: the sum of the markers' counts ALWAYS
+ * The cluster check, in a real browser: the sum of the markers' counts ALWAYS
  * equals the number of visible items — read from the live DOM.
  *
  * The page (public/cluster.html) draws with the shipped bundle, through the

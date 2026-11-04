@@ -1,5 +1,5 @@
 /**
- * G-COMPAT: vis-timeline's own documentation examples, through the
+ * The compat check: vis-timeline's own documentation examples, through the
  * compatibility layer, put the same items at the same time in the same
  * group as vis-timeline itself.
  *
@@ -113,7 +113,7 @@ const convert = (vector: Vector, timeZone = ZONE): VisCompatConfig =>
 const docs = data.vectors.filter((vector) => !vector.page.startsWith("edge/"));
 const edges = data.vectors.filter((vector) => vector.page.startsWith("edge/"));
 
-describe("G-COMPAT: vis-timeline's documentation examples through the compatibility layer", () => {
+describe("compat: vis-timeline's documentation examples through the compatibility layer", () => {
   it("[claim:docs-examples] the vectors are vis-timeline 8.5.6's, from enough of its examples", () => {
     expect(data.visTimeline).toBe("8.5.6");
     expect(docs.length).toBeGreaterThanOrEqual(80);
@@ -342,7 +342,7 @@ describe("the compatibility layer at its edges", () => {
     expect(fromVisItems(null as never).config.items).toEqual([]);
   });
 
-  it("leaves out an item with a time vis-timeline cannot read either, so one bad row does not stop the timeline (M3)", () => {
+  it("leaves out an item with a time vis-timeline cannot read either, so one bad row does not stop the timeline", () => {
     const { config, warnings } = fromVis(
       [
         { id: "good", start: "2026-03-02", end: "2026-03-05" },
@@ -369,7 +369,7 @@ describe("the compatibility layer at its edges", () => {
     expect(() => renderTimeline({ items: config.items, domain: [Date.UTC(2026, 2, 1), Date.UTC(2026, 2, 9)], width: 800, height: 200 })).not.toThrow();
   });
 
-  it("takes editable: true for every right vis-timeline gives it, adding items included (M11)", () => {
+  it("takes editable: true for every right vis-timeline gives it, adding items included", () => {
     expect(fromVis([], null, { editable: true }).config.editing).toEqual({ enabled: true, crossLane: true, add: true, remove: true });
     expect(fromVis([], null, { editable: { add: false, updateTime: true } }).config.editing).toEqual({ enabled: true });
     expect(fromVis([], null, { editable: false }).config.editing).toBeUndefined();

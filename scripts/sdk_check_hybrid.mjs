@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-HYBRID: proves that in the SAME session, on the SAME machine instance,
+ * The hybrid check: proves that in the SAME session, on the SAME machine instance,
  * a drag starts at once with a mouse, while a finger needs a long press.
  *
  * Why this check: a touchscreen laptop is one machine with two hands, and
@@ -278,11 +278,11 @@ if (failures.length > 0) {
   for (const failure of failures) {
     console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-HYBRID FAILED: ${String(failures.length)} failure(s).`);
+  console.error(`\nhybrid FAILED: ${String(failures.length)} failure(s).`);
   process.exit(1);
 }
 
 console.log(
-  "\nG-HYBRID passed: on one machine, in one session, the mouse drags at once, the finger on hold, " +
+  "\nhybrid passed: on one machine, in one session, the mouse drags at once, the finger on hold, " +
     "and the mouse at once again afterwards.",
 );

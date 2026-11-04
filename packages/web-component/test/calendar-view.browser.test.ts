@@ -9,7 +9,7 @@ import { mountCalendarView } from "../src/calendar.js";
 import type { CalendarSelectPayload, CalendarView } from "../src/calendar.js";
 
 /**
- * P27 through the element, in a real Chromium: the week view draws the
+ * The week view through the element, in a real Chromium: the week view draws the
  * events of a calendar file, a click and `Enter` choose the same event with
  * the same `select`, the arrows walk the events, the period keys and the
  * buttons page the same way, right to left mirrors the days, and every word
@@ -64,7 +64,7 @@ const centre = (node: Element): { readonly x: number; readonly y: number } => {
   return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
 };
 
-describe("P27: the week view", () => {
+describe("the week view", () => {
   it("draws the file's events in the week, with the recurring ones expanded and the all-day one in the band", () => {
     const { view, svg } = mount();
     expect(view.range).toEqual([MONDAY, MONDAY + 7 * DAY]);
@@ -148,7 +148,7 @@ describe("P27: the week view", () => {
   });
 });
 
-describe("P27: the week view, every option and path", () => {
+describe("the week view, every option and path", () => {
   it("takes the rest of the options: items beside the events, the hours, a minimum length, theme, density, ariaLabel, a now line, no toolbar, the week's first day", () => {
     const { element, view, svg } = mount({
       items: [{ id: "solo", label: "Solo", start: MONDAY + 13 * HOUR, end: MONDAY + 13 * HOUR + 5 * 60_000 }],

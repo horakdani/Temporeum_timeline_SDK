@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-DEPS — proves that the core has ZERO runtime dependencies.
+ * The deps check — proves that the core has ZERO runtime dependencies.
  *
  * In two independent ways, because each catches a different bug:
  *
@@ -228,7 +228,7 @@ for (const note of notes) console.log(`  ok   ${note}`);
 if (problems.length > 0) {
   console.error("");
   for (const problem of problems) console.error(`  FAIL ${problem}`);
-  console.error(`\nG-DEPS FAILED: ${problems.length} problems.`);
+  console.error(`\ndeps FAILED: ${problems.length} problems.`);
   process.exit(1);
 }
-console.log(`\nG-DEPS passed: zero runtime dependencies, ${notes.length} checks.`);
+console.log(`\ndeps passed: zero runtime dependencies, ${notes.length} checks.`);

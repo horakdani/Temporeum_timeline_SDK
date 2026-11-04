@@ -1,10 +1,10 @@
 /**
- * G-KEYBOARD, P27: the week and day views have a key for everything a
+ * The keyboard check for the calendar views: the week and day views have a key for everything a
  * pointer does there.
  *
  * A pointer does one thing in the views: a click chooses an event. The key
  * for it is `Enter` (or `Space`) on the event the keyboard is on, and the
- * keyboard reaches every event (`G-CALENDAR-VIEW [claim:keyboard]`). Here:
+ * keyboard reaches every event (`the calendar-view check [claim:keyboard]`). Here:
  * the keys resolve to the actions, right to left as well, and for every
  * event the click and the keys end on the same event, so both choose the
  * same one. The period buttons are buttons — keys of their own — and have
@@ -30,7 +30,7 @@ const items: Item[] = [
   { id: "f", label: "F", start: MONDAY + 2 * DAY, end: MONDAY + 4 * DAY },
 ];
 
-describe("G-KEYBOARD: the calendar views", () => {
+describe("keyboard: the calendar views", () => {
   it("[claim:calendar-keys] every key of the views resolves, left to right and right to left", () => {
     const table: readonly (readonly [string, Partial<{ ctrlKey: boolean; metaKey: boolean; altKey: boolean }>, CalendarKeyAction | undefined, CalendarKeyAction | undefined])[] = [
       ["ArrowDown", {}, "next", "next"],

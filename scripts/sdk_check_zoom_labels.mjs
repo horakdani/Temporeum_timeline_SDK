@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-ZOOM-LABELS: proves that a label visible both before and after a zoom
+ * The zoom-labels check: proves that a label visible both before and after a zoom
  * is missing from none of the zoom's frames — on generated, monotonic zoom
  * gestures, driven by the README's loop (stepwise re-anchoring, redrawing
  * until pendingTiles, at rest until the overscan is complete).
@@ -87,5 +87,5 @@ if (control !== undefined) {
 
 for (const note of notes) console.log(`  ok    ${note}`);
 for (const failure of failures) console.log(`  FAIL  ${failure}`);
-console.log(failures.length === 0 ? "G-ZOOM-LABELS: passed" : "G-ZOOM-LABELS: FAILED");
+console.log(failures.length === 0 ? "zoom-labels: passed" : "zoom-labels: FAILED");
 process.exit(failures.length === 0 ? 0 : 1);

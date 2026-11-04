@@ -4,12 +4,13 @@ An editable, responsive timeline engine for the web — from millennia down to
 seconds, with collision-free lanes and **zero runtime dependencies**.
 
 > **Status: 1.0.0.** Stable: the API follows semantic versioning
-> ([stability policy](../docs/site/pages/stability.md)). Most
+> ([stability policy](https://horakdani.github.io/Temporeum_timeline_SDK/stability.html)). Most
 > hosts want the live timeline on top of this engine —
-> [`@temporeum/timeline-element`](../web-component/README.md) (`createTimeline`
-> and `<temporeum-timeline>`) or
-> [`@temporeum/timeline-react`](../react/README.md). This package is the
-> engine itself, for a host that builds its own shell.
+> [`@temporeum/timeline-element`](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/web-component#readme) (`createTimeline`
+> and `<temporeum-timeline>`), or its component for
+> [React](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/react#readme), [Vue](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/vue#readme),
+> [Svelte](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/svelte#readme) or [Angular](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/angular#readme).
+> This package is the engine itself, for a host that builds its own shell.
 
 ```bash
 npm install @temporeum/timeline-core
@@ -138,8 +139,9 @@ attachInput(element, {
   `createTimeline` in `@temporeum/timeline-element` is the complete wiring.
 
 The guides — editing, responsive, accessibility, async data, clustering,
-theming, server rendering, performance — are on the docs site
-(`packages/docs`), each with a live example.
+theming, server rendering, performance — are on the [docs site](https://horakdani.github.io/Temporeum_timeline_SDK/), each
+with a live example; the [core engine guide](https://horakdani.github.io/Temporeum_timeline_SDK/guides/core-engine.html) is this
+loop in full.
 
 ## Performance
 
@@ -183,12 +185,13 @@ loop misses ~37% of the wheel zoom's frames (`npm run bench:wheel -w
 The other entry points, each a subpath with the same three formats and a
 budget of its own on top of the core: `/groups`, `/items`, `/gantt`,
 `/schedule`, `/resources`, `/tools`, `/export`, `/intl`, `/calendar`,
-`/vis-compat`, and two small ones — `/live` (`applyItemChanges`, `relayout`:
+`/vis-compat`, `/story`, and two small ones — `/live` (`applyItemChanges`, `relayout`:
 live data, the same functions `/tools` exports) and `/words` (the English
 dictionary: `DEFAULT_STRINGS`, `resolveStrings`, `sayIn`, `fill`,
 `formatAmount`, the same objects `/intl` exports), 2 kB each. The base of
 `@temporeum/timeline-element` loads these two instead of `/tools` and
-`/intl`, which come only with its plugins. The docs site's entry points page lists them all, with
+`/intl`, which come only with its plugins. The docs site's
+[entry points page](https://horakdani.github.io/Temporeum_timeline_SDK/reference/entry-points.html) lists them all, with
 their budgets.
 
 The entry points are listed once, in `entries.json`; the build, the exports
@@ -210,7 +213,8 @@ one beside it. The element and the React component do it for you.
 
 ## Budgets
 
-These are CI gates, not aspirations:
+Checked by CI on every push and pull request
+(`.github/workflows/ci.yml`; a failing one fails the build):
 
 | Budget | Limit |
 |---|---|
@@ -222,20 +226,28 @@ These are CI gates, not aspirations:
 | coverage, per file | 90% |
 | visual regression | 3 widths x 2 orientations x 2 themes |
 | zoom anchor error after a gesture | 0.01 px |
+| labels an exact frame keeps that a scene space at rest does not show | 0 |
+| items with room for a shortened label that show none, up to 1 000 items in a viewport's width | 0 |
+| labels shown before and after a zoom that a frame of it does not show | 0 |
+| core options the element's configuration drops without a stated reason | 0 |
+| capabilities reachable only by a gesture | 0 |
+| items of an aborted request on the canvas, during fast zoom | 0 |
+| axe violations, WCAG 2.2 AA, every state of the demo pages and every page of the docs site | 0 |
+
+Measured before each release, on a quiet machine — a shared CI runner's
+timing is no yardstick, and the last one needs the iOS Simulator. The
+commands are in
+[RELEASING.md](https://github.com/horakdani/Temporeum_timeline_SDK/blob/main/RELEASING.md#measurements):
+
+| Budget | Limit |
+|---|---|
 | frames missed, pan / zoom / labelled pan, 2000 visible items, 4x CPU slowdown, with a scene space | 5% |
 | the same, through `createTimeline` from the shipped bundle | 5% |
 | frames missed, 4x pinch zoom, on both paths | 5% |
 | frames missed, 4.3x ctrl+wheel zoom from a fresh page, on both paths, median of three | 5% |
-| labels an exact frame keeps that a scene space at rest does not show | 0 |
-| items with room for a shortened label that show none, up to 1 000 items in a viewport's width | 0 |
-| labels shown before and after a zoom that a frame of it does not show | 0 |
 | JavaScript heap growth over the comparison benchmark's pan, 10 000 items, median of three | 5.2 MB |
-| core options the element's configuration drops without a stated reason | 0 |
 | nodes created in the second half of a long pan | 0.5% of the live tree, plus the labels the view gains |
-| axe violations, WCAG 2.2 AA, every state of the demo pages and every page of the docs site | 0 |
-| capabilities reachable only by a gesture | 0 |
 | page scroll under a one-finger drag on the timeline, Mobile Safari in the iOS Simulator, iPhone and iPad | 0 px |
-| items of an aborted request on the canvas, during fast zoom | 0 |
 
 Every code block in this README is checked against a running example in CI
 (`npm run test:examples -w @temporeum/timeline-docs`).

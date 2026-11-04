@@ -1,5 +1,5 @@
 /**
- * G-I18N: the library has no word of its own that a dictionary cannot
+ * The i18n check: the library has no word of its own that a dictionary cannot
  * replace, and in at least five languages and three calendars that are not
  * Gregorian, the axis's ticks are where the calendar's own units begin.
  *

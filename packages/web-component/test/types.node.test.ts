@@ -6,9 +6,9 @@ import type { Timeline, TimelineConfig } from "../src/index.js";
 
 /**
  * Type-level claims about the element's API, checked by `tsc` (the package's
- * `typecheck` covers the tests): the host's item type survives an edit (A6),
+ * `typecheck` covers the tests): the host's item type survives an edit,
  * and a configuration field takes an explicit `undefined` under
- * `exactOptionalPropertyTypes` (A7).
+ * `exactOptionalPropertyTypes`.
  */
 
 interface Task {

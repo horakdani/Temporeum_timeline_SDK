@@ -37,7 +37,7 @@ export default function App() {
         ariaLabel="Release plan"
         editing={{ enabled: true, snapMs: DAY }}
         renderItem={(item) => <ItemCard item={item} />}
-        onItemMoved={({ item, to }) => setLog(`${item.label} moved to ${new Date(to.start).toDateString()}`)}
+        onItemMoved={({ item, to }) => setLog(`${item.label} moved to ${new Date(to.start ?? item.start).toDateString()}`)}
         timelineRef={setTimeline}
       />
       <p aria-live="polite">

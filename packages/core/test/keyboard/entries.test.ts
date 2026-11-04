@@ -1,11 +1,11 @@
 /**
- * G-KEYBOARD for the P19 capabilities, which live in the `/groups` and
+ * The keyboard check for the editing capabilities, which live in the `/groups` and
  * `/items` entry points rather than in the input machine: collapsing and
  * reordering a group, adding, removing and dropping an item.
  *
  * Each test drives the gesture's path and the key's path to the same pure
  * function and records what each produced, in both orientations, in
- * `.keyboard-parity-entries.json` — the log the G-KEYBOARD check reads next
+ * `.keyboard-parity-entries.json` — the log the keyboard check reads next
  * to the machine's own. The browser binding (`createTimeline`) feeds these
  * same functions; `sdk_check_gesture_parity.mjs` checks that statically.
  */
@@ -92,7 +92,7 @@ function findRemove(node: SceneElement): string | undefined {
   return undefined;
 }
 
-describeBothOrientations("P19 keyboard parity", (orientation) => {
+describeBothOrientations("keyboard parity: groups, item kinds, adding and removing", (orientation) => {
   const forward = orientation === "horizontal" ? "ArrowDown" : "ArrowRight";
 
   it("collapses a group with Enter, as a click on its header does [cap:group.toggle]", () => {
@@ -153,7 +153,7 @@ describeBothOrientations("P19 keyboard parity", (orientation) => {
   });
 });
 
-describeBothOrientations("P20 keyboard parity", (orientation) => {
+describeBothOrientations("keyboard parity: the Gantt chart", (orientation) => {
   const forward = orientation === "horizontal" ? "ArrowDown" : "ArrowRight";
 
   it("opens a task-grid row with Enter, as a click on the row does [cap:grid.open]", () => {
@@ -179,7 +179,7 @@ describeBothOrientations("P20 keyboard parity", (orientation) => {
   });
 });
 
-describeBothOrientations("P22 keyboard parity", (orientation) => {
+describeBothOrientations("keyboard parity: resources and the backlog", (orientation) => {
   it("places an unscheduled task with Enter, as letting it go over its resource's row does [cap:backlog.place]", () => {
     // A resource view: each person's row, and under it the row of their load.
     const resources = [{ id: "ann", label: "Ann" }, { id: "bob", label: "Bob" }, { id: "ops", label: "Ops" }];
@@ -209,7 +209,7 @@ describeBothOrientations("P22 keyboard parity", (orientation) => {
   });
 });
 
-describeBothOrientations("P24 keyboard parity", (orientation) => {
+describeBothOrientations("keyboard parity: the time tools", (orientation) => {
   const HOUR = 3_600_000;
   const view = { mainSize: 900, scale: createTimeScale(DOMAIN, 900) };
 

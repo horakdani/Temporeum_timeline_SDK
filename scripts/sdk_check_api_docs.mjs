@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-API-DOCS — every name on a public entry point is documented, and every
+ * The api-docs check — every name on a public entry point is documented, and every
  * public function is called the way the naming rule says.
  *
  * What an editor shows for a name is its JSDoc: a payload, a constant or an
@@ -13,9 +13,9 @@
  *     declaration has no JSDoc text;
  *  2. an exported function with a positional `boolean` parameter — a call
  *     like `f(x, true)` says nothing at the call site; it takes an options
- *     object (D9 of the quality round);
+ *     object;
  *  3. an exported function with more than four positional parameters before
- *     a trailing options object (D9).
+ *     a trailing options object.
  *
  * NEGATIVE CONTROL: a scratch module with an undocumented export, a boolean
  * parameter and five positional parameters is checked the same way, and has
@@ -138,8 +138,8 @@ const controlOk = caught.length === wanted.length && wanted.every((text) => caug
 
 if (!controlOk) problems.push(`the negative control did not fail as it should: ${JSON.stringify(caught)}`);
 if (problems.length > 0) {
-  console.error(`G-API-DOCS: FAILED (${String(problems.length)})`);
+  console.error(`api-docs: FAILED (${String(problems.length)})`);
   for (const problem of problems) console.error(`  x ${problem}`);
   process.exit(1);
 }
-console.log(`G-API-DOCS: every public name of ${String(ENTRIES.length)} entry points is documented and called by the rule (control: ${String(caught.length)} failures, as planted).`);
+console.log(`api-docs: every public name of ${String(ENTRIES.length)} entry points is documented and called by the rule (control: ${String(caught.length)} failures, as planted).`);

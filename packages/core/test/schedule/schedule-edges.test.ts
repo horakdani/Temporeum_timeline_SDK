@@ -108,7 +108,7 @@ describe("the scheduler at its edges", () => {
     ]);
   });
 
-  it("leaves a moment nothing places where it is, even at the start of a working day (M4)", () => {
+  it("leaves a moment nothing places where it is, even at the start of a working day", () => {
     const saturday = BASE - 2 * DAY;
     const items = [
       // At the start of the office day: the same work as Friday 17:00, and its own time.

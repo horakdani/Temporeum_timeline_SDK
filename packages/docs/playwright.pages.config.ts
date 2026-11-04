@@ -1,21 +1,21 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * The browser half of G-DROP (dragging in an external element, and its
- * keyboard twin) and G-TEMPLATE, in a real Chromium (the script WOULD run if
+ * The browser half of the drop check (dragging in an external element, and its
+ * keyboard twin) and the template check, in a real Chromium (the script WOULD run if
  * the template let it through — and in the negative control it does run).
  *
  * Its own port, as for every e2e suite.
  */
-const PORT = Number(process.env.TL_P19_PORT ?? 41751);
+const PORT = Number(process.env.TL_PAGES_PORT ?? 41751);
 
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: process.env.TL_P19_SPEC ?? /(drop|template)\.spec\.ts/,
+  testMatch: process.env.TL_PAGES_SPEC ?? /(drop|template)\.spec\.ts/,
   workers: 1,
   fullyParallel: false,
   retries: 0,
-  reporter: [["list"], ["json", { outputFile: process.env.TL_P19_REPORT ?? ".e2e-p19-report.json" }]],
+  reporter: [["list"], ["json", { outputFile: process.env.TL_PAGES_REPORT ?? ".e2e-pages-report.json" }]],
   use: {
     baseURL: `http://127.0.0.1:${String(PORT)}`,
     channel: "chromium-headless-shell",
@@ -25,7 +25,7 @@ export default defineConfig({
   webServer: {
     command: "node e2e/serve.mjs",
     env: { TL_E2E_PORT: String(PORT) },
-    url: `http://127.0.0.1:${String(PORT)}/p19.html`,
+    url: `http://127.0.0.1:${String(PORT)}/drop-template.html`,
     reuseExistingServer: false,
     timeout: 20_000,
   },

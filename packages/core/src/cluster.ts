@@ -6,7 +6,7 @@
  * A cluster does: one marker over the run of items, with their count on it,
  * that a tap or `Enter` zooms into until the items come apart.
  *
- * Four decisions shape the file, and the gate (G-CLUSTER) holds each of them:
+ * Four decisions shape the file, and the cluster tests hold each of them:
  *
  * 1. **A cluster lives in one row.** Items are clustered along the time axis
  *    inside a sublane, never across rows. The layout already guarantees that

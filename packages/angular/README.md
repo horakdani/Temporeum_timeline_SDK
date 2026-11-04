@@ -1,7 +1,7 @@
 # @temporeum/timeline-angular
 
 The timeline as an Angular standalone component, built on the shared
-instance of [`@temporeum/timeline-element`](../web-component/README.md).
+instance of [`@temporeum/timeline-element`](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/web-component#readme).
 
 ```bash
 npm install @temporeum/timeline-angular
@@ -14,6 +14,10 @@ build serves the Angular versions after 21 too.
 ```ts excerpt:template/angular/src/app/app.ts
 import { Component, signal } from "@angular/core";
 import { TimelineComponent, timelineState } from "@temporeum/timeline-angular";
+import type { TimelineConfig, TimelineInstance } from "@temporeum/timeline-angular";
+
+const DAY = 86_400_000;
+const t = Date.UTC(2026, 2, 2);
 
 @Component({
   selector: "app-root",
@@ -26,16 +30,33 @@ import { TimelineComponent, timelineState } from "@temporeum/timeline-angular";
   `,
 })
 export class App {
+  readonly config: TimelineConfig = {
+    items: [
+      { id: "design", label: "Design", laneId: "work", start: t, end: t + 7 * DAY },
+      { id: "launch", label: "Launch", laneId: "ship", start: t + 25 * DAY, end: t + 32 * DAY },
+    ],
+    lanes: [
+      { id: "work", label: "Work" },
+      { id: "ship", label: "Shipping" },
+    ],
+    height: 320,
+    ariaLabel: "Release plan",
+    editing: { enabled: true, snapMs: DAY },
+  };
   readonly timeline = signal<TimelineInstance | null>(null);
   readonly selected = timelineState(this.timeline, (state) => state.selectedIds);
   readonly log = signal("Drag an item.");
+
+  onMoved({ item, to }: { item: { label?: string; start: number | Date }; to: { start?: number | Date } }): void {
+    this.log.set(`${item.label ?? ""} moved to ${new Date(to.start ?? item.start).toDateString()}`);
+  }
 }
 ```
 
-The whole project, with the Angular CLI, is the Angular template
-(`packages/docs/templates/angular`).
+The whole project, with the Angular CLI, is the
+[Angular template](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/docs/templates/angular).
 
-`[config]` takes the whole [`TimelineConfig`](../web-component/src/config.ts);
+`[config]` takes the whole [`TimelineConfig`](https://horakdani.github.io/Temporeum_timeline_SDK/reference/api.html#configuration);
 a new object whose fields hold the same values is no change, and only the
 fields that changed reach the instance. Every instance event is an output by
 its own name (`(itemMoved)`, `(selectionChanged)`, `(viewportChanged)`, …),
@@ -74,6 +95,13 @@ draw, at `[ssrWidth]` (960 by default), and with `provideClientHydration()`
 the client keeps the server's DOM: the instance takes those nodes over
 instead of drawing again. The drawing is written on the server only, into
 a node the template leaves empty, so hydration has nothing in it to compare.
+
+## Documentation
+
+Guides, recipes and the API reference with live examples are on the
+[docs site](https://horakdani.github.io/Temporeum_timeline_SDK/) — the Angular page is [Frameworks](https://horakdani.github.io/Temporeum_timeline_SDK/frameworks.html). Every
+code block in this README is checked against a running template in CI
+(`npm run test:examples -w @temporeum/timeline-docs`).
 
 ## Licence
 

@@ -1,7 +1,7 @@
 /**
  * Server rendering: the timeline as markup, before any script runs.
  *
- * The core has been DOM-free since P1 for exactly this. The server calls
+ * The core is DOM-free for exactly this. The server calls
  * the same renderer the browser does, with the same configuration resolved
  * the same way (`config.ts`), and prints it with `renderToSvgString`. What
  * reaches the browser is a timeline a reader can see, a screen reader can
@@ -85,7 +85,7 @@ export function resolvedServerFrame<T>(config: TimelineConfig<T>, options: Serve
 
 /**
  * The scene's `<style>`s with the nonce, which a policy without
- * `'unsafe-inline'` lets them apply by (C2). The client's frame has none:
+ * `'unsafe-inline'` lets them apply by. The client's frame has none:
  * it adopts its sheets instead, and lets the server's `<style>`s go.
  */
 function withNonce(scene: SceneElement, nonce: string | undefined): SceneElement {

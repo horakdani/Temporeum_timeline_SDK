@@ -35,7 +35,7 @@ describe("the Svelte adapter in Node", () => {
     expect(body.match(/role="option"/g)).toHaveLength(2);
   });
 
-  it("reads an own __proto__ prop as nothing, not as the configuration's prototype (S13)", () => {
+  it("reads an own __proto__ prop as nothing, not as the configuration's prototype", () => {
     const planted = JSON.parse('{"__proto__":{"instanceId":"planted"}}') as Record<string, unknown>;
     const { body } = render(Timeline, { props: { items, ...planted } });
     expect(body).not.toContain("planted");
@@ -62,7 +62,7 @@ describe("the Svelte adapter in Node", () => {
   });
 });
 
-describe("the plugin registry (W4)", () => {
+describe("the plugin registry", () => {
   it("is the element's, handed on by the adapter", async () => {
     const adapter = await import("../src/index.js");
     const element = await import("@temporeum/timeline-element");

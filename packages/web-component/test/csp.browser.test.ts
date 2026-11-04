@@ -10,8 +10,8 @@ import type { TemporeumTimelineElement, Timeline } from "../src/index.js";
 import { mountStory, TRUSTED_TYPES_POLICY } from "../src/story.js";
 
 /**
- * The timeline under a strict Content-Security-Policy and Trusted Types
- * (C1–C5): no `'unsafe-inline'` for styles, a `TrustedHTML` for every HTML
+ * The timeline under a strict Content-Security-Policy and Trusted Types:
+ * no `'unsafe-inline'` for styles, a `TrustedHTML` for every HTML
  * sink, and only the element's own policy allowed. A `<style>`'s text or a
  * written `style` attribute would be blocked, and say so with a
  * `securitypolicyviolation`; an `innerHTML` with a string would throw.
@@ -73,7 +73,7 @@ async function drawn(timeline: Timeline): Promise<void> {
   await vi.waitFor(() => expect(timeline.result).toBeDefined());
 }
 
-describe("under style-src 'self' and Trusted Types (C5)", () => {
+describe("under style-src 'self' and Trusted Types", () => {
   it("the element takes its height and draws with its stylesheet", async () => {
     const element = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
     element.style.width = "800px";

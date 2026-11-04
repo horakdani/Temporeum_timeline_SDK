@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-HIDDEN-DATES: on generated hidden ranges, in both orientations: hidden time is not on the axis (both ends of a range sit on one pixel, a tick only on the seam), an item spanning it is drawn without it (in the scene too), and the zoom anchor holds across a hidden range — in the scale's zoom and in the machine's wheel. Statically: the core knows hidden dates only as a TimeWarp (it does not import from /tools), the scale, panning and zoom receive the warp, and the machine passes it on.
+ * The hidden-dates check: on generated hidden ranges, in both orientations: hidden time is not on the axis (both ends of a range sit on one pixel, a tick only on the seam), an item spanning it is drawn without it (in the scene too), and the zoom anchor holds across a hidden range — in the scale's zoom and in the machine's wheel. Statically: the core knows hidden dates only as a TimeWarp (it does not import from /tools), the scale, panning and zoom receive the warp, and the machine passes it on.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -40,4 +40,4 @@ for (const file of ["scale.ts", "input.ts", "render.ts", "ticks.ts"]) {
   if (codeOf(readFileSync(join(core, "src", file), "utf8")).includes("/tools/")) failures.push(`the core's ${file} imports from /tools`);
 }
 
-finish("G-HIDDEN-DATES", failures);
+finish("hidden-dates", failures);

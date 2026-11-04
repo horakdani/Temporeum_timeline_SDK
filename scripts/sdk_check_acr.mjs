@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-ACR: the conformance report (packages/docs/site/conformance/
+ * The acr check: the conformance report (packages/docs/site/conformance/
  * wcag22.json) lists EVERY A and AA success criterion of WCAG 2.2, and every
  * "supports" row is backed by an existing, PASSING test.
  *
@@ -182,9 +182,9 @@ const SPECS = {
   "packages/docs/e2e/responsive.spec.ts": { config: "playwright.responsive.config.ts", report: ".e2e-responsive-report.json", env: {} },
   "packages/docs/e2e/touch.spec.ts": { config: "playwright.config.ts", report: ".e2e-touch-report.json", env: {} },
   "packages/docs/e2e/tooltip.spec.ts": {
-    config: "playwright.p19.config.ts",
+    config: "playwright.pages.config.ts",
     report: ".e2e-tooltip-report.json",
-    env: { TL_P19_SPEC: "tooltip.spec.ts", TL_P19_REPORT: ".e2e-tooltip-report.json", TL_P19_PORT: "41767" },
+    env: { TL_PAGES_SPEC: "tooltip.spec.ts", TL_PAGES_REPORT: ".e2e-tooltip-report.json", TL_PAGES_PORT: "41767" },
   },
 };
 const docs = join(repo, "packages", "docs");
@@ -263,5 +263,5 @@ notes.push(`${String(green)}/${String(greenRefs.length)} "supports" citations pa
 
 for (const note of notes) console.log(`  ok    ${note}`);
 for (const failure of failures) console.log(`  FAIL  ${failure}`);
-console.log(failures.length === 0 ? "G-ACR: passed" : `G-ACR: FAILED (${String(failures.length)} problems)`);
+console.log(failures.length === 0 ? "acr: passed" : `acr: FAILED (${String(failures.length)} problems)`);
 process.exit(failures.length === 0 ? 0 : 1);

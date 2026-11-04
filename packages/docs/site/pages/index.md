@@ -39,6 +39,6 @@ It tells stories too: one slide at a time with images and video, beside the time
 
 - [Getting started](getting-started.md): install, and the three ways in.
 - [Recipes](recipes/gantt.md): a Gantt plan, an event log, a chronology, a roadmap.
-- [Frameworks](frameworks.md): starter projects for plain JavaScript, React, Vue, Next, Nuxt and Astro.
+- [Frameworks](frameworks.md): starter projects for plain JavaScript, React, Next, Vue, Nuxt, Svelte, Angular and Astro.
 - [The benchmark](benchmark.md), including where it loses.
 - [Stability](stability.md): what 1.0 promises, and what it does not.

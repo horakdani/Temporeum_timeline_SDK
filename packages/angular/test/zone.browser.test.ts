@@ -13,7 +13,7 @@ import { TimelineComponent } from "../src/index.js";
 registerPlugin(toolsPlugin);
 
 /**
- * The instance runs outside Angular's zone (W6 of the quality round). With
+ * The instance runs outside Angular's zone. With
  * zone.js, every listener and timer is bound to the zone it was made in, and
  * each one that fires in Angular's zone checks the whole application: a
  * pointer move, a frame, a resize — and `rolling`'s interval, which kept the
@@ -121,7 +121,7 @@ function record(zone: RecordingZone): void {
   });
 }
 
-describe("<tl-timeline> and Angular's zone (W6)", () => {
+describe("<tl-timeline> and Angular's zone", () => {
   it("makes its listeners, frames and timers outside the zone, and emits a listened-to output inside it", async () => {
     // Angular's own work runs in its zone.
     const zone = new RecordingZone();

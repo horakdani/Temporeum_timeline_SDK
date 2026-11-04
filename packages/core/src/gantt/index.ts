@@ -342,7 +342,7 @@ export function dependencyNodes(routes: readonly DependencyRoute[], orientation:
  * The arrows as few paths: one per look — type, selection, class — naming
  * its arrows in `data-tl-dep`, space-separated, the stronger ones last. A
  * path is a draw: at 800 arrows in view, a path each is most of a zoom
- * frame's paint (P20, G-PERF-GANTT). `pathOf` may hand a route's `d` from a
+ * frame's paint. `pathOf` may hand a route's `d` from a
  * cache.
  */
 export function dependencyPaths(

@@ -206,7 +206,7 @@ async function openDemo(page: Page, query = ""): Promise<void> {
     .catch(() => false);
   if (!mine) {
     throw new Error(
-      `${page.url()} is not the SDK demo page: it has no window.tl. ` +
+      `${page.url()} is not the timeline demo page: it has no window.tl. ` +
         "Something else is probably on the port — fix the server, not the tests.",
     );
   }

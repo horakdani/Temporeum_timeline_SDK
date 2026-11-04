@@ -1019,7 +1019,7 @@ export function metricsOf(view: ResolvedView): { readonly axisSize: number; read
  * frame (the layout, the scroll across, the selection), what it draws and
  * the scale are the same; and the nodes for the last clip, in that scale's
  * pixels. A pan in a space keeps the scale, so a layer once drawn is not
- * drawn again (P20, G-PERF-GANTT).
+ * drawn again.
  */
 interface LayerCache {
   readonly layout: Layout<unknown>;

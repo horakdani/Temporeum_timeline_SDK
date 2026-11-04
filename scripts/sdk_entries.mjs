@@ -10,7 +10,7 @@
  * typesVersions (for node10 resolution), in size-limit and in rollup. Four
  * hand-written lists can each miss something — at one point /dom found no
  * types under node10 for exactly that reason. So there is one source, and
- * the four places follow from it; G-ENTRIES (sdk_check_entries.mjs) proves
+ * the four places follow from it; the entries check (sdk_check_entries.mjs) proves
  * on the shipped package that this really holds.
  *
  * What it writes:
@@ -46,7 +46,7 @@ export function readEntries(coreDir = CORE_DIR) {
     if (entry.name !== "index" && !/^src\/[a-z][a-z0-9-]*\/index\.ts$/.test(entry.input)) {
       // The build factory recognises a non-base entry point's own code by its
       // folder (src/<name>/). The code of an entry point at the root of src
-      // would merge into the core, and the G-TREESHAKE proof would lose its meaning.
+      // would merge into the core, and the treeshake check's proof would lose its meaning.
       throw new Error(`entries.json: the source of ${entry.name} is not of the form src/<name>/index.ts: ${entry.input}`);
     }
     if (!/^\d+(\.\d+)? kB$/.test(entry.limit)) throw new Error(`entries.json: the budget of ${entry.name} is not "<number> kB": ${entry.limit}`);

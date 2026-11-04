@@ -36,7 +36,7 @@ export class App {
   readonly selected = timelineState(this.timeline, (state) => state.selectedIds);
   readonly log = signal("Drag an item.");
 
-  onMoved({ item, to }: { item: { label?: string }; to: { start?: number } }): void {
-    this.log.set(`${item.label ?? ""} moved to ${new Date(to.start ?? 0).toDateString()}`);
+  onMoved({ item, to }: { item: { label?: string; start: number | Date }; to: { start?: number | Date } }): void {
+    this.log.set(`${item.label ?? ""} moved to ${new Date(to.start ?? item.start).toDateString()}`);
   }
 }

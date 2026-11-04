@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-E2E-TOUCH: proves that the browser suite really ran — with real touch,
+ * The e2e-touch check: proves that the browser suite really ran — with real touch,
  * device emulation, and on the SHIPPED package.
  *
  * This check lies about itself most easily. In three ways:
@@ -200,8 +200,8 @@ if (failures.length > 0) {
   for (const failure of failures) {
     console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-E2E-TOUCH FAILED: ${String(failures.length)} problems.`);
+  console.error(`\ne2e-touch FAILED: ${String(failures.length)} problems.`);
   process.exit(1);
 }
 
-console.log("\nG-E2E-TOUCH passed: real tap, drag and pinch on an emulated touchscreen.");
+console.log("\ne2e-touch passed: real tap, drag and pinch on an emulated touchscreen.");

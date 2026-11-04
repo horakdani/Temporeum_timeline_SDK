@@ -294,7 +294,7 @@ interface Interval {
  * separate float computations, so the first can end a few ulps past the
  * second's start. A label placed exactly at that start then "overlapped"
  * the first item, and was sent out after its own, where a tile during a
- * gesture could not reach it: a label that blinked (P17). A millionth of a
+ * gesture could not reach it: a label that blinked. A millionth of a
  * pixel is far above any such error and far below anything drawn.
  */
 const CLEARANCE = 1e-6;

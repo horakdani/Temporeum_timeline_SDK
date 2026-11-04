@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-ANCHOR: proves that zoom is anchored to the gesture's focus — and that
+ * The anchor check: proves that zoom is anchored to the gesture's focus — and that
  * the tolerance used for the measurement really is tight.
  *
  * This check is special because here the MEASUREMENT itself is the risk. A
@@ -142,8 +142,8 @@ if (failures.length > 0) {
   for (const failure of failures) {
     console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-ANCHOR FAILED: ${String(failures.length)} failure(s).`);
+  console.error(`\nanchor FAILED: ${String(failures.length)} failure(s).`);
   process.exit(1);
 }
 
-console.log("\nG-ANCHOR passed: the MOMENT under the focus is in the same place after the zoom.");
+console.log("\nanchor passed: the MOMENT under the focus is in the same place after the zoom.");

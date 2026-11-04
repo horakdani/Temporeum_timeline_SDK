@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-LIVE-DATA: on generated update sequences the incremental update (applyItemChanges + relayout) gives the same layout and the same frame as a full reload. Statically: the instance's live-data API (addItems, updateItems, removeItems, changeItems) draws through a single commitLive, with relayout.
+ * The live-data check: on generated update sequences the incremental update (applyItemChanges + relayout) gives the same layout and the same frame as a full reload. Statically: the instance's live-data API (addItems, updateItems, removeItems, changeItems) draws through a single commitLive, with relayout.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -21,7 +21,7 @@ const failures = checkReport({
 const entries = JSON.parse(readFileSync(join(core, "entries.json"), "utf8")).entries;
 if (!entries.some((entry) => entry.name === "tools" && entry.input === "src/tools/index.ts")) failures.push("the tools entry point is missing from entries.json");
 // The live-data module is now the shared src/shared/live-data.ts (both /tools and
-// /live export from it, G-TREESHAKE); the claim is the same: it imports only from the base.
+// /live export from it, the treeshake check); the claim is the same: it imports only from the base.
 for (const file of ["live-data.ts"]) {
   const source = codeOf(readFileSync(join(core, "src", "shared", file), "utf8"));
   for (const match of source.matchAll(/from\s+"([^"]+)"/g)) {
@@ -34,4 +34,4 @@ for (const method of ["addItems", "updateItems", "removeItems", "changeItems"]) 
 }
 if (!timeline.includes("relayout(result.layout")) failures.push("the instance does not draw with relayout after a live change");
 
-finish("G-LIVE-DATA", failures);
+finish("live-data", failures);

@@ -264,7 +264,7 @@ try {
 
 writeFileSync(
   out,
-  `${JSON.stringify({ $comment: "scripts/sdk_vis_compat_vectors.mjs — do not edit by hand", visTimeline: visVersion, source: "github.com/visjs/vis-timeline v8.5.6 examples/timeline", timeZone: TIME_ZONE, maxItems: MAX_ITEMS, vectors, skipped }, null, 1)}\n`,
+  `${JSON.stringify({ $comment: "scripts/sdk_vis_compat_vectors.mjs — do not edit by hand", visTimeline: visVersion, source: "github.com/visjs/vis-timeline v8.5.6 examples/timeline", attribution: "The items and groups are vis-timeline's own documentation examples, used under vis-timeline's MIT licence (vis-timeline is dual-licensed Apache-2.0 and MIT; copyright the vis.js contributors).", timeZone: TIME_ZONE, maxItems: MAX_ITEMS, vectors, skipped }, null, 1)}\n`,
 );
 const items = vectors.reduce((sum, vector) => sum + vector.vis.items.length, 0);
 console.log(`${String(vectors.length)} timelines, ${String(items)} items, ${String(skipped.length)} skipped -> ${relative(repo, out)}`);

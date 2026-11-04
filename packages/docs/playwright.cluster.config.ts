@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * The browser half of G-CLUSTER: the markers in the live DOM, with real
+ * The browser half of the cluster check: the markers in the live DOM, with real
  * taps, mouse and keyboard.
  *
  * Its own port (a suite running on a foreign page is worse than a missing

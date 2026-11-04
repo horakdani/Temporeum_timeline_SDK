@@ -68,7 +68,7 @@ describe("props", () => {
   });
 });
 
-describe("the plugin registry (W4)", () => {
+describe("the plugin registry", () => {
   it("is the element's, handed on by the adapter", async () => {
     const adapter = await import("../src/index.js");
     const element = await import("@temporeum/timeline-element");

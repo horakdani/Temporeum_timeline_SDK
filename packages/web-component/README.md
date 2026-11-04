@@ -2,7 +2,7 @@
 
 The timeline as a custom element, as a live instance, and as server-rendered
 markup — one package, built on
-[`@temporeum/timeline-core`](../core/README.md).
+[`@temporeum/timeline-core`](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/core#readme).
 
 ```bash
 npm install @temporeum/timeline-element
@@ -11,8 +11,8 @@ npm install @temporeum/timeline-element
 ## Plain HTML
 
 No bundler, no build: the UMD file carries the core and registers the
-element on load — `<script src="https://unpkg.com/@temporeum/timeline-element"></script>`
-once the package is on npm, or `dist/timeline-element.umd.js` from the package.
+element on load — `<script src="https://unpkg.com/@temporeum/timeline-element@1"></script>`,
+or `dist/timeline-element.umd.js` from the package.
 
 ```html excerpt:example/element-html
 <temporeum-timeline height="280" theme="auto" aria-label="Release plan">
@@ -59,7 +59,7 @@ Items, lanes, hooks and the selection are **properties** (`items`, `lanes`,
 `hooks`, `selectedIds`); `orientation`, `density`, `theme`, `height` and
 `editable` are properties too, which win over their attributes (`undefined`
 hands back to the attribute), so Angular's `[theme]` and Lit's `.theme=`
-work. `config` takes any [`TimelineConfig`](src/config.ts) at once and
+work. `config` takes any [`TimelineConfig`](https://horakdani.github.io/Temporeum_timeline_SDK/reference/api.html#configuration) at once and
 replaces what the `config` before it said: a field it leaves out goes back
 to the attribute or the default, and a named property set on its own stays. A property set before the element is defined is
 not lost.
@@ -128,13 +128,13 @@ drags or moves with the arrows, `timeBarMoved`), `minimap`, `rangeSelect`
 (`rangeSelected`), `laneHeaders`, `zoomPresets`, `tooltip` and `rolling`. Live
 data needs no plugin — `addItems`, `updateItems`, `removeItems`,
 `changeItems` — and draws the frame a full reload would, packing only the
-lanes a change touched. See the time tools guide.
+lanes a change touched. See the [time tools guide](https://horakdani.github.io/Temporeum_timeline_SDK/guides/time-tools.html).
 
 Exports need no server: `exportSvg()` and `exportPng()` give the view as a
 file, `exportPdf()` the whole range as a PDF of the library's own (vector,
 selectable text), and `print()` sends the same pages to the browser's print —
-the lanes cut between rows, every item on exactly one page. See the export and
-print guide.
+the lanes cut between rows, every item on exactly one page. See the
+[export and print guide](https://horakdani.github.io/Temporeum_timeline_SDK/guides/export.html).
 
 **Plugins.** The parts a plain timeline does not need are on entry points of
 their own, so a page downloads them only when it imports them:
@@ -197,7 +197,7 @@ tools' labels) from `DEFAULT_STRINGS`, with dates and numbers from `Intl` in
 `locale`; and `calendar` puts the axis's months and years where a calendar's
 own begin — Hebrew, Islamic, Persian, Chinese, any calendar `Intl` knows.
 Without it, the English words are the base's own. See the
-internationalisation guide.
+[internationalisation guide](https://horakdani.github.io/Temporeum_timeline_SDK/guides/internationalisation.html).
 
 Calendars of events: `mountCalendarView(container, { events })` from
 `@temporeum/timeline-element/calendar` shows a week or a day — overlapping
@@ -205,7 +205,14 @@ events side by side, every event reached from the keyboard, `Enter` the same
 as a click — and the core's `/calendar` reads and writes iCalendar files and
 expands RFC 5545 rules, for the view and for the timeline's `items`
 (`recurringSource`). It is a subpath of its own, so a timeline alone does not
-download it. See the calendar guide.
+download it. See the [calendar guide](https://horakdani.github.io/Temporeum_timeline_SDK/guides/calendar.html).
+
+Stories told slide by slide: `mountStory(panel, timeline, { title })` from
+`@temporeum/timeline-element/story` puts a panel beside the timeline that
+shows one slide at a time, moves the view to it, and follows the reader's
+selection; the core's `/story` reads a TimelineJS story (its JSON or a
+published Google Sheet) into items. It is a subpath of its own too. See the
+[storytelling guide](https://horakdani.github.io/Temporeum_timeline_SDK/guides/storytelling.html).
 
 It is also an **external store**: `subscribe(listener)` and `getSnapshot()`
 are the shape `useSyncExternalStore` (or any signal library) expects. The
@@ -230,7 +237,7 @@ server's nodes over instead of drawing again.
 `@temporeum/timeline-element/define`.
 
 **Nuxt / Vue:** use the Vue component,
-[`@temporeum/timeline-vue`](../vue/README.md); it server-renders itself and
+[`@temporeum/timeline-vue`](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/vue#readme); it server-renders itself and
 hydrates without a second drawing. The bare element in Vue works the same
 way it does: give `renderTimelineHtml`'s markup to a node **on the server
 only** (a plain `v-html` is written again while hydrating, and a browser
@@ -256,12 +263,14 @@ SvelteKit and Angular.
 | `dist/groups.mjs` / `.cjs` | the `/groups` subpath | the nested groups plugin (`groupsPlugin`) and the group-header functions |
 | `dist/items.mjs` / `.cjs` | the `/items` subpath | item kinds, templates, adding and removing (`itemsPlugin`) |
 | `dist/intl.mjs` / `.cjs` | the `/intl` subpath | other languages, directions and calendars (`intlPlugin`) |
+| `dist/story.mjs` / `.cjs` | the `/story` subpath | slide-by-slide storytelling (`mountStory`) |
 | `dist/timeline-element.umd.js` | UMD | `<script>` tag: core included, every plugin and the element registered |
 
 ## Documentation
 
 Guides, four recipes (a Gantt plan, an event log, a chronology, a roadmap),
-starter projects for six frameworks and the API reference, with live examples,
-are on the docs site (`npm run build -w @temporeum/timeline-docs`, then
-`packages/docs/dist`). Every code block in this README is checked against a
-running example in CI (`npm run test:examples -w @temporeum/timeline-docs`).
+[starter projects](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/docs/templates) for plain JavaScript, React,
+Next.js, Vue, Nuxt, Svelte, Angular and Astro, and the API reference, with live
+examples, are on the [docs site](https://horakdani.github.io/Temporeum_timeline_SDK/). Every code block in this README is
+checked against a running example in CI
+(`npm run test:examples -w @temporeum/timeline-docs`).

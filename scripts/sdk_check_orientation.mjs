@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-ORIENT: proves that EVERY geometry test ran horizontally AND
+ * The orient check: proves that EVERY geometry test ran horizontally AND
  * vertically.
  *
  * Two independent checks, because grep alone can lie:
@@ -165,8 +165,8 @@ if (failures.length > 0) {
   for (const failure of failures) {
     console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-ORIENT FAILED: ${failures.length} failure(s).`);
+  console.error(`\norient FAILED: ${failures.length} failure(s).`);
   process.exit(1);
 }
 
-console.log("\nG-ORIENT passed: every geometry test ran in both orientations.");
+console.log("\norient passed: every geometry test ran in both orientations.");

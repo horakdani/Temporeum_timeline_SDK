@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-ALL — the full suite is green, in EVERY package, not just in core.
+ * The full suite (`npm run test:all`) is green, in EVERY package, not just in core.
  *
  * Why `npm run test --workspaces --if-present` is not enough: `--if-present`
  * SILENTLY skips a workspace without a `test` script, and the command returns
@@ -42,11 +42,11 @@ for (const workspace of workspaces) {
   results.push({ name: manifest.name, status: run.status ?? 1, seconds: Math.round((Date.now() - started) / 1000) });
 }
 
-process.stdout.write("\nG-ALL — per package:\n");
+process.stdout.write("\nall — per package:\n");
 for (const result of results) process.stdout.write(`  ${result.status === 0 ? "ok   " : "FAIL "}  ${result.name} (exit ${String(result.status)}, ${String(result.seconds)} s)\n`);
 for (const result of results.filter((r) => r.status !== 0)) problems.push(`${result.name}: the test exited with code ${String(result.status)}`);
 if (problems.length > 0) {
   for (const problem of problems) process.stdout.write(`  ✗ ${problem}\n`);
   process.exit(1);
 }
-process.stdout.write(`\nG-ALL: the tests of all ${String(results.length)} workspaces ran and are green.\n`);
+process.stdout.write(`\nall: the tests of all ${String(results.length)} workspaces ran and are green.\n`);

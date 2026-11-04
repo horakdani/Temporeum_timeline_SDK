@@ -1,6 +1,6 @@
 /**
  * The dictionary's translation tools. The dictionary itself — the English
- * defaults, `resolveStrings` and `sayIn` — is `/words` since P30, which a
+ * defaults, `resolveStrings` and `sayIn` — is `/words`, which a
  * timeline loads without this entry point; it is exported here too.
  */
 

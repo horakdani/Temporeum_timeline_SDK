@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 /**
- * G-RESPONSIVE: the same page at four widths, and at each the EXPECTED
+ * The responsive check: the same page at four widths, and at each the EXPECTED
  * projection.
  *
  * The core's tests prove that the decisions are right for a measurement.

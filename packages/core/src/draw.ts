@@ -91,7 +91,7 @@ const HTML_LINE_ATTRS = Object.freeze({ xmlns: XHTML_NS });
  * and during a zoom a drawing in a scene space changes scale on every step:
  * in Chromium at a 4x slowdown, two thousand labels as `<text>` made every
  * frame that changed the scale 33 ms; the same labels as HTML left the
- * frame at 16.7 ms (P17).
+ * frame at 16.7 ms.
  *
  * The box's cross extent is one line, and the stylesheet gives the HTML
  * its padding and line height, so the attributes of the inner node are the

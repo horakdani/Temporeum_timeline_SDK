@@ -18,7 +18,7 @@ registerPlugin(ganttPlugin, resourcesPlugin, groupsPlugin, itemsPlugin, toolsPlu
 const DAY = 86_400_000;
 const START = Date.UTC(2026, 0, 1);
 
-// With a group tree, a point item and a background item: by the G-SSR proof,
+// With a group tree, a point item and a background item: by the ssr check's proof,
 // the client takes over the group headers drawn on the server too. (The HTML
 // template is a function and does not travel with the JSON config; the Next
 // path measures it, where the React component gets the same function on the
@@ -36,7 +36,7 @@ export const config = {
     { id: "l1", label: "Work", parentId: "proj" },
     { id: "l2", label: "Delivery", parentId: "proj" },
   ],
-  // With Gantt arrows, progress and a baseline: by the G-SSR proof, the
+  // With Gantt arrows, progress and a baseline: by the ssr check's proof, the
   // client takes over the arrows drawn on the server too.
   gantt: {
     dependencies: [
@@ -47,20 +47,20 @@ export const config = {
   },
   // With the resource view: the two group lanes are resources, each with a
   // load lane under it; "Work" has half capacity, so its two tasks are
-  // overbooked. By the G-SSR proof, the client takes over the load drawn on
+  // overbooked. By the ssr check's proof, the client takes over the load drawn on
   // the server too, with the same frame.
   resources: [
     { id: "l1", label: "Work", capacity: 0.5 },
     { id: "l2", label: "Delivery" },
   ],
   // With hidden weekends, an overview strip and sticky lane headers: by the
-  // G-SSR proof, it hydrates with the same frame with these too. 3 January
+  // the ssr check's proof, it hydrates with the same frame with these too. 3 January
   // 2026 is a Saturday; "Planning" spans the first weekend, and is drawn
   // without it.
   hiddenDates: [{ start: START + 2 * DAY, end: START + 4 * DAY, repeat: "weekly" }],
   minimap: true,
   laneHeaders: true,
-  // Right to left, with the library's words in Hungarian: by the G-SSR proof,
+  // Right to left, with the library's words in Hungarian: by the ssr check's proof,
   // it hydrates with the same frame in RTL and in another language too. The
   // dates are Intl's (hu); the dictionary below is deliberately not English —
   // it is the test data of that claim — and holds the words for names, the

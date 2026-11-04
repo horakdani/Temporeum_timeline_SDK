@@ -79,7 +79,7 @@ describe("planSceneSpace", () => {
       extents.push(space.extent);
     }
     // A sixteenth of a viewport a frame — one tile — on one side: the one
-    // with more still to draw, the later one on a tie. Until P15 it was a
+    // with more still to draw, the later one on a tie. Once it was a
     // quarter on both sides at once, and that frame, at 2000 items in view,
     // was the one an ending wheel run missed; then an eighth, the tile of
     // the time, still a frame the wheel run missed when the machine was busy.
@@ -169,7 +169,7 @@ describe("planSceneSpace", () => {
     expect(inward.extent).toEqual([T0 + 2 * DAY - 6 * DAY, T0 + 8 * DAY + 6 * DAY]);
     expect(inward.extent?.[0]).toBeGreaterThanOrEqual(space.extent?.[0] ?? Number.NaN);
     expect(inward.budget).toBe(2);
-    // Out, squeezed down to half before it steps (P17): at 1.6x out it holds.
+    // Out, squeezed down to half before it steps: at 1.6x out it holds.
     const squeezed = planSceneSpace(space, { domain: [T0, T0 + 16 * DAY], mainSize: 1000 }, { levels: true });
     expect(squeezed.msPerPx).toBe(space.msPerPx);
     // Past half: twice the scale; a far zoom takes as many steps as it needs.
@@ -215,7 +215,7 @@ describe("planSceneSpace", () => {
       atRest: true,
     });
     // Without levels a tight limit anchors at the viewport; with them a step
-    // always finds a scale within half of the screen's (P17), so it steps.
+    // always finds a scale within half of the screen's, so it steps.
     const tight = planSceneSpace(space, { domain: [T0, T0 + 8 * DAY], mainSize: 1000 }, { maxStretch: 1.2 });
     expect(tight.msPerPx).toBeCloseTo((8 * DAY) / 1000);
     expect(tight.extent).toEqual([T0, T0 + 8 * DAY]);

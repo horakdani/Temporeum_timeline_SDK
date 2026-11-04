@@ -1,6 +1,6 @@
 // The build's fingerprint: dist/build.json carries the hash of the SOURCE.
 //
-// Why: the browser checks (G-E2E-TOUCH, G-RESPONSIVE, G-PERF, G-MEMORY) run
+// Why: the browser checks (the e2e-touch check, the responsive check, the perf check, the memory check) run
 // the built dist. If the build failed silently and the old dist stayed, the
 // suite could report green falsely — about the old code. The measuring script
 // reads this file through the page, recomputes the hash from the source, and
@@ -24,7 +24,7 @@ function files(dir) {
 /**
  * The source hash: the path and content of every file under src/, sorted.
  * The package defaults to the core; the element uses it too (the
- * G-PERF-PUBLIC check measures the shipped element bundle).
+ * the perf-public check measures the shipped element bundle).
  */
 export function sourceHash(packageDir = coreDir) {
   const hash = createHash("sha256");

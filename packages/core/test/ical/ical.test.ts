@@ -1,5 +1,5 @@
 /**
- * G-ICAL: an iCal file read and written back gives the same events — the
+ * The ical check: an iCal file read and written back gives the same events — the
  * same set, and the same occurrences.
  *
  * Five claims:
@@ -65,7 +65,7 @@ function normal(event: CalendarEvent): Record<string, unknown> {
 const occurrencesOf = (events: readonly CalendarEvent[]): string =>
   JSON.stringify(expandEvents(events, FROM, TO).map((item) => [item.id, item.start, item.end, item.label]));
 
-describe("G-ICAL: the shapes the big calendars write", () => {
+describe("ical: the shapes the big calendars write", () => {
   it.each(FILES.map((name) => [name] as const))("[claim:roundtrip-files] %s reads, writes and reads back the same", (name) => {
     const first = parseICal(read(name));
     expect(first.warnings).toEqual([]);
@@ -107,7 +107,7 @@ describe("G-ICAL: the shapes the big calendars write", () => {
   });
 });
 
-describe("G-ICAL: zones by other names", () => {
+describe("ical: zones by other names", () => {
   it("[claim:zones] a Windows zone name is matched by its VTIMEZONE's rules, a vendor TZID by its Area/City", () => {
     const calendar = parseICal(read("outlook.ics"));
     const board = calendar.events.find((event) => event.title === "Board meeting");
@@ -161,7 +161,7 @@ describe("G-ICAL: zones by other names", () => {
   });
 });
 
-describe("what a hostile calendar cannot do (S1)", () => {
+describe("what a hostile calendar cannot do", () => {
   const zone = (rule: string): string =>
     [
       "BEGIN:VCALENDAR",
@@ -204,7 +204,7 @@ describe("what a hostile calendar cannot do (S1)", () => {
     expect(calendar.warnings).toEqual([]);
   }, 20_000);
 
-  it("reads a time zone RDATE of 300 000 values without overflowing the stack (S10)", () => {
+  it("reads a time zone RDATE of 300 000 values without overflowing the stack", () => {
     const rdates = Array.from({ length: 300_000 }, (_, i) => `${String(1970 + (i % 50))}0101T000000`).join(",");
     const text = zone("FREQ=YEARLY").replace("BEGIN:STANDARD\r\nDTSTART:19700101T000000", `BEGIN:STANDARD\r\nDTSTART:19700101T000000\r\nRDATE:${rdates}`);
     expect(text).toContain("RDATE:1970");
@@ -227,7 +227,7 @@ describe("what a hostile calendar cannot do (S1)", () => {
   });
 });
 
-describe("G-ICAL: generated calendars", () => {
+describe("ical: generated calendars", () => {
   const ZONES = ["UTC", "Europe/Budapest", "America/New_York", "Australia/Lord_Howe", "Asia/Kolkata", "America/St_Johns"];
   const RULES = ["FREQ=DAILY;COUNT=5", "FREQ=WEEKLY;BYDAY=MO,WE,FR;UNTIL=20271231T000000Z", "FREQ=MONTHLY;BYDAY=-1FR", "FREQ=YEARLY;BYMONTH=3;BYDAY=2SU", "FREQ=WEEKLY;INTERVAL=2;WKST=SU;BYDAY=TU,SU", "FREQ=MONTHLY;BYMONTHDAY=1,-1;BYSETPOS=1"];
   const TEXTS = ["Plain", "Comma, semicolon; backslash \\ done", "Line one\nline two\nline three", "Ékezetes árvíztűrő tükörfúrógép — és egy nagyon hosszú cím, amelynek a hajtogatás a közepén vág", "日本語の予定と絵文字 🎉🎉🎉 が長く続くタイトル、折り返しを試す", "עברית ומספרים 123"];
@@ -288,7 +288,7 @@ describe("G-ICAL: generated calendars", () => {
   });
 });
 
-describe("G-ICAL: lines", () => {
+describe("ical: lines", () => {
   const encoder = new TextEncoder();
   const decoder = new TextDecoder("utf-8", { fatal: true });
 

@@ -227,7 +227,7 @@ describe("gesture sequences", () => {
       shiftKey: false,
       time: 0,
     });
-    // A used wheel step starts a wheel run (P15): announced before the move,
+    // A used wheel step starts a wheel run: announced before the move,
     // and a wake-up for when it ends.
     expect(kinds(zoomed)).toEqual(["gestureStart", "viewport", "schedule"]);
     expect(zoomed[1]).toMatchObject({ reason: "zoom" });
@@ -389,7 +389,7 @@ describe("gesture sequences", () => {
   });
 
   it("gives every gesture a programmatic twin", () => {
-    // P8 will need this: a capability only a finger can reach is a
+    // The keyboard checks need this: a capability only a finger can reach is a
     // capability a keyboard user does not have.
     const input = machine();
     const under = timeUnder(input.domain, 450);

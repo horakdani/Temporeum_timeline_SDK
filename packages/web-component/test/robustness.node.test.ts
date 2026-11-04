@@ -1,6 +1,6 @@
 /**
  * Large input does not overflow the stack: a value folded over many items
- * is a loop, not a spread into one call's arguments (S10).
+ * is a loop, not a spread into one call's arguments.
  */
 import { describe, expect, it } from "vitest";
 
@@ -8,7 +8,7 @@ import type { Item, Lane } from "@temporeum/timeline-core";
 
 import { defaultTaskColumns } from "../src/task-grid.js";
 
-describe("a task-grid row of 300 000 items (S10)", () => {
+describe("a task-grid row of 300 000 items", () => {
   it("reads its first start and its last end", () => {
     const day = 86_400_000;
     const items: Item[] = Array.from({ length: 300_000 }, (_, i) => ({ id: String(i), start: (i + 1) * day, end: (i + 2) * day }));
@@ -20,7 +20,7 @@ describe("a task-grid row of 300 000 items (S10)", () => {
   });
 });
 
-describe("a server render with a bad item or option (S9)", () => {
+describe("a server render with a bad item or option", () => {
   it("leaves the item out and falls back to the default, instead of throwing", async () => {
     const { renderTimelineHtml } = await import("../src/index.js");
     const day = 86_400_000;

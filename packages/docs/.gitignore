@@ -28,7 +28,7 @@ dist/
 .e2e-drop-report.json
 .e2e-template-report.json
 .template-e2e.json
-.e2e-p19-report.json
+.e2e-pages-report.json
 .bench-gantt.json
 .bench-resources.json
 .tooltip-browser-log.json

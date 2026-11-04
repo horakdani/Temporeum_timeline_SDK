@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-BENCH-FIELD: every number on the benchmark page comes from results.json,
+ * The bench-field check: every number on the benchmark page comes from results.json,
  * all four rivals and all three browsers ran, and the "where it loses" list
  * is built from the data, not by hand.
  *
@@ -148,5 +148,5 @@ if (digits.length > 0) failures.push(`hand-written number in the page source: ${
 
 for (const note of notes) console.log(`  ok    ${note}`);
 for (const failure of failures.slice(0, 60)) console.log(`  FAIL  ${failure}`);
-console.log(failures.length === 0 ? "G-BENCH-FIELD: passed" : `G-BENCH-FIELD: FAILED (${String(failures.length)} problems)`);
+console.log(failures.length === 0 ? "bench-field: passed" : `bench-field: FAILED (${String(failures.length)} problems)`);
 process.exit(failures.length === 0 ? 0 : 1);

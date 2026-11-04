@@ -38,7 +38,7 @@ describe("zoneOffsetMs", () => {
   });
 
   it("answers UTC without Intl, as Intl would", () => {
-    // A fast path since P15: ticks ask this hundreds of times a frame. The
+    // A fast path: ticks ask this hundreds of times a frame. The
     // same zone under another name still goes through Intl, and agrees.
     const spy = vi.spyOn(Intl.DateTimeFormat.prototype, "formatToParts");
     const times = [0, -1, 1, Date.UTC(1890, 0, 1), Date.UTC(2025, 2, 30, 1, 0, 0, 1), 8.64e15, -8.64e15];

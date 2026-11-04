@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-EXPORTS — the exports map is correct for ESM, CJS and UMD.
+ * The exports check — the exports map is correct for ESM, CJS and UMD.
  *
  * This is the silent bug of most libraries: their own tests run from the
  * source, but the consumer gets the PACKAGE, and if the two drift apart,
@@ -31,7 +31,7 @@
  * both ecosystems are ESM-only). For these the manifest asks for types on
  * the import/default branch, attw runs with the `esm-only` profile (node10
  * and node16-CJS are not targets), the Node probe does not load them (the
- * framework's build does, G-SSR and G-TEMPLATES), and the TypeScript consumer
+ * framework's build does, the ssr check and the templates check), and the TypeScript consumer
  * asks for them in the two ESM resolutions.
  *  7. NEGATIVE CONTROL: the core with its earlier exports map (one types for
  *     both branches) FAILS on this same checker. If it did not fail, the
@@ -371,8 +371,8 @@ rmSync(work, { recursive: true, force: true });
 
 for (const note of notes) process.stdout.write(`  ok  ${note}\n`);
 if (problems.length > 0) {
-  process.stdout.write(`\nG-EXPORTS: ${String(problems.length)} problems\n`);
+  process.stdout.write(`\nexports: ${String(problems.length)} problems\n`);
   for (const problem of problems) process.stdout.write(`  FAIL  ${problem}\n`);
   process.exit(1);
 }
-process.stdout.write(`\nG-EXPORTS: the exports map is correct for ESM, CJS and UMD, in ${String(packed.size)} packages.\n`);
+process.stdout.write(`\nexports: the exports map is correct for ESM, CJS and UMD, in ${String(packed.size)} packages.\n`);

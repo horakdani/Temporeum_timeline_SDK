@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 /**
- * G-SSR: server-rendered HTML hydrates — Next, Nuxt, Astro, SvelteKit,
+ * The ssr check: server-rendered HTML hydrates — Next, Nuxt, Astro, SvelteKit,
  * Angular (Nuxt, SvelteKit and Angular each with their own framework
  * adapter).
  *

@@ -1,5 +1,5 @@
 /**
- * Where a stylesheet now lives (C1): a scene's `<style>` and the element's
+ * Where a stylesheet now lives: a scene's `<style>` and the element's
  * own go into `adoptedStyleSheets` of the document or the shadow root, and
  * the `<style>` stays empty. A test of what a stylesheet says reads it here.
  *

@@ -9,7 +9,7 @@
     "url": "git+https://github.com/horakdani/Temporeum_timeline_SDK.git",
     "directory": "packages/web-component"
   },
-  "homepage": "https://github.com/horakdani/Temporeum_timeline_SDK#readme",
+  "homepage": "https://horakdani.github.io/Temporeum_timeline_SDK/",
   "bugs": {
     "url": "https://github.com/horakdani/Temporeum_timeline_SDK/issues"
   },
@@ -198,6 +198,8 @@
     "@temporeum/timeline-core": "^1.0.0"
   },
   "scripts": {
+    "test:passthrough": "node ../../scripts/sdk_check_passthrough.mjs",
+    "test:gesture-parity": "node ../../scripts/sdk_check_gesture_parity.mjs",
     "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.build.json --emitDeclarationOnly && rollup -c && node ../../scripts/sdk_cjs_types.mjs && node ../../scripts/sdk_custom_elements.mjs dist/custom-elements.json && node ../core/scripts/fingerprint.mjs .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run --silent build -w @temporeum/timeline-core && npm run --silent build && npm run --silent typecheck && vitest run --coverage"

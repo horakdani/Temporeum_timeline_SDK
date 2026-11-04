@@ -21,7 +21,7 @@ import type { Surface } from "../edit-fixture.js";
 import { describeBothOrientations } from "../orientation.js";
 
 /**
- * G-KEYBOARD: every capability a gesture reaches, the keyboard reaches too.
+ * The keyboard check: every capability a gesture reaches, the keyboard reaches too.
  *
  * Each test drives ONE capability twice through the same machine type — once
  * with pointer samples, once with key presses — and compares what came out.

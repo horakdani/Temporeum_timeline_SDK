@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-AXE: proves that axe found 0 violations in EVERY measured state of the
+ * The axe check: proves that axe found 0 violations in EVERY measured state of the
  * pages, with the WCAG 2.2 AA tags, in a real browser — and that the harness
  * is not blind.
  *
@@ -21,7 +21,7 @@
  *
  * The fourth is contrast: axe cannot decide the contrast of SVG text
  * (incomplete). SVG text belongs to the core token test
- * (packages/core/test/a11y/contrast.test.ts, part of G-TEST); HTML text that
+ * (packages/core/test/a11y/contrast.test.ts, part of the unit tests); HTML text that
  * axe did not decide is measured by the spec from the computed colours, and
  * it must be above 4.5:1. Any other incomplete result is a FAILURE.
  */
@@ -186,8 +186,8 @@ if (!existsSync(contrastTest)) failures.push("the core contrast test is missing:
 
 for (const note of notes) console.log(`  · ${note}`);
 if (failures.length > 0) {
-  console.error("\nG-AXE FAILED:");
+  console.error("\naxe FAILED:");
   for (const failure of failures) console.error(`  ✗ ${failure}`);
   process.exit(1);
 }
-console.log("\nG-AXE: 0 axe violations at WCAG 2.2 AA, in every measured state; the negative control finds its bugs.");
+console.log("\naxe: 0 axe violations at WCAG 2.2 AA, in every measured state; the negative control finds its bugs.");

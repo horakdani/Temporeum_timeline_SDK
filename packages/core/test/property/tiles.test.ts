@@ -173,7 +173,7 @@ function generateStep(random: () => number): GeneratedCase<Step> {
     width: 300 + Math.floor(random() * 900),
     height: 200 + Math.floor(random() * 500),
     // Past the 1.5x limit, up to two steps away.
-    // Out, a space is squeezed to a half before it steps (P17): past 2x.
+    // Out, a space is squeezed to a half before it steps: past 2x.
     zoom: inward ? 1.6 + random() * 3 : 1 / (2.1 + random() * 3),
     about: random(),
     budget: 1 + Math.floor(random() * 3),

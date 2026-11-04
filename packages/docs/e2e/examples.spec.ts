@@ -6,7 +6,7 @@ import { expect, test } from "@playwright/test";
 import type { FrameLocator, Locator, Page } from "@playwright/test";
 
 /**
- * G-EXAMPLES in a real browser: every live example on the docs site runs.
+ * The examples check in a real browser: every live example on the docs site runs.
  *
  * The list comes from dist/site-manifest.json, which the builder writes from
  * the pages themselves — so a page cannot add an example this suite does not
@@ -149,7 +149,7 @@ test("NEGATIVE CONTROL: a broken example reads as broken", async ({ page }) => {
   expect(missing.state).toBe("error");
 });
 
-test("a message from anywhere but the example's own frame is ignored (S14)", async ({ page }) => {
+test("a message from anywhere but the example's own frame is ignored", async ({ page }) => {
   const example = manifest.examples[0] as ExampleEntry;
   await page.goto(`/site/${example.path}`);
   const section = page.locator(`section#example-${example.id}`);

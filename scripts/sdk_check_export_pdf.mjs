@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-EXPORT-PDF: the exported PDF is valid according to an independent parser
+ * The export-pdf check: the exported PDF is valid according to an independent parser
  * (pdf.js, stopAtErrors), its text is selectable, and splitting it across
  * pages loses no item.
  *
@@ -45,4 +45,4 @@ for (const file of readdirSync(dir).filter((name) => name.endsWith(".ts"))) {
 }
 const pkg = JSON.parse(readFileSync(join(core, "package.json"), "utf8"));
 if (Object.keys(pkg.dependencies ?? {}).length > 0) failures.push(`the core has runtime dependencies: ${Object.keys(pkg.dependencies).join(", ")}`);
-finish("G-EXPORT-PDF", failures, notes);
+finish("export-pdf", failures, notes);

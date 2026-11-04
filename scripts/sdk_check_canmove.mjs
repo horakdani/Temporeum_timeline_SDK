@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-CANMOVE: proves that the host's rule really stops an edit — on EVERY
+ * The canmove check: proves that the host's rule really stops an edit — on EVERY
  * path, and as a whole.
  *
  * Three claims, and all three break silently with ease:
@@ -221,11 +221,11 @@ if (failures.length > 0) {
   for (const failure of failures) {
     console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-CANMOVE FAILED: ${String(failures.length)} problems.`);
+  console.error(`\ncanmove FAILED: ${String(failures.length)} problems.`);
   process.exit(1);
 }
 
 console.log(
-  "\nG-CANMOVE passed: the host's rule stops the edit on both paths, as a whole, and " +
+  "\ncanmove passed: the host's rule stops the edit on both paths, as a whole, and " +
     "no command is created for a refused position.",
 );

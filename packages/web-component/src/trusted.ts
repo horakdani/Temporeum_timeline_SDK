@@ -1,5 +1,5 @@
 /**
- * Trusted Types (C4).
+ * Trusted Types.
  *
  * The one place the element hands a string to an HTML sink is the story's
  * inert parse: TimelineJS's HTML goes into a `<template>`, which runs

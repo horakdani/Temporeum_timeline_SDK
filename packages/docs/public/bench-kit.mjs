@@ -2,9 +2,9 @@
  * Shared tools for the performance measurements: the data, the gestures, the
  * frame counting and the scenarios.
  *
- * Two pages use it: bench.html measures the core's own path (G-PERF), and
+ * Two pages use it: bench.html measures the core's own path (the perf check), and
  * bench-public.html the public path, `createTimeline` from the shipped
- * element bundle (G-PERF-PUBLIC). This code used to live in bench.html; it
+ * element bundle (the perf-public check). This code used to live in bench.html; it
  * sits in one place now so the two measurements cannot drift apart — the
  * same data, the same finger, the same counting, only the measured path differs.
  */
@@ -171,7 +171,7 @@ export function createBenchKit({ frame, counters, settleAt, origin }) {
   };
 
   /**
-   * A deep pinch: from 100 px to 400 px (4x) and back — the G-PERF-DEEP
+   * A deep pinch: from 100 px to 400 px (4x) and back — the perf-deep check
    * scenario (a gated check). Even the 2x zoom does not fit into item space's
    * 1.5x stretch (two or three re-anchors along the way; an earlier comment
    * here claimed the opposite), and the 4x one needs six: this scenario
@@ -215,7 +215,7 @@ export function createBenchKit({ frame, counters, settleAt, origin }) {
   }
 
   /**
-   * Recording for input that comes from outside (G-PERF-WHEEL): the real
+   * Recording for input that comes from outside (the perf-wheel check): the real
    * wheel is sent by the measuring script from Node (`page.mouse.wheel`), as
    * in the vis comparison, so the browser's own input path is part of the
    * measurement. The recording collects rAF times, the wheel events reaching

@@ -1,5 +1,5 @@
 /**
- * The field benchmark's page blocks (P28): every number on benchmark-field.md
+ * The field benchmark's page blocks: every number on benchmark-field.md
  * comes from site/benchmark/field/results.json, written by
  * scripts/sdk_bench_rivals.mjs, and so does the list of where Temporeum loses.
  *
@@ -7,7 +7,7 @@
  *   {{bench:field-method}}  how and where it was measured, from the file's settings
  *   {{bench:field-losses}}  every comparison a rival wins by more than the noise
  *   {{bench:field-tradeoff}} the trade-off on the largest workload: the bytes, and what
- *                           they buy — first render, elements, missed frames in a pan (P32)
+ *                           they buy — first render, elements, missed frames in a pan
  *
  * `scripts/sdk_check_bench_field.mjs` recomputes the list with its own code
  * and reads every cell back from the built page; `scripts/sdk_check_bench_tradeoff.mjs`
@@ -134,7 +134,7 @@ export function fieldMethodHtml(docsDir) {
     ["Missed frame", s.missedFrameDefinition],
     ["Heap", s.heap],
     ["Where it loses", `A rival wins a comparison when its median is lower than Temporeum's by more than ${String(LOSS_RULE.relative * 100)}% and by more than ${Object.entries(LOSS_RULE.absolute).map(([unit, bar]) => `${String(bar)} ${unit}`).join(", ")} (${String(FRAME_MS_BAR)} ms for a frame time).`],
-    ["Run", `${String(s.runSeconds)} s, commit ${String(data.libraries.temporeum.commit)}`],
+    ["Run", `${String(s.runSeconds)} s, Temporeum ${String(data.libraries.temporeum.version)}`],
   ];
   const ignored = Object.entries(data.ignoredPageErrors?.counts ?? {});
   if (ignored.length > 0) facts.push(["Let through", `${ignored.map(([where, count]) => `${where}: ${String(count)}`).join(", ")} page errors matching ${data.ignoredPageErrors.pattern}`]);

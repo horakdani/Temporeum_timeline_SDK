@@ -1,5 +1,5 @@
 /**
- * G-TIME-BARS: a custom time bar moves by a gesture and by a key, and gives
+ * The time-bars check: a custom time bar moves by a gesture and by a key, and gives
  * an event — the same event for the same move. Both orientations: the keys
  * are axis-relative, and the drag is along the main axis.
  */

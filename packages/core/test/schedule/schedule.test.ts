@@ -1,5 +1,5 @@
 /**
- * G-SCHEDULE: the scheduler keeps every dependency, constraint and calendar,
+ * The schedule check: the scheduler keeps every dependency, constraint and calendar,
  * is idempotent, agrees with an exhaustive search on small projects, and its
  * critical path is exactly the tasks with no slack.
  *
@@ -75,7 +75,7 @@ function each(seed: number, cases: number, shape: ProjectShape, check: (project:
   return checked;
 }
 
-describe("G-SCHEDULE: working time", () => {
+describe("schedule: working time", () => {
   const QUARTER = 15 * 60_000;
   const ZONES = ["UTC", "Europe/Budapest", "America/New_York", "Asia/Kolkata", "Australia/Lord_Howe"];
   /** Around the clock changes: Europe and America in spring, Lord Howe's half hour, Europe in autumn. */
@@ -144,7 +144,7 @@ describe("G-SCHEDULE: working time", () => {
   });
 });
 
-describe("G-SCHEDULE: the rules hold", () => {
+describe("schedule: the rules hold", () => {
   it("[claim:dependencies] keeps every dependency, of every type, with leads and lags, across calendars", () => {
     let arrows = 0;
     const tasks = each(SEED + 1, CASES, WIDE, (project, schedule) => {
@@ -246,7 +246,7 @@ describe("G-SCHEDULE: the rules hold", () => {
   });
 });
 
-describe("G-SCHEDULE: against a reference", () => {
+describe("schedule: against a reference", () => {
   /** Calendars whose working time starts on the hour grid at the base: every least start is on it. */
   const GRID_CALENDARS = HOUR_CALENDARS.filter((calendar) => calendar?.timeZone !== "Asia/Kolkata");
   /** Office calendars only, for projects that mix them: a day's work is close in each, so a push in one stays inside the other's grid. */
@@ -281,7 +281,7 @@ describe("G-SCHEDULE: against a reference", () => {
       const edgeAt = (at: number, work: number, end: boolean): number => {
         const task = tasks[at] as (typeof tasks)[number];
         if (task.duration === 0) {
-          // A moment where it was keeps its own instants (M4).
+          // A moment where it was keeps its own instants.
           const own = task.item.start as number;
           const ownEnd = task.item.kind === "milestone" ? undefined : (task.item.end as number | undefined);
           return work === task.time.work(own) ? (end ? (ownEnd ?? own) : own) : task.time.finish(work);

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-CYCLE: a dependency graph with a cycle reports an error naming the
+ * The cycle check: a dependency graph with a cycle reports an error naming the
  * cycle's members in finite time, and changes nothing.
  *
  * The members are measured against a brute-force reachability reference
@@ -26,4 +26,4 @@ const source = codeOf(readFileSync(join(root, "packages", "core", "src", "schedu
 const body = /function cyclesOf\([\s\S]*?\n}\n/.exec(source)?.[0];
 if (body === undefined) failures.push("cyclesOf is missing from /schedule");
 else if ((body.match(/cyclesOf\(/g) ?? []).length > 1) failures.push("cyclesOf is recursive");
-finish("G-CYCLE", failures);
+finish("cycle", failures);

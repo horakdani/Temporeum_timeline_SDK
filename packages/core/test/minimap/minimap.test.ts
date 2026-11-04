@@ -1,5 +1,5 @@
 /**
- * G-MINIMAP: dragging the overview strip's window gives the view the
+ * The minimap check: dragging the overview strip's window gives the view the
  * corresponding pan gives — and so do its keys. Generated views and drags,
  * with and without hidden dates, in both orientations.
  */

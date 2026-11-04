@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-TEMPLATE: the HTML template renders the same on the client and the
+ * The template check: the HTML template renders the same on the client and the
  * server, the element keeps its accessible name, and a template containing a
  * script does not run by default — WITH A NEGATIVE CONTROL: with
  * `sanitize: false` the same template does reach the DOM.
@@ -31,4 +31,4 @@ if (!existsSync(e2e)) {
   if (log.unsanitized?.ran !== true) failures.push(`the negative control did not detect the run (sanitize: false): ${JSON.stringify(log.unsanitized)} — the probe is blind`);
   if (log.ssrEqual !== true) failures.push("the server and client template markup differed in the browser");
 }
-finish("G-TEMPLATE", failures);
+finish("template", failures);

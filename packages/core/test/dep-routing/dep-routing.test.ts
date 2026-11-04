@@ -1,5 +1,5 @@
 /**
- * G-DEP-ROUTE: dependency arrows, generated projects, both orientations,
+ * The dep-route check: dependency arrows, generated projects, both orientations,
  * every packing.
  *
  * Four claims, each on generated projects — tasks spread over lanes, packed

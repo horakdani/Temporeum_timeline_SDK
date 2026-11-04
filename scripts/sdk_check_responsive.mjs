@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-RESPONSIVE: proves that at 320 / 375 / 768 / 1440 px the orientation and the
+ * The responsive check: proves that at 320 / 375 / 768 / 1440 px the orientation and the
  * density switch to the EXPECTED values, and there is no horizontal page
  * scroll — in a real browser, on the SHIPPED package.
  *
@@ -219,9 +219,9 @@ if (failures.length > 0) {
   for (const failure of failures) {
     console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-RESPONSIVE FAILED: ${String(failures.length)} failure(s).`);
+  console.error(`\nresponsive FAILED: ${String(failures.length)} failure(s).`);
   process.exit(1);
 }
 console.log(
-  "\nG-RESPONSIVE passed: the expected projection at 320 / 375 / 768 / 1440 px, with live resizing, without horizontal scroll.",
+  "\nresponsive passed: the expected projection at 320 / 375 / 768 / 1440 px, with live resizing, without horizontal scroll.",
 );

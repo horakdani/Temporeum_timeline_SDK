@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 
 /**
- * G-DROP, in a real browser: an external element lands at the time and in
+ * The drop check, in a real browser: an external element lands at the time and in
  * the lane under the pointer — real HTML5 drag-and-drop, with the shipped
  * bundles — and its keyboard twin (Enter on the source → `dropItem`) puts
  * the same into the focused lane, in the middle of the view.
@@ -40,7 +40,7 @@ type Tl = {
 };
 
 test("a dragged external element lands at the time and in the lane under the pointer", async ({ page }) => {
-  await page.goto("/p19.html?mode=drop");
+  await page.goto("/drop-template.html?mode=drop");
   await page.waitForFunction(() => (window as unknown as { tl?: Tl }).tl?.ready === true);
   const lane = await page.evaluate(() => (window as unknown as { tl: Tl }).tl.laneBox("ops"));
   expect(lane).toBeDefined();
@@ -61,7 +61,7 @@ test("a dragged external element lands at the time and in the lane under the poi
 });
 
 test("its keyboard twin: Enter on the source adds to the focused lane, in the middle of the view", async ({ page }) => {
-  await page.goto("/p19.html?mode=drop");
+  await page.goto("/drop-template.html?mode=drop");
   await page.waitForFunction(() => (window as unknown as { tl?: Tl }).tl?.ready === true);
   // Keyboard only: into the timeline, onto the last item, out to the source.
   await page.locator("#timeline svg").focus();

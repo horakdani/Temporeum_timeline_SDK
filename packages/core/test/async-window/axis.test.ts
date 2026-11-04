@@ -83,7 +83,7 @@ for (const orientation of ["horizontal", "vertical"] as const) {
       expect(render(orientation, [{ start: ORIGIN, end: ORIGIN + DAY }], { width: 0 }).scene.attrs?.["aria-busy"]).toBe("true");
     });
 
-    it("[claim:axis-mark] without loading ranges the frame is byte-identical to one rendered before P9", () => {
+    it("[claim:axis-mark] without loading ranges the frame is byte-identical to one rendered without the loading layer", () => {
       const items = [{ id: "a", start: ORIGIN + DAY, end: ORIGIN + 5 * DAY, label: "A" }];
       const plain = renderTimeline({ items, domain, width: WIDTH, height: HEIGHT, orientation });
       const empty = renderTimeline({ items, domain, width: WIDTH, height: HEIGHT, orientation, loading: [] });

@@ -6,7 +6,7 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 /**
- * G-TOOLTIP, in a real browser, through the shipped bundles: an item's
+ * The tooltip check, in a real browser, through the shipped bundles: an item's
  * tooltip appears for a mouse, for the keyboard's focus and for a long
  * press; and it is what WCAG 1.4.13 asks of content on hover or focus —
  * dismissible (Escape takes it away without moving the pointer or the
@@ -45,7 +45,7 @@ async function tl<K extends Exclude<keyof Tl, "ready">>(page: Page, method: K): 
 }
 
 async function open(page: Page): Promise<void> {
-  await page.goto("/p24.html");
+  await page.goto("/time-tools.html");
   await page.waitForFunction(() => (window as unknown as { tl?: Tl }).tl?.ready === true);
 }
 

@@ -7,7 +7,7 @@ import type { ThemeTokenName } from "../../src/theme.js";
  * The built-in themes meet WCAG 2.2 AA contrast, token by token.
  *
  * `axe` cannot check this for us: it does not compute the contrast of SVG
- * text or shapes, so a theme could fail AA in every frame while the G-AXE
+ * text or shapes, so a theme could fail AA in every frame while the axe check
  * run stays green. The pairs below are the ones the stylesheet actually puts
  * on top of each other (`theme.ts`), with the threshold the criterion sets:
  * 4.5:1 for text (1.4.3), 3:1 for the graphics a user has to see to operate

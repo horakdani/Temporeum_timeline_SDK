@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The second half of G-TYPES — proves that there is no `any` in the PUBLIC API.
+ * The second half of the types check — proves that there is no `any` in the PUBLIC API.
  *
  * `tsc --noEmit` checks strict mode, but an `any` can still get through on the
  * public surface (e.g. it leaks in through inference or from a third party's
@@ -82,7 +82,7 @@ try {
   if (hits.length > 0) {
     console.error(`\nERROR: ${hits.length} \`any\` on the public type surface:`);
     for (const hit of hits) console.error(`  ${hit}`);
-    console.error("\nG-TYPES FAILED.");
+    console.error("\ntypes FAILED.");
     process.exit(1);
   }
 

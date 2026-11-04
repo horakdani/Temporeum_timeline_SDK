@@ -14,7 +14,7 @@ import { answer, controlledSource, DAY, fetchesShown, flush, ORIGIN } from "./fi
 import type { SourceCall } from "./fixture.js";
 
 /**
- * G-ASYNC: during fast zooming, what an aborted request brings back NEVER
+ * The async check: during fast zooming, what an aborted request brings back NEVER
  * reaches the canvas.
  *
  * Each schedule is a seeded walk of a user — bursts of zoom steps one frame
@@ -27,7 +27,7 @@ import type { SourceCall } from "./fixture.js";
  *
  * The check is on the drawn scene, not on the loader's internals, so it also
  * covers the renderer's caches: half the frames go through a scene space and
- * its tile cache, the path a gesture takes since P7.
+ * its tile cache, the path a gesture takes.
  *
  * The NEGATIVE CONTROL runs the same schedules through a deliberately naive
  * loader — it aborts like the real one but keeps whatever arrives. If the

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-NARROW-LABELS: proves that every item whose truncated label (at least 3
+ * The narrow-labels check: proves that every item whose truncated label (at least 3
  * characters and an ellipsis) fits in the item's visible part or in the free
  * space after it gets a label — on generated, dense data, in both
  * orientations, in the exact frame AND in the resting item space; the
@@ -86,5 +86,5 @@ if (control !== undefined) {
 
 for (const note of notes) console.log(`  ok    ${note}`);
 for (const failure of failures) console.log(`  FAIL  ${failure}`);
-console.log(failures.length === 0 ? "G-NARROW-LABELS: passed" : "G-NARROW-LABELS: FAILED");
+console.log(failures.length === 0 ? "narrow-labels: passed" : "narrow-labels: FAILED");
 process.exit(failures.length === 0 ? 0 : 1);

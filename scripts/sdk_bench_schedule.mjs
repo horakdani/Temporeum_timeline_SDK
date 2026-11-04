@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-SCHEDULE-PERF: scheduling 10 000 tasks and 20 000 dependencies in Node
+ * The schedule-perf check: scheduling 10 000 tasks and 20 000 dependencies in Node
  * stays within its budget.
  *
  * It measures the shipped ESM (dist/schedule.mjs; the package command builds
@@ -29,7 +29,7 @@ const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 
 if (!existsSync(dist)) {
-  console.error(`G-SCHEDULE-PERF: no ${dist} — the build did not run, so FAIL`);
+  console.error(`schedule-perf: no ${dist} — the build did not run, so FAIL`);
   process.exit(1);
 }
 const { scheduleTasks, workTime } = await import(pathToFileURL(dist).href);
@@ -92,8 +92,8 @@ console.log(`  ${TASKS} tasks, ${DEPENDENCIES} dependencies, Budapest work calen
 console.log(`  moved ${moved}, critical ${result.critical.length}, conflicts ${result.conflicts.length}, broken dependencies ${broken}`);
 if (!(median <= BUDGET_MS)) failures.push(`the median is ${median.toFixed(1)} ms, the budget ${BUDGET_MS} ms`);
 if (failures.length > 0) {
-  console.error("G-SCHEDULE-PERF: FAILED");
+  console.error("schedule-perf: FAILED");
   for (const failure of failures) console.error(`  x ${failure}`);
   process.exit(1);
 }
-console.log("G-SCHEDULE-PERF: within budget.");
+console.log("schedule-perf: within budget.");

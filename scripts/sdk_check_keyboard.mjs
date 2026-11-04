@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * G-KEYBOARD: proves that EVERY capability reachable by a gesture has a
+ * The keyboard check: proves that EVERY capability reachable by a gesture has a
  * keyboard equivalent — at runtime, in both orientations.
  *
  * This file does NOT write the list of capabilities: it comes from the
  * machine's types (sdk_gesture_vocabulary.mjs), the same list the
- * G-NO-GESTURE-ONLY check verifies statically. So a new gesture capability
+ * the no-gesture-only check verifies statically. So a new gesture capability
  * fails both checks at once until it has a key and a test.
  *
  * Three independent checks:
@@ -120,8 +120,8 @@ if (/vi\.mock\(|vi\.fn\(/.test(source)) failures.push("the parity test mocks —
 
 for (const note of notes) console.log(`  · ${note}`);
 if (failures.length > 0) {
-  console.error("\nG-KEYBOARD FAILED:");
+  console.error("\nkeyboard FAILED:");
   for (const failure of failures) console.error(`  ✗ ${failure}`);
   process.exit(1);
 }
-console.log(`\nG-KEYBOARD: all ${vocabulary.capabilities.length + entries.capabilities.length} gesture capabilities and ${vocabulary.rules.length} rules also work by keyboard, in both orientations.`);
+console.log(`\nkeyboard: all ${vocabulary.capabilities.length + entries.capabilities.length} gesture capabilities and ${vocabulary.rules.length} rules also work by keyboard, in both orientations.`);

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-RESOURCES: on generated assignments, utilisation in every time slot is
+ * The resources check: on generated assignments, utilisation in every time slot is
  * the sum of the assignments, overallocation is marked exactly where it is
  * over capacity, and dragging an item across is an undoable command.
  *
@@ -37,4 +37,4 @@ for (const match of source.matchAll(/from\s+"([^"]+)"/g)) {
   // Only the base: ../a11y.js, ../render.js ... — not another entry point's code (../gantt/, ../items/ ...).
   if (!/^\.\.\/[a-z0-9-]+\.js$/.test(target)) failures.push(`/resources imports from outside the base: ${target}`);
 }
-finish("G-RESOURCES", failures);
+finish("resources", failures);

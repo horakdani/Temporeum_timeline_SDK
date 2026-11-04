@@ -1,5 +1,5 @@
 /**
- * G-ADD-REMOVE: adding and removing items.
+ * The add-remove check: adding and removing items.
  *
  *  - The gesture and the keyboard reach the same command: a double tap on
  *    empty lane space and `n` with the focus in that lane, at the same time,
@@ -188,7 +188,7 @@ describe("add and remove", () => {
     expect(itemFromDrop([], "null", target)).toBeUndefined();
   });
 
-  it("reads a JSON payload's date strings, and leaves out the fields that would break the layout (E9)", () => {
+  it("reads a JSON payload's date strings, and leaves out the fields that would break the layout", () => {
     const target = { start: ORIGIN, end: ORIGIN + DAY, laneId: "b" };
     // JSON has no Date: a dragged item's times arrive as strings.
     const dated = itemFromDrop([], JSON.stringify({ id: "s", start: new Date(ORIGIN), end: new Date(ORIGIN + 3 * DAY) }), target);

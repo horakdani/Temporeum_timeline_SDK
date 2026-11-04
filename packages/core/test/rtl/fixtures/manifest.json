@@ -1,5 +1,5 @@
 {
-  "note": "G-RTL's visual provenance: the G-VISUAL matrix, mirrored. The sha256 of the scenario, the matrix and every fixture.",
+  "note": "The rtl check's visual provenance: the visual check's matrix, mirrored. The sha256 of the scenario, the matrix and every fixture.",
   "core": "1.0.0",
   "scenarioSha256": "4b0d628b793c6e22c090b5785b85ebb83c18636f14e4bc605c502ef1f9ef80fc",
   "matrixSha256": "0bf6cde62825378334fe1b6eb39752a050d417211fc3efb9be3d60ab15409a58",

@@ -121,7 +121,7 @@ describe("<tl-timeline> — Angular renders from the store, not from events", ()
   });
 });
 
-describe("<tl-timeline> — a config written anew on every view change (D1)", () => {
+describe("<tl-timeline> — a config written anew on every view change", () => {
   /** What a template with `[config]="{ …, editing: { enabled: true } }"` and the view in a signal does: every view change, a new config object. */
   async function rewriting(): Promise<{ ref: ComponentRef<TimelineComponent>; timeline: TimelineInstance; writes: () => number }> {
     let writes = 0;
@@ -273,7 +273,7 @@ describe("<tl-timeline> — inputs and outputs", () => {
     app?.tick();
     expect(ref.instance.config).toEqual({});
     // Every field the host set goes back to its default; the scope stays,
-    // and so does the view, whose start the config only said (D1).
+    // and so does the view, whose start the config only said.
     const changed = update.mock.calls.at(-1)?.[0] ?? {};
     expect(Object.keys(changed).sort()).toEqual(Object.keys(base).filter((key) => key !== "defaultDomain").sort());
     expect(Object.values(changed).every((value) => value === undefined)).toBe(true);

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-BENCH-LABELS and G-PAN-MEMORY: the measurement on the vis comparison's
+ * The bench-labels check and the pan-memory check: the measurement on the vis comparison's
  * OWN page (packages/docs/bench/temporeum.html), with 10 000 items and the
  * same input as sdk_bench_compare.mjs: 1440 x 900, DPR 1, 4x CPU throttling
  * before navigation, a fresh browser context for every page.

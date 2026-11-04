@@ -9,7 +9,7 @@
     "url": "git+https://github.com/horakdani/Temporeum_timeline_SDK.git",
     "directory": "packages/core"
   },
-  "homepage": "https://github.com/horakdani/Temporeum_timeline_SDK#readme",
+  "homepage": "https://horakdani.github.io/Temporeum_timeline_SDK/",
   "bugs": {
     "url": "https://github.com/horakdani/Temporeum_timeline_SDK/issues"
   },
@@ -242,6 +242,7 @@
     "node": ">=20.11.0"
   },
   "scripts": {
+    "test:treeshake": "npm run --silent build && node ../../scripts/sdk_check_treeshake.mjs",
     "build": "node ./scripts/clean.mjs && npm run build:types && rollup -c && node ../../scripts/sdk_cjs_types.mjs && node ./scripts/fingerprint.mjs",
     "build:types": "tsc -p tsconfig.build.json --emitDeclarationOnly",
     "typecheck": "tsc -p tsconfig.json --noEmit && node ../../scripts/sdk_check_public_any.mjs",

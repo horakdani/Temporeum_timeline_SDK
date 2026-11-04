@@ -2,10 +2,10 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    // The core runs in Node, without a DOM — the basis of the G-NODOM check.
+    // The core runs in Node, without a DOM — the basis of the nodom check.
     environment: "node",
     include: ["test/**/*.test.ts"],
-    // A per-test time limit, not a performance threshold (G-PERF measures that).
+    // A per-test time limit, not a performance threshold (the perf check measures that).
     // The vitest default is 5 s, and that measures the MACHINE's load: the
     // [claim:contiguous] property takes 1.4 s on its own, 3.9–5.4 s in the
     // parallel coverage run, and once timed out at 5.36 s in a gate run.

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-EXAMPLES, third part: every framework template (packages/docs/templates)
+ * The examples check, third part: every framework template (packages/docs/templates)
  * builds and draws — with the PACKED tarballs, the way a user would get them.
  *
  * Per template:
@@ -104,7 +104,7 @@ function servePlan(name, dir) {
 // --- the packages ------------------------------------------------------------------
 const templates = existsSync(templatesDir) ? readdirSync(templatesDir).filter((name) => existsSync(join(templatesDir, name, "package.json"))).sort() : [];
 if (templates.length === 0) {
-  console.error("G-EXAMPLES (templates): there are no templates at all — FAIL");
+  console.error("examples (templates): there are no templates at all — FAIL");
   process.exit(1);
 }
 mkdirSync(join(work, "packs"), { recursive: true });

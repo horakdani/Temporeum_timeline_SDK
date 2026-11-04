@@ -9,7 +9,7 @@ import type { TemporeumTimelineElement } from "../src/index.js";
 import { mountStory } from "../src/story.js";
 
 /**
- * The nonce (C2): where a stylesheet cannot be adopted — a browser without
+ * The nonce: where a stylesheet cannot be adopted — a browser without
  * constructable stylesheets — each `<style>` the timeline writes carries
  * the host's nonce, which a policy without `'unsafe-inline'` lets apply.
  */
@@ -39,7 +39,7 @@ function withoutAdoptedSheets(): void {
 
 const nonces = (root: ParentNode): string[] => [...root.querySelectorAll("style")].map((style) => (style as HTMLStyleElement).nonce ?? "");
 
-describe("the nonce (C2)", () => {
+describe("the nonce", () => {
   it("the element reads its nonce attribute, and the companions take it from the instance", async () => {
     const element = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
     element.setAttribute("nonce", "n0");

@@ -7,7 +7,7 @@
  * to weigh; and the properties here need about sixty lines of generator, with
  * shrinking that is a greedy item-removal loop. A library would be the right
  * call the moment the generators get interesting — that trade is recorded in
- * the P2 report rather than hidden here.
+ * the property-test notes rather than hidden here.
  *
  * What it does give is the two things a property test is worthless without:
  * a **printed seed** so a failure is reproducible, and **shrinking** so the
@@ -39,7 +39,7 @@ export function makeRandom(seed: number): () => number {
  * *sequence* applied to one, and the shrinker has to be able to drop a step
  * as readily as an item. Keeping both in one case keeps one runner, one
  * report format and one shrinker — the trade against a dedicated library is
- * recorded in the P2 report and still open.
+ * recorded in the property-test notes and still open.
  */
 export interface GeneratedCase<S = never> {
   readonly items: readonly Item[];
@@ -153,7 +153,7 @@ export function propertyResults(): readonly PropertyResult[] {
  * so two files would each hold their own results and the second one to finish
  * would overwrite the first's report. The gate would then see fewer
  * properties than actually ran — which is exactly what happened when the
- * second property file was added in P3.
+ * second property file was added.
  */
 export function writePropertyReport(suite: string): void {
   writeFileSync(

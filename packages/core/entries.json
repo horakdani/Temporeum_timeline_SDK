@@ -1,5 +1,5 @@
 {
-  "$comment": "The SINGLE source of the @temporeum/timeline-core entry points. Rollup builds from it (scripts/build-config.mjs), `node ../../scripts/sdk_entries.mjs --write` writes the exports, typesVersions and size-limit fields of package.json from it, and the G-ENTRIES check fails on any drift. A new entry point: one line here, then --write. `name: index` is the package root (`.`); the others are the `./<name>` subpath. The `limit` is minify + gzip of the entry point's FULL surface (import *), shared chunks included.",
+  "$comment": "The SINGLE source of the @temporeum/timeline-core entry points. Rollup builds from it (scripts/build-config.mjs), `node ../../scripts/sdk_entries.mjs --write` writes the exports, typesVersions and size-limit fields of package.json from it, and the entries check fails on any drift. A new entry point: one line here, then --write. `name: index` is the package root (`.`); the others are the `./<name>` subpath. The `limit` is minify + gzip of the entry point's FULL surface (import *), shared chunks included.",
   "entries": [
     {
       "name": "index",

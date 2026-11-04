@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-PERF: proves that 60 fps holds with 2000 visible items out of 10,000 —
+ * The perf check: proves that 60 fps holds with 2000 visible items out of 10,000 —
  * MEASURED, in real Chromium, with 4x CPU throttling — and that the
  * measurement FAILS below the threshold.
  *
@@ -29,7 +29,7 @@
  *     it passed, the measurement would not tell good from bad — or the
  *     throttling has no effect.
  *
- * `node scripts/sdk_check_perf.mjs public` — G-PERF-PUBLIC: the SAME
+ * `node scripts/sdk_check_perf.mjs public` — the perf-public check: the SAME
  * thresholds and conditions on the public path's report (packages/docs/
  * .bench-public.json, on the bench-public.html page: createTimeline from the
  * shipped element bundle). Two more conditions there: the report really is
@@ -44,7 +44,7 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PUBLIC = process.argv[2] === "public";
-const GATE = PUBLIC ? "G-PERF-PUBLIC" : "G-PERF";
+const GATE = PUBLIC ? "perf-public" : "perf";
 const reportFile = PUBLIC ? join(repoRoot, "packages", "docs", ".bench-public.json") : join(repoRoot, "packages", "core", ".bench-perf.json");
 
 const MAX_MISSED_SHARE = 0.05;

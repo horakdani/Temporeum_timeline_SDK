@@ -9,12 +9,12 @@ import { exportPlugin } from "../src/export.js";
 import { toolsPlugin } from "../src/tools.js";
 import type { Timeline, TimelineConfig } from "../src/index.js";
 
-// The parts on entry points of their own (P29, P30), as a page registers them.
+// The parts on entry points of their own, as a page registers them.
 registerPlugin(exportPlugin, toolsPlugin);
 
 /**
- * The P24 tools and the P25 export through the live instance, where the
- * P24 and P25 suites do not go: the tooltip under a real mouse, a pen and a
+ * The time tools and the export through the live instance, where the
+ * `time-tools` and `export` suites do not go: the tooltip under a real mouse, a pen and a
  * finger; time bars turned with the orientation, renamed and taken away;
  * the presets of a vertical timeline; an export's theme, and a vertical
  * timeline's pages.
@@ -233,7 +233,7 @@ describe("export at its edges", () => {
   });
 });
 
-describe("the tool paths the P24 suite leaves out", () => {
+describe("the tool paths the time-tools suite leaves out", () => {
   it("places a vertical timeline's focus tooltip beside its item, and lets it go with the focus or the setting", async () => {
     const { element, timeline } = await mount({ orientation: "vertical", tooltip: true, locale: "hu" }, 500, 700);
     (element.querySelector("svg") as SVGSVGElement).focus();

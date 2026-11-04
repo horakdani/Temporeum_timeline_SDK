@@ -1,5 +1,5 @@
 /**
- * G-TEMPLATE: HTML templates for items.
+ * The template check: HTML templates for items.
  *
  *  - The same template gives the same tree on the client and on the server:
  *    the frame mounted into a DOM shows exactly the server's markup.
@@ -143,7 +143,7 @@ describe("the template parser", () => {
   });
 });
 
-describe("a template from outside (S3)", () => {
+describe("a template from outside", () => {
   const depth = (nodes: readonly SceneElement[]): number => Math.max(0, ...nodes.map((node) => 1 + depth(node.children ?? [])));
   const text = (nodes: readonly SceneElement[]): string => nodes.map((node) => (node.text ?? "") + text(node.children ?? [])).join("");
 
@@ -175,7 +175,7 @@ describe("a template from outside (S3)", () => {
   });
 });
 
-describe("a sanitised template cannot reach the timeline's own markers (S5)", () => {
+describe("a sanitised template cannot reach the timeline's own markers", () => {
   it("drops data-tl-* attributes and tl-* class names, and keeps the rest", () => {
     const nodes = parseTemplate(
       '<span data-tl-remove="b" data-tl-slot="b" data-tl-id="b" data-tag="x" class="tl-item tl-template badge TL-label">t</span>',
@@ -196,7 +196,7 @@ describe("a sanitised template cannot reach the timeline's own markers (S5)", ()
   });
 });
 
-describe("a template's attribute names are names the DOM accepts (S6)", () => {
+describe("a template's attribute names are names the DOM accepts", () => {
   it("drops a name setAttribute would throw on, sanitised or not", () => {
     for (const sanitize of [true, false]) {
       const nodes = parseTemplate('<b data-x\u0000y="1" data-ok="2" 1bad="3" __proto__="4" data-aé="5">t</b>', { sanitize });
@@ -207,7 +207,7 @@ describe("a template's attribute names are names the DOM accepts (S6)", () => {
   });
 });
 
-describe("an extended allow-list does not open URLs or the page's head (S8)", () => {
+describe("an extended allow-list does not open URLs or the page's head", () => {
   const links = { allowTags: [...["a", "img", "form", "base", "meta", "link", "b"]], allowAttributes: ["href", "src", "action", "formaction", "style", "xlink:href", "srcset", "content", "http-equiv"] };
 
   it("keeps http, https, mailto, tel and relative URLs, and drops any other scheme", () => {
@@ -241,7 +241,7 @@ describe("an extended allow-list does not open URLs or the page's head (S8)", ()
   });
 });
 
-describe("an entity name is a character, not an object's property (S11)", () => {
+describe("an entity name is a character, not an object's property", () => {
   it("leaves &constructor; and its kin as written", () => {
     expect(parseTemplate("&constructor; &toString; &__proto__; &hasOwnProperty; &amp;")).toEqual([
       { tag: "span", text: "&constructor; &toString; &__proto__; &hasOwnProperty; &" },

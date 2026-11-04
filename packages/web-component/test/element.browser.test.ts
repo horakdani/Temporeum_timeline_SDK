@@ -286,7 +286,7 @@ describe("<temporeum-timeline>", () => {
     await drawn(el);
     expect(el.timeline).not.toBe(first);
     expect(svgOf(el).querySelectorAll("[role=option]")).toHaveLength(3);
-    // The element's stylesheet was not added a second time — adopted, not a `<style>` (C1).
+    // The element's stylesheet was not added a second time — adopted, not a `<style>`.
     expect(adoptedCss(el.shadowRoot as ShadowRoot).filter((text) => text === HOST_CSS)).toHaveLength(1);
     expect([...(el.shadowRoot as ShadowRoot).children].filter((child) => child.localName === "style")).toHaveLength(0);
   });
@@ -858,7 +858,7 @@ describe("createTimeline — a large timeline draws in a scene space", () => {
   it("draws a small timeline in a space too, with the exact frame's labels at rest; false draws exact", async () => {
     // Until rc.2 "auto" drew exact below 1000 items: a space at rest could
     // drop a label an exact frame keeps. It no longer can (the core's
-    // G-REST-LABELS property), so the threshold is gone.
+    // the rest-labels check's property), so the threshold is gone.
     const box = (): HTMLElement => {
       const el = document.createElement("div");
       el.style.cssText = "width:800px;height:300px;position:relative";

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-CALENDAR-VIEW: in the week and day views overlapping events sit side by
+ * The calendar-view check: in the week and day views overlapping events sit side by
  * side, none covers another, and they can be walked with the keyboard.
  *
  * From the vitest report: every claim has a passing test. Statically: the
@@ -29,4 +29,4 @@ for (const name of ["resolveCalendarKey(", "calendarKeyStep(", "calendarHit(", "
   if (!view.includes(name)) failures.push(`the element's calendar view does not call the core's ${name.slice(0, -1)} function`);
 }
 if (!view.includes('addEventListener("keydown", onKey)')) failures.push("the element's calendar view does not listen for keydown");
-finish("G-CALENDAR-VIEW", failures);
+finish("calendar-view", failures);

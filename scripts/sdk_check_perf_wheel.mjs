@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * G-PERF-WHEEL: proves that the vis comparison's zoom — on a fresh, quiet
+ * The perf-wheel check: proves that the vis comparison's zoom — on a fresh, quiet
  * page, Control + a real wheel, 8 notches in and 8 out, every 50 ms, 1.2x per
- * notch, a 4.3x peak — also holds the G-PERF thresholds, on the core path
+ * notch, a 4.3x peak — also holds the perf check's thresholds, on the core path
  * (bench.html, the README's loop) AND on the public path (bench-public.html,
  * createTimeline from the shipped bundle, with the vis comparison page's
  * settings: editing on, the default density), and that the measurement
@@ -193,5 +193,5 @@ if (!existsSync(reportFile)) {
 
 for (const note of notes) console.log(`  ok    ${note}`);
 for (const failure of failures) console.log(`  FAIL  ${failure}`);
-console.log(failures.length === 0 ? "G-PERF-WHEEL: passed" : `G-PERF-WHEEL: FAILED (${String(failures.length)} failure(s))`);
+console.log(failures.length === 0 ? "perf-wheel: passed" : `perf-wheel: FAILED (${String(failures.length)} failure(s))`);
 process.exit(failures.length === 0 ? 0 : 1);

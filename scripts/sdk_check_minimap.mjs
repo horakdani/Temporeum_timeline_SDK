@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-MINIMAP: dragging the overview bar's window gives the same view as the matching pan (panDomainBy), with hidden dates too; by keyboard too. Statically: every move in minimap.ts runs into panDomainBy.
+ * The minimap check: dragging the overview bar's window gives the same view as the matching pan (panDomainBy), with hidden dates too; by keyboard too. Statically: every move in minimap.ts runs into panDomainBy.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -34,4 +34,4 @@ for (const name of ["minimapDragDomain", "minimapKeyDomain"]) {
   if (!body.slice(0, end).includes("panDomainBy(") && !body.slice(0, end).includes("minimapDragDomain(")) failures.push(`${name} does not run into panDomainBy`);
 }
 
-finish("G-MINIMAP", failures);
+finish("minimap", failures);

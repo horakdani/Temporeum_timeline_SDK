@@ -1,5 +1,5 @@
 /**
- * G-SCHEDULE-CMD: the automatic schedule is one command, its inverse is the
+ * The schedule-cmd check: the automatic schedule is one command, its inverse is the
  * exact start, and the library saves nothing while scheduling.
  *
  *  - `scheduleCommand` gives exactly one `schedule` command, with a patch for
@@ -48,7 +48,7 @@ function sameItems(before: readonly Item[], after: readonly Item[]): string | un
   return undefined;
 }
 
-describe("G-SCHEDULE-CMD", () => {
+describe("schedule cmd", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });

@@ -109,7 +109,7 @@ describe("createNavigator", () => {
 
   it("keeps one per inset: the renderer's and a host's do not evict each other", () => {
     // Every interactive frame asks for one without an inset (the listbox's
-    // positions), and a host for its own. Until P15 the second evicted the
+    // positions), and a host for its own. Once the second evicted the
     // first, so each frame sorted every item twice.
     const layout = layoutItems(demoItems(), { lanes: LANES });
     const bare = createNavigator(layout);

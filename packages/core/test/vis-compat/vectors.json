@@ -2,6 +2,7 @@
  "$comment": "scripts/sdk_vis_compat_vectors.mjs — do not edit by hand",
  "visTimeline": "8.5.6",
  "source": "github.com/visjs/vis-timeline v8.5.6 examples/timeline",
+ "attribution": "The items and groups are vis-timeline's own documentation examples, used under vis-timeline's MIT licence (vis-timeline is dual-licensed Apache-2.0 and MIT; copyright the vis.js contributors).",
  "timeZone": "Europe/Budapest",
  "maxItems": 120,
  "vectors": [

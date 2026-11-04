@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * G-PERF-DEEP: proves that the 4x pinch (zoom-deep: from 100 px to 400 px
- * and back, two seconds) also holds the G-PERF thresholds — on the core path
+ * The perf-deep check: proves that the 4x pinch (zoom-deep: from 100 px to 400 px
+ * and back, two seconds) also holds the perf check's thresholds — on the core path
  * (bench.html) AND on the public path (bench-public.html, createTimeline
  * from the shipped bundle) — and that the measurement FAILS on two negative
  * controls.
@@ -166,5 +166,5 @@ if (!existsSync(reportFile)) {
 
 for (const note of notes) console.log(`  ok    ${note}`);
 for (const failure of failures) console.log(`  FAIL  ${failure}`);
-console.log(failures.length === 0 ? "G-PERF-DEEP: passed" : `G-PERF-DEEP: FAILED (${String(failures.length)} failure(s))`);
+console.log(failures.length === 0 ? "perf-deep: passed" : `perf-deep: FAILED (${String(failures.length)} failure(s))`);
 process.exit(failures.length === 0 ? 0 : 1);

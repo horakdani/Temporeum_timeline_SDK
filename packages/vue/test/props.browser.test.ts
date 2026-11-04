@@ -14,7 +14,7 @@ import type { TimelineInstance, TimelineProps } from "../src/index.js";
 registerPlugin(toolsPlugin);
 
 /**
- * The component's props (W5 of the quality round). It used to declare none
+ * The component's props. It used to declare none
  * but `ssrWidth`: every field was an attribute, untyped, so a bare
  * `<Timeline lane-headers />` arrived as `""` — the tools plugin was asked
  * for, and the headers were not drawn — and a reactive array reached the
@@ -63,7 +63,7 @@ async function mountTemplate(template: string, data: Record<string, unknown>): P
   return timeline.value as TimelineInstance;
 }
 
-describe("<Timeline> props (W5)", () => {
+describe("<Timeline> props", () => {
   it("a bare boolean attribute in a template is true", async () => {
     await mountTemplate(`<Timeline :items="items" :lanes="lanes" :default-domain="defaultDomain" lane-headers @ready="ready" />`, { items, lanes, defaultDomain });
     await vi.waitFor(() => expect(document.querySelectorAll("[data-tl-lane-header]")).toHaveLength(2));

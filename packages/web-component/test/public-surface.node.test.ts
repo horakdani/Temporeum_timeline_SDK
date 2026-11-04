@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
  * The element's public surface, name by name: what each entry point exports
  * at run time. A new export is a decision — it is then on the 1.x contract —
  * so it has to be written here too; a helper the tests need is imported from
- * its own module, not from an entry (D3 of the quality round).
+ * its own module, not from an entry.
  */
 
 const SURFACE: Readonly<Record<string, readonly string[]>> = {

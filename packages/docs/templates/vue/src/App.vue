@@ -19,7 +19,7 @@ const timeline = shallowRef(null);
 const selected = useTimelineState(timeline, (state) => state.selectedIds);
 const log = ref("Drag an item.");
 const onMoved = ({ item, to }) => {
-  log.value = `${item.label} moved to ${new Date(to.start).toDateString()}`;
+  log.value = `${item.label} moved to ${new Date(to.start ?? item.start).toDateString()}`;
 };
 </script>
 

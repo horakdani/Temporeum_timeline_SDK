@@ -3,8 +3,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 
 // What stability.md calls public is what 1.x promises not to break. A
-// package it leaves out (the Vue, Svelte and Angular adapters, until W14 of
-// the quality round) has no promise at all.
+// package it leaves out (as the Vue, Svelte and Angular adapters once were)
+// has no promise at all.
 const pages = new URL("../site/pages/", import.meta.url);
 const packages = new URL("../../", import.meta.url);
 

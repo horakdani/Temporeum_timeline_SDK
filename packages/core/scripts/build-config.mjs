@@ -2,7 +2,7 @@
 // from entries.json, not from this file.
 //
 // Why a factory, and why rollup.config.mjs alone is not enough. The
-// G-TREESHAKE check (scripts/sdk_check_treeshake.mjs) builds a small sample
+// the treeshake check (`npm run test:treeshake`, scripts/sdk_check_treeshake.mjs) builds a small sample
 // package with THIS factory as well, to prove the shared chunking on the
 // mechanism of the shipped build — even when the real entry points happen not
 // to share code. If the sample were built with a configuration of its own, the
@@ -14,7 +14,7 @@
 //    An entry point that uses the core's code imports it rather than copying
 //    it: a consumer of two entry points gets the shared code once. Chunk
 //    names carry no hash, so that dist is deterministic (the fingerprint and
-//    the G-DEPS check read the file names).
+//    the deps check read the file names).
 //  - UMD standalone per entry point: a <script> tag cannot load a chunk, so
 //    there duplication is the price of single-file use.
 //
@@ -30,7 +30,7 @@ import { minifyUmd } from "./minify-umd.mjs";
  *   tsconfig: string;
  *   split?: boolean;
  * }} options `split: false` gives the unchunked ESM/CJS build, standalone
- *   per entry point — the negative control of G-TREESHAKE, not a release mode.
+ *   per entry point — the negative control of the treeshake check, not a release mode.
  */
 export function createConfig({ entries, banner, tsconfig, split = true }) {
   const ts = () =>
@@ -41,6 +41,8 @@ export function createConfig({ entries, banner, tsconfig, split = true }) {
         declaration: false,
         declarationMap: false,
         sourceMap: true,
+        // The maps carry the source: the package ships dist/, not src/.
+        inlineSources: true,
         outDir: undefined,
       },
     });
@@ -104,8 +106,8 @@ export function createConfig({ entries, banner, tsconfig, split = true }) {
           // `src/shared/` is code shared by two non-base entry points (/live
           // and /tools, /words and /intl): it belongs neither to the base nor
           // to either of them — rollup makes a shared chunk of it, so the base
-          // does not grow from it (G-SIZE), and neither consumer gets the
-          // other's own code (G-TREESHAKE).
+          // does not grow from it (the size check), and neither consumer gets the
+          // other's own code (the treeshake check).
           if (local.startsWith("src/shared/")) return undefined;
           return ownDirs.some((dir) => local.startsWith(dir)) ? undefined : "index";
         };
@@ -122,7 +124,7 @@ export function createConfig({ entries, banner, tsconfig, split = true }) {
           // re-exports. `allow-extension` would save that boundary, but it
           // would put internal names in the core's namespace — when the entry
           // points were split, ESM exposed an `f` and CJS `formatNumber`, and
-          // G-ENTRIES (ESM = CJS = UMD) failed on it.
+          // the entries check (ESM = CJS = UMD) failed on it.
           output: [
             { ...modular("es", "mjs"), manualChunks },
             { ...modular("cjs", "cjs"), manualChunks },

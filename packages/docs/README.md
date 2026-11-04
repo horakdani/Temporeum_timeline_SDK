@@ -4,10 +4,8 @@ The documentation site, its live examples and recipes, the framework
 templates, the comparison benchmark, and the end-to-end suites that run under
 Playwright device emulation.
 
-It lives under `packages/` rather than at `docs/`, because the repository root
-already has a `docs/` directory holding the Temporeum application's own
-documentation. The gate commands address this workspace by package name
-(`-w @temporeum/timeline-docs`).
+It is a workspace like the packages it documents, and the commands below
+address it by package name (`-w @temporeum/timeline-docs`).
 
 ## The site
 
@@ -43,4 +41,19 @@ and builds and runs every template from the packed packages.
 
 `test` (the builder's unit tests), `test:examples`, `test:a11y`,
 `test:e2e:touch`, `test:e2e:responsive`, `test:e2e:async`,
-`test:e2e:cluster`, `test:ssr`, `bench:compare`.
+`test:e2e:cluster`, `test:ssr`, `bench:compare`. What each check behind them
+proves is in [`scripts/README.md`](../../scripts/README.md).
+
+## When a drawing changes on purpose
+
+The core's visual and right-to-left suites compare every frame of their
+matrix with committed SVG fixtures, byte for byte. A change that is meant to
+alter the drawing writes them again, from the repository root:
+
+```bash
+node scripts/sdk_visual_snapshots.mjs        # the visual matrix: packages/core/test/visual/fixtures
+node scripts/sdk_rtl_snapshots.mjs           # the same, right to left: packages/core/test/rtl/fixtures
+node scripts/sdk_visual_snapshots.mjs --html /tmp/visual.html   # every fixture on one page, to look at
+```
+
+Look at the diff before you commit it: the fixtures are what the review sees.

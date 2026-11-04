@@ -1,5 +1,5 @@
 /**
- * G-EXPORT-PDF: the PDF the library writes itself is valid to an independent
+ * The export-pdf check: the PDF the library writes itself is valid to an independent
  * parser, its text is text — selectable and copied as written — and cutting
  * a timeline into pages loses no item.
  *
@@ -226,7 +226,7 @@ describe("the PDF writer's parts", () => {
     expect(textWidth("漢", 10)).toBeCloseTo(5.56, 2);
   });
 
-  it("measures bold text in Helvetica-Bold's widths, so it centres where it is drawn (M15)", () => {
+  it("measures bold text in Helvetica-Bold's widths, so it centres where it is drawn", () => {
     expect(textWidth("Hi", 10)).toBeCloseTo(9.44, 6);
     expect(textWidth("Hi", 10, "bold")).toBeCloseTo(10, 6);
     expect(textWidth("Wm'`~", 10, "bold")).toBeCloseTo((944 + 889 + 238 + 333 + 584) / 100, 6);
@@ -241,7 +241,7 @@ describe("the PDF writer's parts", () => {
     expect(source).toMatch(new RegExp(`/F2 10 Tf 1 0 0 -1 ${String(Math.round(left * 1000) / 1000).replace(".", "\\.")} `));
   });
 
-  it("names only glyphs Helvetica has: a comma below where Unicode writes a cedilla, nothing for a pair it lacks (M8)", () => {
+  it("names only glyphs Helvetica has: a comma below where Unicode writes a cedilla, nothing for a pair it lacks", () => {
     // Latvian and Romanian: Unicode decomposes these with a cedilla, Helvetica names a comma accent.
     expect(["ķ", "ļ", "ņ", "ģ", "ŗ", "ţ", "Ķ", "Ļ", "Ņ", "Ģ", "Ŗ", "Ţ"].map(glyphName)).toEqual([
       "kcommaaccent", "lcommaaccent", "ncommaaccent", "gcommaaccent", "rcommaaccent", "tcommaaccent",
@@ -254,7 +254,7 @@ describe("the PDF writer's parts", () => {
     for (const char of ["ǎ", "ẍ", "ẽ", "ḱ", "ẁ", "ǹ", "ǵ"]) expect(glyphName(char), char).toBeUndefined();
   });
 
-  it("writes a text whose accents come apart as the letters they make (M9)", async () => {
+  it("writes a text whose accents come apart as the letters they make", async () => {
     const text = "Re\u0301sume\u0301 Ła\u0328ka";
     const bytes = scenesToPdf([{ tag: "svg", attrs: { width: 200, height: 40 }, children: [{ tag: "text", attrs: { x: 0, y: 20 }, text }] }]);
     expect((await readPdf(bytes)).pages[0]).toContain("Résumé Łąka");
@@ -285,7 +285,7 @@ describe("the PDF writer's parts", () => {
     expect(pathOps("m1 1 2 2")).toBe("1 1 m 3 3 l");
     expect(pathOps("M0 0 Q10 0 10 10")).toBe("0 0 m 6.667 0 10 3.333 10 10 c");
     expect(pathOps("M0 0 X 1 1")).toBe("0 0 m");
-    // An arc's flags are one digit each, written without a separator or with one (M14).
+    // An arc's flags are one digit each, written without a separator or with one.
     expect(pathOps("M0 0 a5 5 0 015 5")).toBe("0 0 m 5 5 l");
     expect(pathOps("M0 0 a5 5 0 1 0 5 5")).toBe("0 0 m 5 5 l");
     expect(pathOps("M0 0A5,5,0,1,1,10,10l1-1")).toBe("0 0 m 10 10 l 11 9 l");

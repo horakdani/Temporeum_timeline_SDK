@@ -279,7 +279,7 @@ describe("<Timeline> — props and callbacks", () => {
   });
 });
 
-describe("<Timeline> — a page that re-renders on every view change (D1)", () => {
+describe("<Timeline> — a page that re-renders on every view change", () => {
   /** The README's timeline, with a state set from `onViewportChanged`: every frame of a pan is a render, every render a new `editing` object. */
   function page(): { App: () => ReactElement; moved: ReturnType<typeof vi.fn>; renders: () => number; instance: () => TimelineInstance | null } {
     let instance: TimelineInstance | null = null;

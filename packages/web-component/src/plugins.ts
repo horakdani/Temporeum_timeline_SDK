@@ -2,7 +2,7 @@
  * The element's plugins: the parts of it that come on an entry point of
  * their own.
  *
- * Until P29 the element imported every part of the core it can draw — the
+ * An earlier element imported every part of the core it can draw — the
  * Gantt chart, the resource view, export — whether a configuration asked
  * for it or not, and a page that showed a plain timeline downloaded all of
  * them. The core's promise ("you pay for what you import") held for the
@@ -14,7 +14,7 @@
  *     import { ganttPlugin } from "@temporeum/timeline-element/gantt";
  *     registerPlugin(ganttPlugin);
  *
- * Since P30 the parts a plain timeline does not need either are plugins
+ * The parts a plain timeline does not need either are plugins
  * too: the time tools (`/tools`: hidden dates, time bars, a rolling window,
  * zoom presets, the overview strip, range selection, lane headers, the
  * tooltip), the group tree (`/groups`), the item kinds, templates and

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The G-PERF-GANTT measurement: 10 000 tasks and 10 000 dependencies on the
+ * The perf-gantt check's measurement: 10 000 tasks and 10 000 dependencies on the
  * public path (packages/docs/bench/gantt.html, the shipped dist), pan and
  * wheel zoom, with 4x CPU throttling, on fresh pages — and the same without
  * arrow culling (`?cull=0`), as the negative control.

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The first half of the G-VISUAL check: visual regression on the SHIPPED bundle.
+ * The first half of the visual check: visual regression on the SHIPPED bundle.
  *
  * What it proves: the renderer produces the same frame at 3 widths x 2
  * orientations x 2 themes as the fixtures stored in the repo say.
@@ -156,7 +156,7 @@ async function main() {
   }
 
   const manifest = {
-    note: "G-VISUAL's provenance. The sha256 of the scenario and of the fixtures; a stale fixture or a hand edit shows up here.",
+    note: "The visual check's provenance. The sha256 of the scenario and of the fixtures; a stale fixture or a hand edit shows up here.",
     core: core.VERSION,
     scenarioSha256: sha256(scenarioSource),
     matrixSha256: sha256(matrixSource),
@@ -178,7 +178,7 @@ async function main() {
       .join("\n");
     writeFileSync(
       htmlIndex,
-      `<!doctype html><html lang="en"><meta charset="utf-8"><title>G-VISUAL fixtures</title>` +
+      `<!doctype html><html lang="en"><meta charset="utf-8"><title>Visual fixtures</title>` +
         `<style>body{margin:0;padding:24px;font:14px system-ui;background:#888}` +
         `figure{margin:0 0 28px;background:#fff}figcaption{font:12px ui-monospace;padding:6px 8px;background:#222;color:#fff}` +
         `svg{display:block;max-width:100%}</style>${sections}</html>\n`,
@@ -258,7 +258,7 @@ async function main() {
     for (const failure of failures) {
       console.error(`  ERROR ${failure}`);
     }
-    console.error(`\nG-VISUAL (fixtures) FAILED: ${String(failures.length)} errors.`);
+    console.error(`\nvisual (fixtures) FAILED: ${String(failures.length)} errors.`);
     process.exit(1);
   }
 

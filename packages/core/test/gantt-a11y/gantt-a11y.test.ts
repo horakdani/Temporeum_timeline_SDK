@@ -1,5 +1,5 @@
 /**
- * G-GANTT-A11Y: a task's predecessors and successors, for a reader who
+ * The gantt-a11y check: a task's predecessors and successors, for a reader who
  * cannot see the arrows.
  *
  * Two claims, on generated projects:

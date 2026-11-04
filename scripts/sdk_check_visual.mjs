@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The second half of the G-VISUAL check: proves that the visual MATRIX
+ * The second half of the visual check: proves that the visual MATRIX
  * really ran to the end.
  *
  * The fixture comparison (sdk_visual_snapshots.mjs --check) says that the
@@ -176,10 +176,10 @@ if (failures.length > 0) {
   for (const failure of failures) {
     console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-VISUAL FAILED: ${String(failures.length)} failure(s).`);
+  console.error(`\nvisual FAILED: ${String(failures.length)} failure(s).`);
   process.exit(1);
 }
 
 console.log(
-  "\nG-VISUAL passed: the frame is unchanged at 3 widths x 2 orientations x 2 themes.",
+  "\nvisual passed: the frame is unchanged at 3 widths x 2 orientations x 2 themes.",
 );

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-PROP: proves that the property-based test really ran on generated
+ * The prop check: proves that the property-based test really ran on generated
  * input, and that it checked the overlap invariant with the core's own
  * exported checker.
  *
@@ -152,8 +152,8 @@ if (failures.length > 0) {
   for (const failure of failures) {
     console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-PROP FAILED: ${String(failures.length)} failure(s).`);
+  console.error(`\nprop FAILED: ${String(failures.length)} failure(s).`);
   process.exit(1);
 }
 
-console.log("\nG-PROP passed: on generated input there is NEVER an overlap in the same row.");
+console.log("\nprop passed: on generated input there is NEVER an overlap in the same row.");

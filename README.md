@@ -1,40 +1,57 @@
 # Temporeum Timeline
 
+[![CI](https://github.com/horakdani/Temporeum_timeline_SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/horakdani/Temporeum_timeline_SDK/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@temporeum/timeline-element.svg)](https://www.npmjs.com/package/@temporeum/timeline-element)
+[![runtime dependencies: 0](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen.svg)](packages/core/package.json)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 An editable, accessible, responsive timeline for the web, covering spans from millennia down to seconds. Lanes never collide, every gesture has a keyboard equivalent, it renders on the server, and the engine has **zero runtime dependencies**.
+
+[![Five thousand years, from the Nile to the Moon: the chronicle demo on the documentation's home page](.github/hero.png)](https://horakdani.github.io/Temporeum_timeline_SDK/)
+
+**[Live demo and documentation →](https://horakdani.github.io/Temporeum_timeline_SDK/)**
 
 ```bash
 npm install @temporeum/timeline-element
 ```
 
-```js
+```js excerpt:example/quick-start
 import { createTimeline, registerPlugin } from "@temporeum/timeline-element";
 import { groupsPlugin } from "@temporeum/timeline-element/groups";
 
-// Named rows are a plugin: a page that does not use them does not download them.
+// Rows with a visible name are groups, a plugin: registered once, before the first timeline.
 registerPlugin(groupsPlugin);
 
+const items = [
+  { id: "design", start: new Date("2026-03-02"), end: new Date("2026-03-09"), label: "Design", laneId: "work" },
+  { id: "launch", start: new Date("2026-03-27"), end: new Date("2026-04-03"), label: "Launch", laneId: "ship" },
+];
+const groups = [
+  { id: "work", label: "Work" },
+  { id: "ship", label: "Shipping" },
+];
+
+const log = document.querySelector("#log");
 const timeline = createTimeline(document.querySelector("#timeline"), {
-  items: [
-    { id: "design", start: new Date("2026-03-02"), end: new Date("2026-03-09"), label: "Design", laneId: "work" },
-    { id: "launch", start: new Date("2026-03-27"), end: new Date("2026-04-03"), label: "Launch", laneId: "ship" },
-  ],
-  groups: [
-    { id: "work", label: "Work" },
-    { id: "ship", label: "Shipping" },
-  ],
+  items,
+  groups,
   ariaLabel: "Release plan",
   editing: { enabled: true, snapMs: 86_400_000 },
 });
 
-// The library never saves anything itself: every edit arrives as a command, and your code decides what to do with it.
-timeline.on("itemMoved", ({ item, to }) => console.log(item.id, "now starts", to.start));
+// The library never saves: an edit comes out as a command, and it is yours.
+timeline.on("itemMoved", ({ item, to }) => {
+  log.textContent = `${item.label} now starts ${new Date(to.start ?? item.start).toDateString()}`;
+});
 ```
 
-**[Documentation →](packages/docs/site/pages/index.md)**
+The page needs a `<div id="timeline" style="height: 300px">` and a `<p id="log">`. [Getting started](https://horakdani.github.io/Temporeum_timeline_SDK/getting-started.html) goes on from here; the [frameworks page](https://horakdani.github.io/Temporeum_timeline_SDK/frameworks.html) has the same in React, Vue, Svelte and Angular.
 
 ## Try it
 
-The documentation site runs every example live: the timelines on its pages are the library, not pictures of it. Until the site is published, build it and open it on your own machine (Node 22.12 or later):
+The documentation site runs every example live: the timelines on its pages are the library, not pictures of it — the [home page's chronicle](https://horakdani.github.io/Temporeum_timeline_SDK/) of five thousand years, the [showcase](https://horakdani.github.io/Temporeum_timeline_SDK/showcase.html), the recipes and the guides, each with its example running.
+
+To run the site on your own machine (Node 22.12 or later):
 
 ```bash
 npm ci
@@ -42,7 +59,7 @@ npm run build -w @temporeum/timeline-docs
 npm run serve -w @temporeum/timeline-docs
 ```
 
-Then open <http://localhost:41737/site/> — the home page's chronicle of five thousand years, the [showcase](packages/docs/site/pages/showcase.md), the recipes and the guides, each with its example running.
+Then open <http://localhost:41737/site/>.
 
 ## Why another timeline
 
@@ -56,7 +73,7 @@ Read-only timeline widgets already exist. This one is built to have five propert
 
 ## How it compares
 
-The [benchmark](packages/docs/site/pages/benchmark.md) runs this library and vis-timeline 8.5.6 on the same data, in the same browser, with real mouse input, on Chromium with a 4× CPU slowdown. Results for 10 000 items:
+The [benchmark](https://horakdani.github.io/Temporeum_timeline_SDK/benchmark.html) runs this library and vis-timeline 8.5.6 on the same data, in the same browser, with real mouse input, on Chromium with a 4× CPU slowdown. Results for 10 000 items:
 
 | | Temporeum | vis-timeline |
 |---|---|---|
@@ -78,11 +95,11 @@ The benchmark page also lists where we lose. At this density (about 2 000 items 
 | [`@temporeum/timeline-angular`](packages/angular) | `<tl-timeline>` and `timelineState` for Angular, standalone and zoneless. |
 | [`@temporeum/timeline-core`](packages/core) | The engine: geometry, layout, rendering, input, keyboard, loading and clustering. It needs no DOM, so you can build your own shell on it. |
 
-All six packages are released together, always share one version, and follow [semantic versioning](packages/docs/site/pages/stability.md).
+All six packages are released together, always share one version, and follow [semantic versioning](https://horakdani.github.io/Temporeum_timeline_SDK/stability.html).
 
 ## Coming from vis-timeline?
 
-[The migration guide](packages/docs/site/pages/guides/migrating-from-vis-timeline.md) maps vis-timeline options to their equivalents here, with a running example for each. It also lists, honestly, what is not here yet.
+[The migration guide](https://horakdani.github.io/Temporeum_timeline_SDK/guides/migrating-from-vis-timeline.html) maps vis-timeline options to their equivalents here, with a running example for each. It also lists, honestly, what is not here yet.
 
 ## Contributing
 

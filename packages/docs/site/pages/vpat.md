@@ -1,6 +1,6 @@
 # VPAT® 2.5 INT
 
-The [accessibility conformance report](conformance.md) in the layout of the ITI VPAT® 2.5, International Edition: WCAG 2.2, the Revised Section 508 and EN 301 549 in one document, the form a procurement office asks for. It is generated from the same file as the conformance report, `site/conformance/wcag22.json`, so the two say the same thing; the conformance report names the test behind every line, and the release check runs each one.
+The [accessibility conformance report](conformance.md) in the layout of the ITI VPAT® 2.5, International Edition: WCAG 2.2, the Revised Section 508 and EN 301 549 in one document, the form a procurement office asks for. It is generated from the same file as the conformance report, `site/conformance/wcag22.json`, so the two say the same thing; the conformance report names the test behind every line, and the conformance check runs each one before each release.
 
 ## Product information
 

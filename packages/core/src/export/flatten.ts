@@ -1,7 +1,7 @@
 /**
  * HTML text as SVG text.
  *
- * Item labels are a line of HTML in a `foreignObject` (P17). A browser draws
+ * Item labels are a line of HTML in a `foreignObject`. A browser draws
  * that on screen and in a standalone SVG; it does not let a canvas that drew
  * one be read back (the canvas is "tainted"), so a PNG cannot hold it, and a
  * PDF has no HTML at all. Flattened, each becomes the same text in a

@@ -14,7 +14,7 @@ import { DAY, denseUniverse, measure, membersFrom, ORIGIN, readFrame } from "./f
 import type { FrameReading, MembersOf } from "./fixture.js";
 
 /**
- * G-CLUSTER: the counts of the clusters ALWAYS add up to the items shown —
+ * The cluster check: the counts of the clusters ALWAYS add up to the items shown —
  * no item is lost.
  *
  * Each schedule is a seeded walk over a dense universe: bursts of zoom steps
@@ -23,7 +23,7 @@ import type { FrameReading, MembersOf } from "./fixture.js";
  * without it, which is what "visible" means — and the clustered one is read
  * back from its scene and measured (`fixture.ts`). Half the schedules draw
  * every frame through a scene space planned the way a host plans it, so the
- * P7 tile cache hands tiles from one frame to the next; the log counts how
+ * tile cache hands tiles from one frame to the next; the log counts how
  * many, so a cache that never hit would show.
  *
  * Two more things are checked along the way. A pan never changes a count:

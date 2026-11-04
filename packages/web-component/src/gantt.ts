@@ -87,7 +87,7 @@ const NO_DEPENDENCIES: readonly Dependency[] = [];
  * The dependency arrows, in a layer between the load and the items, in the
  * items' own space: a path per look ({@link dependencyPaths}), not one each,
  * through the element's layer cache — a pan in a space does not draw them
- * again (P20, G-PERF-GANTT).
+ * again.
  */
 function layer<T>(config: TimelineConfig<T>, state: FrameState<T>, result: RenderResult<T>, scene: SceneElement): SceneElement {
   const view = state.view;

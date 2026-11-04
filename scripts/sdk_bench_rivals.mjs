@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The field benchmark (P28): Temporeum against vis-timeline,
+ * The field benchmark: Temporeum against vis-timeline,
  * react-calendar-timeline, frappe-gantt and SVAR React Gantt, in Chromium,
  * Firefox and WebKit.
  *
@@ -448,7 +448,6 @@ const median = (values) => {
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 };
-const git = spawnSync("git", ["rev-parse", "--short", "HEAD"], { cwd: repoRoot, encoding: "utf8" });
 const pkg = (path) => JSON.parse(readFileSync(path, "utf8"));
 const report = {
   generatedAt: new Date().toISOString(),
@@ -468,7 +467,7 @@ const report = {
     runSeconds: Math.round((performance.now() - startedAt) / 1000),
   },
   libraries: {
-    temporeum: { version: pkg(join(repoRoot, "packages", "web-component", "package.json")).version, commit: git.status === 0 ? git.stdout.trim() : null },
+    temporeum: { version: pkg(join(repoRoot, "packages", "web-component", "package.json")).version },
     "vis-timeline": { version: installed("vis-timeline"), with: { "vis-data": installed("vis-data") } },
     "react-calendar-timeline": { version: installed("react-calendar-timeline"), with: { react: installed("react"), dayjs: installed("dayjs"), interactjs: installed("interactjs") } },
     "frappe-gantt": { version: installed("frappe-gantt") },

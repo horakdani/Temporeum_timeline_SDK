@@ -4,7 +4,7 @@
  * Every test that touches screen coordinates runs through this, which is how
  * the vertical timeline stays the same code path as the horizontal one rather
  * than drifting into a second implementation. `scripts/sdk_check_orientation.mjs`
- * enforces that every file under `test/geometry/` uses it, so the G-ORIENT
+ * enforces that every file under `test/geometry/` uses it, so the orient check
  * gate cannot be satisfied by a suite that quietly covers one orientation.
  *
  * The orientation list comes from the core itself, not from a copy here: if a

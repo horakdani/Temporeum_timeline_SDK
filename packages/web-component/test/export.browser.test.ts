@@ -6,11 +6,11 @@ import { createTimeline, registerPlugin } from "../src/index.js";
 import { exportPlugin } from "../src/export.js";
 import type { Timeline, TimelineConfig } from "../src/index.js";
 
-// The parts on entry points of their own (P29), as a page registers them.
+// The parts on entry points of their own, as a page registers them.
 registerPlugin(exportPlugin);
 
 /**
- * P25 through the live instance, in a real Chromium: the frame as SVG with
+ * Export and print through the live instance, in a real Chromium: the frame as SVG with
  * its theme pinned, as a PNG the browser lets out of its canvas, the whole
  * range as a PDF, and the print view the browser's print takes — mounted,
  * one section a page, gone after the print.
@@ -70,7 +70,7 @@ describe("export", () => {
     expect([bitmap.width, bitmap.height]).toEqual([1800, 720]);
   });
 
-  it("makes a PNG of a frame whose label holds a character XML does not allow (M1)", async () => {
+  it("makes a PNG of a frame whose label holds a character XML does not allow", async () => {
     const { timeline } = await mount({ items: [{ id: "odd", label: "Bell\u0007", start: T0 + DAY, end: T0 + 3 * DAY, laneId: "l0" }] });
     const png = await timeline.exportPng({ scale: 1 });
     expect(png.type).toBe("image/png");

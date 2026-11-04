@@ -14,11 +14,11 @@ import { backlogCss, describeBacklogTask, mountBacklog, resourcesPlugin } from "
 import type { TemporeumTimelineElement, Timeline, TimelineConfig } from "../src/index.js";
 import "../src/define.js";
 
-// The parts on entry points of their own (P29, P30), as a page registers them.
+// The parts on entry points of their own, as a page registers them.
 registerPlugin(ganttPlugin, resourcesPlugin, groupsPlugin, itemsPlugin);
 
 /**
- * P22 through the live instance, in a real Chromium: the resource view's
+ * Resources and the backlog through the live instance, in a real Chromium: the resource view's
  * load lanes and layer, a move between resources by a key, the instance's
  * `dropItemAt`, `items` and `itemsChanged`, and the backlog beside it — its
  * keys, its pointer drag, its list following the items.
@@ -96,7 +96,7 @@ describe("the resource view", () => {
     timeline.destroy();
   });
 
-  it("exports a document a browser parses, with the load lanes and a label holding a control character (M1)", async () => {
+  it("exports a document a browser parses, with the load lanes and a label holding a control character", async () => {
     const { timeline } = await mount({ items: [...items, { id: "odd", label: "Bell\u0007 \uD800end", start: T0 + DAY, end: T0 + 2 * DAY, laneId: "dana" }] });
     const svg = timeline.exportSvg();
     expect(svg).toContain(`data-tl-lane="${loadLaneId("ana")}"`);
@@ -114,7 +114,7 @@ describe("the resource view", () => {
     timeline.update({ lanes, resourceOptions: { loadSize: 30 } });
     timeline.flush();
     // Given lanes, the resources are those: Ana's and Dana's work has no row
-    // of its own, and is drawn in the default lane after them (E2), without
+    // of its own, and is drawn in the default lane after them, without
     // a load lane.
     expect(laneIds(timeline)).toEqual(["ben", loadLaneId("ben"), "room", ""]);
     expect(timeline.result?.layout.lanes[1]?.crossSize).toBe(30);

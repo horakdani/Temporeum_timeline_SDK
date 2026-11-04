@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * G-PERF-RESOURCES: with 500 resources and 10,000 assignments, with load
- * bands, pan and wheel zoom are within the G-PERF thresholds (<= 5% missed
+ * The perf-resources check: with 500 resources and 10,000 assignments, with load
+ * bands, pan and wheel zoom are within the perf check's thresholds (<= 5% missed
  * vsyncs, <= 100 ms longest frame, by the median of three fresh pages) — and
  * the sensitivity control (`?burn=24`: one and a half vsyncs of extra work on
  * every frame during a gesture) FAILS: both the pan AND the zoom are over the
@@ -12,7 +12,7 @@
  * into four paths, rebuilt on every frame, still gave 0.0% missed vsyncs at
  * 4x throttling. The assumption — that the layer is expensive without
  * culling — is false at this size (like the earlier flat control of
- * G-PERF-DEEP); so by design the control claims what has to be proven — that
+ * the perf-deep check); so by design the control claims what has to be proven — that
  * the measurement is not blind — and drawing without culling is a note.
  *
  * Validity — if any of these is violated, the check FAILS:
@@ -110,5 +110,5 @@ if (!existsSync(reportFile)) {
 
 for (const note of notes) console.log(`  ok    ${note}`);
 for (const failure of failures) console.log(`  FAIL  ${failure}`);
-console.log(failures.length === 0 ? "G-PERF-RESOURCES: passed" : "G-PERF-RESOURCES: FAILED");
+console.log(failures.length === 0 ? "perf-resources: passed" : "perf-resources: FAILED");
 process.exit(failures.length === 0 ? 0 : 1);

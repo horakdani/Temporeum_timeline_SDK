@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/horakdani/Temporeum_timeline_SDK/security/advisories/new
+    about: Privately, never in a public issue — see SECURITY.md.
+  - name: Ask a question
+    url: https://github.com/horakdani/Temporeum_timeline_SDK/discussions
+    about: How to do something with the timeline, or whether it can.
+  - name: Documentation
+    url: https://horakdani.github.io/Temporeum_timeline_SDK/
+    about: The guides, the recipes and the API reference, with live examples.

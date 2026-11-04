@@ -13,7 +13,7 @@
  *   ::: example <id>       a live, editable example (the builder renders it)
  *   {{name:argument}}      a block the builder fills in (results, API tables)
  *   ```js excerpt:<ref>    a code block that claims to be part of a running
- *                          example — G-EXAMPLES holds it to that claim
+ *                          example — the examples check holds it to that claim
  *
  * `parseMarkdown` returns blocks; `renderBlocks` turns them into HTML with
  * the builder's callbacks for the two non-Markdown kinds.

@@ -82,7 +82,7 @@ describe("the load lanes and their drawing", () => {
 // eslint-disable-next-line no-control-regex -- these are the characters it is about
 const NOT_XML = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]|\p{Cs}/u;
 
-describe("the load lanes in an exported file (M1)", () => {
+describe("the load lanes in an exported file", () => {
   it("are named in XML characters, so a frame with them is a well-formed SVG document", () => {
     expect(loadLaneId("a")).not.toMatch(NOT_XML);
     expect(loadLaneOf(loadLaneId("a"))).toBe("a");

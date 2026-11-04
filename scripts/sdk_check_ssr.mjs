@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-SSR — importing in Node does not throw; the HTML rendered on the server
+ * The ssr check — importing in Node does not throw; the HTML rendered on the server
  * hydrates. Under Next (React adapter), Nuxt (Vue adapter), Astro (the
  * element), SvelteKit (Svelte adapter) and Angular SSR (Angular adapter).
  *
@@ -109,11 +109,11 @@ process.on("SIGINT", () => process.exit(130));
 function finish() {
   for (const note of notes) process.stdout.write(`  ok  ${note}\n`);
   if (problems.length > 0) {
-    process.stdout.write(`\nG-SSR: ${String(problems.length)} problem(s)\n`);
+    process.stdout.write(`\nssr: ${String(problems.length)} problem(s)\n`);
     for (const problem of problems) process.stdout.write(`  FAIL  ${problem}\n`);
     process.exit(1);
   }
-  process.stdout.write("\nG-SSR: importable in Node, and the HTML rendered on the server hydrates — Next, Nuxt, Astro, SvelteKit, Angular.\n");
+  process.stdout.write("\nssr: importable in Node, and the HTML rendered on the server hydrates — Next, Nuxt, Astro, SvelteKit, Angular.\n");
   process.exit(0);
 }
 

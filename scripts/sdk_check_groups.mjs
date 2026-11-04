@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-GROUPS: on generated group trees, in both orientations — the descendants
+ * The groups check: on generated group trees, in both orientations — the descendants
  * of a collapsed group are neither in the layout nor in the accessibility
  * tree, expanding gives back the same layout, and reordering is a reversible
  * command (dragging and the keyboard give the same one).
@@ -28,4 +28,4 @@ const header = codeOf(readFileSync(join(root, "packages", "web-component", "src"
 for (const needle of ['"tree"', '"treeitem"', '"aria-expanded"', '"aria-level"', "moveGroupCommand", "dropPosition", "groupKeyStep", "resolveGroupKey"]) {
   if (!header.includes(needle)) failures.push(`the group header layer (web-component/src/groups/layer.ts) does not use: ${needle}`);
 }
-finish("G-GROUPS", failures);
+finish("groups", failures);

@@ -1,0 +1,20 @@
+# Weekly updates for the development dependencies and the workflows' actions.
+# The published packages have no runtime dependencies to update; a framework
+# peer range changes by hand, with the tests on its lowest version.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      development:
+        dependency-type: development
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

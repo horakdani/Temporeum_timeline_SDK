@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-E2E-TOUCH-WEBKIT: the gesture claims of the Chromium G-E2E-TOUCH check in
+ * The e2e-touch-webkit check: the gesture claims of the Chromium e2e-touch check in
  * WebKit, on an emulated iPhone and iPad — and a negative control that
  * fails.
  *
@@ -170,7 +170,7 @@ if (!existsSync(iosReportFile)) {
 for (const note of notes) process.stdout.write(`  ok   ${note}\n`);
 if (failures.length > 0) {
   for (const failure of failures) process.stderr.write(`  FAIL ${failure}\n`);
-  process.stderr.write(`\nG-E2E-TOUCH-WEBKIT FAILED: ${String(failures.length)} problems.\n`);
+  process.stderr.write(`\ne2e-touch-webkit FAILED: ${String(failures.length)} problems.\n`);
   process.exit(1);
 }
-process.stdout.write("\nG-E2E-TOUCH-WEBKIT passed: the gestures in WebKit, touch-action in real Mobile Safari, the negative control bites.\n");
+process.stdout.write("\ne2e-touch-webkit passed: the gestures in WebKit, touch-action in real Mobile Safari, the negative control bites.\n");

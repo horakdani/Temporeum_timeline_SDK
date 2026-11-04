@@ -626,7 +626,7 @@ ${body}
 ${pager}
 </main>
 </div>
-<footer class="bottom"><p>MIT licensed. Every live example on this site runs the published bundles, and every code block is checked against one (G-EXAMPLES).</p></footer>
+<footer class="bottom"><p>MIT licensed. Every live example on this site runs the published bundles, and every code block is checked against one (the examples check).</p></footer>
 ${hasExamples ? `<script type="application/json" id="import-map-data">${scriptJson(IMPORTS)}</script>\n<script type="module" src="${base}assets/playground.js"></script>` : ""}
 </body>
 </html>

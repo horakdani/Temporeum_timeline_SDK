@@ -256,7 +256,7 @@ function useTimelineStateIn<S = readonly string[]>(
   return isEqual === undefined ? useTimelineState(source, selector) : useTimelineState(source, selector, isEqual);
 }
 
-describe("<Timeline> — a page that re-renders on every view change (D1)", () => {
+describe("<Timeline> — a page that re-renders on every view change", () => {
   /** An inline `editing` in the render, and a state set from `@viewport-changed`: every frame of a pan is a render, every render a new object. */
   function page(): { Page: ReturnType<typeof defineComponent>; renders: () => number; timeline: ShallowRef<TimelineInstance | null>; moved: ReturnType<typeof vi.fn> } {
     const timeline: ShallowRef<TimelineInstance | null> = shallowRef(null);

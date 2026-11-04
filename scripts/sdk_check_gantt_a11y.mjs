@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-GANTT-A11Y: a task's predecessors and successors are in its accessible
+ * The gantt-a11y check: a task's predecessors and successors are in its accessible
  * description (in the rendered option's aria-label), and they can be reached
  * with the keyboard: `[` gets to every predecessor, `]` to every successor,
  * wrapping around.
@@ -28,4 +28,4 @@ for (const needle of ["resolveDependencyKey(", "dependencyKeyStep("]) {
   if (!wc("timeline.ts").includes(needle)) failures.push(`createTimeline does not use: ${needle}`);
 }
 if (!wc("config.ts").includes("ganttHooks(")) failures.push("the frame's hooks do not go through ganttHooks");
-finish("G-GANTT-A11Y", failures);
+finish("gantt-a11y", failures);

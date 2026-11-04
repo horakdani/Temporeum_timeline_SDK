@@ -119,7 +119,7 @@ describe("the browser binding", () => {
       // The browser taking the pointer away is a cancel from here.
       "lostpointercapture",
       "wheel",
-      // Since P8: the keyboard comes in through the same binding.
+      // The keyboard comes in through the same binding.
       "keydown",
     ]);
     // The wheel listener must not be passive, or it cannot stop the page
@@ -258,7 +258,7 @@ describe("the browser binding", () => {
     expect(machine.phase).toBe("panning");
   });
 
-  it("pans with the primary mouse button only (E11)", () => {
+  it("pans with the primary mouse button only", () => {
     const { element, machine } = setup();
     const mouse = (id: number, x: number, extra: Record<string, unknown>) => ({ ...pointer(id, x), pointerType: "mouse", ...extra });
     // The middle and the right button press nothing, and capture nothing.
@@ -502,7 +502,7 @@ describe("the keyboard and motion", () => {
     expect(listener).toBeUndefined();
   });
 
-  it("asks the element's own window, not the one the script runs in — an iframe's preference is the frame's (S12)", () => {
+  it("asks the element's own window, not the one the script runs in — an iframe's preference is the frame's", () => {
     const page: string[] = [];
     vi.stubGlobal("matchMedia", (text: string) => {
       page.push(text);

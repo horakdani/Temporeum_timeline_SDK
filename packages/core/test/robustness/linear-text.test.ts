@@ -1,6 +1,6 @@
 /**
  * Text from outside — a calendar file, a story, a vis-timeline item, a
- * style — is read in time proportional to its length (S2). Each input below
+ * style — is read in time proportional to its length. Each input below
  * is one a backtracking pattern took quadratic time over: at this length,
  * the old patterns ran for close to a minute; a linear scan, milliseconds.
  * The bound is far from both.
@@ -22,7 +22,7 @@ function within(run: () => unknown): unknown {
   return out;
 }
 
-describe("untrusted text in linear time (S2)", () => {
+describe("untrusted text in linear time", () => {
   it("a TZID of letters, and still finds the Area/City at the end of a vendor's", () => {
     const calendar = within(() =>
       parseICal(["BEGIN:VCALENDAR", "BEGIN:VEVENT", "UID:x", `DTSTART;TZID=${"a".repeat(N)}!:20260101T090000`, "END:VEVENT", "END:VCALENDAR"].join("\r\n")),

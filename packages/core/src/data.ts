@@ -2,7 +2,7 @@
  * Items fetched per window: the data half of a timeline that does not fit in
  * memory.
  *
- * {@link ItemsSource} has allowed a function since P0 — `(domain, signal) =>
+ * {@link ItemsSource} may be a function — `(domain, signal) =>
  * Promise<Item[]>` — and this file is what makes that form real. A loader
  * sits between the host's function and the renderer: the host tells it what
  * domain it is about to draw, the loader asks the source for the windows that
@@ -22,8 +22,8 @@
  *    moment the window stops being needed, and a result that arrives after
  *    that is dropped — also when the source ignored the signal and answered
  *    anyway, which a server that cannot cancel will do. Nothing of it is
- *    cached, so nothing of it can be drawn. That is the promise G-ASYNC
- *    checks, against a deliberately naive loader as its negative control.
+ *    cached, so nothing of it can be drawn. That is the promise the async
+ *    tests check, against a deliberately naive loader as its negative control.
  * 3. **Nothing here draws or waits.** The loader holds no timer and reads no
  *    clock: a request is cheap enough to make on every frame, and what is
  *    loading comes back as data for the renderer to show on the axis.

@@ -1,5 +1,5 @@
 /**
- * G-CALENDAR-VIEW: in the week and day views, events that overlap go side by
+ * The calendar-view check: in the week and day views, events that overlap go side by
  * side, none covers another, and every one is reached from the keyboard.
  *
  * On generated weeks — four zones, the weeks the clocks change in among
@@ -77,7 +77,7 @@ function generate(seed: number, index: number): Case {
 const cases = Array.from({ length: CASES }, (_, index) => generate(SEED, index));
 const geometryOf = (c: Case) => calendarGeometry(c.layout, { width: 980, height: 760, rtl: c.rtl });
 
-describe("G-CALENDAR-VIEW: side by side", () => {
+describe("calendar view: side by side", () => {
   it("[claim:side-by-side] pieces that overlap as drawn are in different columns, and reach over no column an overlapping one is in", () => {
     let pairs = 0;
     for (const c of cases) {
@@ -97,7 +97,7 @@ describe("G-CALENDAR-VIEW: side by side", () => {
   });
 });
 
-describe("G-CALENDAR-VIEW: nothing covers anything", () => {
+describe("calendar view: nothing covers anything", () => {
   it("[claim:no-cover] no two rectangles of the drawing intersect, left to right and right to left", () => {
     let rects = 0;
     for (const c of cases) {
@@ -140,7 +140,7 @@ describe("G-CALENDAR-VIEW: nothing covers anything", () => {
   });
 });
 
-describe("G-CALENDAR-VIEW: every event is there", () => {
+describe("calendar view: every event is there", () => {
   it("[claim:complete] a timed item is on every day it touches, an all-day one in the band, and nothing else is", () => {
     for (const c of cases) {
       const viewStart = c.layout.days[0]?.start ?? 0;
@@ -162,7 +162,7 @@ describe("G-CALENDAR-VIEW: every event is there", () => {
   });
 });
 
-describe("G-CALENDAR-VIEW: the keyboard", () => {
+describe("calendar view: the keyboard", () => {
   it("[claim:keyboard] from no focus, next visits every event once, in reading order", () => {
     for (const c of cases) {
       const visited: string[] = [];
@@ -239,7 +239,7 @@ function walk(node: SceneElement, visit: (node: SceneElement) => void): void {
   for (const child of node.children ?? []) walk(child, visit);
 }
 
-describe("G-CALENDAR-VIEW: the drawing", () => {
+describe("calendar view: the drawing", () => {
   it("[claim:scene] the options are the keyboard's order, named, with the focused one the active descendant", () => {
     for (const c of cases.slice(0, 120)) {
       const focused = c.layout.order[Math.floor(c.layout.order.length / 2)];
@@ -287,7 +287,7 @@ describe("G-CALENDAR-VIEW: the drawing", () => {
   });
 });
 
-describe("G-CALENDAR-VIEW: the wall clock", () => {
+describe("calendar view: the wall clock", () => {
   // The 2026 clock changes: Budapest 29 March and 25 October, New York
   // 8 March and 1 November, Lord Howe (half an hour) 5 April and 4 October.
   const CHANGES: readonly (readonly [string, number, number])[] = [

@@ -9,7 +9,7 @@ import type { TimelineInstance } from "../src/index.js";
 import { reactiveProps } from "./props.svelte.js";
 
 /**
- * The component under Trusted Types (C4). The server's drawing reaches the
+ * The component under Trusted Types. The server's drawing reaches the
  * page through `{@html}`, as markup; on the client Svelte takes the
  * server's nodes for it while hydrating, and a client-only mount writes no
  * HTML at all — so neither hands a string to `innerHTML`, which this page's

@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
  * The public surface, name by name: what each entry point exports at run
  * time. A new export is a decision — it is then on the 1.x contract — so it
  * has to be written here too; a helper the tests need is imported from its
- * own module, not from an entry (D3 of the quality round).
+ * own module, not from an entry.
  */
 
 const entries = (JSON.parse(readFileSync(new URL("../entries.json", import.meta.url), "utf8")) as { entries: { name: string; input: string }[] }).entries;
@@ -39,7 +39,7 @@ const INTERNAL: Readonly<Record<string, readonly string[]>> = {
 };
 
 describe("the core's public surface", () => {
-  it("has one snapTime and one TaskGrid options name: the root's snapTime, the element's TaskGridOptions (A8)", async () => {
+  it("has one snapTime and one TaskGrid options name: the root's snapTime, the element's TaskGridOptions", async () => {
     const tools = (await import("../src/tools/index.js")) as Record<string, unknown>;
     expect(tools).not.toHaveProperty("snapTime");
     const gantt = await import("../src/gantt/index.js");

@@ -467,7 +467,7 @@ describe("dragging between lanes", () => {
     machine.handle(sample(1, "down", main, surface.crossOf("a"), 0));
     const dragged = machine.handle(sample(1, "move", main + 20, 199, 16));
     // Not `null`: with declared lanes a cleared lane took the item out of
-    // view (E2, E3). Unset keeps the lane it was in.
+    // view. Unset keeps the lane it was in.
     expect("laneId" in ((of(dragged, "editMove")[0] as EditMoveEffect).patches[0] ?? {})).toBe(false);
   });
 });

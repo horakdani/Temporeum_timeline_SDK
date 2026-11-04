@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * G-BENCH-LABELS: proves that on the 10,000-item page of the vis comparison,
- * panning and wheel zoom stay within the G-PERF thresholds (<= 5% missed
+ * The bench-labels check: proves that on the 10,000-item page of the vis comparison,
+ * panning and wheel zoom stay within the perf check's thresholds (<= 5% missed
  * vsync, <= 100 ms longest frame), and that on the same page, zoomed in with
  * a real wheel up to the density limit (the core's SHORTEN_DENSITY_LIMIT,
  * 1000 items per view width), at least half of the visible items carry a
@@ -107,5 +107,5 @@ if (!existsSync(reportFile)) {
 
 for (const note of notes) console.log(`  ok    ${note}`);
 for (const failure of failures) console.log(`  FAIL  ${failure}`);
-console.log(failures.length === 0 ? "G-BENCH-LABELS: passed" : "G-BENCH-LABELS: FAILED");
+console.log(failures.length === 0 ? "bench-labels: passed" : "bench-labels: FAILED");
 process.exit(failures.length === 0 ? 0 : 1);

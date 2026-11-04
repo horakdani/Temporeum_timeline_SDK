@@ -6,7 +6,7 @@
  * Each is pure, like the rest of the core: it computes what to draw and
  * where a gesture or a key leads, and the element (`createTimeline`) puts it
  * on screen and wires the events. Every capability a pointer reaches has a
- * keyboard path that ends in the same function — G-KEYBOARD's promise. The
+ * keyboard path that ends in the same function — the keyboard tests check it. The
  * entry point is separate so that the core's own budget does not grow with
  * it: the core takes hidden dates as a two-function `TimeWarp`, and the rest
  * of this lives here.

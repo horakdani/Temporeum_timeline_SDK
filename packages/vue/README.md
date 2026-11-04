@@ -1,7 +1,7 @@
 # @temporeum/timeline-vue
 
 The timeline as a Vue component, built on the shared instance of
-[`@temporeum/timeline-element`](../web-component/README.md).
+[`@temporeum/timeline-element`](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/web-component#readme).
 
 ```bash
 npm install @temporeum/timeline-vue
@@ -14,11 +14,22 @@ The peer range is `vue >=3.5` (`useId` is new in 3.5).
 import { Timeline, useTimelineState } from "@temporeum/timeline-vue";
 import { ref, shallowRef } from "vue";
 
+const DAY = 86_400_000;
+const t = Date.UTC(2026, 2, 2);
+const items = [
+  { id: "design", label: "Design", laneId: "work", start: t, end: t + 7 * DAY, data: { owner: "Ana" } },
+  { id: "launch", label: "Launch", laneId: "ship", start: t + 25 * DAY, end: t + 32 * DAY, data: { owner: "Dev" } },
+];
+const lanes = [
+  { id: "work", label: "Work" },
+  { id: "ship", label: "Shipping" },
+];
+
 const timeline = shallowRef(null);
 const selected = useTimelineState(timeline, (state) => state.selectedIds);
 const log = ref("Drag an item.");
 const onMoved = ({ item, to }) => {
-  log.value = `${item.label} moved to ${new Date(to.start).toDateString()}`;
+  log.value = `${item.label} moved to ${new Date(to.start ?? item.start).toDateString()}`;
 };
 </script>
 
@@ -43,10 +54,10 @@ const onMoved = ({ item, to }) => {
 </template>
 ```
 
-The whole project, with Vite, is the Vue template
-(`packages/docs/templates/vue`); a Nuxt one is beside it.
+The whole project, with Vite, is the [Vue template](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/docs/templates/vue); a
+[Nuxt one](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/docs/templates/nuxt) is beside it.
 
-Every [`TimelineConfig`](../web-component/src/config.ts) field is a typed
+Every [`TimelineConfig`](https://horakdani.github.io/Temporeum_timeline_SDK/reference/api.html#configuration) field is a typed
 prop — in camelCase or kebab-case, `:time-zone` is `timeZone`, and a bare
 `lane-headers` is `true`; `class`, `style`, `id` and other attributes go on
 the box —
@@ -92,6 +103,13 @@ The drawing goes into the server's markup only. Vue 3.5 writes a dynamic
 second drawing, not the parser's first; on the client the component's node
 has no children for Vue to compare, so Vue leaves alone what the parser
 built.
+
+## Documentation
+
+Guides, recipes and the API reference with live examples are on the
+[docs site](https://horakdani.github.io/Temporeum_timeline_SDK/) — the Vue page is [Frameworks](https://horakdani.github.io/Temporeum_timeline_SDK/frameworks.html). Every
+code block in this README is checked against a running template in CI
+(`npm run test:examples -w @temporeum/timeline-docs`).
 
 ## Licence
 

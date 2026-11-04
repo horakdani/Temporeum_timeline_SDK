@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-INVERSE: proves that the inverse of every command restores the EXACT
+ * The inverse check: proves that the inverse of every command restores the EXACT
  * starting state — for generated SEQUENCES too.
  *
  * This is the editing layer's most important claim, because everything else
@@ -47,16 +47,16 @@ const REQUIRED_PROPERTIES = [
   "an inverse of an inverse is the command",
   "a command is serialisable",
   "the machine's own commands invert",
-  // Adding, removing and reordering groups are commands too — the G-INVERSE
+  // Adding, removing and reordering groups are commands too — the inverse check
   // proof explicitly asks for these commands as well.
   "an add or a remove inverts exactly",
   "a group reorder inverts exactly",
-  // Automatic scheduling is a command too — the G-INVERSE proof asks for
-  // every command, and the G-SCHEDULE-CMD check asks for this one separately.
+  // Automatic scheduling is a command too — the inverse check's proof asks for
+  // every command, and the schedule-cmd check asks for this one separately.
   "a schedule inverts exactly",
   // Reassigning between resources is the lane-changing move, with load
   // bands between the rows — a drag onto any row is a 'move' command, and
-  // the G-INVERSE proof asks for every command.
+  // the inverse check's proof asks for every command.
   "a move between resources inverts exactly",
 ];
 
@@ -246,11 +246,11 @@ if (failures.length > 0) {
   for (const failure of failures) {
     console.error(`  FAIL ${failure}`);
   }
-  console.error(`\nG-INVERSE FAILED: ${String(failures.length)} failure(s).`);
+  console.error(`\ninverse FAILED: ${String(failures.length)} failure(s).`);
   process.exit(1);
 }
 
 console.log(
-  "\nG-INVERSE passed: the inverse of every command restores the EXACT starting state, " +
+  "\ninverse passed: the inverse of every command restores the EXACT starting state, " +
     "for generated sequences too.",
 );

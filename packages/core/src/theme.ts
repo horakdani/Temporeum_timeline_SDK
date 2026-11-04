@@ -137,7 +137,7 @@ export interface StyleOptions {
    * right for one timeline per document. Two timelines in one document would
    * then share one stylesheet and the last one rendered would decide the
    * theme and the type sizes for both — so a page with more than one passes
-   * each its own id. Inside a shadow root (the web component, P11) the scope
+   * each its own id. Inside a shadow root (the web component) the scope
    * is the root itself and this is not needed.
    */
   readonly scope?: string;
@@ -224,7 +224,7 @@ export function timelineStyleCss(options: StyleOptions): string {
     `${root} .tl-item{fill:var(--tl-item-fill);stroke:var(--tl-item-stroke);stroke-width:1}`,
     `${root} .tl-item--open{stroke-dasharray:4 3}`,
     `${root} .tl-item--selected{stroke:var(--tl-focus);stroke-width:2}`,
-    // An item's label is a line of HTML in a `foreignObject` (P17): it takes
+    // An item's label is a line of HTML in a `foreignObject`: it takes
     // `color`, and `fill` still for a host's own `<text>` label.
     `${root} .tl-label{fill:var(--tl-item-text);color:var(--tl-item-text);font-size:${metrics.fontSize}px;pointer-events:none}`,
     // The box was fitted to the text as measured. A reader's own spacing

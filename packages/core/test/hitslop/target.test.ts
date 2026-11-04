@@ -20,7 +20,7 @@ import type { Density, Domain, Item, Lane, Orientation, PointerKind } from "../.
 import { describeBothOrientations } from "../orientation.js";
 
 /**
- * G-HITSLOP: the target a pointer gets comes from the pointer.
+ * The hitslop check: the target a pointer gets comes from the pointer.
  *
  * One slop number is too blunt (`api_terv` §8.6). A mouse aims to the pixel,
  * and a 12-pixel zone would make it grab neighbours; a finger covers about

@@ -2,7 +2,7 @@
  * Excerpts: the rule that keeps a code block in the docs from going stale.
  *
  * A documented code block is one of two things. Either it is a whole live
- * example (`::: example <id>`), and G-EXAMPLES runs it. Or it is marked as a
+ * example (`::: example <id>`), and the examples check runs it. Or it is marked as a
  * part of one — ```js excerpt:example/gantt — and then every line it shows
  * has to be in that example's source, in the same order. Lines may be left
  * out (an excerpt is a part), and `// …` marks where; nothing may be added,

@@ -1,7 +1,7 @@
 /**
  * The DOM half of the renderer: a scene into live nodes, patched in place.
  *
- * Until P7 a host turned a frame into a string and assigned it to
+ * A host once turned a frame into a string and assigned it to
  * `innerHTML`. That is correct and it is what the server does, but in a
  * browser it throws away every node on every frame and has the parser build
  * them again — at 2000 visible items, a pan frame created and discarded about
@@ -17,7 +17,7 @@
  * **Rehomed across a released parent.** An item's node is found by its
  * `data-tl-id` beyond its own parent too, but only inside a parent this
  * mount has let go of: when a tile of one scale gives way to tiles of
- * another (a stepped re-anchor, P14), every item it held moves to its new
+ * another (a stepped re-anchor), every item it held moves to its new
  * tile as the same element, with a new `x` and width — not a new element
  * with all of its attributes written. A parent still in the scene is never
  * robbed, so a hook's node that repeats an item's id cannot take it.
@@ -25,7 +25,7 @@
  * **Pooled where identity ends.** An item that scrolls out releases its node
  * into a pool, with its children still attached, and the next item that
  * scrolls in takes it from there. A long pan therefore stops creating nodes
- * once the pool holds one screen's worth: that is what the G-MEMORY check
+ * once the pool holds one screen's worth: that is what the memory check
  * measures, from the counters below and from the browser's own node count.
  *
  * **No reads.** What a node currently shows is remembered on the side, so a
@@ -104,7 +104,7 @@ export interface MountStats {
   readonly created: number;
   /**
    * Elements taken from the pool instead of created — directly, or out of
-   * an element in it: an item rehomed from a released tile (P14), with its
+   * an element in it: an item rehomed from a released tile, with its
    * children, is the pool's too.
    */
   readonly reused: number;
@@ -148,8 +148,8 @@ interface Shown {
    * The scene attributes it shows: the very object last patched in, or what
    * a server wrote. A scene is not changed once handed over, so this is
    * what the element carries, and the same object again means nothing to
-   * write. One reference per node: until P17 every node kept two maps of
-   * its attributes — a third of the heap a long pan grows by.
+   * write. One reference per node: two maps of its attributes per node, as an
+   * earlier version kept, were a third of the heap a long pan grows by.
    */
   attrs: Readonly<Record<string, string | number | undefined>>;
   /** How many of them are set: a scene that sets fewer may have dropped one. */
@@ -219,7 +219,7 @@ function identityOf(node: SceneElement): string | undefined {
 
 /**
  * Whether an identity is followed into a released parent: an item's, and
- * an item's label (P17) — a zoom's refill moves both into the new scale's
+ * an item's label — a zoom's refill moves both into the new scale's
  * tiles, and a label built anew there is three nodes and its text shaped.
  */
 function isItem(identity: string): boolean {

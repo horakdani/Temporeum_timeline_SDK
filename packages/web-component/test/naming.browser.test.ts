@@ -6,7 +6,7 @@ import { createTimeline, defineTimelineElement, TIMELINE_EVENTS } from "../src/i
 import type { TemporeumTimelineElement, Timeline } from "../src/index.js";
 
 /**
- * The naming rule of the 1.0 API (D4 of the quality round), as the code has
+ * The naming rule of the 1.0 API, as the code has
  * it: an event that reports a change that happened is in the past tense, an
  * event that reports what the reader asked for is in the present; the same
  * name has the same signature on the element and the instance; a query that
@@ -35,7 +35,7 @@ function mount(): { element: HTMLDivElement; timeline: Timeline } {
   return { element, timeline: createTimeline(element, { items, domain: [T0 - DAY, T0 + 7 * DAY] }) };
 }
 
-describe("D4: the names of the 1.0 API", () => {
+describe("the names of the 1.0 API", () => {
   it("every event is a change in the past tense or a signal in the present, and the plurals agree", () => {
     expect([...TIMELINE_EVENTS].sort()).toEqual(
       [

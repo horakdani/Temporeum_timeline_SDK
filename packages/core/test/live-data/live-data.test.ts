@@ -1,5 +1,5 @@
 /**
- * G-LIVE-DATA: on generated sequences of updates, the incremental update
+ * The live-data check: on generated sequences of updates, the incremental update
  * gives the same frame as a full reload.
  *
  * Each case starts from a generated timeline and applies a sequence of

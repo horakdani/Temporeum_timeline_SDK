@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * G-ICAL: importing and exporting an iCal file round-trips to the same set
+ * The ical check: importing and exporting an iCal file round-trips to the same set
  * of events.
  *
  * From the vitest report: every claim has a green test, and each of the
@@ -41,4 +41,4 @@ for (const name of ["google.ics", "outlook.ics", "apple.ics"]) {
   const text = readFileSync(file, "utf8");
   if (/[^\r]\n/.test(text)) failures.push(`${name} does not use CRLF`);
 }
-finish("G-ICAL", failures);
+finish("ical", failures);
