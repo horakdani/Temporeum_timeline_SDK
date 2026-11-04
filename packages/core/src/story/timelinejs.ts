@@ -147,7 +147,7 @@ export function storyPlainText(html: string): string {
     // A tag does not hold a `<`: an unclosed one is text, read once.
     .replace(/<[^<>]*>/g, "")
     .replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (whole, name: string) => {
-      if (!name.startsWith("#")) return ENTITIES[name.toLowerCase()] ?? whole;
+      if (!name.startsWith("#")) return Object.hasOwn(ENTITIES, name.toLowerCase()) ? (ENTITIES[name.toLowerCase()] as string) : whole;
       const code = name[1] === "x" || name[1] === "X" ? Number.parseInt(name.slice(2), 16) : Number.parseInt(name.slice(1), 10);
       // A reference to no character — zero, half a surrogate pair, past U+10FFFF — is U+FFFD, as in HTML.
       return code > 0 && code <= 0x10ffff && (code < 0xd800 || code > 0xdfff) ? String.fromCodePoint(code) : "\uFFFD";

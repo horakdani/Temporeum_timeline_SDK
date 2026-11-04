@@ -185,10 +185,12 @@ export function sheetCsvUrl(address: string): string | undefined {
     return undefined;
   }
   if (url.protocol !== "https:" || url.hostname !== "docs.google.com") return undefined;
-  const gid = url.searchParams.get("gid") ?? /gid=(\d+)/.exec(url.hash)?.[1];
+  // A sheet's gid is a number; anything else, decoded, could be a parameter of its own.
+  const given = url.searchParams.get("gid") ?? /gid=(\d+)/.exec(url.hash)?.[1];
+  const gid = given !== undefined && given !== null && /^\d+$/.test(given) ? `&gid=${given}` : "";
   const published = /^\/spreadsheets\/d\/e\/([\w-]+)\//.exec(url.pathname);
-  if (published !== null) return `https://docs.google.com/spreadsheets/d/e/${published[1] ?? ""}/pub?output=csv${gid === undefined || gid === null ? "" : `&gid=${gid}`}`;
+  if (published !== null) return `https://docs.google.com/spreadsheets/d/e/${published[1] ?? ""}/pub?output=csv${gid}`;
   const shared = /^\/spreadsheets\/d\/([\w-]+)/.exec(url.pathname);
-  if (shared !== null) return `https://docs.google.com/spreadsheets/d/${shared[1] ?? ""}/export?format=csv${gid === undefined || gid === null ? "" : `&gid=${gid}`}`;
+  if (shared !== null) return `https://docs.google.com/spreadsheets/d/${shared[1] ?? ""}/export?format=csv${gid}`;
   return undefined;
 }

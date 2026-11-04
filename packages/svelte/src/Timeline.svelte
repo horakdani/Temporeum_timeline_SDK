@@ -59,7 +59,8 @@
   function configOf(source: Record<string, unknown>): Record<string, unknown> {
     const config: Record<string, unknown> = {};
     for (const key of Object.keys(source)) {
-      if (!HANDLERS.has(key) && !STARTS.has(key)) config[key] = source[key];
+      // An own `__proto__` is not a prop: assigned, it would set the configuration's prototype.
+      if (key !== "__proto__" && !HANDLERS.has(key) && !STARTS.has(key)) config[key] = source[key];
     }
     // Light DOM: two timelines on one page must not share one stylesheet.
     if (config.instanceId === undefined) config.instanceId = scope;
@@ -125,7 +126,7 @@
       const changed: Record<string, unknown> = {};
       let any = false;
       for (const key of new Set([...Object.keys(applied), ...Object.keys(next)])) {
-        if (applied[key] !== next[key]) {
+        if (key !== "__proto__" && applied[key] !== next[key]) {
           changed[key] = next[key];
           any = true;
         }

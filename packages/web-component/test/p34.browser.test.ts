@@ -197,6 +197,8 @@ describe("the story panel", () => {
     const frame = panel.querySelector("iframe");
     expect(frame?.src).toBe("https://www.youtube-nocookie.com/embed/abcdefghijk");
     expect(frame?.title).toBe("The launch, filmed");
+    // Sandboxed (S14): the player plays and opens its own links, but cannot navigate the page or reach it.
+    expect(frame?.sandbox.value.split(" ").sort()).toEqual(["allow-popups", "allow-popups-to-escape-sandbox", "allow-presentation", "allow-same-origin", "allow-scripts"]);
     expect(document.activeElement).toBe(frame);
     // Another item moves: the slide stays as drawn, the player with it.
     timeline.updateItems([{ id: "splash", start: Date.UTC(1969, 6, 25) }]);

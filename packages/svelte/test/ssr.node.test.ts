@@ -35,6 +35,13 @@ describe("the Svelte adapter in Node", () => {
     expect(body.match(/role="option"/g)).toHaveLength(2);
   });
 
+  it("reads an own __proto__ prop as nothing, not as the configuration's prototype (S13)", () => {
+    const planted = JSON.parse('{"__proto__":{"instanceId":"planted"}}') as Record<string, unknown>;
+    const { body } = render(Timeline, { props: { items, ...planted } });
+    expect(body).not.toContain("planted");
+    expect(body).toMatch(/data-tl-instance="tl[a-zA-Z0-9_-]+"/);
+  });
+
   it("scopes the stylesheet by Svelte's id when the host gave none", () => {
     const { body } = render(Timeline, { props: { items } });
     expect(body).toMatch(/data-tl-instance="tl[a-zA-Z0-9_-]+"/);

@@ -255,9 +255,11 @@ export interface TimelineConfig<T = unknown> {
   /** The selection, when the host owns it. Changes from the user are still reported. */
   readonly selectedIds?: readonly string[] | undefined;
   /**
-   * Scope for the embedded stylesheet, for a timeline in the light DOM next
-   * to another. The custom element does not need one: its shadow root is
-   * the scope.
+   * Scope for the embedded stylesheet and the drawing's ids, for a timeline
+   * in the light DOM next to another. Without one, `createTimeline` in the
+   * light DOM takes a scope of its own (`tl-auto1`, …), and a drawing taken
+   * over from the server keeps the server's. The custom element does not
+   * need one: its shadow root is the scope.
    */
   readonly instanceId?: string | undefined;
   /**
@@ -466,9 +468,110 @@ export function hiddenDatesOf<T>(config: TimelineConfig<T>): HiddenDates | undef
   return hidden;
 }
 
-/** The items a configuration shows right away: none for a fetched source. */
-export function itemsOf<T>(config: TimelineConfig<T>): readonly Item<T>[] {
-  return typeof config.items === "function" ? [] : (config.items ?? []);
+/** `inputSkipped`: an item or an option the timeline cannot read, left out so the rest is drawn. */
+export interface InputSkippedPayload {
+  /** What was wrong, for a developer. */
+  readonly message: string;
+  /** The item left out, as it was given. */
+  readonly item?: unknown;
+  /** The option that fell back to its default. */
+  readonly option?: "locale" | "timeZone";
+}
+
+/** Where a skipped item or option is said. */
+export type SkipReport = (skipped: InputSkippedPayload) => void;
+
+/** A time the core reads: epoch milliseconds or a `Date`, within the `Date` range. */
+function isTime(value: unknown): boolean {
+  const ms = typeof value === "number" ? value : typeof (value as Date | null)?.getTime === "function" ? (value as Date).getTime() : Number.NaN;
+  return Math.abs(ms) <= 8.64e15;
+}
+
+/** Why an item cannot be drawn, or `undefined` when it can. */
+function itemProblem(item: unknown): string | undefined {
+  if (typeof item !== "object" || item === null) return `An item that is not an object (${String(item)}) is left out`;
+  const { id, start, end, sublaneSpan } = item as Partial<Item>;
+  if (typeof id !== "string") return "An item without a string id is left out";
+  const which = `Item ${JSON.stringify(id)}`;
+  const time = "epoch milliseconds or a Date, within ±8.64e15";
+  if (!isTime(start)) return `${which} is left out: its start (${String(start)}) is not a time — ${time}`;
+  if (end !== undefined && !isTime(end)) return `${which} is left out: its end (${String(end)}) is not a time — ${time}`;
+  if (sublaneSpan !== undefined && !(Number.isInteger(sublaneSpan) && sublaneSpan >= 1)) return `${which} is left out: its sublaneSpan (${String(sublaneSpan)}) is not a positive integer`;
+  return undefined;
+}
+
+/** Each items array checked once: what is kept, and what was left out. */
+const checkedItems = new WeakMap<readonly unknown[], { readonly kept: readonly unknown[]; readonly skipped: readonly InputSkippedPayload[] }>();
+
+/**
+ * The items the timeline can draw: the array itself when every item is
+ * readable, a shorter one otherwise, each left-out item said to `report`.
+ * An item from an attribute, a JSON script or a fetched window can be
+ * anything, and one bad item must not take the whole frame.
+ */
+export function readableItems<T>(items: readonly Item<T>[], report?: SkipReport): readonly Item<T>[] {
+  let checked = checkedItems.get(items);
+  if (checked === undefined) {
+    let kept: unknown[] | undefined;
+    const skipped: InputSkippedPayload[] = [];
+    items.forEach((item, index) => {
+      const problem = itemProblem(item);
+      if (problem === undefined) kept?.push(item);
+      else {
+        kept ??= items.slice(0, index);
+        skipped.push({ message: problem, item });
+      }
+    });
+    checked = { kept: kept ?? items, skipped };
+    checkedItems.set(items, checked);
+  }
+  if (report !== undefined) for (const each of checked.skipped) report(each);
+  return checked.kept as readonly Item<T>[];
+}
+
+/** The items a configuration shows right away: none for a fetched source, and only those it can draw. */
+export function itemsOf<T>(config: TimelineConfig<T>, report?: SkipReport): readonly Item<T>[] {
+  return typeof config.items === "function" ? [] : readableItems(config.items ?? [], report);
+}
+
+const readableOptions = new Map<string, boolean>();
+
+/** Whether the platform reads a locale or a time zone: `Intl` throws on one it does not. */
+function readable(key: string, probe: () => unknown): boolean {
+  let known = readableOptions.get(key);
+  if (known === undefined) {
+    try {
+      probe();
+      known = true;
+    } catch {
+      known = false;
+    }
+    if (readableOptions.size >= 64) readableOptions.clear();
+    readableOptions.set(key, known);
+  }
+  return known;
+}
+
+/**
+ * The configuration without a `locale` or `timeZone` the platform cannot
+ * read — each falls back to its default, and is said to `report`. The same
+ * object when both are fine.
+ */
+export function readableOptionsOf<T>(config: TimelineConfig<T>, report?: SkipReport): TimelineConfig<T> {
+  const { locale, timeZone } = config;
+  const badLocale = locale !== undefined && !readable(`l${locale}`, () => Intl.getCanonicalLocales(locale));
+  const badZone = timeZone !== undefined && !readable(`z${timeZone}`, () => new Intl.DateTimeFormat("en", { timeZone }));
+  if (!badLocale && !badZone) return config;
+  const kept: Record<string, unknown> = { ...config };
+  if (badLocale) {
+    delete kept.locale;
+    report?.({ message: `The locale ${JSON.stringify(locale)} is not a language tag the platform reads; the default is used`, option: "locale" });
+  }
+  if (badZone) {
+    delete kept.timeZone;
+    report?.({ message: `The time zone ${JSON.stringify(timeZone)} is not one the platform knows; UTC is used`, option: "timeZone" });
+  }
+  return kept as TimelineConfig<T>;
 }
 
 /**

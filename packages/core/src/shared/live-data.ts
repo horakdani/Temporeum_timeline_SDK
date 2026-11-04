@@ -65,6 +65,8 @@ export function applyItemChanges<T>(items: readonly Item<T>[], changes: ItemChan
     if (at === undefined || before === undefined) throw new RangeError(`Cannot update item "${update.id}": there is no item with that id`);
     const after = { ...before } as Record<string, unknown>;
     for (const [key, value] of Object.entries(update)) {
+      // An own `__proto__` (JSON.parse makes one) is not a field: assigned, it would set the item's prototype.
+      if (key === "__proto__") continue;
       if (value === undefined) delete after[key];
       else after[key] = value;
     }

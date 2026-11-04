@@ -20,7 +20,7 @@ import { renderTimeline, renderToSvgString } from "@temporeum/timeline-core";
 import { withParts } from "@temporeum/timeline-core/dom";
 import type { Density, Orientation, RenderResult, TimeMs } from "@temporeum/timeline-core";
 
-import { contentOf, DEFAULT_SERVER_WIDTH, directionOf, frameOptions, frameScene, initialDomain, initialSpace, itemsOf, resolveView, usesSceneSpace, wordsOf } from "./config.js";
+import { contentOf, DEFAULT_SERVER_WIDTH, directionOf, frameOptions, frameScene, initialDomain, initialSpace, itemsOf, readableOptionsOf, resolveView, usesSceneSpace, wordsOf } from "./config.js";
 import type { ResolvedView, TimelineConfig } from "./config.js";
 import { plugin, requireKinds, requirePlugins } from "./plugins.js";
 
@@ -84,9 +84,11 @@ export function resolvedServerFrame<T>(config: TimelineConfig<T>, options: Serve
 }
 
 /** The frame; `host` for the element's shadow root, with the tokens on `:host` and the classes as parts. */
-function serverFrame<T>(config: TimelineConfig<T>, options: ServerRenderOptions, host: boolean): ServerFrame<T> & { readonly view: ResolvedView } {
+function serverFrame<T>(given: TimelineConfig<T>, options: ServerRenderOptions, host: boolean): ServerFrame<T> & { readonly view: ResolvedView } {
   // A plugin the client would need is needed here: the server throws where the client would.
-  requirePlugins(config);
+  requirePlugins(given);
+  // What cannot be read is left out, as on the client — which says so, with `inputSkipped`, when it hydrates.
+  const config = readableOptionsOf(given);
   const items = itemsOf(config);
   requireKinds(items);
   const domain = initialDomain(config, options.now);

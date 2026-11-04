@@ -41,6 +41,8 @@ function fakeElement(box = { left: 20, top: 10 }): FakeElement {
   const attrs = new Map<string, string>();
   const captured: number[] = [];
   const element = {
+    // The page's window: what the stubbed globals are on.
+    ownerDocument: { defaultView: globalThis },
     listeners,
     attrs,
     captured,
@@ -498,6 +500,28 @@ describe("the keyboard and motion", () => {
     expect(machine.domain).toEqual(moved);
     binding.destroy();
     expect(listener).toBeUndefined();
+  });
+
+  it("asks the element's own window, not the one the script runs in — an iframe's preference is the frame's (S12)", () => {
+    const page: string[] = [];
+    vi.stubGlobal("matchMedia", (text: string) => {
+      page.push(text);
+      return { matches: false, addEventListener() {}, removeEventListener() {} };
+    });
+    const frame: string[] = [];
+    const element = fakeElement();
+    (element as unknown as { ownerDocument: unknown }).ownerDocument = {
+      defaultView: {
+        matchMedia: (text: string) => {
+          frame.push(text);
+          return { matches: true, addEventListener() {}, removeEventListener() {} };
+        },
+      },
+    };
+    const machine = createInputMachine({ domain: [START, START + 30 * DAY], mainSize: 900 });
+    attachInput(element as unknown as Element, { machine, onEffects: () => {} });
+    expect(frame).toEqual(["(prefers-reduced-motion: reduce)"]);
+    expect(page).toEqual([]);
   });
 
   it("leaves motion to a host that decides it itself", () => {

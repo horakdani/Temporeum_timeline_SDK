@@ -99,10 +99,9 @@ export function attachInput<T>(target: Element, options: AttachInputOptions<T>):
   const reflect = options.reflectGesture !== false;
   const emit = options.onEffects;
   let wakeUp: ReturnType<typeof setTimeout> | undefined;
-  const motion =
-    options.followReducedMotion !== false && typeof matchMedia === "function"
-      ? matchMedia("(prefers-reduced-motion: reduce)")
-      : undefined;
+  // The element's own window: in an iframe, the frame's preference is the one that applies.
+  const view = options.followReducedMotion === false ? undefined : target.ownerDocument.defaultView;
+  const motion = typeof view?.matchMedia === "function" ? view.matchMedia("(prefers-reduced-motion: reduce)") : undefined;
   function followMotion(): void {
     machine.setKeyboard({ reducedMotion: motion?.matches === true });
   }

@@ -28,7 +28,7 @@ The engine keeps a budget of 31 kB minified and gzipped. Everything else is on a
 - **`/schedule`** — `scheduleTasks`: dependencies, eight kinds of constraint, working calendars (`WorkCalendar`, `workTime`), slack and the critical path, conflicts and cycles. `scheduleCommand` turns the result into one command, undone by its inverse.
 - **`/resources`** — load against capacity (`resourceLoad`, `loadAt`, `overloads`), load lanes, overbooked assignments, and the backlog of unscheduled tasks.
 - **`/groups`** — nested groups as header lanes, collapsing, reordering as commands, and the keys of a WAI-ARIA tree.
-- **`/items`** — item kinds (`box`, `point`, `background`); adding and removing as commands, with vetoes; drops; HTML templates, sanitised by a DOM-free parser against an allow-list.
+- **`/items`** — item kinds (`box`, `point`, `background`); adding and removing as commands, with vetoes; drops; HTML templates, sanitised by a DOM-free parser against an allow-list: a widened list still keeps only safe addresses and styles that load nothing, never `<base>`, `<meta>`, `<link>` or `<form>`, and never the timeline's own `data-tl-*` attributes and `tl-*` classes.
 - **`/tools`** — hidden dates (fixed and repeating, on a zone's wall clock), time bars, the overview strip, range selection, rolling mode, zoom presets and lane headers.
 - **`/live`** — live data: `applyItemChanges` and `relayout`, which packs only the lanes a change touched.
 - **`/words`** — the library's words in English: `DEFAULT_STRINGS`, `resolveStrings`, `sayIn`, `fill`, `formatAmount`.

@@ -53,6 +53,7 @@ import type {
   ItemsChangedPayload,
   ItemSlot,
   ItemsRemovedPayload,
+  InputSkippedPayload,
   JumpRequestPayload,
   OrientationChangedPayload,
   SlotsChangedPayload,
@@ -170,6 +171,7 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
   @Output() readonly timeBarMoved = new EventEmitter<Payload<T, "timeBarMoved">>();
   @Output() readonly rangeSelected = new EventEmitter<Payload<T, "rangeSelected">>();
   @Output() readonly slotsChanged = new EventEmitter<SlotsChangedPayload<T>>();
+  @Output() readonly inputSkipped = new EventEmitter<InputSkippedPayload>();
 
   /** The item template, `<ng-template tlItem let-item>`, if there is one. */
   @ContentChild(TimelineItemDirective) itemTemplate: TimelineItemDirective<T> | undefined;
@@ -237,7 +239,7 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
         const changed: Record<string, unknown> = {};
         let any = false;
         for (const key of new Set([...Object.keys(before), ...Object.keys(next)])) {
-          if (before[key] !== next[key]) {
+          if (key !== "__proto__" && before[key] !== next[key]) {
             changed[key] = next[key];
             any = true;
           }
@@ -284,7 +286,8 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
   #configOf(config: TimelineComponentConfig<T>): Record<string, unknown> {
     const own: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(config)) {
-      if (!STARTS.has(key)) own[key] = value;
+      // An own `__proto__` is not a field: assigned, it would set the configuration's prototype.
+      if (key !== "__proto__" && !STARTS.has(key)) own[key] = value;
     }
     // Light DOM: two timelines on one page must not share one stylesheet.
     return own.instanceId === undefined ? { ...own, instanceId: this.#scope } : own;

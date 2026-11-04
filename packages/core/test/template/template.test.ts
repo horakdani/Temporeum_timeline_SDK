@@ -15,6 +15,7 @@ import { describe, expect, it } from "vitest";
 import { mountScene } from "../../src/dom/mount.js";
 import { parseTemplate, templateHooks } from "../../src/items/index.js";
 import { renderTimeline } from "../../src/render.js";
+import { storyPlainText } from "../../src/story/index.js";
 import { renderToSvgString } from "../../src/scene.js";
 import type { SceneElement } from "../../src/scene.js";
 import type { Item } from "../../src/types.js";
@@ -171,5 +172,80 @@ describe("a template from outside (S3)", () => {
     expect(first).toBeDefined();
     // The same nodes, not an equal copy: the string was not parsed again.
     expect(second).toBe(first);
+  });
+});
+
+describe("a sanitised template cannot reach the timeline's own markers (S5)", () => {
+  it("drops data-tl-* attributes and tl-* class names, and keeps the rest", () => {
+    const nodes = parseTemplate(
+      '<span data-tl-remove="b" data-tl-slot="b" data-tl-id="b" data-tag="x" class="tl-item tl-template badge TL-label">t</span>',
+    );
+    expect(nodes).toEqual([{ tag: "span", attrs: { "data-tag": "x", class: "badge" }, text: "t" }]);
+    // An attribute the host asked for by name is still not the timeline's.
+    expect(parseTemplate('<i data-tl-remove="b">t</i>', { allowAttributes: ["data-tl-remove"] })).toEqual([{ tag: "i", text: "t" }]);
+    // Without sanitising, the host's own template keeps everything.
+    expect(parseTemplate('<i data-tl-remove="b" class="tl-x">t</i>', { sanitize: false })).toEqual([
+      { tag: "i", attrs: { "data-tl-remove": "b", class: "tl-x" }, text: "t" },
+    ]);
+  });
+
+  it("an item's template cannot carry another item's remove button into the frame", () => {
+    const result = frame('<span data-tl-remove="b" class="tl-remove">x</span>');
+    const printed = renderToSvgString(result.scene);
+    expect(printed).not.toContain('data-tl-remove="b"');
+  });
+});
+
+describe("a template's attribute names are names the DOM accepts (S6)", () => {
+  it("drops a name setAttribute would throw on, sanitised or not", () => {
+    for (const sanitize of [true, false]) {
+      const nodes = parseTemplate('<b data-x\u0000y="1" data-ok="2" 1bad="3" __proto__="4" data-aé="5">t</b>', { sanitize });
+      expect(nodes).toEqual([{ tag: "b", attrs: { "data-ok": "2" }, text: "t" }]);
+    }
+    const { container } = fakeContainer();
+    expect(() => mountScene(container as unknown as Element).update(frame('<b data-x\u0000y="1">t</b>').scene)).not.toThrow();
+  });
+});
+
+describe("an extended allow-list does not open URLs or the page's head (S8)", () => {
+  const links = { allowTags: [...["a", "img", "form", "base", "meta", "link", "b"]], allowAttributes: ["href", "src", "action", "formaction", "style", "xlink:href", "srcset", "content", "http-equiv"] };
+
+  it("keeps http, https, mailto, tel and relative URLs, and drops any other scheme", () => {
+    const hrefOf = (href: string) => parseTemplate(`<a href="${href}">x</a>`, links)[0]?.attrs?.href;
+    expect(hrefOf("https://example.com/a?b=1")).toBe("https://example.com/a?b=1");
+    expect(hrefOf("http://example.com")).toBe("http://example.com");
+    expect(hrefOf("mailto:a@example.com")).toBe("mailto:a@example.com");
+    expect(hrefOf("tel:+3612345")).toBe("tel:+3612345");
+    expect(hrefOf("/relative/path#x")).toBe("/relative/path#x");
+    expect(hrefOf("page.html")).toBe("page.html");
+    for (const evil of ["javascript:alert(1)", "JaVaScRiPt:alert(1)", " \u0001javascript:alert(1)", "java\tscript:alert(1)", "java&#10;script:alert(1)", "data:text/html,&lt;script&gt;alert(1)", "vbscript:x"]) {
+      expect(hrefOf(evil), evil).toBeUndefined();
+    }
+    expect(parseTemplate('<img src="javascript:x">', links)[0]?.attrs?.src).toBeUndefined();
+    expect(parseTemplate('<b formaction="javascript:x" xlink:href="javascript:x" srcset="x.png 1x">t</b>', links)).toEqual([{ tag: "b", text: "t" }]);
+  });
+
+  it("drops a style that loads a URL or hides it behind an escape", () => {
+    const styleOf = (style: string) => parseTemplate(`<b style="${style}">t</b>`, links)[0]?.attrs?.style;
+    expect(styleOf("color: red")).toBe("color: red");
+    expect(styleOf("background: url(https://evil.example/x)")).toBeUndefined();
+    expect(styleOf("background: URL ( x )")).toBeUndefined();
+    expect(styleOf("background: \\75 rl(x)")).toBeUndefined();
+    expect(styleOf("background-image: image-set('x.png' 1x)")).toBeUndefined();
+    expect(styleOf("width: expression(alert(1))")).toBeUndefined();
+  });
+
+  it("never keeps base, meta, link or form, even when allowed", () => {
+    const nodes = parseTemplate('<base href="https://evil.example/"><meta http-equiv="refresh" content="0;url=https://evil.example"><link rel="stylesheet" href="https://evil.example/x.css"><form action="https://evil.example"><b>in</b></form>after', links);
+    expect(nodes).toEqual([{ tag: "b", text: "in" }, { tag: "span", text: "after" }]);
+  });
+});
+
+describe("an entity name is a character, not an object's property (S11)", () => {
+  it("leaves &constructor; and its kin as written", () => {
+    expect(parseTemplate("&constructor; &toString; &__proto__; &hasOwnProperty; &amp;")).toEqual([
+      { tag: "span", text: "&constructor; &toString; &__proto__; &hasOwnProperty; &" },
+    ]);
+    expect(storyPlainText("&constructor; &amp;")).toBe("&constructor; &");
   });
 });

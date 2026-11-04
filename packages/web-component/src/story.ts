@@ -366,6 +366,8 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
     frame.setAttribute("allow", "fullscreen; picture-in-picture; encrypted-media; clipboard-write");
     frame.setAttribute("allowfullscreen", "");
     frame.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+    // A player plays, goes full screen and opens its own links in a tab; it cannot navigate the page or open dialogs over it.
+    frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation");
     frame.loading = "lazy";
     return frame;
   }
@@ -664,6 +666,8 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
   order();
   const opening = fromHash();
   const start = opening >= 0 ? opening : options.start === undefined ? 0 : Math.max(indexOf(options.start), 0);
+  /** The wait for the timeline's first frame, until it comes or the story is destroyed first. */
+  let stopWaiting: (() => void) | undefined;
   if (entries.length === 0) draw();
   else {
     // The first view waits for the timeline's first frame, so the move lands where the reader will look.
@@ -675,8 +679,9 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
         if (!destroyed && index === start) show(start, opening >= 0 ? "hash" : "panel", false);
       };
       if (timeline.getSnapshot().viewport === undefined) {
-        const stop = timeline.on("layoutChanged", () => {
-          stop();
+        stopWaiting = timeline.on("layoutChanged", () => {
+          stopWaiting?.();
+          stopWaiting = undefined;
           opened();
         });
       } else opened();
@@ -702,6 +707,7 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
     destroy() {
       if (destroyed) return;
       destroyed = true;
+      stopWaiting?.();
       stopSelection();
       stopItems();
       if (prefix !== undefined) win?.removeEventListener("hashchange", onHash);

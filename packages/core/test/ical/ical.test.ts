@@ -204,6 +204,14 @@ describe("what a hostile calendar cannot do (S1)", () => {
     expect(calendar.warnings).toEqual([]);
   }, 20_000);
 
+  it("reads a time zone RDATE of 300 000 values without overflowing the stack (S10)", () => {
+    const rdates = Array.from({ length: 300_000 }, (_, i) => `${String(1970 + (i % 50))}0101T000000`).join(",");
+    const text = zone("FREQ=YEARLY").replace("BEGIN:STANDARD\r\nDTSTART:19700101T000000", `BEGIN:STANDARD\r\nDTSTART:19700101T000000\r\nRDATE:${rdates}`);
+    expect(text).toContain("RDATE:1970");
+    const calendar = parseICal(text);
+    expect(calendar.events[0]?.start).toBe(Date.UTC(2026, 5, 1, 8));
+  }, 60_000);
+
   it("expands at most a limit of one event's occurrences, 10 000 by default, and says so", () => {
     const every: CalendarEvent = { id: "tick", start: Date.UTC(2026, 0, 1), rrule: "FREQ=SECONDLY" };
     const limited: string[] = [];

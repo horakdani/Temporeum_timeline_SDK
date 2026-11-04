@@ -844,8 +844,9 @@ describe("createTimeline — a large timeline draws in a scene space", () => {
   });
 
   it("exports the view exactly, without the overscan", async () => {
-    const spaced = await large();
-    const exact = await large({ sceneSpace: false });
+    // One scope for both: two light-DOM timelines each take their own, and the markup would differ by it alone.
+    const spaced = await large({ instanceId: "same" });
+    const exact = await large({ sceneSpace: false, instanceId: "same" });
     expect(spaced.timeline.exportSvg()).toBe(exact.timeline.exportSvg());
     spaced.timeline.destroy();
     exact.timeline.destroy();

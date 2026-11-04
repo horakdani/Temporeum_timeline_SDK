@@ -65,7 +65,8 @@ addEventListener("message", (event) => {
   const data = event.data;
   if (data === null || typeof data !== "object" || data.source !== "tl-example") return;
   const section = live.get(data.token);
-  if (section === undefined) return;
+  // Only the example's own frame reports on it: a token is easy to guess, a window is not.
+  if (section === undefined || event.source !== section.querySelector("iframe")?.contentWindow) return;
   const status = section.querySelector(".example-status");
   if (data.type === "error") {
     const errors = Number(section.dataset.errors ?? "0") + 1;

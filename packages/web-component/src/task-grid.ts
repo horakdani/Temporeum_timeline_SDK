@@ -109,13 +109,14 @@ export function defaultTaskColumns<T>(words: TaskColumnWords = {}): TaskGridColu
       id: "start",
       header: header("startColumn"),
       width: 84,
-      value: (row) => (row.items.length === 0 ? "" : day(Math.min(...row.items.map((item) => toTimeMs(item.start))))),
+      // A fold, not a spread: a lane may hold more items than a call has room for arguments.
+      value: (row) => (row.items.length === 0 ? "" : day(row.items.reduce((first, item) => Math.min(first, toTimeMs(item.start)), Infinity))),
     },
     {
       id: "end",
       header: header("endColumn"),
       width: 84,
-      value: (row) => (row.items.length === 0 ? "" : day(Math.max(...row.items.map((item) => toTimeMs(item.end ?? item.start))))),
+      value: (row) => (row.items.length === 0 ? "" : day(row.items.reduce((last, item) => Math.max(last, toTimeMs(item.end ?? item.start)), -Infinity))),
     },
     {
       id: "progress",

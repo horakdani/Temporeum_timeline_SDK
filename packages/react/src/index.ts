@@ -177,7 +177,8 @@ function configOf<T>(props: TimelineProps<T>): Record<string, unknown> {
 function boxOf<T>(props: TimelineProps<T>): Record<string, unknown> {
   const box: Record<string, unknown> = {};
   for (const key of Object.keys(props)) {
-    if (!Object.hasOwn(CONFIG, key) && !HANDLERS.has(key) && !OWN.has(key)) box[key] = (props as Record<string, unknown>)[key];
+    // An own `__proto__` is not a prop: assigned, it would set the box's prototype.
+    if (key !== "__proto__" && !Object.hasOwn(CONFIG, key) && !HANDLERS.has(key) && !OWN.has(key)) box[key] = (props as Record<string, unknown>)[key];
   }
   return box;
 }
@@ -291,7 +292,7 @@ export function Timeline<T = unknown>(props: TimelineProps<T>): ReactElement {
     const changed: Record<string, unknown> = {};
     let any = false;
     for (const key of new Set([...Object.keys(before), ...Object.keys(next)])) {
-      if (before[key] !== next[key]) {
+      if (key !== "__proto__" && before[key] !== next[key]) {
         changed[key] = next[key];
         any = true;
       }

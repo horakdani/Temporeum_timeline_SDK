@@ -279,6 +279,13 @@ describe("the Google Sheets template", () => {
     expect(sheetCsvUrl("https://example.com/spreadsheets/d/1/edit")).toBeUndefined();
     expect(sheetCsvUrl("not a url")).toBeUndefined();
   });
+
+  it("keeps a gid only when it is a sheet's number, and adds nothing else to the address (S14)", () => {
+    // `%26output%3Dhtml` decodes to `&output=html`: appended as it was, it would be a second parameter.
+    expect(sheetCsvUrl("https://docs.google.com/spreadsheets/d/1AbC/edit?gid=1%26output%3Dhtml")).toBe("https://docs.google.com/spreadsheets/d/1AbC/export?format=csv");
+    expect(sheetCsvUrl("https://docs.google.com/spreadsheets/d/e/2PACX/pubhtml?gid=7%23x")).toBe("https://docs.google.com/spreadsheets/d/e/2PACX/pub?output=csv");
+    expect(sheetCsvUrl("https://docs.google.com/spreadsheets/d/1AbC/edit?gid=0")).toBe("https://docs.google.com/spreadsheets/d/1AbC/export?format=csv&gid=0");
+  });
 });
 
 describe("storyMedia", () => {

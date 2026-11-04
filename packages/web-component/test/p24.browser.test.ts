@@ -316,7 +316,8 @@ describe("live data", () => {
     expect(timeline.layout).toBe(layout);
     timeline.destroy();
     document.body.replaceChildren();
-    const fresh = await mount({ items: [...timeline.items] });
+    // The scope too: a light-DOM timeline takes one of its own, and the markup would differ by it alone.
+    const fresh = await mount({ items: [...timeline.items], instanceId: /data-tl-instance="([^"]+)"/.exec(incremental)?.[1] ?? "" });
     expect(fresh.timeline.exportSvg()).toBe(incremental);
     expect(() => fresh.timeline.addItems([{ id: "one", start: T0 }])).toThrow(/already there/);
     expect(() => fresh.timeline.updateItems([{ id: "zz", start: T0 }])).toThrow(/no item/);

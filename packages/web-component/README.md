@@ -74,12 +74,21 @@ Every event is dispatched under its kebab-case name, bubbling out of the
 shadow root, with the payload as `detail`: `item-click`, `item-dbl-click`,
 `selection-changed`, `viewport-changed`, `layout-changed`, `item-moved`,
 `item-resized`, `timeline-command`, `density-changed`, `orientation-changed`,
-`cluster-opened`, `jump-request`. Kebab-case because it is the spelling Vue's
+`cluster-opened`, `jump-request`, `input-skipped`, and the rest of
+`TIMELINE_EVENTS`. Kebab-case because it is the spelling Vue's
 `@item-moved`, Angular's `(item-moved)` and `addEventListener` all reach.
 `element.timeline.on("itemMoved", …)` is the instance itself. The
 one exception to the rule is the instance's `command`, which is
 `timeline-command` on the element: `command` is the platform's own event (a
 `<button commandfor>` fires it at its target).
+
+Input from outside — an attribute, the JSON child, a fetched window — can be
+anything, and one bad item does not take the whole frame. An item with no
+string id, a start or end that is not a time, or a fractional `sublaneSpan`
+is left out; a `locale` or `timeZone` the platform does not know falls back
+to the default. Each is said with `input-skipped` (`inputSkipped`), whose
+`detail` holds a message and the item or the option. The server render
+leaves out the same and says nothing; the client says it when it hydrates.
 
 The library never saves. An edit is shown while it happens and kept when it
 ends; what to do with `event.detail.command` is yours. Its `inverse` is the

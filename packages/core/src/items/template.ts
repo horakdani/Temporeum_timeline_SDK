@@ -16,8 +16,13 @@
  * 2. **A template cannot run code by default.** `<script>`, `<style>`,
  *    `<iframe>` and their content are dropped, every `on…` attribute is
  *    dropped, and so is any attribute outside the allow-list. A URL is not
- *    on the default list at all. `sanitize: false` keeps everything, and is
- *    only for a template the host wrote itself from data it trusts.
+ *    on the default list at all; one the host allows keeps only an http,
+ *    https, mailto, tel or relative address, a `style` it allows loads
+ *    nothing, and `<base>`, `<meta>`, `<link>` and `<form>` never survive.
+ *    Nor do the timeline's own markers — a `data-tl-*` attribute or a `tl-*`
+ *    class —, so one item's template cannot act as another item's control.
+ *    `sanitize: false` keeps everything, and is only for a template the host
+ *    wrote itself from data it trusts.
  *
  * The item keeps its accessible name: the render step sets `aria-label` on
  * the item's node, and the template is its picture, not its name.
@@ -84,6 +89,34 @@ const DROPPED = new Set([
   "head",
 ]);
 
+/** Tags that act on the page, not the item: never kept, even when allowed. Their content stays, as text. */
+const NEVER = new Set(["base", "meta", "link", "form"]);
+
+/** Attributes holding one address: kept only when it is relative or its scheme is in {@link SAFE_SCHEME}. */
+const URL_ATTRIBUTES = new Set(["href", "src", "action", "formaction", "xlink:href", "poster", "cite", "background", "data", "codebase", "longdesc", "manifest"]);
+
+/** Attributes holding a list of addresses: never kept by a sanitised template. */
+const URL_LISTS = new Set(["srcset", "imagesrcset", "ping"]);
+
+const SAFE_SCHEME = /^(?:https?|mailto|tel):/i;
+
+/** An attribute name `setAttribute` accepts. */
+const ATTRIBUTE_NAME = /^[a-z][a-z0-9._:-]*$/;
+
+/**
+ * An address when it is relative or names a safe scheme, read as a browser
+ * reads it — leading controls and spaces gone, tabs and line breaks gone
+ * throughout; otherwise `undefined`.
+ */
+function safeUrl(value: string): string | undefined {
+  // eslint-disable-next-line no-control-regex
+  const read = value.replace(/[\t\n\r]/g, "").replace(/^[\u0000-\u0020]+/, "");
+  return /^[a-z][a-z0-9+.-]*:/i.test(read) && !SAFE_SCHEME.test(read) ? undefined : value;
+}
+
+/** A style that loads something — `url(`, `image-set(`, `expression(`, `@import` — or hides it behind an escape. */
+const LOADING_STYLE = /\\|@import|(?:url|image|image-set|cross-fade|element|expression|src)\s*\(/i;
+
 /** Tags with no closing tag. */
 const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
 
@@ -108,7 +141,8 @@ function decode(text: string): string {
       const code = body[1] === "x" || body[1] === "X" ? parseInt(body.slice(2), 16) : parseInt(body.slice(1), 10);
       return Number.isFinite(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : whole;
     }
-    return NAMED[body.toLowerCase()] ?? whole;
+    const name = body.toLowerCase();
+    return Object.hasOwn(NAMED, name) ? (NAMED[name] as string) : whole;
   });
 }
 
@@ -127,7 +161,8 @@ function attributesOf(source: string): Record<string, string> {
   const attrs: Record<string, string> = {};
   for (const match of source.matchAll(ATTRIBUTE)) {
     const name = (match[1] as string).toLowerCase();
-    if (name in attrs) continue;
+    // A name the DOM would throw on is not an attribute.
+    if (!ATTRIBUTE_NAME.test(name) || Object.hasOwn(attrs, name)) continue;
     attrs[name] = decode(match[2] ?? match[3] ?? match[4] ?? "");
   }
   return attrs;
@@ -175,8 +210,20 @@ export function parseTemplate(html: string, options: TemplateOptions = {}): Scen
   const sanitize = options.sanitize !== false;
   const tags = new Set((options.allowTags ?? TEMPLATE_TAGS).map((tag) => tag.toLowerCase()));
   const attributes = new Set((options.allowAttributes ?? TEMPLATE_ATTRIBUTES).map((name) => name.toLowerCase()));
-  const keepAttribute = (name: string): boolean =>
-    !sanitize || (!name.startsWith("on") && (attributes.has(name) || name.startsWith("data-") || name.startsWith("aria-")));
+  /** An attribute's value as the template keeps it, or `undefined`. */
+  const kept = (name: string, value: string): string | undefined => {
+    if (!sanitize) return value;
+    if (name.startsWith("on") || name.startsWith("data-tl-") || URL_LISTS.has(name)) return undefined;
+    if (!attributes.has(name) && !name.startsWith("data-") && !name.startsWith("aria-")) return undefined;
+    if (URL_ATTRIBUTES.has(name)) return safeUrl(value);
+    if (name === "style") return LOADING_STYLE.test(value) ? undefined : value;
+    if (name === "class") {
+      // The timeline's own classes are its, not the template's.
+      const classes = value.split(/\s+/).filter((token) => token !== "" && !/^tl-/i.test(token));
+      return classes.length === 0 ? undefined : classes.join(" ");
+    }
+    return value;
+  };
 
   const root: Draft = { tag: "#root", attrs: {}, content: [], dropped: false, kept: false };
   const stack: Draft[] = [root];
@@ -218,7 +265,8 @@ export function parseTemplate(html: string, options: TemplateOptions = {}): Scen
     const raw = attributesOf(body.slice(tag.length).replace(/\/\s*$/, ""));
     const attrs: Record<string, string> = {};
     for (const [name, value] of Object.entries(raw)) {
-      if (keepAttribute(name)) attrs[name] = value;
+      const keep = kept(name, value);
+      if (keep !== undefined) attrs[name] = keep;
     }
     const dropped = sanitize && DROPPED.has(tag);
     if (dropped) {
@@ -231,7 +279,7 @@ export function parseTemplate(html: string, options: TemplateOptions = {}): Scen
     }
     // Past the depth, a tag is unwrapped: its content goes on in the deepest element.
     if (stack.length > MAX_DEPTH) continue;
-    const draft: Draft = { tag, attrs, content: [], dropped, kept: !sanitize || tags.has(tag) };
+    const draft: Draft = { tag, attrs, content: [], dropped, kept: !sanitize || (tags.has(tag) && !NEVER.has(tag)) };
     top().content.push(draft);
     if (!VOID.has(tag) && !body.trimEnd().endsWith("/")) stack.push(draft);
   }

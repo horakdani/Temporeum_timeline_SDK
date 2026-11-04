@@ -19,6 +19,7 @@
  */
 export { DEFAULT_HEIGHT, DEFAULT_SERVER_WIDTH } from "./config.js";
 export type {
+  InputSkippedPayload,
   MetricsSetting,
   SizeOverrides,
   TimelineConfig,

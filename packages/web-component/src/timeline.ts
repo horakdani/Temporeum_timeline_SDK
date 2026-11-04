@@ -77,8 +77,8 @@ import type { AddTarget } from "@temporeum/timeline-core/items";
 import type { Strings } from "@temporeum/timeline-core/words";
 import type { PngOptions } from "@temporeum/timeline-core/export";
 
-import { checkMetrics, contentOf, exportTheme, frameOptions, frameScene, groupViewOf, hiddenDatesOf, initialDomain, itemsOf, metricsOf, minimapGeometryOf, resolveView, sameValue, sizesOf, slotsOn, usesSceneSpace, wordsOf } from "./config.js";
-import type { FrameState, ResolvedView, TimelineConfig, TimelineRollingOptions, TimelineUpdate } from "./config.js";
+import { checkMetrics, contentOf, exportTheme, frameOptions, frameScene, groupViewOf, hiddenDatesOf, initialDomain, itemsOf, metricsOf, readableItems, readableOptionsOf, minimapGeometryOf, resolveView, sameValue, sizesOf, slotsOn, usesSceneSpace, wordsOf } from "./config.js";
+import type { FrameState, InputSkippedPayload, ResolvedView, SkipReport, TimelineConfig, TimelineRollingOptions, TimelineUpdate } from "./config.js";
 import type { TimelinePrintOptions } from "./export.js";
 import { plugin, pluginIf, requireKinds, requirePlugins } from "./plugins.js";
 import type { GanttFeature } from "./plugins.js";
@@ -210,6 +210,14 @@ export interface TimelineInstanceEventMap<T = unknown> extends TimelineEventMap<
    * browser paints it.
    */
   readonly slotsChanged: SlotsChangedPayload<T>;
+  /**
+   * An item or an option could not be read, and was left out so the rest is
+   * drawn: an item with no string id, a start or end that is not a time, a
+   * fractional `sublaneSpan`; a `locale` or `timeZone` the platform does not
+   * know, which falls back to the default. What was there at creation is
+   * said on the microtask after it, so a listener added right away hears it.
+   */
+  readonly inputSkipped: InputSkippedPayload;
 }
 
 /** The name of an event of {@link TimelineInstanceEventMap}. */
@@ -238,6 +246,7 @@ const EVENT_NAMES: Record<TimelineInstanceEventName, true> = {
   timeBarMoved: true,
   rangeSelected: true,
   slotsChanged: true,
+  inputSkipped: true,
 };
 
 /** Every event the instance emits — what the element and the framework adapters forward. */
@@ -566,6 +575,9 @@ function isGroupCommand(command: Command | GroupCommand): command is GroupComman
 /** The dictionary's word for each default zoom preset. */
 const PRESET_WORDS: Readonly<Record<string, keyof Strings>> = { day: "zoomDay", week: "zoomWeek", month: "zoomMonth", year: "zoomYear" };
 
+/** How many light-DOM timelines have taken a scope of their own: each takes the next. */
+let autoScopes = 0;
+
 /**
  * Create a live timeline on an element.
  *
@@ -582,7 +594,14 @@ export function createTimeline<T = unknown>(
 ): Timeline<T> {
   requirePlugins(initial);
   checkMetrics(initial);
-  requireKinds(itemsOf(initial));
+  // What cannot be read is left out, and said once the host can listen: on the microtask after creation.
+  const skippedAtStart: InputSkippedPayload[] = [];
+  let say: SkipReport = (skipped) => void skippedAtStart.push(skipped);
+  const report: SkipReport = (skipped) => say(skipped);
+  const readableInitial = readableOptionsOf(initial, report);
+  // `useSource` below says what it leaves out.
+  const initialItems = itemsOf(readableInitial);
+  requireKinds(initialItems);
   const doc = element.ownerDocument;
   const view_ = doc.defaultView;
   // The layers over the drawing (the tools, the groups) are positioned against the host: a host that is not positioned itself
@@ -590,11 +609,19 @@ export function createTimeline<T = unknown>(
   const ownPosition = element.style.position;
   const claimedPosition = view_?.getComputedStyle(element).position === "static";
   if (claimedPosition) element.style.position = "relative";
-  let config: TimelineConfig<T> = { ...initial };
+  const inShadow = typeof ShadowRoot !== "undefined" && options.root instanceof ShadowRoot;
+  let config: TimelineConfig<T> = { ...readableInitial };
+  if (config.instanceId === undefined && !inShadow) {
+    // In the light DOM two timelines would share one stylesheet's rules and ids: each gets a scope of
+    // its own, as the framework components give theirs. A drawing taken over from the server keeps
+    // the scope the server gave it, or none.
+    const scope = options.hydrate === true ? (options.root ?? element).querySelector("svg[data-tl-instance]")?.getAttribute("data-tl-instance") : `tl-auto${String(++autoScopes)}`;
+    if (scope !== undefined && scope !== null) config = { ...config, instanceId: scope };
+  }
   const emitter = new Emitter<TimelineInstanceEventMap<T>>();
   const listeners = new Set<() => void>();
 
-  let items: readonly Item<T>[] = itemsOf(config);
+  let items: readonly Item<T>[] = initialItems;
   /** The groups as the reader reordered them; `config.groups` until then. */
   let groups: readonly Group[] | undefined = config.groups;
   /** Collapsed groups. View state, like the selection: seeded from `Group.collapsed`. */
@@ -666,7 +693,6 @@ export function createTimeline<T = unknown>(
   // In a shadow root the page styles the drawing through `::part()` and the
   // tokens it sets on the element: the nodes carry their classes as parts,
   // and the stylesheet declares the tokens on `:host`.
-  const inShadow = typeof ShadowRoot !== "undefined" && options.root instanceof ShadowRoot;
   const mount: SceneMount = mountScene(options.root ?? element, { hydrate: options.hydrate === true, parts: inShadow });
   const measured =
     options.measureText === false
@@ -714,13 +740,13 @@ export function createTimeline<T = unknown>(
       // render hands over a new one each time, and that is no reload.
       loader = createItemLoader<T>({ source: (range, signal) => (fetcher as typeof source)(range, signal) });
       stopLoader = loader.subscribe(() => {
-        items = (loader as ItemLoader<T>).items;
+        items = readableItems((loader as ItemLoader<T>).items, report);
         emitter.emit("itemsChanged", { items });
         loop.request();
       });
-      items = loader.items;
+      items = readableItems(loader.items, report);
     } else {
-      items = source ?? [];
+      items = readableItems(source ?? [], report);
     }
     emitter.emit("itemsChanged", { items });
   }
@@ -1160,11 +1186,12 @@ export function createTimeline<T = unknown>(
     if (loader !== undefined) throw new TypeError("Live changes need an items array: a fetched source's items are its own");
     const applied = applyItemChanges(items, changes);
     if (applied.added.length === 0 && applied.updated.length === 0 && applied.removed.length === 0) return;
-    requireKinds([...applied.added, ...applied.updated]);
+    const next = readableItems(applied.items, report);
+    requireKinds(readableItems([...applied.added, ...applied.updated]));
     const lanes = new Set(live?.touched ?? []);
     for (const lane of applied.lanes) lanes.add(lane);
-    live = { from: live?.from ?? items, to: applied.items, touched: lanes };
-    items = applied.items;
+    live = { from: live?.from ?? items, to: next, touched: lanes };
+    items = next;
     const gone = new Set(applied.removed.map((item) => item.id));
     if (gone.size > 0) {
       if (machine.focusedId !== null && gone.has(machine.focusedId)) machine.setFocus(null);
@@ -1662,11 +1689,11 @@ export function createTimeline<T = unknown>(
     update(next) {
       if (destroyed) return;
       const before = config;
-      const merged = { ...config, ...next } as TimelineConfig<T>;
+      const merged = readableOptionsOf({ ...config, ...next } as TimelineConfig<T>, report);
       // Before anything changes: a configuration that throws leaves the instance as it was.
       requirePlugins(merged);
       checkMetrics(merged);
-      if ("items" in next && typeof next.items !== "function") requireKinds(next.items ?? []);
+      if ("items" in next && typeof next.items !== "function") requireKinds(readableItems(next.items ?? []));
       // A value that says what the one before said is no change, and keeps
       // its identity: what is cached on it (the hidden dates' expansion)
       // stays. A component hands its props again on every render.
@@ -1903,6 +1930,12 @@ export function createTimeline<T = unknown>(
   // property set on it never reaching the instance.
   Object.setPrototypeOf(instance, INSTANCE_PROTOTYPE);
   startRolling();
+  say = (skipped) => emitter.emit("inputSkipped", skipped);
+  if (skippedAtStart.length > 0) {
+    queueMicrotask(() => {
+      if (!destroyed) for (const skipped of skippedAtStart) emitter.emit("inputSkipped", skipped);
+    });
+  }
   return instance;
 }
 

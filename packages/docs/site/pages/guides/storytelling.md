@@ -69,7 +69,7 @@ interface StorySlide {
 | YouTube, Vimeo, SoundCloud, Spotify, a Google Maps embed | the provider's player: YouTube's without cookies (`youtube-nocookie.com`), Vimeo's without tracking (`dnt=1`), a start time kept |
 | anything else (a Wikipedia article, a post) | a link, named by `title` or by its host |
 
-**A player loads when it is asked for.** Until then the slide shows a button that names the provider and the host it loads from ("Load the YouTube player — it is loaded from youtube.com when you ask for it"), over the `thumbnail` if there is one. A story with forty videos does not open forty connections on its first slide, and the reader decides when a third party is contacted. `media: "eager"` loads the player with the slide.
+**A player loads when it is asked for.** Until then the slide shows a button that names the provider and the host it loads from ("Load the YouTube player — it is loaded from youtube.com when you ask for it"), over the `thumbnail` if there is one. A story with forty videos does not open forty connections on its first slide, and the reader decides when a third party is contacted. `media: "eager"` loads the player with the slide. The player's frame is sandboxed: it runs, goes full screen and opens its own links in a new tab, but cannot navigate your page or open dialogs over it.
 
 ## The keyboard and the screen reader
 

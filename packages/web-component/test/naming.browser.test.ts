@@ -60,6 +60,7 @@ describe("D4: the names of the 1.0 API", () => {
         "timeBarMoved",
         "rangeSelected",
         "slotsChanged",
+        "inputSkipped",
       ].sort(),
     );
     for (const name of TIMELINE_EVENTS) {

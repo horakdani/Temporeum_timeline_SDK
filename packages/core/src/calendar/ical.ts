@@ -226,7 +226,8 @@ export function parseICal(text: string, options: ICalParseOptions = {}): ICalCal
         if (rule.freq === "HOURLY" || rule.freq === "MINUTELY" || rule.freq === "SECONDLY") warnings.push(`A time zone rule of ${JSON.stringify(zoneId ?? "")} that repeats more often than daily is ignored`);
         else onset.rule = rule;
       }
-      else if (line.name === "RDATE") onset.rdates.push(...line.value.split(",").map(wallOfValue));
+      // A loop, not a spread: a hostile RDATE has more values than a call has room for arguments.
+      else if (line.name === "RDATE") for (const value of line.value.split(",")) onset.rdates.push(wallOfValue(value));
     } else if (line.name === "TZID") zoneId = line.value;
     else if (line.name === "X-LIC-LOCATION" && zoneId !== undefined) locations.set(zoneId, line.value);
     else if (line.name === "X-WR-CALNAME") name = unescapeText(line.value);

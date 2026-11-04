@@ -148,3 +148,19 @@ test("NEGATIVE CONTROL: a broken example reads as broken", async ({ page }) => {
   expect(emptyClaims.some((claim) => claim.count < claim.min)).toBe(true);
   expect(missing.state).toBe("error");
 });
+
+test("a message from anywhere but the example's own frame is ignored (S14)", async ({ page }) => {
+  const example = manifest.examples[0] as ExampleEntry;
+  await page.goto(`/site/${example.path}`);
+  const section = page.locator(`section#example-${example.id}`);
+  await section.locator("iframe").scrollIntoViewIfNeeded();
+  const ran = await settle(section, Number(await section.getAttribute("data-run")));
+  expect(ran.state, ran.status).toBe("ok");
+  // The page itself, or any other window, forging the frame's report under every token a run could have.
+  await page.evaluate((id) => {
+    for (let run = 0; run < 50; run += 1) window.postMessage({ source: "tl-example", token: `${id}:${String(run)}`, type: "error", message: "forged" }, "*");
+  }, example.id);
+  await page.waitForTimeout(400);
+  expect(await section.getAttribute("data-state")).toBe("ok");
+  expect(await section.locator(".example-status").textContent()).not.toContain("forged");
+});

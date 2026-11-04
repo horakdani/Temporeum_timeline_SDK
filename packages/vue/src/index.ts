@@ -149,7 +149,7 @@ function changedOf(before: Record<string, unknown>, next: Record<string, unknown
   const changed: Record<string, unknown> = {};
   let any = false;
   for (const key of new Set([...Object.keys(before), ...Object.keys(next)])) {
-    if (before[key] !== next[key]) {
+    if (key !== "__proto__" && before[key] !== next[key]) {
       changed[key] = next[key];
       any = true;
     }

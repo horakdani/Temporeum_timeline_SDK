@@ -57,6 +57,25 @@ describe("the Angular adapter in Node", () => {
   });
 });
 
+describe("an own __proto__ key in the configuration (S13)", () => {
+  it("is read as nothing, not as the configuration's prototype", async () => {
+    const { Component, provideZonelessChangeDetection } = await import("@angular/core");
+    const { bootstrapApplication } = await import("@angular/platform-browser");
+    const { renderApplication } = await import("@angular/platform-server");
+    const { TimelineComponent } = await import("../src/index.js");
+    @Component({ selector: "app-root", imports: [TimelineComponent], template: '<tl-timeline [config]="config" [ssrWidth]="720" />' })
+    class App {
+      config = { items, ...(JSON.parse('{"__proto__":{"instanceId":"planted"}}') as Record<string, unknown>) };
+    }
+    const html = await renderApplication((context) => bootstrapApplication(App, { providers: [provideZonelessChangeDetection()] }, context), {
+      document: "<!doctype html><html><head></head><body><app-root></app-root></body></html>",
+      url: "/",
+    });
+    expect(html).not.toContain("planted");
+    expect(html.match(/role="option"/g)).toHaveLength(2);
+  });
+});
+
 describe("the plugin registry (W4)", () => {
   it("is the element's, handed on by the adapter", async () => {
     const adapter = await import("../src/index.js");
