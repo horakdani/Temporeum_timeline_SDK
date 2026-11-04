@@ -39,10 +39,18 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
+/**
+ * The first draw. The file's first test also pays the engine's cold start
+ * here (WebKit's, on a loaded machine, over vitest's default second), so
+ * the wait is longer; a frame that never comes still fails.
+ */
 async function drawn(el: TemporeumTimelineElement): Promise<void> {
-  await vi.waitFor(() => {
-    if (el.timeline?.result === undefined) throw new Error("not drawn yet");
-  });
+  await vi.waitFor(
+    () => {
+      if (el.timeline?.result === undefined) throw new Error("not drawn yet");
+    },
+    { timeout: 5000 },
+  );
 }
 
 async function place(setup: (el: TemporeumTimelineElement) => void = () => {}, width = 800): Promise<TemporeumTimelineElement> {

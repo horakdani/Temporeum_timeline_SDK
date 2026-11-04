@@ -1,17 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { LIGHT_THEME } from "@temporeum/timeline-core";
 import type { Item } from "@temporeum/timeline-core";
 
 import { createTimeline, defineTimelineElement } from "../src/index.js";
 import type { InputSkippedPayload, TemporeumTimelineElement } from "../src/index.js";
-import { sceneCss } from "./sheets.js";
+import { adoptedCss, sceneCss } from "./sheets.js";
 
 /**
  * One bad item or option does not take the whole frame. An item from
  * an attribute, a JSON script, a fetched window or a host's typo — a start
  * in words, NaN, ±1e20, a fractional `sublaneSpan`, no id — is left out; a
- * `locale` or `timeZone` the platform cannot read falls back to the
- * default. Each is said once, with `inputSkipped`.
+ * `locale` or `timeZone` the platform cannot read, or a theme token that is
+ * not a colour, falls back to the default. Each is said once, with
+ * `inputSkipped`.
  */
 
 const DAY = 86_400_000;
@@ -71,6 +73,24 @@ describe("a bad item or option is left out, and said", () => {
     window.removeEventListener("error", onError);
     expect(errors).toEqual([]);
     expect(skipped.map((each) => each.item ?? each.option)).toEqual([{ id: "nan", start: Number.NaN }, { id: "words", start: "soon" }, "locale", "timeZone"]);
+  });
+
+  it("a theme with a token that is not a colour falls back to the automatic one, and writes no rule (S4)", async () => {
+    const injected = { name: "evil", tokens: { ...LIGHT_THEME.tokens, accent: "red}*{--injected:1}/*" } };
+    const timeline = createTimeline(host(), { items: [good], domain, theme: injected });
+    const skipped: InputSkippedPayload[] = [];
+    timeline.on("inputSkipped", (payload) => skipped.push(payload));
+    await vi.waitFor(() => expect(timeline.result).toBeDefined());
+    expect(document.querySelector('[data-tl-id="ok"]')).not.toBeNull();
+    const css = () => [...document.querySelectorAll("style")].map((style) => style.textContent).join("") + adoptedCss(document).join("");
+    expect(css()).not.toContain("--injected");
+    timeline.update({ theme: "dark" });
+    timeline.update({ theme: { ...injected, tokens: { ...injected.tokens, accent: "url(https://example.com/x)" } } });
+    const before = timeline.result;
+    await vi.waitFor(() => expect(timeline.result).not.toBe(before));
+    expect(css()).not.toContain("example.com");
+    expect(skipped.map((each) => each.option)).toEqual(["theme", "theme"]);
+    expect(skipped[0]?.message).toMatch(/accent/);
   });
 
   it("through live changes: a bad added item is left out", async () => {

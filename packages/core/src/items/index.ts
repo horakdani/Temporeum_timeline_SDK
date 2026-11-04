@@ -2,7 +2,7 @@
  * `@temporeum/timeline-core/items` — item kinds, adding and removing items,
  * and HTML templates.
  *
- * A separate entry point because the base one is full: its 31 kB budget is
+ * A separate entry point because the base one is full: its 31.2 kB budget is
  * spent on the engine every timeline needs. What is here is what some
  * timelines need, and it works through the engine's own seams — the render
  * hooks draw the kinds, decorations draw the backgrounds, and an add or a

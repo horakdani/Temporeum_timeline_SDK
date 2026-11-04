@@ -19,6 +19,7 @@ import {
   planSceneSpace,
   resolveDensity,
   resolveOrientation,
+  resolveTheme,
   toTimeMs,
 } from "@temporeum/timeline-core";
 import type { Dependency } from "@temporeum/timeline-core/gantt";
@@ -485,7 +486,7 @@ export interface InputSkippedPayload {
   /** The item left out, as it was given. */
   readonly item?: unknown;
   /** The option that fell back to its default. */
-  readonly option?: "locale" | "timeZone";
+  readonly option?: "locale" | "timeZone" | "theme";
 }
 
 /** Where a skipped item or option is said. */
@@ -562,16 +563,28 @@ function readable(key: string, probe: () => unknown): boolean {
   return known;
 }
 
+/** Why a theme of the host's cannot be drawn (a token that is not a colour), or `undefined` when it can. */
+function themeProblem(theme: TimelineConfig["theme"]): string | undefined {
+  if (typeof theme !== "object" || theme === null) return undefined;
+  try {
+    resolveTheme(theme);
+    return undefined;
+  } catch (error) {
+    return (error as Error).message;
+  }
+}
+
 /**
  * The configuration without a `locale` or `timeZone` the platform cannot
- * read — each falls back to its default, and is said to `report`. The same
- * object when both are fine.
+ * read, or a `theme` with a token that is not a colour — each falls back to
+ * its default, and is said to `report`. The same object when all are fine.
  */
 export function readableOptionsOf<T>(config: TimelineConfig<T>, report?: SkipReport): TimelineConfig<T> {
   const { locale, timeZone } = config;
   const badLocale = locale !== undefined && !readable(`l${locale}`, () => Intl.getCanonicalLocales(locale));
   const badZone = timeZone !== undefined && !readable(`z${timeZone}`, () => new Intl.DateTimeFormat("en", { timeZone }));
-  if (!badLocale && !badZone) return config;
+  const badTheme = themeProblem(config.theme);
+  if (!badLocale && !badZone && badTheme === undefined) return config;
   const kept: Record<string, unknown> = { ...config };
   if (badLocale) {
     delete kept.locale;
@@ -580,6 +593,10 @@ export function readableOptionsOf<T>(config: TimelineConfig<T>, report?: SkipRep
   if (badZone) {
     delete kept.timeZone;
     report?.({ message: `The time zone ${JSON.stringify(timeZone)} is not one the platform knows; UTC is used`, option: "timeZone" });
+  }
+  if (badTheme !== undefined) {
+    delete kept.theme;
+    report?.({ message: `${badTheme}; the automatic theme is used`, option: "theme" });
   }
   return kept as TimelineConfig<T>;
 }

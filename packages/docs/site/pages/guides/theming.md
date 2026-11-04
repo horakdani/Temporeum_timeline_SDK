@@ -30,7 +30,7 @@ The tokens are declared on the timeline's root element (`.tl`), so set yours the
 
 ## Light, dark, auto
 
-`theme: "auto"` (the default) follows `prefers-color-scheme`; `"light"` and `"dark"` pin it, which is what a page with its own theme switch needs. Changing it with `update({ theme })` swaps the tokens; the items are the same nodes. Both built-in themes pass WCAG AA contrast for every text pair; a custom fill has to carry the text drawn on it — which is why the example scopes its pale fills to the light theme. A theme of your own is an object, `{ name, tokens }`, with every token named (`LIGHT_THEME` and `DARK_THEME` from `@temporeum/timeline-core` are two), and it is type-checked.
+`theme: "auto"` (the default) follows `prefers-color-scheme`; `"light"` and `"dark"` pin it, which is what a page with its own theme switch needs. Changing it with `update({ theme })` swaps the tokens; the items are the same nodes. Both built-in themes pass WCAG AA contrast for every text pair; a custom fill has to carry the text drawn on it — which is why the example scopes its pale fills to the light theme. A theme of your own is an object, `{ name, tokens }`, with every token named (`LIGHT_THEME` and `DARK_THEME` from `@temporeum/timeline-core` are two), and it is type-checked. Each token is a colour — no `;`, brace, angle bracket, backslash, `*` or `url(` — or `resolveTheme` throws a `RangeError`: the tokens go into a stylesheet, and a token is never a way to write a rule.
 
 ## Sizes and type
 

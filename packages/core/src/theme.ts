@@ -94,7 +94,12 @@ export const DARK_THEME: Theme = {
 /** Both built-in themes, as the single source of truth for the visual matrix. */
 export const THEMES: readonly Theme[] = [LIGHT_THEME, DARK_THEME];
 
-/** The theme a setting selects, or `undefined` for `auto`. */
+/**
+ * The theme a setting selects, or `undefined` for `auto`. A theme of the
+ * host's goes into a stylesheet as it is, so a token is a name of letters
+ * and a colour — no `;`, brace, bracket, backslash, `*` or `url(` — or a
+ * `RangeError`: a token is never a way to write a rule.
+ */
 export function resolveTheme(setting: ThemeSetting): Theme | undefined {
   if (setting === "auto") {
     return undefined;
@@ -104,6 +109,9 @@ export function resolveTheme(setting: ThemeSetting): Theme | undefined {
   }
   if (setting === "dark") {
     return DARK_THEME;
+  }
+  for (const [name, value] of Object.entries(setting.tokens)) {
+    if (!/^[a-z]+:(?![^]*url\()[\w\s#%.,()/-]*$/i.test(`${name}:${value}`)) throw new RangeError(`Theme token ${name}: not a colour`);
   }
   return setting;
 }

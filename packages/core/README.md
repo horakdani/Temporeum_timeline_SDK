@@ -218,7 +218,7 @@ Checked by CI on every push and pull request
 
 | Budget | Limit |
 |---|---|
-| core, minified + gzipped, on its own | 31 kB |
+| core, minified + gzipped, on its own | 31.2 kB |
 | `/dom` entry point, minified + gzipped, on top of the core | 4.25 kB |
 | a source module shipped in two files | 0 |
 | runtime dependencies | 0 |

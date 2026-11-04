@@ -8,7 +8,7 @@ The first release. From here on the package follows [semantic versioning](https:
 
 - The `(main, cross)` projector, the time scale and an adaptive axis: round ticks from milliseconds to millennia, in the reader's time zone, with daylight saving handled, without a date library. Hidden time as a `TimeWarp` (`RenderOptions.hiddenDates`), and the axis's ticks from a source of the host's (`RenderOptions.ticks`).
 - Layout: collision-free packing in time, lanes, pinned lanes, sublane spans, open intervals, granularity-aware instants; cached per items array, or given by the host (`RenderOptions.layout`).
-- Rendering: a DOM-free scene and `renderToSvgString`; themes as CSS custom properties, light and dark, contrast-checked; density levels; labels placed, shortened with an ellipsis where they do not fit whole (`labelOverflow`), and reported; decorations (banding, now, eras, markers).
+- Rendering: a DOM-free scene and `renderToSvgString`; themes as CSS custom properties, light and dark, contrast-checked, and a host's own tokens refused unless each is a colour (a token never writes a rule); density levels; labels placed, shortened with an ellipsis where they do not fit whole (`labelOverflow`), and reported; decorations (banding, now, eras, markers).
 - Input: one pointer pipeline for mouse, pen and touch — pan, pinch, double tap (two taps of the same pointer type: on a hybrid device a finger's tap and a mouse's click are not one), two-finger tap, wheel (a run of wheel steps is one gesture) — anchored to the instant under each pointer; cooperative touch.
 - Editing: move, resize, snap, `canMove`, cross-lane moves, multi-select, and reversible commands with an `inverse`.
 - Responsive: orientation, density and detail surface resolved from the container; pointer-aware hit slop.
@@ -22,7 +22,7 @@ The first release. From here on the package follows [semantic versioning](https:
 
 ### Entry points
 
-The engine keeps a budget of 31 kB minified and gzipped. Everything else is on an entry point of its own, budgeted by what it adds on top of the engine, and a page downloads only the ones it imports. `entries.json` lists them; the build, the `exports` map and the size checks follow from it.
+The engine keeps a budget of 31.2 kB minified and gzipped. Everything else is on an entry point of its own, budgeted by what it adds on top of the engine, and a page downloads only the ones it imports. `entries.json` lists them; the build, the `exports` map and the size checks follow from it.
 
 - **`/dom`** — the browser binding: `attachInput` (mirrored for right to left), mounting and hydration.
 - **`/gantt`** — dependencies (`FS`, `SS`, `FF`, `SF`, with a lag or a lead) routed as arrows in both orientations and culled to the view; progress, baselines and milestones; the task grid's rows and keys; accessible names that say what a task depends on.

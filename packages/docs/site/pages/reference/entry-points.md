@@ -8,7 +8,7 @@ One package, several entry points: you pay for what you import.
 
 | Entry point | Import | Size budget | What it is |
 |---|---|---|---|
-| `index` | `@temporeum/timeline-core` | 31 kB on its own | The engine: geometry, layout, rendering, input, editing, accessibility, clustering, windowed data. |
+| `index` | `@temporeum/timeline-core` | 31.2 kB on its own | The engine: geometry, layout, rendering, input, editing, accessibility, clustering, windowed data. |
 | `dom` | `@temporeum/timeline-core/dom` | 4.25 kB on top of the core | The browser binding: mounts a scene into live SVG, wires pointer and keyboard input, observes size. |
 | `groups` | `@temporeum/timeline-core/groups` | 2 kB on top of the core | Nested groups: the tree as lanes, collapsing, reorder commands, the tree's keys. See [groups](../guides/groups-and-item-kinds.md). |
 | `items` | `@temporeum/timeline-core/items` | 4 kB on top of the core | Item kinds (box, point, background), add and remove as commands, sanitised HTML templates. |

@@ -5,7 +5,7 @@
       "name": "index",
       "input": "src/index.ts",
       "umd": "TemporeumTimeline",
-      "limit": "31 kB",
+      "limit": "31.2 kB",
       "label": "core — the full public surface (ESM, minify + gzip)"
     },
     {

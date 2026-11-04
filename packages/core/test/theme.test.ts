@@ -102,6 +102,18 @@ describe("resolveTheme", () => {
     const custom: Theme = { name: "brand", tokens: { ...LIGHT_THEME.tokens, accent: "#123456" } };
     expect(resolveTheme(custom)).toBe(custom);
   });
+
+  it("refuses a token that is not a colour, so no theme can write a rule (S4)", () => {
+    const theme = (tokens: Record<string, string>): Theme => ({ name: "t", tokens: { ...LIGHT_THEME.tokens, ...tokens } });
+    for (const value of ["red}*{display:none}/*", "red;background:red", "url(https://example.com/x.svg)", "red/*", "</style><script>", "\\72 ed", "red\nurl(x)", "URL(x)"]) {
+      expect(() => resolveTheme(theme({ accent: value })), value).toThrow(RangeError);
+    }
+    expect(() => resolveTheme(theme({ "x}*{": "red" }))).toThrow(RangeError);
+    for (const value of ["#123", "rgb(1 2 3 / 50%)", "hsl(210deg 40% 50%)", "color-mix(in srgb, red 40%, blue)", "var(--brand, #000)", "light-dark(#fff, #000)", "transparent"]) {
+      expect(resolveTheme(theme({ accent: value })), value).toBeDefined();
+    }
+    expect(() => timelineStyleCss({ theme: theme({ accent: "red}*{display:none" }), metrics: densityMetrics("comfortable", "horizontal") })).toThrow(RangeError);
+  });
 });
 
 describe("timelineStyleCss", () => {

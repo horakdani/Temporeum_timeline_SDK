@@ -85,10 +85,11 @@ one exception to the rule is the instance's `command`, which is
 Input from outside — an attribute, the JSON child, a fetched window — can be
 anything, and one bad item does not take the whole frame. An item with no
 string id, a start or end that is not a time, or a fractional `sublaneSpan`
-is left out; a `locale` or `timeZone` the platform does not know falls back
-to the default. Each is said with `input-skipped` (`inputSkipped`), whose
-`detail` holds a message and the item or the option. The server render
-leaves out the same and says nothing; the client says it when it hydrates.
+is left out; a `locale` or `timeZone` the platform does not know, or a
+`theme` with a token that is not a colour, falls back to the default. Each
+is said with `input-skipped` (`inputSkipped`), whose `detail` holds a message
+and the item or the option. The server render leaves out the same and says
+nothing; the client says it when it hydrates.
 
 The library never saves. An edit is shown while it happens and kept when it
 ends; what to do with `event.detail.command` is yours. Its `inverse` is the
