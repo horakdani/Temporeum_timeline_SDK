@@ -133,9 +133,8 @@ test("[claim:browser-loading-mark] loading shows on the axis, the root is aria-b
   const svg = page.locator("#frame svg");
   await expect(svg).toHaveAttribute("aria-busy", "true");
   await expect(page.locator("#frame line.tl-loading").first()).toBeAttached();
-  expect(await drawnLength(page, "#frame line.tl-loading")).toBeGreaterThan(100);
-  const animation = await page.locator("#frame line.tl-loading").first().evaluate((node) => getComputedStyle(node).animationName);
-  expect(animation).toBe("tl-loading");
+  await expect.poll(() => drawnLength(page, "#frame line.tl-loading")).toBeGreaterThan(100);
+  await expect.poll(() => page.locator("#frame line.tl-loading").first().evaluate((node) => getComputedStyle(node).animationName)).toBe("tl-loading");
   await idle(page);
   await expect(svg).not.toHaveAttribute("aria-busy", "true");
   await expect(page.locator("#frame line.tl-loading")).toHaveCount(0);
@@ -154,8 +153,9 @@ test("[claim:browser-failure] a failed window shows dotted, and the Retry button
   await page.goto("/async.html?latency=100&fail=1");
   const failed = page.locator("#frame line.tl-loading--failed").first();
   await expect(failed).toBeAttached();
-  expect(await drawnLength(page, "#frame line.tl-loading--failed")).toBeGreaterThan(100);
-  // Its look comes from the stylesheet, which can be adopted a frame after the line is in.
+  // In the document is not yet drawn: its length and its look (from a
+  // stylesheet that can be adopted a frame later) are waited for.
+  await expect.poll(() => drawnLength(page, "#frame line.tl-loading--failed")).toBeGreaterThan(100);
   await expect.poll(() => failed.evaluate((node) => getComputedStyle(node).strokeDasharray)).toMatch(/^2(px)?,? 4(px)?$/);
   await expect(page.locator("#frame svg")).not.toHaveAttribute("aria-busy", "true");
   const before = (await report(page)).requests;
