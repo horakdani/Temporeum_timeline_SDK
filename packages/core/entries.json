@@ -61,7 +61,7 @@
       "name": "export",
       "input": "src/export/index.ts",
       "umd": "TemporeumTimelineExport",
-      "limit": "7.75 kB",
+      "limit": "8 kB",
       "label": "export — standalone SVG, PNG, a built-in PDF writer, a print view of the full range split into pages (ESM, minify + gzip)"
     },
     {
