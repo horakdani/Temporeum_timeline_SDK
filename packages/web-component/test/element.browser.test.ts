@@ -655,11 +655,22 @@ describe("createTimeline — the instance and its store", () => {
       limits: { min: T0, max: T0 + 30 * DAY, minSpanMs: DAY },
       interactions: { zoom: false, dragThreshold: 6, moveTrigger: "handle", longPressMs: 300 },
     });
-    // Zoom is off: Ctrl+wheel does nothing to the span.
+    // Zoom is off: Ctrl+wheel does nothing to the span, and stays the page's.
+    // The test then takes it from the page itself: left alone, Firefox on
+    // Linux zooms the whole page, and every later pointer lands elsewhere.
+    const wheels: boolean[] = [];
+    const keepPageZoom = (event: WheelEvent): void => {
+      wheels.push(event.defaultPrevented);
+      event.preventDefault();
+    };
+    window.addEventListener("wheel", keepPageZoom, { passive: false });
     const at = centre(el.querySelector('[data-tl-id="b"]') as Element);
     await commands.mouse([{ type: "move", x: at.x, y: at.y }, { type: "wheel", deltaY: -240, modifiers: ["Control"] }]);
     await nextFrame();
+    window.removeEventListener("wheel", keepPageZoom);
     expect(timeline.getSnapshot().domain).toEqual(domain);
+    expect(wheels.length).toBeGreaterThan(0);
+    expect(wheels.every((prevented) => !prevented)).toBe(true);
     // The limits hold for the API too.
     timeline.zoomTo([T0 - 10 * DAY, T0 - 9 * DAY]);
     timeline.flush();

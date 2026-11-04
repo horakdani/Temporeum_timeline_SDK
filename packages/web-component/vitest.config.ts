@@ -66,6 +66,7 @@ export default defineConfig({
         test: {
           name: "browser",
           include: ["test/**/*.browser.test.ts"],
+          setupFiles: ["test/page-zoom.setup.ts"],
           // Playwright's Firefox and WebKit run the files' frames in one page,
           // with one mouse: two files dragging at once move each other's pointer.
           fileParallelism: engine === "chromium",

@@ -310,7 +310,10 @@ test.describe("live resizing, with a mouse", () => {
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     const popover = page.locator('[data-tl-detail="popover"]');
     await expect(popover).toBeVisible();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height + 60);
+    // Below the item AND the popover: over the popover it would rightly stay
+    // (its size is the platform's fonts'; on Linux it reached 60 px lower).
+    const card = (await popover.boundingBox()) ?? { y: 0, height: 0 };
+    await page.mouse.move(box.x + box.width / 2, Math.max(box.y + box.height, card.y + card.height) + 30);
     await expect(popover).toHaveCount(0);
   });
 });

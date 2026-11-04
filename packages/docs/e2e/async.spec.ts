@@ -155,7 +155,8 @@ test("[claim:browser-failure] a failed window shows dotted, and the Retry button
   const failed = page.locator("#frame line.tl-loading--failed").first();
   await expect(failed).toBeAttached();
   expect(await drawnLength(page, "#frame line.tl-loading--failed")).toBeGreaterThan(100);
-  expect(await failed.evaluate((node) => getComputedStyle(node).strokeDasharray)).toMatch(/^2(px)?,? 4(px)?$/);
+  // Its look comes from the stylesheet, which can be adopted a frame after the line is in.
+  await expect.poll(() => failed.evaluate((node) => getComputedStyle(node).strokeDasharray)).toMatch(/^2(px)?,? 4(px)?$/);
   await expect(page.locator("#frame svg")).not.toHaveAttribute("aria-busy", "true");
   const before = (await report(page)).requests;
   const retry = page.locator("#retry");

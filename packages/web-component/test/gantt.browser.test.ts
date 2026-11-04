@@ -230,7 +230,10 @@ describe("the task grid", () => {
     await userEvent.keyboard("{Enter}");
     expect(timeline.getSnapshot().focusedId).toBe("t0a");
     await userEvent.keyboard("x");
-    await userEvent.click(rows().find((row) => row.getAttribute("aria-rowindex") === "4") as HTMLElement);
+    // The grid draws its rows at the next frame: the row is there before it is clicked.
+    const fourth = (): HTMLElement | undefined => rows().find((row) => row.getAttribute("aria-rowindex") === "4") as HTMLElement | undefined;
+    await vi.waitFor(() => expect(fourth()).toBeDefined());
+    await userEvent.click(fourth() as HTMLElement);
     expect(grid.focusedIndex).toBe(2);
     expect(timeline.getSnapshot().focusedId).toBe("t2a");
     timeline.destroy();
