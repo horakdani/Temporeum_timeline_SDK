@@ -85,7 +85,7 @@ function pdf<T>(config: TimelineConfig<T>, state: FrameState<T>, layout: Layout<
 
 function print<T>(doc: Document, config: TimelineConfig<T>, state: FrameState<T>, layout: Layout<T>, options: TimelinePrintOptions): Promise<void> {
   const scenes = printScenes(config, state, layout, options);
-  const remove = mountPrintView(doc, scenes, resolvePaper(options));
+  const remove = mountPrintView(doc, scenes, resolvePaper(options), config.nonce);
   const win = doc.defaultView;
   if (win === null) {
     remove();

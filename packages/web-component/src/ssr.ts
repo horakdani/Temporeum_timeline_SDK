@@ -18,7 +18,7 @@
 
 import { renderTimeline, renderToSvgString } from "@temporeum/timeline-core";
 import { withParts } from "@temporeum/timeline-core/dom";
-import type { Density, Orientation, RenderResult, TimeMs } from "@temporeum/timeline-core";
+import type { Density, Orientation, RenderResult, SceneElement, TimeMs } from "@temporeum/timeline-core";
 
 import { contentOf, DEFAULT_SERVER_WIDTH, directionOf, frameOptions, frameScene, initialDomain, initialSpace, itemsOf, readableOptionsOf, resolveView, usesSceneSpace, wordsOf } from "./config.js";
 import type { ResolvedView, TimelineConfig } from "./config.js";
@@ -83,6 +83,16 @@ export function resolvedServerFrame<T>(config: TimelineConfig<T>, options: Serve
   return serverFrame(config, options, false);
 }
 
+/**
+ * The scene's `<style>`s with the nonce, which a policy without
+ * `'unsafe-inline'` lets them apply by (C2). The client's frame has none:
+ * it adopts its sheets instead, and lets the server's `<style>`s go.
+ */
+function withNonce(scene: SceneElement, nonce: string | undefined): SceneElement {
+  if (nonce === undefined) return scene;
+  return { ...scene, children: (scene.children ?? []).map((child) => (child.tag === "style" ? { ...child, attrs: { ...child.attrs, nonce } } : child)) };
+}
+
 /** The frame; `host` for the element's shadow root, with the tokens on `:host` and the classes as parts. */
 function serverFrame<T>(given: TimelineConfig<T>, options: ServerRenderOptions, host: boolean): ServerFrame<T> & { readonly view: ResolvedView } {
   // A plugin the client would need is needed here: the server throws where the client would.
@@ -115,9 +125,10 @@ function serverFrame<T>(given: TimelineConfig<T>, options: ServerRenderOptions, 
       : tree.groupHeaderMarkup(
           tree.groupLayerAttrs(view.orientation, view.density, config.theme, config.strings === undefined ? undefined : wordsOf(config).say("groups"), directionOf(config), view.metrics),
           tree.headerPlacements(content.view.rows, result.layout, view.orientation, 0, undefined, directionOf(config)),
+          config.nonce,
         );
   // The dependency arrows are not the renderer's: the same function adds them here as in the client.
-  const scene = frameScene(config, state, result);
+  const scene = withNonce(frameScene(config, state, result), config.nonce);
   const { width, height, orientation, density } = view;
   return { svg: renderToSvgString(host ? withParts(scene) : scene), groups, domain, width, height, orientation, density, view, result };
 }
@@ -161,7 +172,9 @@ export interface ServerHtmlOptions extends ServerRenderOptions {
 export function renderTimelineHtml<T>(config: TimelineConfig<T>, options: ServerHtmlOptions = {}): string {
   const tag = options.tagName ?? TAG_NAME;
   const frame = serverFrame(config, options, true);
-  const attributes: Record<string, string> = { ...options.attributes };
+  // On the element, where the client reads it — not in the JSON, which any
+  // script could read, while the browser hides an attribute's nonce.
+  const attributes: Record<string, string> = { ...options.attributes, ...(config.nonce === undefined ? {} : { nonce: config.nonce }) };
   if (config.height !== undefined) {
     const style = attributes.style === undefined ? "" : `${attributes.style.replace(/;?\s*$/, "")};`;
     attributes.style = `${style}--tl-height:${String(config.height)}px`;
@@ -169,10 +182,11 @@ export function renderTimelineHtml<T>(config: TimelineConfig<T>, options: Server
   const printed = Object.entries(attributes)
     .map(([name, value]) => ` ${name}="${escapeAttr(value)}"`)
     .join("");
-  const state = serializeConfig({ ...config, domain: frame.domain });
+  const state = serializeConfig({ ...config, domain: frame.domain, nonce: undefined });
+  const nonce = config.nonce === undefined ? "" : ` nonce="${escapeAttr(config.nonce)}"`;
   return (
     `<${tag}${printed}>` +
-    `<template shadowrootmode="open" shadowrootdelegatesfocus><style>${HOST_CSS}</style>${frame.svg}${frame.groups}</template>` +
+    `<template shadowrootmode="open" shadowrootdelegatesfocus><style${nonce}>${HOST_CSS}</style>${frame.svg}${frame.groups}</template>` +
     `<script type="application/json" data-tl-config>${state}</script>` +
     `</${tag}>`
   );

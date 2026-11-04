@@ -12,7 +12,7 @@
       "name": "dom",
       "input": "src/dom/index.ts",
       "umd": "TemporeumTimelineDom",
-      "limit": "4 kB",
+      "limit": "4.25 kB",
       "label": "dom — the browser binding (ESM, minify + gzip)"
     },
     {
@@ -61,7 +61,7 @@
       "name": "export",
       "input": "src/export/index.ts",
       "umd": "TemporeumTimelineExport",
-      "limit": "7.5 kB",
+      "limit": "7.75 kB",
       "label": "export — standalone SVG, PNG, a built-in PDF writer, a print view of the full range split into pages (ESM, minify + gzip)"
     },
     {

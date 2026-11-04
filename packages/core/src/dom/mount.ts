@@ -86,6 +86,16 @@ export interface MountOptions {
    * have it claimed.
    */
   readonly hydrate?: boolean;
+  /**
+   * The nonce a scene's `<style>` carries where it has to be an element.
+   *
+   * A scene's stylesheet goes into `adoptedStyleSheets` of the container's
+   * document or shadow root, which a `style-src` without `'unsafe-inline'`
+   * allows. Only where that is not possible — a container not yet in a
+   * document, a browser without constructable stylesheets — is it written
+   * as a `<style>`, and under such a policy that one needs this nonce.
+   */
+  readonly nonce?: string;
 }
 
 /** What the mount did, cumulatively. The numbers a node budget is checked by. */
@@ -233,6 +243,9 @@ export function mountScene(container: Element | DocumentFragment, options: Mount
   /** The element last known by each item identity, wherever it is. */
   const homes = new Map<string, Element>();
   let root: Element | undefined;
+  /** Each `<style>`'s constructed sheet, with the text it holds, and where they are adopted. */
+  const sheets = new Map<Element, [CSSStyleSheet, string]>();
+  let sheetHost: DocumentOrShadowRoot | undefined;
   let created = 0;
   let reused = 0;
   let released = 0;
@@ -258,7 +271,11 @@ export function mountScene(container: Element | DocumentFragment, options: Mount
       return spare;
     }
     created += 1;
-    const element = doc.createElementNS(html ? XHTML_NS : SVG_NS, tag);
+    // A `<style>` whose sheet is adopted is an element of no namespace: one
+    // the browser does not read as a stylesheet, so a policy has nothing to
+    // block — not even an empty one.
+    const element = doc.createElementNS(html ? XHTML_NS : tag === "style" && sheetRoot() ? null : SVG_NS, tag);
+    if (tag === "style" && options.nonce !== undefined) element.setAttribute("nonce", options.nonce);
     shown.set(element, {
       tag,
       kind,
@@ -289,6 +306,9 @@ export function mountScene(container: Element | DocumentFragment, options: Mount
     for (const name of names) {
       attrs[name] = element.getAttribute(name) as string;
     }
+    // A policy without 'unsafe-inline' kept the server's `style` from
+    // applying; written through the CSSOM, it does.
+    if (attrs.style !== undefined) (element as HTMLElement).style.cssText = attrs.style;
     if (parts) writeParts(element, attrs.class);
     let text: Text | undefined;
     const children: Element[] = [];
@@ -346,6 +366,9 @@ export function mountScene(container: Element | DocumentFragment, options: Mount
   function release(element: Element): void {
     released += 1;
     const state = shown.get(element) as Shown;
+    // A `<style>` let go of stops applying, though its sheet stays adopted.
+    const held = sheets.get(element);
+    if (held !== undefined) held[0].replaceSync((held[1] = ""));
     // Whoever takes it next patches its children fully: what it showed is
     // still remembered, but not as anything a scene could hand back.
     state.childrenFrom = undefined;
@@ -399,7 +422,9 @@ export function mountScene(container: Element | DocumentFragment, options: Mount
       }
       const text = written(value);
       if (before === undefined || written(before) !== text) {
-        element.setAttribute(name, text);
+        // Through the CSSOM, which a `style-src` without 'unsafe-inline' allows.
+        if (name === "style") (element as HTMLElement).style.cssText = text;
+        else element.setAttribute(name, text);
       }
     }
     if (kept < state.defined) {
@@ -414,8 +439,41 @@ export function mountScene(container: Element | DocumentFragment, options: Mount
     state.defined = defined;
   }
 
+  /** The container's document or shadow root, where it takes constructed sheets. */
+  function sheetRoot(): (Node & DocumentOrShadowRoot) | undefined {
+    const host = container.getRootNode?.() as (Node & DocumentOrShadowRoot) | undefined;
+    return host?.adoptedStyleSheets && doc.defaultView?.CSSStyleSheet ? host : undefined;
+  }
+
+  /**
+   * A stylesheet into the container's document or shadow root, where it
+   * applies exactly as the `<style>` would, CSP or not. False where there is
+   * no such root — the `<style>` keeps its text.
+   */
+  function adoptSheet(element: Element, text: string): boolean {
+    const host = sheetRoot();
+    if (!host) return false;
+    let held = sheets.get(element);
+    if (!held) {
+      sheets.set(element, (held = [new (doc.defaultView as typeof globalThis).CSSStyleSheet(), ""]));
+      (sheetHost = host).adoptedStyleSheets = [...host.adoptedStyleSheets, held[0]];
+    }
+    if (held[1] !== text) held[0].replaceSync((held[1] = text));
+    return true;
+  }
+
+  /** Every sheet this mount adopted, out of its root. */
+  function dropSheets(): void {
+    const mine = [...sheets.values()].map((held) => held[0]);
+    if (sheetHost) sheetHost.adoptedStyleSheets = sheetHost.adoptedStyleSheets.filter((sheet) => !mine.includes(sheet));
+    sheets.clear();
+  }
+
   function patchText(element: Element, state: Shown, next: SceneElement): void {
-    const text = next.text ?? "";
+    let text = next.text ?? "";
+    // A server's `<style>` stays while it says the same — taking it over
+    // writes nothing — and goes once it would say something stale.
+    if (state.tag === "style" && adoptSheet(element, text) && state.text?.data !== text) text = "";
     if (text === "") {
       if (state.text !== undefined) {
         element.removeChild(state.text);
@@ -603,6 +661,7 @@ export function mountScene(container: Element | DocumentFragment, options: Mount
       frames += 1;
       if (root !== undefined && (shown.get(root) as Shown).tag !== scene.tag) {
         container.removeChild(root);
+        dropSheets();
         root = undefined;
       }
       if (root === undefined && options.hydrate === true) {
@@ -631,6 +690,7 @@ export function mountScene(container: Element | DocumentFragment, options: Mount
         container.removeChild(root);
       }
       root = undefined;
+      dropSheets();
       pool.clear();
       homes.clear();
       pooled = 0;

@@ -7,6 +7,8 @@ import type { Item } from "@temporeum/timeline-core";
 import "../src/define.js";
 import { createTimeline, defineTimelineElement, renderTimelineHtml, renderTimelineSvg, TemporeumTimelineElement, TIMELINE_EVENTS } from "../src/index.js";
 import type { Timeline, TimelineSnapshot } from "../src/index.js";
+import { HOST_CSS } from "../src/ssr.js";
+import { adoptedCss, sceneCss } from "./sheets.js";
 
 /**
  * `<temporeum-timeline>` and `createTimeline` in a real Chromium: a real
@@ -284,8 +286,9 @@ describe("<temporeum-timeline>", () => {
     await drawn(el);
     expect(el.timeline).not.toBe(first);
     expect(svgOf(el).querySelectorAll("[role=option]")).toHaveLength(3);
-    // The element's stylesheet was not added a second time.
-    expect([...(el.shadowRoot as ShadowRoot).children].filter((child) => child.localName === "style")).toHaveLength(1);
+    // The element's stylesheet was not added a second time — adopted, not a `<style>` (C1).
+    expect(adoptedCss(el.shadowRoot as ShadowRoot).filter((text) => text === HOST_CSS)).toHaveLength(1);
+    expect([...(el.shadowRoot as ShadowRoot).children].filter((child) => child.localName === "style")).toHaveLength(0);
   });
 
   it("takes properties before and after it is connected", async () => {
@@ -937,7 +940,7 @@ describe("createTimeline — core options the configuration passes on", () => {
     document.body.append(el);
     const timeline = createTimeline(el, { items, lanes, domain, touchAction: "cooperative" });
     await vi.waitFor(() => expect(timeline.result).toBeDefined());
-    expect(el.querySelector("style")?.textContent).toContain("touch-action:pan-y");
+    expect(sceneCss(el)).toContain("touch-action:pan-y");
     // A plain wheel over a cooperative timeline is the page's scroll, not a pan.
     const at = centre(el.querySelector('[data-tl-id="b"]') as Element);
     await commands.mouse([{ type: "move", x: at.x, y: at.y }, { type: "wheel", deltaY: 240 }]);
@@ -945,7 +948,7 @@ describe("createTimeline — core options the configuration passes on", () => {
     expect(timeline.getSnapshot().domain).toEqual(domain);
     timeline.update({ touchAction: "own" });
     timeline.flush();
-    expect(el.querySelector("style")?.textContent).toContain("touch-action:none");
+    expect(sceneCss(el)).toContain("touch-action:none");
     await commands.mouse([{ type: "move", x: at.x, y: at.y }, { type: "wheel", deltaY: 240 }]);
     await vi.waitFor(() => expect(timeline.getSnapshot().domain[0]).not.toBe(domain[0]));
     timeline.destroy();
@@ -1008,9 +1011,9 @@ describe("createTimeline — core options the configuration passes on", () => {
 
   it("the element reads touch-action from its attribute", async () => {
     const el = await place((each) => each.setAttribute("touch-action", "cooperative"));
-    expect(svgOf(el).querySelector("style")?.textContent).toContain("touch-action:pan-y");
+    expect(sceneCss(el.shadowRoot as ShadowRoot)).toContain("touch-action:pan-y");
     el.setAttribute("touch-action", "nonsense");
     el.timeline?.flush();
-    expect(svgOf(el).querySelector("style")?.textContent).toContain("touch-action:none");
+    expect(sceneCss(el.shadowRoot as ShadowRoot)).toContain("touch-action:none");
   });
 });

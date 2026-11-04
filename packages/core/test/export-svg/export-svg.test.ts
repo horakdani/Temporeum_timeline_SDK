@@ -234,46 +234,132 @@ describe("the PNG", () => {
 });
 
 describe("the print view", () => {
-  it("mounts one section a page with the sheet's stylesheet, replaces an earlier view, and leaves when asked", () => {
-    interface FakeNode {
-      attrs: Record<string, string>;
-      innerHTML: string;
-      attached: boolean;
-      setAttribute(name: string, value: string): void;
-      remove(): void;
+  /** Just enough of a document for the view: elements, attributes, children, inline style, adopted sheets. */
+  class FakeNode {
+    attrs: Record<string, string> = {};
+    children: (FakeNode | string)[] = [];
+    parent: FakeNode | undefined;
+    nonce = "";
+    textContent = "";
+    readonly style = { cssText: "" };
+    constructor(
+      readonly tag: string,
+      readonly ns: string,
+    ) {}
+    setAttribute(name: string, value: string) {
+      this.attrs[name] = value;
     }
-    const nodes: FakeNode[] = [];
+    append(...nodes: (FakeNode | string)[]) {
+      for (const node of nodes) {
+        if (typeof node !== "string") node.parent = this;
+        this.children.push(node);
+      }
+    }
+    prepend(node: FakeNode) {
+      node.parent = this;
+      this.children.unshift(node);
+    }
+    remove() {
+      if (this.parent !== undefined) this.parent.children = this.parent.children.filter((child) => child !== this);
+      this.parent = undefined;
+    }
+    /** Serialised, the way the markup used to be written. */
+    toString(): string {
+      const attrs = Object.entries(this.attrs).map(([name, value]) => ` ${name}="${value}"`).join("");
+      const style = this.style.cssText === "" ? "" : ` style="${this.style.cssText}"`;
+      const inner = this.children.map(String).join("") + this.textContent;
+      return `<${this.tag}${attrs}${style}${this.nonce === "" ? "" : ` nonce="${this.nonce}"`}>${inner}</${this.tag}>`;
+    }
+  }
+  class FakeSheet {
+    text = "";
+    replaceSync(text: string) {
+      this.text = text;
+    }
+  }
+  function fakeDocument(adopting: boolean) {
+    const body = new FakeNode("body", "");
     const doc = {
-      querySelector: (selector: string) => (selector === `body>[${PRINT_VIEW_ATTR}]` ? nodes.find((node) => node.attached) ?? null : null),
-      createElement: (): FakeNode => ({
-        attrs: {},
-        innerHTML: "",
-        attached: false,
-        setAttribute(name: string, value: string) {
-          this.attrs[name] = value;
-        },
-        remove() {
-          this.attached = false;
-        },
-      }),
-      body: {
-        append(node: FakeNode) {
-          node.attached = true;
-          nodes.push(node);
-        },
-      },
-    } as unknown as Document;
-    const paper = resolvePaper({ size: "a4" });
-    const scenes: SceneElement[] = [{ tag: "svg", attrs: { width: 10, height: 10 } }, { tag: "svg" }];
-    mountPrintView(doc, scenes, paper);
-    const remove = mountPrintView(doc, scenes, paper);
-    expect(nodes.map((node) => node.attached)).toEqual([false, true]);
-    const view = nodes[1];
-    expect(view?.attrs).toEqual({ [PRINT_VIEW_ATTR]: "" });
-    expect(view?.innerHTML).toBe(`<style>${printCss(paper)}</style><section data-tl-page="1"><svg width="10" height="10"/></section><section data-tl-page="2"><svg/></section>`);
+      body,
+      adoptedStyleSheets: adopting ? ([] as FakeSheet[]) : undefined,
+      defaultView: { CSSStyleSheet: FakeSheet },
+      createElement: (tag: string) => new FakeNode(tag, "html"),
+      createElementNS: (ns: string, tag: string) => new FakeNode(tag, ns),
+    };
+    return doc;
+  }
+  const paper = resolvePaper({ size: "a4" });
+  const scenes: SceneElement[] = [
+    {
+      tag: "svg",
+      attrs: { width: 10, height: 10 },
+      children: [
+        { tag: "style", text: ".tl-item{fill:red}" },
+        { tag: "path", attrs: { d: "M0 0", style: "stroke:blue" } },
+        { tag: "foreignObject", children: [{ tag: "div", text: "<b>not markup</b>" }] },
+      ],
+    },
+    { tag: "svg" },
+  ];
+
+  it("builds one section a page with the DOM, the stylesheets in one adopted sheet, and leaves when asked", () => {
+    const doc = fakeDocument(true);
+    mountPrintView(doc as unknown as Document, scenes, paper);
+    const remove = mountPrintView(doc as unknown as Document, scenes, paper);
+    expect(doc.body.children).toHaveLength(1);
+    const view = doc.body.children[0] as FakeNode;
+    expect(view.attrs).toEqual({ [PRINT_VIEW_ATTR]: "" });
+    expect(String(view)).toBe(
+      `<div ${PRINT_VIEW_ATTR}="">` +
+        `<section data-tl-page="1"><svg width="10" height="10"><path d="M0 0" style="stroke:blue"></path><foreignObject><div><b>not markup</b></div></foreignObject></svg></section>` +
+        `<section data-tl-page="2"><svg></svg></section></div>`,
+    );
+    // The text is a text node, not markup: the fake keeps it as the string it was given.
+    const foreign = ((view.children[0] as FakeNode).children[0] as FakeNode).children[1] as FakeNode;
+    expect(foreign.children[0]).toBeInstanceOf(FakeNode);
+    expect((foreign.children[0] as FakeNode).ns).toBe("http://www.w3.org/1999/xhtml");
+    expect((foreign.children[0] as FakeNode).children).toEqual(["<b>not markup</b>"]);
+    expect(((view.children[0] as FakeNode).children[0] as FakeNode).ns).toBe("http://www.w3.org/2000/svg");
+    expect((doc.adoptedStyleSheets ?? []).map((sheet) => sheet.text)).toEqual([printCss(paper) + ".tl-item{fill:red}"]);
     remove();
-    expect(view?.attached).toBe(false);
+    expect(doc.body.children).toEqual([]);
+    expect(doc.adoptedStyleSheets).toEqual([]);
     expect(printCss(paper)).toContain("@page{size:842pt 595pt;margin:36pt}");
     expect(printCss(paper)).toContain("width:1026px;height:697px");
+  });
+
+  it("without adopted sheets, writes one `<style>` first, with the nonce", () => {
+    const doc = fakeDocument(false);
+    mountPrintView(doc as unknown as Document, scenes, paper, "r4nd0m");
+    const view = doc.body.children[0] as FakeNode;
+    const style = view.children[0] as FakeNode;
+    expect(style.tag).toBe("style");
+    expect(style.nonce).toBe("r4nd0m");
+    expect(style.textContent).toBe(printCss(paper) + ".tl-item{fill:red}");
+    expect(view.children.filter((child) => (child as FakeNode).tag === "section")).toHaveLength(2);
+  });
+
+  it("leaves out an undefined attribute, keeps HTML below a foreignObject HTML, and takes a fallback view away without a nonce", () => {
+    const doc = { ...fakeDocument(true), defaultView: null };
+    const remove = mountPrintView(doc as unknown as Document, [
+      {
+        tag: "svg",
+        attrs: { width: 4, title: undefined },
+        children: [{ tag: "style" }, { tag: "foreignObject", children: [{ tag: "div", children: [{ tag: "span", text: "deep" }] }] }],
+      },
+    ], paper);
+    const view = doc.body.children[0] as FakeNode;
+    const style = view.children[0] as FakeNode;
+    // No constructable sheets in a document without a window: a `<style>`, without a nonce.
+    expect(style.tag).toBe("style");
+    expect(style.nonce).toBe("");
+    expect(style.textContent).toBe(printCss(paper));
+    const svg = (view.children[1] as FakeNode).children[0] as FakeNode;
+    expect(svg.attrs).toEqual({ width: "4" });
+    const span = ((svg.children[0] as FakeNode).children[0] as FakeNode).children[0] as FakeNode;
+    expect(span.ns).toBe("http://www.w3.org/1999/xhtml");
+    remove();
+    expect(doc.body.children).toEqual([]);
+    expect(doc.adoptedStyleSheets).toEqual([]);
   });
 });

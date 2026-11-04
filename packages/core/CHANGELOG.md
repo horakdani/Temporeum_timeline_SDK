@@ -17,6 +17,7 @@ The first release. From here on the package follows [semantic versioning](https:
 - Accessibility: a listbox with `aria-activedescendant`, a keyboard twin for every gesture, reduced motion. The timeline's focus ring is drawn inside its box, so a parent with `overflow: hidden` cannot cut it. In forced colours (Windows High Contrast) every token is a system colour, the plugins' shapes included, and what is selected or focused is the highlight, drawn wider. An item's dates are read with their era before year 1 ("15 Mar 44 BC", not "15 Mar 44"). The root's letter and word spacing carry a 1 ms transition, so a host learns from its `transitionend` that a reader's spacing (WCAG 1.4.12) came or went, and can measure its labels again.
 - Data: `createItemLoader`, windowed and aborting. Clusters at dense zoom, with `clusterZoom`.
 - Server rendering: `mountScene(container, { hydrate: true })` adopts a server-rendered `<svg>`.
+- A strict Content-Security-Policy and Trusted Types: `mountScene` puts a scene's `<style>` into the `adoptedStyleSheets` of the container's document or shadow root and writes `style` attributes through the CSSOM, so `style-src` needs no `'unsafe-inline'`; where a sheet cannot be adopted it writes the `<style>` with `MountOptions.nonce`. `mountPrintView` builds the print view with the DOM, not markup, its stylesheet adopted too (`nonce` as the fourth argument for the fallback).
 - `VERSION` is `"1.0.0"`.
 
 ### Entry points

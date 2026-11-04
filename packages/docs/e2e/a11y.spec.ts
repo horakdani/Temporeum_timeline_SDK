@@ -63,7 +63,13 @@ test.beforeAll(() => {
 /** Run axe on the page as it is now, and record the result for the gate. */
 async function scan(page: Page | Frame, info: TestInfo, state: string, control = false): Promise<AxeRun> {
   if (!(await page.evaluate(() => "axe" in window))) {
-    await page.addScriptTag({ path: AXE });
+    // A frame that requires Trusted Types (the Content Security Policy
+    // guide's example) refuses a script element's text: there axe's source
+    // is evaluated as it is, which no page policy governs.
+    await page.addScriptTag({ path: AXE }).catch(async (error: unknown) => {
+      if (!String(error).includes("TrustedScript")) throw error;
+      await page.evaluate(readFileSync(AXE, "utf8"));
+    });
   }
   const run = await page.evaluate(async (tags) => {
     const axe = (window as unknown as { axe: { run: (context: Document, options: unknown) => Promise<Record<string, unknown>>; version: string } }).axe;

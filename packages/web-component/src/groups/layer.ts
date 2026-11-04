@@ -32,6 +32,7 @@ import {
 } from "@temporeum/timeline-core/groups";
 import type { Group, GroupCommand, GroupRow } from "@temporeum/timeline-core/groups";
 
+import { adoptCss, writeAttr } from "../css.js";
 import type { TimelinePlugin } from "../plugins.js";
 
 /** Indent per level of nesting, in CSS pixels. */
@@ -164,9 +165,9 @@ function printAttrs(attrs: Readonly<Record<string, string>>): string {
 }
 
 /** The tree as markup, for the server. */
-export function groupHeaderMarkup(container: Readonly<Record<string, string>>, placements: readonly HeaderPlacement[]): string {
+export function groupHeaderMarkup(container: Readonly<Record<string, string>>, placements: readonly HeaderPlacement[], nonce?: string): string {
   return (
-    `<div${printAttrs(container)}><style>${groupHeaderCss()}</style>` +
+    `<div${printAttrs(container)}><style${nonce === undefined ? "" : ` nonce="${escape(nonce)}"`}>${groupHeaderCss()}</style>` +
     placements
       .map(
         (placement) =>
@@ -189,6 +190,8 @@ export interface GroupLayerHost {
   readonly direction?: () => "ltr" | "rtl";
   readonly toggle: (id: string, collapsed: boolean) => void;
   readonly command: (command: GroupCommand) => void;
+  /** The nonce of the headers' `<style>`, where it has to be one. */
+  readonly nonce?: string | undefined;
 }
 
 /** The live tree. */
@@ -218,11 +221,11 @@ export function mountGroupLayer(root: Element | DocumentFragment, doc: Document,
   let layer = (Array.from(root.children).find((child) => child.classList.contains("tl-groups")) as HTMLDivElement | undefined) ?? null;
   if (layer === null) {
     layer = doc.createElement("div");
-    const style = doc.createElement("style");
-    style.textContent = groupHeaderCss();
-    layer.append(style);
     root.append(layer);
   }
+  // A server's tree brings its `<style>`, which a strict policy may block:
+  // the sheet is adopted all the same.
+  const unstyle = adoptCss(layer, groupHeaderCss(), host.nonce);
   const element = layer;
   let focusedId: string | undefined;
   let drag:
@@ -336,9 +339,7 @@ export function mountGroupLayer(root: Element | DocumentFragment, doc: Document,
       return focusedId;
     },
     update(container, placements) {
-      for (const [name, value] of Object.entries(container)) {
-        if (element.getAttribute(name) !== value) element.setAttribute(name, value);
-      }
+      for (const [name, value] of Object.entries(container)) writeAttr(element, name, value);
       const existing = new Map<string, HTMLElement>();
       for (const node of Array.from(element.children) as HTMLElement[]) {
         if (node.dataset.tlGroup !== undefined) existing.set(node.dataset.tlGroup, node);
@@ -361,7 +362,7 @@ export function mountGroupLayer(root: Element | DocumentFragment, doc: Document,
         for (const [name, value] of Object.entries(placement.attrs)) {
           // The dragged header keeps the transform it is being dragged by.
           if (name === "style" && drag?.node === node) continue;
-          if (node.getAttribute(name) !== value) node.setAttribute(name, value);
+          writeAttr(node, name, value);
         }
         const [toggle, label] = node.children as unknown as [HTMLElement, HTMLElement];
         if (toggle.textContent !== placement.toggle) toggle.textContent = placement.toggle;
@@ -387,6 +388,7 @@ export function mountGroupLayer(root: Element | DocumentFragment, doc: Document,
       element.removeEventListener("focusin", onFocusIn);
       element.removeEventListener("click", stop);
       element.removeEventListener("dblclick", stop);
+      unstyle();
       element.remove();
     },
   };

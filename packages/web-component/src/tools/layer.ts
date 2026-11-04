@@ -54,12 +54,15 @@ import { DEFAULT_STRINGS, fill } from "@temporeum/timeline-core/words";
 
 import { hiddenDatesOf, sizesOf } from "../config.js";
 import type { FrameState, TimelineConfig } from "../config.js";
+import { adoptCss } from "../css.js";
 import type { TimelinePlugin } from "../plugins.js";
 
 /** What the layer asks of the timeline it is on. */
 export interface ToolsHost<T> {
   /** The element pointer and key events reach. */
   readonly element: HTMLElement;
+  /** The nonce of the layer's `<style>`, where it has to be one. */
+  readonly nonce?: string | undefined;
   orientation(): Orientation;
   /** The frame: its main and cross extents, and the axis band's. */
   frame(): { readonly mainSize: number; readonly crossSize: number; readonly axisSize: number; readonly band: number } | undefined;
@@ -154,11 +157,9 @@ export function mountToolsLayer<T>(root: Element | DocumentFragment, doc: Docume
   if (layer === null) {
     layer = doc.createElement("div");
     classed(layer, "tl-tools");
-    const style = doc.createElement("style");
-    style.textContent = css();
-    layer.append(style);
     root.append(layer);
   }
+  const unstyle = adoptCss(layer, css(), host.nonce);
   const element = layer;
   const bars = new Map<string, { readonly line: HTMLDivElement; readonly grip: HTMLDivElement }>();
   let minimapHit: HTMLDivElement | undefined;
@@ -748,6 +749,7 @@ export function mountToolsLayer<T>(root: Element | DocumentFragment, doc: Docume
       clearTimers();
       if (pressTimer !== undefined) clearTimeout(pressTimer);
       for (const [target, name, handler, captureIt] of listeners) target.removeEventListener(name, handler as EventListener, captureIt);
+      unstyle();
       element.remove();
     },
   };

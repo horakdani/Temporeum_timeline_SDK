@@ -1,0 +1,9 @@
+{
+  "title": "A timeline and a story under a strict policy",
+  "height": 420,
+  "expect": [
+    { "selector": "#timeline svg [role=option]", "min": 3 },
+    { "selector": "#story .tl-story-headline em", "min": 1 },
+    { "selector": "#result[data-violations=\"0\"]", "min": 1 }
+  ]
+}

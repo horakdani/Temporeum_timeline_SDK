@@ -43,7 +43,13 @@ import type { Item, Theme, ThemeSetting } from "@temporeum/timeline-core";
 import { storyDateText, storyMedia } from "@temporeum/timeline-core/story";
 import type { StoryData, StoryMedia, StoryMediaSource, StorySlide } from "@temporeum/timeline-core/story";
 
+import { adoptCss } from "./css.js";
 import type { Timeline } from "./timeline.js";
+import { trustedHtml } from "./trusted.js";
+import type { TrustedHtmlPolicy } from "./trusted.js";
+
+export { TRUSTED_TYPES_POLICY } from "./trusted.js";
+export type { TrustedHtmlPolicy } from "./trusted.js";
 
 /** The panel's words. `{index}`, `{count}`, `{provider}` and `{host}` are filled in. */
 export interface StoryStrings {
@@ -112,6 +118,12 @@ export interface StoryOptions<T = unknown> {
   readonly theme?: ThemeSetting;
   /** Called after every change of slide, whoever made it. */
   readonly onChange?: (change: StoryChange<T>) => void;
+  /**
+   * The Trusted Types policy the slides' HTML is parsed through, inertly, for
+   * a page whose `trusted-types` directive does not list the element's own,
+   * `temporeum-timeline`.
+   */
+  readonly trustedTypesPolicy?: TrustedHtmlPolicy;
 }
 
 /** A change of slide. */
@@ -163,16 +175,25 @@ function safeHref(href: string, base: string): string | undefined {
   }
 }
 
+/** How {@link storyHtml} reads. */
+export interface StoryHtmlOptions {
+  /** Keep only what goes in a heading. */
+  readonly inline?: boolean | undefined;
+  /** The host's Trusted Types policy for the parse; the element's own `temporeum-timeline` by default. */
+  readonly trustedTypesPolicy?: TrustedHtmlPolicy | undefined;
+}
+
 /**
  * The safe part of TimelineJS's HTML, rebuilt in the page's document: the
  * text, the emphasis, paragraphs, lists, quotes and links, without one
  * attribute of the source but a link's address, an abbreviation's title
  * and a time's datetime. `inline` keeps only what goes in a heading.
  */
-export function storyHtml(doc: Document, html: string, options: { readonly inline?: boolean | undefined } = {}): DocumentFragment {
+export function storyHtml(doc: Document, html: string, options: StoryHtmlOptions = {}): DocumentFragment {
   const inline = options.inline === true;
   const template = doc.createElement("template");
-  template.innerHTML = html;
+  // An inert parse: a template's content runs nothing (C4).
+  template.innerHTML = trustedHtml(doc.defaultView, html, options.trustedTypesPolicy);
   const out = doc.createDocumentFragment();
   const copy = (from: Node, to: Node): void => {
     for (const node of from.childNodes) {
@@ -295,8 +316,6 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
     box.dataset.tlTheme = custom ? "custom" : resolved.name;
     if (custom) box.style.cssText = tokens(resolved);
   }
-  const style = doc.createElement("style");
-  style.textContent = storyCss();
   const slideBox = doc.createElement("div");
   slideBox.className = "tl-story-slide";
   slideBox.setAttribute("role", "group");
@@ -321,8 +340,9 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
   const said = doc.createElement("div");
   said.className = "tl-story-said";
   said.setAttribute("aria-live", "polite");
-  box.append(style, slideBox, nav, said);
+  box.append(slideBox, nav, said);
   container.append(box);
+  const unstyle = adoptCss(box, storyCss(), timeline.nonce);
 
   interface Entry {
     readonly item: Item<T> | undefined;
@@ -347,7 +367,7 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
   function plainHeadline(slide: StorySlide): string {
     if (slide.headline === undefined) return "";
     const holder = doc.createElement("div");
-    holder.append(storyHtml(doc, slide.headline, { inline: true }));
+    holder.append(storyHtml(doc, slide.headline, { inline: true, trustedTypesPolicy: options.trustedTypesPolicy }));
     return holder.textContent.trim();
   }
 
@@ -438,11 +458,11 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
     if (media.caption !== undefined || media.credit !== undefined) {
       const caption = doc.createElement("figcaption");
       caption.className = "tl-story-caption";
-      if (media.caption !== undefined) caption.append(storyHtml(doc, media.caption));
+      if (media.caption !== undefined) caption.append(storyHtml(doc, media.caption, { trustedTypesPolicy: options.trustedTypesPolicy }));
       if (media.credit !== undefined) {
         const credit = doc.createElement("span");
         credit.className = "tl-story-credit";
-        credit.append(storyHtml(doc, media.credit, { inline: true }));
+        credit.append(storyHtml(doc, media.credit, { inline: true, trustedTypesPolicy: options.trustedTypesPolicy }));
         caption.append(credit);
       }
       figure.append(caption);
@@ -482,13 +502,13 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
     if (slide.headline !== undefined && slide.headline !== "") {
       const heading = doc.createElement(`h${String(level)}`);
       heading.className = "tl-story-headline";
-      heading.append(storyHtml(doc, slide.headline, { inline: true }));
+      heading.append(storyHtml(doc, slide.headline, { inline: true, trustedTypesPolicy: options.trustedTypesPolicy }));
       body.append(heading);
     }
     if (slide.text !== undefined && slide.text !== "") {
       const text = doc.createElement("div");
       text.className = "tl-story-text";
-      text.append(storyHtml(doc, slide.text));
+      text.append(storyHtml(doc, slide.text, { trustedTypesPolicy: options.trustedTypesPolicy }));
       body.append(text);
     }
     const media = slide.media === undefined ? undefined : mediaOf(slide.media, headlineText);
@@ -712,6 +732,7 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
       stopItems();
       if (prefix !== undefined) win?.removeEventListener("hashchange", onHash);
       box.removeEventListener("keydown", onKey);
+      unstyle();
       box.remove();
     },
   };

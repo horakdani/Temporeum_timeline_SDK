@@ -104,6 +104,7 @@ const PROPS: { readonly [K in keyof TimelineProps]-?: { readonly type: unknown; 
   editing: ANY,
   defaultSelectedIds: ANY,
   instanceId: ANY,
+  nonce: ANY,
   measureText: ANY,
   sceneSpace: { type: [Boolean, String], default: undefined },
   hiddenDates: ANY,

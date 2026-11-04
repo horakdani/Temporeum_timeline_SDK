@@ -9,6 +9,7 @@ import { groupsPlugin } from "../src/groups.js";
 import { itemsPlugin } from "../src/items.js";
 import { mountTaskGrid } from "../src/task-grid.js";
 import { toolsPlugin } from "../src/tools.js";
+import { sceneCss } from "./sheets.js";
 
 registerPlugin(itemsPlugin);
 registerPlugin(groupsPlugin);
@@ -83,7 +84,7 @@ describe("styling the custom element from the page", () => {
     expect(fill(rectOf(root, "b"))).toBe("rgb(250, 200, 220)");
     expect(fill(root.querySelector(".tl-surface") as Element)).toBe("rgb(1, 2, 3)");
     el.setAttribute("theme", "dark");
-    await vi.waitFor(() => expect(root.querySelector("svg style")?.textContent).toMatch(/^:host\{--tl-surface:#14171c/));
+    await vi.waitFor(() => expect(sceneCss(root)).toMatch(/^:host\{--tl-surface:#14171c/));
     expect(fill(rectOf(root, "b"))).toBe("rgb(250, 200, 220)");
     // Without a rule of the page's, the theme's own.
     el.classList.remove("pink");
@@ -120,7 +121,7 @@ describe("styling the custom element from the page", () => {
 
   it("declares the tokens on :host for both schemes when the theme follows the platform, a scoped stylesheet's too", async () => {
     const el = await place({ instanceId: "plan" });
-    const css = (el.shadowRoot as ShadowRoot).querySelector("svg style")?.textContent ?? "";
+    const css = sceneCss(el.shadowRoot as ShadowRoot);
     expect(css).toMatch(/^:host\{--tl-surface:#ffffff;/);
     expect(css).toContain("@media (prefers-color-scheme:dark){:host{--tl-surface:#14171c;");
     // The rest of the stylesheet is the root's.
@@ -157,7 +158,8 @@ describe("styling the custom element from the page", () => {
   it("leaves a timeline in the page's own DOM without parts: the page reaches its classes", async () => {
     const { element } = await plain();
     expect(element.querySelector("[part]")).toBeNull();
-    expect(element.querySelector("style")?.textContent).not.toContain(":host");
+    expect(sceneCss(element)).toContain(".tl-item{");
+    expect(sceneCss(element)).not.toContain(":host");
   });
 });
 

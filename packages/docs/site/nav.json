@@ -32,6 +32,7 @@
       "guides/clustering",
       "guides/theming",
       "guides/server-rendering",
+      "guides/content-security-policy",
       "guides/performance",
       "guides/core-engine"
     ]

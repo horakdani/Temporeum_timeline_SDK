@@ -11,6 +11,7 @@ import { groupsPlugin } from "../src/groups.js";
 import { intlPlugin } from "../src/intl.js";
 import { itemsPlugin } from "../src/items.js";
 import "../src/define.js";
+import { normalisedHtml } from "./sheets.js";
 
 // The parts on entry points of their own (P29, P30), as a page registers them.
 registerPlugin(groupsPlugin, itemsPlugin, intlPlugin);
@@ -131,8 +132,9 @@ describe("the group tree", () => {
     expect(server.groups).toContain('role="tree"');
     const { element } = await mount(config);
     const parsed = new DOMParser().parseFromString(`<div>${server.groups}</div>`, "text/html");
-    const serverHeaders = [...parsed.querySelectorAll("[role=treeitem]")].map((node) => node.outerHTML);
-    expect(headers(element).map((node) => node.outerHTML)).toEqual(serverHeaders);
+    // A `style` as the CSSOM writes it on both sides: the client writes it through the CSSOM (C3).
+    const serverHeaders = [...parsed.querySelectorAll("[role=treeitem]")].map(normalisedHtml);
+    expect(headers(element).map(normalisedHtml)).toEqual(serverHeaders);
     expect(renderTimelineHtml(config)).toContain('class="tl-groups');
   });
 });
@@ -248,7 +250,7 @@ describe("the group tree at its edges", () => {
     const tree = element.querySelector(".tl-groups") as HTMLElement;
     expect(tree.classList.contains("tl-groups--vertical")).toBe(true);
     expect(tree.getAttribute("data-tl-theme")).toBe("custom");
-    expect(tree.getAttribute("style")).toContain("left:");
+    expect(tree.style.left).not.toBe("");
     const solo = element.querySelector('[data-tl-group="solo"]') as HTMLElement;
     expect(solo.className).toBe("tl-group hot");
     expect(solo.textContent).toContain("solo");

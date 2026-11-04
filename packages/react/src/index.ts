@@ -136,6 +136,7 @@ const CONFIG: { readonly [K in keyof TimelineComponentConfig]-?: true } = {
   editing: true,
   defaultSelectedIds: true,
   instanceId: true,
+  nonce: true,
   measureText: true,
   sceneSpace: true,
   hiddenDates: true,

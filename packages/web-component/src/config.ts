@@ -263,6 +263,16 @@ export interface TimelineConfig<T = unknown> {
    */
   readonly instanceId?: string | undefined;
   /**
+   * The nonce of the `<style>`s the timeline writes, for a
+   * Content-Security-Policy without `'unsafe-inline'`. In a browser the
+   * stylesheets go into `adoptedStyleSheets`, which such a policy allows, and
+   * no `<style>` is written; this is for the rest — a browser without
+   * constructable stylesheets — and for the server's markup, whose `<style>`s
+   * carry it. On the element it is the `nonce` attribute. Read once, when the
+   * timeline is created.
+   */
+  readonly nonce?: string | undefined;
+  /**
    * Width of a line of label text. In a browser the instance measures with
    * the page's own font; the server, which has no font, estimates — and the
    * first client frame patches the labels that came out differently.

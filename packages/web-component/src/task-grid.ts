@@ -31,6 +31,7 @@ import type { Item, KeySample, Lane, LayoutItem, Orientation, Theme, ThemeSettin
 import { gridKeyStep, resolveGridKey, taskGridRows } from "@temporeum/timeline-core/gantt";
 import type { TaskGridRow } from "@temporeum/timeline-core/gantt";
 
+import { adoptCss } from "./css.js";
 import type { Timeline } from "./timeline.js";
 
 /** What a column is handed for one row. */
@@ -179,8 +180,6 @@ export function mountTaskGrid<T>(container: HTMLElement, timeline: Timeline<T>, 
   grid.setAttribute("role", "grid");
   grid.setAttribute("aria-label", options.label ?? fill(resolveStrings(options.strings).tasks, {}, options.locale));
   grid.setAttribute("aria-colcount", String(columns.length));
-  const style = doc.createElement("style");
-  style.textContent = taskGridCss();
   const head = doc.createElement("div");
   head.className = "tl-grid-head";
   head.setAttribute("role", "row");
@@ -196,8 +195,9 @@ export function mountTaskGrid<T>(container: HTMLElement, timeline: Timeline<T>, 
   const body = doc.createElement("div");
   body.className = "tl-grid-body";
   body.setAttribute("role", "rowgroup");
-  grid.append(style, head, body);
+  grid.append(head, body);
   container.append(grid);
+  const unstyle = adoptCss(grid, taskGridCss(), timeline.nonce);
 
   /** Rows in the document, by position among all rows. */
   const shown = new Map<number, HTMLElement>();
@@ -395,6 +395,7 @@ export function mountTaskGrid<T>(container: HTMLElement, timeline: Timeline<T>, 
       grid.removeEventListener("keydown", onKey);
       grid.removeEventListener("click", onClick);
       grid.removeEventListener("wheel", onWheel);
+      unstyle();
       grid.remove();
       shown.clear();
     },

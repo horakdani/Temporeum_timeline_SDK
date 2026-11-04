@@ -28,6 +28,7 @@ import type { BacklogTask } from "@temporeum/timeline-core/resources";
 import { resolveStrings, sayIn } from "@temporeum/timeline-core/words";
 import type { Strings } from "@temporeum/timeline-core/words";
 
+import { adoptCss } from "./css.js";
 import type { Timeline } from "./timeline.js";
 
 /** How a backlog is set up. */
@@ -143,8 +144,6 @@ export function mountBacklog<T>(container: HTMLElement, timeline: Timeline<T>, o
     box.dataset.tlTheme = custom ? "custom" : resolved.name;
     if (custom) box.style.cssText = tokens(resolved);
   }
-  const style = doc.createElement("style");
-  style.textContent = backlogCss();
   const list = doc.createElement("ul");
   list.className = "tl-backlog-list";
   list.setAttribute("role", "listbox");
@@ -153,8 +152,9 @@ export function mountBacklog<T>(container: HTMLElement, timeline: Timeline<T>, o
   const empty = doc.createElement("div");
   empty.className = "tl-backlog-empty";
   empty.textContent = options.empty ?? say?.("backlogEmpty") ?? "Nothing left to schedule";
-  box.append(style, list, empty);
+  box.append(list, empty);
   container.append(box);
+  const unstyle = adoptCss(box, backlogCss(), timeline.nonce);
 
   let all = options.tasks;
   let shown: readonly BacklogTask<T>[] = [];
@@ -307,6 +307,7 @@ export function mountBacklog<T>(container: HTMLElement, timeline: Timeline<T>, o
       destroyed = true;
       stop();
       ghost?.remove();
+      unstyle();
       box.remove();
     },
   };

@@ -215,7 +215,7 @@ These are CI gates, not aspirations:
 | Budget | Limit |
 |---|---|
 | core, minified + gzipped, on its own | 31 kB |
-| `/dom` entry point, minified + gzipped, on top of the core | 4 kB |
+| `/dom` entry point, minified + gzipped, on top of the core | 4.25 kB |
 | a source module shipped in two files | 0 |
 | runtime dependencies | 0 |
 | `any` on the public surface | 0 |

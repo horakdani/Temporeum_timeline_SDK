@@ -34,6 +34,8 @@ import {
 } from "@temporeum/timeline-core/calendar";
 import type { CalendarEvent, CalendarKeyAction, DaysLayout } from "@temporeum/timeline-core/calendar";
 import { mountScene } from "@temporeum/timeline-core/dom";
+
+import { adoptCss } from "./css.js";
 import { resolveStrings, sayIn } from "@temporeum/timeline-core/words";
 import type { Strings } from "@temporeum/timeline-core/words";
 
@@ -48,6 +50,12 @@ export interface CalendarViewOptions<T = unknown> {
   /** Any moment of the period to show. Now by default. */
   readonly date?: TimeInput;
   readonly timeZone?: string;
+  /**
+   * The nonce of the view's `<style>`s, for a Content-Security-Policy without
+   * `'unsafe-inline'` in a browser that cannot adopt a constructed sheet.
+   * Where it can, no `<style>` is written. Read once, when the view mounts.
+   */
+  readonly nonce?: string;
   /** Dates and names in this locale. `"en"` by default. */
   readonly locale?: string;
   /** 1 = Monday (the default) to 7 = Sunday. */
@@ -141,8 +149,6 @@ export function mountCalendarView<T = unknown>(container: HTMLElement, initial: 
 
   const box = doc.createElement("div");
   box.className = "tl-cal-view";
-  const style = doc.createElement("style");
-  style.textContent = calendarViewCss();
   const bar = doc.createElement("div");
   bar.className = "tl-cal-bar";
   const previousButton = doc.createElement("button");
@@ -154,9 +160,10 @@ export function mountCalendarView<T = unknown>(container: HTMLElement, initial: 
   rangeText.setAttribute("aria-live", "polite");
   bar.append(previousButton, todayButton, nextButton, rangeText);
   const host = doc.createElement("div");
-  box.append(style, bar, host);
+  box.append(bar, host);
   container.append(box);
-  const mount = mountScene(host);
+  const unstyle = adoptCss(box, calendarViewCss(), initial.nonce);
+  const mount = mountScene(host, initial.nonce === undefined ? {} : { nonce: initial.nonce });
 
   function emit<K extends keyof CalendarViewEventMap<T>>(event: K, payload: CalendarViewEventMap<T>[K]): void {
     for (const handler of listeners.get(event) ?? []) (handler as (value: CalendarViewEventMap<T>[K]) => void)(payload);
@@ -344,6 +351,7 @@ export function mountCalendarView<T = unknown>(container: HTMLElement, initial: 
       destroyed = true;
       resize?.disconnect();
       mount.destroy();
+      unstyle();
       box.remove();
     },
   };

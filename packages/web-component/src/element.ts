@@ -28,6 +28,7 @@
 import type { DensitySetting, Lane, OrientationSetting, PackMode, RenderHooks, ThemeSetting, TimeInput } from "@temporeum/timeline-core";
 
 import { sameValue } from "./config.js";
+import { adoptCss } from "./css.js";
 import type { TimelineConfig, TimelineUpdate } from "./config.js";
 import { HOST_CSS, TAG_NAME } from "./ssr.js";
 import { createTimeline, TIMELINE_EVENTS } from "./timeline.js";
@@ -398,13 +399,14 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     // Delegated: `element.focus()`, a label's click and the tab order reach
     // the timeline inside.
     const root = existing ?? this.attachShadow({ mode: "open", delegatesFocus: true });
-    if (existing === null || existing.querySelector("style") === null) {
-      const style = this.ownerDocument.createElement("style");
-      style.textContent = HOST_CSS;
-      root.prepend(style);
-    }
     this.#heightStyle(this.height);
-    const config = { ...scriptConfig(this), ...this.#config(), ...this.#props } as TimelineConfig<T>;
+    let config = { ...scriptConfig(this), ...this.#config(), ...this.#props } as TimelineConfig<T>;
+    // The `nonce` attribute: the browser hides its value from the attribute
+    // once the element is in the document, and keeps it in the property.
+    if (config.nonce === undefined && this.nonce) config = { ...config, nonce: this.nonce };
+    // Adopted, or — where it cannot be — a `<style>` with the nonce, unless
+    // the server's is there (C1).
+    const unstyle = adoptCss(root, HOST_CSS, config.nonce);
     const timeline = createTimeline<T>(this, config, { root, hydrate: existing !== null });
     this.#timeline = timeline;
     this.#unsubscribe = EVENTS.map((type) =>
@@ -412,6 +414,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
         this.dispatchEvent(new CustomEvent(eventNameOf(type), { detail, bubbles: true, composed: true }));
       }),
     );
+    this.#unsubscribe.push(unstyle);
   }
 
   disconnectedCallback(): void {

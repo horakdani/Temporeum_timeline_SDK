@@ -254,3 +254,28 @@ describe("eventNameOf", () => {
     expect(eventNameOf("timeBarMoved")).toBe("time-bar-moved");
   });
 });
+
+describe("the server's markup under a strict Content-Security-Policy (C2)", () => {
+  it("gives every <style> the nonce, puts it on the element, and keeps it out of the JSON", async () => {
+    const { registerPlugin } = await import("../src/index.js");
+    const { groupsPlugin } = await import("../src/groups.js");
+    registerPlugin(groupsPlugin);
+    const config = { items, lanes, domain: [T0, T0 + 14 * DAY] as const, nonce: "r4nd0m", groups: [{ id: "l1", label: "Work" }, { id: "l2", label: "Delivery" }] };
+    const html = renderTimelineHtml(config);
+    const styles = html.match(/<style[^>]*>/g) ?? [];
+    // The host's, the drawing's, the group tree's.
+    expect(styles.length).toBeGreaterThanOrEqual(3);
+    for (const style of styles) expect(style).toBe('<style nonce="r4nd0m">');
+    expect(html).toMatch(/^<temporeum-timeline nonce="r4nd0m"/);
+    const json = /<script type="application\/json" data-tl-config>(.*?)<\/script>/.exec(html)?.[1] ?? "";
+    expect(json).not.toContain("r4nd0m");
+    const frame = renderTimelineSvg(config);
+    for (const style of [...(frame.svg + frame.groups).matchAll(/<style[^>]*>/g)].map((match) => match[0])) expect(style).toBe('<style nonce="r4nd0m">');
+  });
+
+  it("escapes a nonce, and writes none without one", () => {
+    expect(renderTimelineHtml({ items, nonce: '"><script>' })).not.toContain("<script>\"");
+    expect(renderTimelineHtml({ items, nonce: '"><script>' })).toContain('nonce="&quot;&gt;&lt;script&gt;"');
+    expect(renderTimelineHtml({ items })).not.toContain("nonce");
+  });
+});

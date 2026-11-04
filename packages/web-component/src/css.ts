@@ -1,0 +1,72 @@
+/**
+ * Styles under a strict Content-Security-Policy (C1, C3).
+ *
+ * A `style-src` without `'unsafe-inline'` blocks the text of a `<style>` and
+ * a `style` attribute written with `setAttribute`, and allows the two things
+ * this file uses instead: a constructed sheet in the `adoptedStyleSheets` of
+ * the document or shadow root, and the CSSOM (`element.style`). A sheet
+ * adopted there applies exactly as the `<style>` did, which reached the
+ * whole of the same root too.
+ *
+ * Where there is no such root — a box not yet in a document, a browser
+ * without constructable stylesheets — the `<style>` is written as before,
+ * with the host's nonce, which such a policy needs.
+ */
+
+/** Each root's sheets by their text, with how many holders keep each. */
+const held = new WeakMap<Node, Map<string, [CSSStyleSheet, number]>>();
+
+/**
+ * A stylesheet for what `parent` is drawn in. Returns its release: the last
+ * holder of a sheet takes it out of the root again.
+ *
+ * Without a root that adopts, a `<style>` goes first into `parent` — unless
+ * one is there already, as in what a server rendered.
+ */
+export function adoptCss(parent: Element | DocumentFragment, css: string, nonce?: string): () => void {
+  const root = parent.getRootNode() as Node & Partial<DocumentOrShadowRoot>;
+  const doc = parent.ownerDocument as Document;
+  const Sheet = doc.defaultView?.CSSStyleSheet;
+  if (root.adoptedStyleSheets === undefined || Sheet === undefined) {
+    if (Array.from(parent.children).some((child) => child.localName === "style")) return () => undefined;
+    const style = doc.createElement("style");
+    if (nonce !== undefined) style.nonce = nonce;
+    style.textContent = css;
+    parent.prepend(style);
+    return () => style.remove();
+  }
+  let sheets = held.get(root);
+  if (sheets === undefined) held.set(root, (sheets = new Map()));
+  let entry = sheets.get(css);
+  if (entry === undefined) {
+    const sheet = new Sheet();
+    sheet.replaceSync(css);
+    sheets.set(css, (entry = [sheet, 0]));
+  }
+  const mine = entry;
+  if (mine[1]++ === 0) root.adoptedStyleSheets = [...root.adoptedStyleSheets, mine[0]];
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    if (--mine[1] === 0) root.adoptedStyleSheets = (root.adoptedStyleSheets as CSSStyleSheet[]).filter((sheet) => sheet !== mine[0]);
+  };
+}
+
+/** The `style` each element was last given here: the CSSOM reads back a normalised one. */
+const styles = new WeakMap<Element, string>();
+
+/**
+ * An attribute, written only when it changed; a `style` through the CSSOM.
+ *
+ * A server's `style` that the policy kept from applying is written once
+ * more, on the first patch, and from then on it applies.
+ */
+export function writeAttr(node: HTMLElement, name: string, value: string): void {
+  if (name !== "style") {
+    if (node.getAttribute(name) !== value) node.setAttribute(name, value);
+  } else if (styles.get(node) !== value) {
+    node.style.cssText = value;
+    styles.set(node, value);
+  }
+}

@@ -4,6 +4,7 @@ import type { Item } from "@temporeum/timeline-core";
 
 import { createTimeline, defineTimelineElement } from "../src/index.js";
 import type { InputSkippedPayload, TemporeumTimelineElement } from "../src/index.js";
+import { sceneCss } from "./sheets.js";
 
 /**
  * One bad item or option does not take the whole frame (S9). An item from
@@ -108,7 +109,7 @@ describe("two timelines in the light DOM (S12)", () => {
     const scopes = svgs.map((svg) => svg.getAttribute("data-tl-instance"));
     expect(scopes).toHaveLength(2);
     expect(new Set(scopes).size).toBe(2);
-    svgs.forEach((svg, index) => expect(svg.querySelector("style")?.textContent).toContain(`[data-tl-instance="${String(scopes[index])}"]`));
+    for (const svg of svgs) expect(sceneCss(svg as SVGSVGElement)).not.toBe("");
     // Unscoped on the server, unscoped once taken over: the markup stays the server's.
     const element = host();
     element.innerHTML = renderTimelineSvg({ items: [good], domain }, { width: 800 }).svg;

@@ -30,6 +30,7 @@ The packages in this repository: `@temporeum/timeline-core`, `@temporeum/timelin
 
 - **Injection.** Item labels, lane labels, tooltips and accessible names are text, never HTML. A way to make the timeline run markup or script from data it was given is a vulnerability.
 - **Server rendering.** `renderTimelineHtml` and `renderTimelineSvg` escape everything they write. A way to break out of the markup they produce is a vulnerability.
+- **Content Security Policy and Trusted Types.** The timeline runs under `style-src 'self'` and `require-trusted-types-for 'script'`, with no `'unsafe-inline'` and no `'unsafe-eval'` ([the policy it needs](packages/docs/site/pages/guides/content-security-policy.md)). A way to make it need a weaker policy, or to make its `temporeum-timeline` Trusted Types policy pass markup anywhere but into its own inert parse, is a vulnerability.
 - **Denial of service.** Input that makes layout or rendering hang or grow without bound counts, as long as the input size is realistic.
 
 The documentation site's live examples run in a sandboxed iframe. The playground running code you typed yourself is not a vulnerability.

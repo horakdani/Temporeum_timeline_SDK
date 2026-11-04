@@ -383,6 +383,12 @@ export interface Timeline<T = unknown> {
   /** Draw now instead of on the next animation frame. */
   flush(): void;
   readonly destroyed: boolean;
+  /**
+   * The `nonce` it was created with (`config.nonce`), for the `<style>`s of
+   * what is mounted beside it — `mountStory`, `mountBacklog` and
+   * `mountTaskGrid` take it from here.
+   */
+  readonly nonce: string | undefined;
   destroy(): void;
 }
 
@@ -693,7 +699,8 @@ export function createTimeline<T = unknown>(
   // In a shadow root the page styles the drawing through `::part()` and the
   // tokens it sets on the element: the nodes carry their classes as parts,
   // and the stylesheet declares the tokens on `:host`.
-  const mount: SceneMount = mountScene(options.root ?? element, { hydrate: options.hydrate === true, parts: inShadow });
+  const nonce = config.nonce;
+  const mount: SceneMount = mountScene(options.root ?? element, { hydrate: options.hydrate === true, parts: inShadow, ...(nonce === undefined ? {} : { nonce }) });
   const measured =
     options.measureText === false
       ? undefined
@@ -874,6 +881,7 @@ export function createTimeline<T = unknown>(
       orientation: () => view?.orientation ?? "horizontal",
       crossOffset: () => machine.crossOffset,
       direction: () => direction,
+      nonce,
       toggle: (id, next) => {
         instance.toggleGroup(id, next);
       },
@@ -1285,6 +1293,7 @@ export function createTimeline<T = unknown>(
 
   const toolsHost: ToolsHost<T> = {
     element,
+    nonce,
     orientation: () => view?.orientation ?? "horizontal",
     frame: () => (view === undefined ? undefined : { mainSize: view.mainSize, crossSize: view.crossSize, axisSize: metricsOf(view).axisSize, band: view.band }),
     domain: () => domain,
@@ -1900,6 +1909,9 @@ export function createTimeline<T = unknown>(
     },
     get destroyed() {
       return destroyed;
+    },
+    get nonce() {
+      return nonce;
     },
     destroy() {
       if (destroyed) return;

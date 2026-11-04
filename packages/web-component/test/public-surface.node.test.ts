@@ -18,7 +18,7 @@ const SURFACE: Readonly<Record<string, readonly string[]>> = {
   groups: ["groupsPlugin"],
   items: ["itemsPlugin"],
   intl: ["intlPlugin"],
-  story: ["STORY_STRINGS", "mountStory", "storyCss", "storyHtml"],
+  story: ["STORY_STRINGS", "TRUSTED_TYPES_POLICY", "mountStory", "storyCss", "storyHtml"],
 };
 
 /** What the review of 2026-11-03 found exported for the tests only. None of it may come back. */
