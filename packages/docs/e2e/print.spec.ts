@@ -59,13 +59,15 @@ async function sections(page: Page): Promise<Section[]> {
 
 /** Each page's text, as pdf.js reads it. */
 async function pdfText(bytes: Uint8Array): Promise<string[][]> {
-  const doc = await getDocument({ data: bytes.slice(), stopAtErrors: true, standardFontDataUrl: STANDARD_FONTS, verbosity: 0 }).promise;
+  // pdf.js 6 destroys through the loading task; the document has no destroy() of its own.
+  const task = getDocument({ data: bytes.slice(), stopAtErrors: true, standardFontDataUrl: STANDARD_FONTS, verbosity: 0 });
+  const doc = await task.promise;
   const pages: string[][] = [];
   for (let at = 1; at <= doc.numPages; at += 1) {
     const content = await (await doc.getPage(at)).getTextContent();
     pages.push(content.items.map((item) => ("str" in item ? item.str.trim() : "")).filter((text) => text !== ""));
   }
-  await doc.destroy();
+  await task.destroy();
   return pages;
 }
 

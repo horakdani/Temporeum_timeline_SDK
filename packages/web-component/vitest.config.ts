@@ -44,6 +44,14 @@ const mouse: BrowserCommand<[steps: readonly MouseStep[]]> = async (context, ste
  *
  * Coverage is the union of the two, with a 90% threshold per file, as in the core.
  */
+/**
+ * The browser suite's engine: Chromium unless TL_BROWSER names another
+ * (`firefox`, `webkit`) — scripts/sdk_test_browsers.mjs runs the suite in all
+ * three. Only Chromium has a headless shell.
+ */
+const engine = (process.env.TL_BROWSER ?? "chromium") as "chromium" | "firefox" | "webkit";
+if (!["chromium", "firefox", "webkit"].includes(engine)) throw new Error(`TL_BROWSER: no such engine: ${engine}`);
+
 export default defineConfig({
   test: {
     projects: [
@@ -58,11 +66,14 @@ export default defineConfig({
         test: {
           name: "browser",
           include: ["test/**/*.browser.test.ts"],
+          // Playwright's Firefox and WebKit run the files' frames in one page,
+          // with one mouse: two files dragging at once move each other's pointer.
+          fileParallelism: engine === "chromium",
           browser: {
             enabled: true,
             headless: true,
-            provider: playwright({ launchOptions: { channel: "chromium-headless-shell" } }),
-            instances: [{ browser: "chromium", viewport: { width: 1200, height: 900 } }],
+            provider: playwright(engine === "chromium" ? { launchOptions: { channel: "chromium-headless-shell" } } : {}),
+            instances: [{ browser: engine, viewport: { width: 1200, height: 900 } }],
             commands: { mouse },
             screenshotFailures: false,
           },

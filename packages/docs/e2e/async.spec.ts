@@ -55,6 +55,14 @@ interface Report {
 const report = (page: Page): Promise<Report> =>
   page.evaluate(() => (window as unknown as { tl: { report(): Report } }).tl.report());
 
+/** Every request answered or rejected — the late ones of a server that cannot cancel too — and a frame drawn after the last. */
+async function settled(page: Page): Promise<void> {
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { tl: { requests: { settled: boolean }[] } }).tl.requests.every((request) => request.settled)), { timeout: 15_000 })
+    .toBe(true);
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+}
+
 async function idle(page: Page): Promise<void> {
   await expect
     .poll(() => page.evaluate(() => (window as unknown as { tl: { loader: { busy: boolean } } }).tl.loader.busy), { timeout: 15_000 })
@@ -95,7 +103,7 @@ for (const mode of ["abort", "ignore-abort"] as const) {
     await fastZoom(page, 24);
     await idle(page);
     // In the end every request settles, the late ones too.
-    await page.waitForTimeout(700);
+    await settled(page);
     const result = await report(page);
     record(mode, result);
     expect(result.leaks).toEqual([]);
@@ -113,7 +121,7 @@ test("[claim:browser-negative-control] NEGATIVE CONTROL: the meter finds a leak 
   await idle(page);
   await fastZoom(page, 24);
   await idle(page);
-  await page.waitForTimeout(700);
+  await settled(page);
   const result = await report(page);
   record("control", { ...result, leaks: result.leaks.length });
   expect(result.answeredAfterAbort).toBeGreaterThan(5);

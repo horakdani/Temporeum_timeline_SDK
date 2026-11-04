@@ -31,8 +31,17 @@ test.afterAll(() => {
 test("a sanitised template runs nothing, keeps the names, and matches the server", async ({ page }) => {
   await page.goto("/drop-template.html?mode=template");
   await page.waitForFunction(() => (window as unknown as { tl?: Tl }).tl?.ready === true);
-  // Long enough for a failed image to fire its error handler, had it one.
-  await page.waitForTimeout(1000);
+  // The browser's own answer for the planted image's address: once a control
+  // image's error has come, the planted one's handler would have run, had it survived.
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const control = new Image();
+        control.addEventListener("error", resolve, { once: true });
+        control.addEventListener("load", resolve, { once: true });
+        control.src = "/missing.png";
+      }),
+  );
   // A click on the template's content, had a handler survived the sanitiser. A click that
   // cannot happen fails the test: a negative proof needs the event to have been sent.
   await page.locator("#timeline .tl-template span").first().click({ force: true });

@@ -32,7 +32,7 @@ import type {
   TimelineSnapshot,
   TimelineUpdate,
 } from "@temporeum/timeline-element";
-import { createElement, Fragment, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createElement, forwardRef, Fragment, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { CSSProperties, ReactElement, ReactNode, Ref } from "react";
 import { createPortal, flushSync } from "react-dom";
 
@@ -66,7 +66,7 @@ export interface TimelineProps<T = unknown> extends TimelineComponentConfig<T>, 
   readonly title?: string;
   readonly [attribute: `data-${string}`]: string | number | boolean | undefined;
   readonly [attribute: `aria-${string}`]: string | number | boolean | undefined;
-  /** The box, on React 19, where a function component takes `ref` as a prop. */
+  /** The box. */
   readonly ref?: Ref<HTMLDivElement>;
   /** Width the server draws at; the client redraws at the real one. */
   readonly ssrWidth?: number;
@@ -196,8 +196,7 @@ function initialOf<T>(config: TimelineConfig<T>, props: TimelineProps<T>): Timel
 /** `useId` gives `:r0:` or `«r0»`; a stylesheet scope wants a plain name. */
 const scopeOf = (id: string): string => `tl${id.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-/** The timeline. Every {@link TimelineConfig} field is a prop, every event an `on…` prop. */
-export function Timeline<T = unknown>(props: TimelineProps<T>): ReactElement {
+function TimelineBox<T = unknown>(props: TimelineProps<T>, forwarded: Ref<HTMLDivElement> | null): ReactElement {
   const generated = scopeOf(useId());
   const config = configOf(props) as TimelineConfig<T>;
   if (config.instanceId === undefined) {
@@ -274,8 +273,9 @@ export function Timeline<T = unknown>(props: TimelineProps<T>): ReactElement {
     return () => assign(timelineRef, null);
   }, [timelineRef]);
 
-  // React 19 hands `ref` to a function component as a prop: it is the box's.
-  const outer = (props as { ref?: Ref<HTMLDivElement> }).ref;
+  // The box's ref: forwardRef hands it over on React 18 and 19 alike (React 18
+  // keeps `ref` out of a function component's props).
+  const outer = forwarded ?? undefined;
   const boxRef = useCallback(
     (node: HTMLDivElement | null) => {
       container.current = node;
@@ -324,6 +324,10 @@ export function Timeline<T = unknown>(props: TimelineProps<T>): ReactElement {
   // when the first portal came would be a new box, and the drawing lost.
   return createElement(Fragment, null, box, ...portals);
 }
+
+/** The timeline. Every {@link TimelineConfig} field is a prop, every event an `on…` prop. */
+export const Timeline = forwardRef(TimelineBox) as <T = unknown>(props: TimelineProps<T>) => ReactElement;
+(Timeline as { displayName?: string }).displayName = "Timeline";
 
 /**
  * Subscribe to the part of the instance's state a component renders.

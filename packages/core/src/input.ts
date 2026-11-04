@@ -642,7 +642,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
    * then start a pan from where it happens to be resting.
    */
   let consumed = false;
-  let lastTap: { main: number; cross: number; time: number } | undefined;
+  let lastTap: { main: number; cross: number; time: number; pointerType: PointerKind } | undefined;
   let editing: EditingInputOptions<T> = options.editing ?? {};
   let selectedIds: readonly string[] = [];
   /** A press that may still become a drag. */
@@ -1515,6 +1515,8 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
     const isDouble =
       pointerCount === 1 &&
       lastTap !== undefined &&
+      // A finger's tap and a mouse's click are a hybrid device's two hands, not one hand tapping twice.
+      lastTap.pointerType === pointer.pointerType &&
       time - lastTap.time <= doubleTapMs &&
       Math.abs(at.main - lastTap.main) <= doubleTapSlop &&
       Math.abs(at.cross - lastTap.cross) <= doubleTapSlop;
@@ -1542,7 +1544,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
       }
       return;
     }
-    lastTap = { main: at.main, cross: at.cross, time };
+    lastTap = { main: at.main, cross: at.cross, time, pointerType: pointer.pointerType };
   }
 
   function onDown(input: PointerSample, into: InputEffect<T>[]): void {

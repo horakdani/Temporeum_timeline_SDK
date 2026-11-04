@@ -30,8 +30,8 @@ const lanes = [
 const domain: [number, number] = [T0, T0 + 24 * DAY];
 
 let mounted: Record<string, unknown> | undefined;
-afterEach(() => {
-  if (mounted !== undefined) unmount(mounted);
+afterEach(async () => {
+  if (mounted !== undefined) await unmount(mounted);
   mounted = undefined;
   document.body.replaceChildren();
 });
@@ -166,7 +166,7 @@ describe("<Timeline> — props and callbacks", () => {
   it("lets go of the instance on unmount, and clears the binding", async () => {
     const { props, timeline } = await place();
     const destroy = vi.spyOn(timeline, "destroy");
-    unmount(mounted as Record<string, unknown>);
+    await unmount(mounted as Record<string, unknown>);
     mounted = undefined;
     expect(destroy).toHaveBeenCalledTimes(1);
     expect(props.timeline).toBeNull();
@@ -230,7 +230,7 @@ describe("<Timeline> — props written anew on every view change", () => {
     ]);
     await vi.waitFor(() => expect(moved).toHaveBeenCalledTimes(1));
     expect(moved.mock.calls[0]?.[0].to.start).toBe(T0 + 5 * DAY);
-    unmount(mounted as Record<string, unknown>);
+    await unmount(mounted as Record<string, unknown>);
     mounted = undefined;
     document.body.replaceChildren();
     const started = await place({ defaultDomain: [T0, T0 + 4 * DAY], defaultSelectedIds: ["b"] });

@@ -273,9 +273,13 @@ describe("following the clock", () => {
     const at = centre(svg);
     svg.dispatchEvent(new WheelEvent("wheel", { clientX: at.x, clientY: at.y, deltaX: 150, deltaY: 0, bubbles: true, cancelable: true }));
     timeline.flush();
-    // A wheel run is a gesture until 150 ms pass without a step, on the real
-    // clock: the clock does not move the view under it. Let it end.
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // A wheel run is a gesture until 150 ms pass without a step (timed by the
+    // events' own clock): the clock does not move the view under it. A press
+    // ends a run at once — on empty time, where it is a tap on nothing.
+    const box = svg.getBoundingClientRect();
+    const corner = { clientX: box.right - 3, clientY: box.bottom - 3, bubbles: true, cancelable: true, composed: true, pointerId: 3, pointerType: "mouse" };
+    svg.dispatchEvent(new PointerEvent("pointerdown", { ...corner, buttons: 1 }));
+    svg.dispatchEvent(new PointerEvent("pointerup", { ...corner, buttons: 0 }));
     timeline.flush();
     const panned = timeline.getSnapshot().domain;
     vi.setSystemTime(T0 + 2 * DAY + 2 * HOUR);

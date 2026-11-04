@@ -25,6 +25,10 @@
  * REQUIRED_CLAIMS of the Chromium checker (`sdk_check_e2e_touch.mjs`), so the
  * two lists cannot drift apart. Every claim must pass either in Playwright
  * WebKit on BOTH devices, or in the iOS measurement.
+ *
+ * `--webkit-only` (CI, on Linux, where there is no iOS Simulator): the first
+ * half alone, every check of it; the claims only Mobile Safari can measure
+ * are named as NOT measured, and the release measurement runs them.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -39,6 +43,7 @@ const configFile = join(docs, "playwright.webkit.config.ts");
 const specFile = join(docs, "e2e", "touch.spec.ts");
 const chromiumChecker = join(repo, "scripts", "sdk_check_e2e_touch.mjs");
 
+const WEBKIT_ONLY = process.argv.includes("--webkit-only");
 const failures = [];
 const notes = [];
 const check = (ok, message) => {
@@ -106,7 +111,9 @@ if (!existsSync(webkitReportFile)) {
 }
 
 // --- 2. real Mobile Safari ---------------------------------------------------------------------
-if (!existsSync(iosReportFile)) {
+if (WEBKIT_ONLY) {
+  notes.push(`NOT measured here (--webkit-only): ${[...IOS_CLAIMS.keys()].map((claim) => `"${claim}"`).join(", ")} — real Mobile Safari, in the release measurement`);
+} else if (!existsSync(iosReportFile)) {
   failures.push(`no iOS report (${iosReportFile}) — the Mobile Safari measurement did NOT run, and a measurement that cannot run is a FAILURE`);
 } else {
   const ios = JSON.parse(readFileSync(iosReportFile, "utf8"));
@@ -173,4 +180,4 @@ if (failures.length > 0) {
   process.stderr.write(`\ne2e-touch-webkit FAILED: ${String(failures.length)} problems.\n`);
   process.exit(1);
 }
-process.stdout.write("\ne2e-touch-webkit passed: the gestures in WebKit, touch-action in real Mobile Safari, the negative control bites.\n");
+process.stdout.write(WEBKIT_ONLY ? "\ne2e-touch-webkit passed in Playwright WebKit alone: the touch-action claims are left to the Mobile Safari measurement.\n" : "\ne2e-touch-webkit passed: the gestures in WebKit, touch-action in real Mobile Safari, the negative control bites.\n");

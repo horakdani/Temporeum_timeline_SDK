@@ -48,9 +48,10 @@ beforeAll(() => {
   meta.content = POLICY;
   document.head.append(meta);
   // The policy is in force: a string in an HTML sink throws, a `<style>` is blocked.
+  // (Chromium and WebKit name the type the sink wants; Firefox the mismatch.)
   expect(() => {
     document.createElement("div").innerHTML = "<b>x</b>";
-  }).toThrow(/TrustedHTML/);
+  }).toThrow(/TrustedHTML|Sink type mismatch/);
 });
 
 afterEach(async () => {

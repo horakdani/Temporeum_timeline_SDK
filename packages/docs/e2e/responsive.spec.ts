@@ -227,14 +227,9 @@ test.describe("375 px, by finger", () => {
     expect(tap.main - (box.y - frameTop + box.height)).toBeGreaterThan(11);
     await sheet.getByRole("button", { name: "Dismiss" }).tap();
     await expect(sheet).toHaveCount(0);
-    // The same point with a mouse: neither its 4 px nor dense's 11 px reach it.
-    //
-    // First the double-tap window (320 ms) has to pass. Without that the
-    // machine takes the finger tap and the mouse click as a DOUBLE TAP and
-    // zooms — lastTap does not record the pointer type. This is a real bug
-    // of the gesture machine on hybrid devices, and this test found it;
-    // fixing it was out of scope here.
-    await page.waitForTimeout(400);
+    // The same point with a mouse, at once: neither its 4 px nor dense's 11 px
+    // reach it. Within the double-tap window too — a finger's tap and a
+    // mouse's click are two hands, not a double tap that would zoom.
     await page.mouse.click(x, y);
     await expect(page.locator("[data-tl-detail]")).toHaveCount(0);
     const click = await page.evaluate(

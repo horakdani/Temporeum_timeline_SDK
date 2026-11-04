@@ -138,10 +138,14 @@ describe("the story panel", () => {
     await userEvent.keyboard("{ArrowLeft}");
     expect(handle.index).toBe(0);
     await userEvent.click(next as HTMLButtonElement);
+    // Chromium and Firefox focus a button on a click; Safari (WebKit) does
+    // not, by design, and a click there leaves the focus on the page.
+    const clickFocuses = document.activeElement === next;
     await userEvent.click(next as HTMLButtonElement);
     await userEvent.click(next as HTMLButtonElement);
     expect(handle.index).toBe(3);
-    expect(document.activeElement).toBe(previous);
+    expect(document.activeElement).toBe(clickFocuses ? previous : document.body);
+    previous?.focus();
     await userEvent.keyboard("{ArrowLeft}{ArrowLeft}{ArrowLeft}");
     expect(handle.index).toBe(0);
     expect(document.activeElement).toBe(next);
@@ -161,15 +165,19 @@ describe("the story panel", () => {
     expect(location.hash).toBe("#tale-launch");
     location.hash = "#tale-eagle";
     await vi.waitFor(() => expect(handle.id).toBe("eagle"));
+    // The story's own hashchange listener came first: once ours has run, it has too.
+    const hashChanged = (): Promise<void> => new Promise((resolve) => addEventListener("hashchange", () => resolve(), { once: true }));
+    let changed = hashChanged();
     location.hash = "#elsewhere";
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await changed;
     expect(handle.id).toBe("eagle");
     handle.go(0);
     expect(location.hash).toBe("");
     expect(changes).toEqual(["splash:hash", "launch:panel", "eagle:hash", "null:panel"]);
     handle.destroy();
+    changed = hashChanged();
     location.hash = "#tale-splash";
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await changed;
     expect(changes).toHaveLength(4);
   });
 
@@ -306,7 +314,8 @@ describe("the story panel's edges", () => {
     handle.next();
     expect(panel.querySelector("audio")?.getAttribute("aria-label")).toBe("");
     expect(panel.querySelector(".tl-story-headline")).toBeNull();
-    expect(panel.querySelector(".tl-story-date")?.textContent).toBe("17 July 1969 at 1:00");
+    // `hour: "numeric"` is the engine's to pad: en-GB is "1:00" in Chromium and WebKit, "01:00" in Firefox.
+    expect(panel.querySelector(".tl-story-date")?.textContent?.replace(/\b0(\d):/u, "$1:")).toBe("17 July 1969 at 1:00");
     handle.next();
     expect(panel.querySelector(".tl-story-media a")?.getAttribute("href")).toBe("https://example.org/a");
     expect(panel.querySelector(".tl-story-media img")?.getAttribute("alt")).toBe("");

@@ -119,6 +119,9 @@ that need a quiet machine run before each release
 | `sdk_size.mjs` | The size budget of the non-base entry points: marginal cost. |
 | `sdk_suite_report.mjs` | The shared half of the suite-report checks: reading a vitest JSON report. |
 | `sdk_test_all.mjs` | The full suite (`npm run test:all`) is green, in EVERY package, not just in core. |
+| `sdk_test_browsers.mjs` | The element's browser suite in Firefox and WebKit too, not only in Chromium, and proof that each run ran in the engine it was asked for. |
+| `sdk_test_claims.mjs` | Every claim check of the core and the docs site (`test:<name>`: a suite and the checker that reads its report) in CI, and none forgotten. |
+| `sdk_test_lowest_peers.mjs` | Every framework package's suite on the LOWEST version its peer range admits, and every peer range closed. |
 | `sdk_vis_compat_vectors.mjs` | The vis-compat reference: vis-timeline 8.5.6 itself. |
 | `sdk_visual_snapshots.mjs` | The first half of the visual check: visual regression on the SHIPPED bundle. |
 

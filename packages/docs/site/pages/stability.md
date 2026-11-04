@@ -45,10 +45,11 @@ Before anything public is removed it is deprecated for at least one minor releas
 
 - **Browsers**: the current and previous major version of Chrome, Edge, Firefox and Safari, on desktop and mobile. Server rendering needs declarative shadow DOM, which all four have. What is measured, and where:
   - Every browser suite runs in Chromium, on the desktop and with phone emulation.
+  - The element's browser suite — drawing, mouse and keyboard input, editing, the tools, right to left, Trusted Types — also runs in Firefox and in WebKit, Safari's engine, in CI.
   - The touch suite also runs in WebKit, Safari's engine, with iPhone and iPad emulation: one-finger pan, two-finger pinch, double tap, two-finger tap, long press, moving and resizing, the host's rules, undo, and a mouse on the same page. Two fingers are the browser's own touch input, not events made up in the page.
   - In the real Mobile Safari 26.5, in Xcode's iOS Simulator, on an iPhone 17 and an iPad Pro 11: a drag on the timeline does not scroll the page, not even when it carries on past the timeline's edge; with `touchAction: "cooperative"` a vertical swipe scrolls the page and the timeline lets go of the gesture; a long press picks an item up, and iOS does not take the touch away. A control run with `touch-action: auto` scrolls the page, so the measurement is able to fail.
-  - Not measured: a physical iPhone or iPad, and whether a two-finger pinch on iOS zooms the timeline rather than the page. The simulator's automation delivers one finger, so the pinch is measured in WebKit's emulation only. Firefox is supported, and not tested.
-  - The WebKit and iOS measurements run on a developer machine before a release, not in CI: the simulator needs macOS and Xcode.
+  - Not measured: a physical iPhone or iPad, and whether a two-finger pinch on iOS zooms the timeline rather than the page. The simulator's automation delivers one finger, so the pinch is measured in WebKit's emulation only. In Firefox, the framework components and the docs site's end-to-end suites.
+  - The WebKit touch suite runs in CI too; the Mobile Safari measurement runs on a developer machine before a release: the simulator needs macOS and Xcode.
 - **Node**: 22.12 and later (the `engines` range) for server rendering and the CommonJS build; CI runs the core's suites on Node 22.12, 24 and 26, and the rest on 24.
 - **React**: 18 and 19 are the peer range; the test suite runs on 19 only.
 - **TypeScript**: the packages are built and checked with TypeScript 6, and a packed tarball is compiled in a foreign project under `moduleResolution` `node10`, `node16` (CommonJS and ESM) and `bundler`. Older compilers are likely to work and are not tested.

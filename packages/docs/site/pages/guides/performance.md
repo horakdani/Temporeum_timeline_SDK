@@ -43,7 +43,7 @@ const loop = createFrameLoop(element, () => {
 - **Culling** in `(main, cross)` space with a one-row margin: nothing outside what is drawn gets a node, along time or across the lanes.
 - **The layout is cached** per items array and checked element by element, so a pan does not re-pack 10 000 items. Replace items, do not write into them.
 - **`mountScene`** skips a subtree handed back as the same object, matches items by id — across tiles too, out of a tile it let go of — and pools what leaves the screen: a long pan stops creating nodes once the pool is warm (`npm run bench:memory -w @temporeum/timeline-core`: under 0.5% of the live tree in the second half of a long pan, besides the labels the view gains).
-- **One draw per frame**, however many pointer events arrive in it; the instance's store notifies at most once per frame too.
+- **One draw per frame**, however many pointer events arrive in it; the instance's store notifies at most once per frame too, and once more only when the selection or the focus changes, so what a listener reads is the change.
 
 ## For a host
 

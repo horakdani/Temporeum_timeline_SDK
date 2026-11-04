@@ -5,8 +5,8 @@
  * and never covers an item — in both orientations.
  *
  * Statically: createTimeline and the server split off the backgrounds with
- * the SAME configuration function (config.ts), otherwise the server's and
- * the client's first frames would differ.
+ * the SAME configuration function (config.ts), through the /items plugin
+ * (items.ts), otherwise the server's and the client's first frames would differ.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -22,8 +22,13 @@ const failures = checkReport({
   claims: ["drawn", "named", "hit", "never-covers"],
   orientations: true,
 });
-const config = codeOf(readFileSync(join(root, "packages", "web-component", "src", "config.ts"), "utf8"));
-for (const needle of ["splitBackgrounds", "itemKindHooks"]) {
-  if (!config.includes(needle)) failures.push(`the web-component config.ts does not use: ${needle} — the server and the client would draw by different paths`);
+// The one configuration function (config.ts) reaches both through the /items
+// plugin, whose feature (items.ts) is splitBackgrounds and itemKindHooks.
+const wc = (file) => codeOf(readFileSync(join(root, "packages", "web-component", "src", file), "utf8"));
+for (const needle of ["feature.split(items", "feature.hooks(config, base)"]) {
+  if (!wc("config.ts").includes(needle)) failures.push(`the web-component config.ts does not use: ${needle} — the server and the client would draw by different paths`);
+}
+for (const needle of ["split: splitBackgrounds", "itemKindHooks(drawn"]) {
+  if (!wc("items.ts").includes(needle)) failures.push(`the /items plugin (items.ts) does not use: ${needle}`);
 }
 finish("item-kinds", failures);

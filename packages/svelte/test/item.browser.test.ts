@@ -27,8 +27,8 @@ const items: Item[] = [
 ];
 
 let mounted: Record<string, unknown> | undefined;
-afterEach(() => {
-  if (mounted !== undefined) unmount(mounted);
+afterEach(async () => {
+  if (mounted !== undefined) await unmount(mounted);
   mounted = undefined;
   document.body.replaceChildren();
 });

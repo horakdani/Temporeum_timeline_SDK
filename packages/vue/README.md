@@ -7,7 +7,8 @@ The timeline as a Vue component, built on the shared instance of
 npm install @temporeum/timeline-vue
 ```
 
-The peer range is `vue >=3.5` (`useId` is new in 3.5).
+The peer range is `vue ^3.5.0` (`useId` is new in 3.5). The suite runs on
+the newest Vue 3 and, in CI, on 3.5.0, the lowest the range admits.
 
 ```vue excerpt:template/vue/src/App.vue
 <script setup>

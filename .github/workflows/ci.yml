@@ -30,8 +30,8 @@ jobs:
         # The lowest Node the packages support (engines), and the current LTS lines.
         node: ["22.12.0", "24", "26"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -69,8 +69,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "24"
           cache: npm
@@ -98,18 +98,61 @@ jobs:
         run: |
           npm run test:passthrough -w @temporeum/timeline-element
           npm run test:gesture-parity -w @temporeum/timeline-element
+      # vitest alone is green when a claim's test is deleted or skipped; the checkers notice.
+      - name: every claim check of the core (a minimum of tests, each claim passing, a negative control)
+        run: node scripts/sdk_test_claims.mjs
       - name: the changelogs have an entry for the version
         run: node scripts/sdk_changelog.mjs --check-entry
       - name: what npm would receive (dry run)
         run: node scripts/sdk_check_pack.mjs
+
+  # The element's browser suite, and the touch gestures, in the other two
+  # engines the stability page promises. The two touch-action claims only
+  # real Mobile Safari can measure run before a release (RELEASING.md).
+  engines:
+    name: firefox and webkit
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps firefox webkit
+      - run: npm run build -w packages/core -w packages/web-component
+      - name: the element's browser suite in Firefox and WebKit
+        run: node scripts/sdk_test_browsers.mjs
+      - name: touch in WebKit, on an emulated iPhone and iPad
+        run: npm run test:e2e:touch:webkit:linux -w @temporeum/timeline-docs
+
+  # The browser suites above run on the newest framework versions the lockfile
+  # holds; this job runs them on the lowest each peer range admits (React 18,
+  # Vue 3.5.0, Svelte 5.20.0, Angular 21.0.0). It rewrites the manifests and
+  # the lockfile — on this throwaway checkout only.
+  lowest-peers:
+    name: lowest framework versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium chromium-headless-shell
+      - name: every framework package on the lowest version its peer range admits
+        run: node scripts/sdk_test_lowest_peers.mjs --throwaway
 
   audit:
     name: audit
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "24"
           cache: npm

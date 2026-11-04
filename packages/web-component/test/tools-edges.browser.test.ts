@@ -36,6 +36,7 @@ const items: Item[] = [
 afterEach(() => {
   document.body.replaceChildren();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 async function mount(config: Partial<TimelineConfig> = {}, width = 1000, height = 360): Promise<{ element: HTMLDivElement; timeline: Timeline }> {
@@ -46,6 +47,7 @@ async function mount(config: Partial<TimelineConfig> = {}, width = 1000, height 
   await vi.waitFor(() => {
     if (timeline.result === undefined || element.querySelector("svg [role=option]") === null) throw new Error("not drawn yet");
   });
+  fakeClock();
   return { element, timeline };
 }
 
@@ -53,7 +55,17 @@ const centre = (node: Element): { x: number; y: number } => {
   const box = node.getBoundingClientRect();
   return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
 };
-const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+/**
+ * The tools' waits (a resting pointer, the grace, a finger's hold, the clock
+ * the view follows) on a fake clock: a test that says "nothing shows after
+ * the wait" moves the clock past the wait instead of sleeping, so it neither
+ * passes because the machine was slow nor costs real seconds. The frames
+ * (requestAnimationFrame) stay real: drawing is not what is timed here.
+ */
+function fakeClock(): void {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] });
+}
+const wait = (ms: number): Promise<void> => vi.advanceTimersByTimeAsync(ms).then(() => undefined);
 const tipOf = (element: Element): HTMLElement => element.querySelector(".tl-tooltip") as HTMLElement;
 const item = (element: Element, id: string): Element => element.querySelector(`[data-tl-id="${id}"]`) as Element;
 
@@ -146,8 +158,11 @@ describe("the tooltip under a pointer", () => {
     await wait(650);
     expect(tipOf(element).hidden).toBe(true);
     pointer(svg, "pointercancel", { x: frame.right - 5, y: frame.bottom - 5 }, { pointerType: "touch" });
-    // Held still: it shows, and a press elsewhere lets it go.
+    // Held still: it shows, and a press elsewhere lets it go. The hold is a
+    // wait on the fake clock (so the waits above proved what they say).
     pointer(svg, "pointerdown", at, { pointerType: "touch" });
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
+    expect(tipOf(element).hidden).toBe(true);
     await vi.waitFor(() => expect(tipOf(element).hidden).toBe(false), { timeout: 2000 });
     pointer(svg, "pointerup", at, { pointerType: "touch" });
     pointer(svg, "pointerdown", { x: frame.right - 5, y: frame.bottom - 5 }, { pointerType: "mouse" });
@@ -344,6 +359,7 @@ describe("the tool paths the time-tools suite leaves out", () => {
     element.style.cssText = "width:1000px;height:360px;position:relative";
     document.body.append(element);
     // Following the clock by default: now, at the middle, every second.
+    fakeClock();
     const timeline = createTimeline(element, { items, lanes, domain: [T0, T0 + 4 * DAY], height: 360, timeZone: "UTC", zoomPresets: true, rolling: true });
     await vi.waitFor(() => {
       if (timeline.result === undefined) throw new Error("not drawn yet");

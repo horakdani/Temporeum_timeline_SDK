@@ -29,6 +29,8 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { intlStable } from "../packages/core/test/intl-text.mjs";
+
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const corePackage = join(repoRoot, "packages", "core");
 const visualDir = join(corePackage, "test", "visual");
@@ -237,7 +239,8 @@ async function main() {
       continue;
     }
     const stored = readFileSync(path, "utf8");
-    if (stored === svg) {
+    // An ICU update's spacing in the accessible names' dates is no drift (intl-text.mjs).
+    if (intlStable(stored) === intlStable(svg)) {
       continue;
     }
     const storedLines = stored.split("\n");

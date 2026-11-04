@@ -129,6 +129,11 @@
       /** The actions of the keys the machine took, in order — the test reads from this. */
       const keys = [];
       let views = 0;
+      // Whether a transition has asked for a frame it has not had yet: when
+      // it has not, no more view changes are on their way.
+      let transitionPending = false;
+      // How many frames transitions have asked for: the moving case's proof that the flag sees one.
+      let transitionFrames = 0;
       const undoStack = [];
       /** The items before the edit — an interrupted gesture returns here. */
       let beforeEdit = items;
@@ -236,6 +241,8 @@
             selectedIds,
             focusedId: machine.focusedId,
             views,
+            transitionPending,
+            transitionFrames,
             undoDepth: undoStack.length,
             days,
             lanesOf: Object.fromEntries(items.map((item) => [item.id, item.laneId])),
@@ -323,6 +330,15 @@
       });
 
       function onEffects(effects) {
+        // A batch that asks for the next frame keeps a transition going; one
+        // that changes the view and asks for none was its last frame.
+        const asked = effects.find((effect) => effect.type === "schedule" && effect.reason === "transition");
+        if (asked !== undefined) {
+          transitionPending = asked.at !== null;
+          if (transitionPending) transitionFrames += 1;
+        } else if (effects.some((effect) => effect.type === "viewport")) {
+          transitionPending = false;
+        }
         for (const effect of effects) {
           if (effect.type === "viewport") {
             domain = effect.domain;

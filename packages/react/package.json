@@ -55,8 +55,8 @@
     "@temporeum/timeline-element": "^1.0.0"
   },
   "peerDependencies": {
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   },
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.build.json --emitDeclarationOnly && rollup -c && node ../../scripts/sdk_cjs_types.mjs",

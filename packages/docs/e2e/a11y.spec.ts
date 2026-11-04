@@ -164,6 +164,8 @@ interface DemoState {
   readonly selectedIds: readonly string[];
   readonly focusedId: string | null;
   readonly views: number;
+  readonly transitionPending: boolean;
+  readonly transitionFrames: number;
   readonly days: Record<string, number>;
   readonly edits: readonly string[];
 }
@@ -440,6 +442,9 @@ test.describe("the keyboard in a real browser", () => {
     const before = (await stateOf(page)).views;
     await page.keyboard.press("PageDown");
     await expect.poll(async () => (await stateOf(page)).views - before, { timeout: 2000 }).toBeGreaterThan(5);
+    // The flag the reduced case relies on sees a transition, and sees it end.
+    expect((await stateOf(page)).transitionFrames).toBeGreaterThan(0);
+    await expect.poll(async () => (await stateOf(page)).transitionPending, { timeout: 2000 }).toBe(false);
     const moving = (await stateOf(page)).views - before;
 
     await page.emulateMedia({ reducedMotion: "reduce" });
@@ -447,8 +452,9 @@ test.describe("the keyboard in a real browser", () => {
     await tabIn(page);
     const still = (await stateOf(page)).views;
     await page.keyboard.press("PageDown");
-    // Wait as long as a transition would take, then count.
-    await page.waitForTimeout(400);
+    // Arrived, and no transition is waiting for a frame: nothing more is on its way.
+    await expect.poll(async () => (await stateOf(page)).views - still).toBeGreaterThan(0);
+    expect((await stateOf(page)).transitionPending).toBe(false);
     expect((await stateOf(page)).views - still).toBe(1);
     writeFileSync(join(here, "..", ".motion-frames.json"), `${JSON.stringify({ moving, reduced: 1 })}\n`);
   });
@@ -462,7 +468,8 @@ test.describe("the keyboard in a real browser", () => {
     await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
     const before = (await stateOf(page)).views;
     await page.keyboard.press("PageDown");
-    await page.waitForTimeout(400);
+    await expect.poll(async () => (await stateOf(page)).views - before).toBeGreaterThan(0);
+    expect((await stateOf(page)).transitionPending).toBe(false);
     expect((await stateOf(page)).views - before).toBe(1);
   });
 });

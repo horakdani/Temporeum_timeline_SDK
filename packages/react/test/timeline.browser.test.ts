@@ -358,6 +358,10 @@ describe("<Timeline> — hydration", () => {
     const element = (): ReactElement => createElement(Timeline, { items, lanes, defaultDomain: domain, height: 260, ssrWidth: 800, locale: "hu", timeZone: "UTC", timelineRef: ref });
     const container = host();
     container.innerHTML = renderToString(element());
+    // The server's render runs here in a page, where `document` exists: the
+    // component takes useLayoutEffect, and React 18 (not 19) warns that it does
+    // nothing on a server. A real server has no document and takes useEffect.
+    errors.splice(0, errors.length, ...errors.filter((args) => !String((args as unknown[])[0]).startsWith("Warning: useLayoutEffect does nothing on the server")));
     const svg = container.querySelector("svg");
     const options = [...container.querySelectorAll("[data-tl-id]")];
     expect(options).toHaveLength(3);

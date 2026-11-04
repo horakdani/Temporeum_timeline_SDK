@@ -12,7 +12,8 @@
  * `useSyncExternalStore` expects: the snapshot is a plain frozen object that
  * gets a new identity only when something in it changed, and it changes at
  * most once per drawn frame — a pan of a hundred pointer events is as many
- * notifications as it is frames, not as it is events. A framework that
+ * notifications as it is frames, not as it is events — and besides only when
+ * the selection or the focus changes, at the change. A framework that
  * subscribes therefore re-renders what depends on the view, not the
  * timeline, and not on every event.
  *
@@ -1488,7 +1489,23 @@ export function createTimeline<T = unknown>(
     const previousIds = selectedIds;
     selectedIds = [...ids];
     machine.setSelection(selectedIds);
+    syncSnapshot();
     emitter.emit("selectionChanged", { ids: selectedIds, previousIds });
+  }
+
+  /**
+   * The selection and the focus in the snapshot at once, not at the next
+   * frame: a `selectionChanged` listener that reads `getSnapshot()` (or the
+   * element's `selectedIds`), or a caller right after `focusItem`, gets the
+   * change, not the last frame's state. The next frame's snapshot then says
+   * the same, so it notifies nobody twice.
+   */
+  function syncSnapshot(): void {
+    if (snapshot.selectedIds === selectedIds && snapshot.focusedId === machine.focusedId) return;
+    snapshot = Object.freeze({ ...snapshot, selectedIds, focusedId: machine.focusedId });
+    for (const listener of [...listeners]) {
+      listener();
+    }
   }
 
   function choose(id: string | null): void {
@@ -1666,6 +1683,8 @@ export function createTimeline<T = unknown>(
       }
     }
     if (changed) {
+      // A key that moved the focus says so in the snapshot now, not at the next frame.
+      syncSnapshot();
       loop.request();
     }
   }
@@ -1856,6 +1875,7 @@ export function createTimeline<T = unknown>(
       const placed = result?.layout.items.find((each) => each.item.id === id);
       if (placed === undefined || view === undefined) return false;
       machine.setFocus(id);
+      syncSnapshot();
       const { start, end } = placed.span;
       if (end <= domain[0] || start >= domain[1]) {
         run(machine.goTo(start, view_?.performance.now() ?? 0));

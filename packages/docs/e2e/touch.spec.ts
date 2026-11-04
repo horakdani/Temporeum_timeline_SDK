@@ -38,8 +38,8 @@ interface TimelineState {
   readonly edits: readonly string[];
   readonly selectedIds: readonly string[];
   readonly undoDepth: number;
-  /** Per item, the start, in days from the project's start. */
-  readonly days: Record<string, number>;
+  /** Per item, the start, in days from the project's start (the demo's items a to e). */
+  readonly days: Readonly<Record<"a" | "b" | "c" | "d" | "e", number>>;
   readonly lanesOf: Record<string, string>;
   readonly visible: number;
 }
@@ -47,6 +47,13 @@ interface TimelineState {
 interface Point {
   readonly x: number;
   readonly y: number;
+}
+
+/** What the demo page (public/index.html) puts on `window.tl` for the suite. */
+interface DemoPage {
+  readonly domain: readonly [number, number];
+  boxOf(id: string, at: number): Point | null;
+  handleOf(id: string): Point | null;
 }
 
 const MIDDLE_Y = 130;
@@ -142,7 +149,7 @@ async function drag(
 /** Where an item is on screen. The page computes it itself: the truth lives in one place. */
 async function boxOf(page: Page, id: string, fraction = 0.5): Promise<Point> {
   const point = await page.evaluate(
-    ([itemId, at]) => window.tl.boxOf(itemId, at),
+    ([itemId, at]) => (window as unknown as { tl: DemoPage }).tl.boxOf(itemId, at),
     [id, fraction] as const,
   );
   expect(point, `no box: ${id}`).toBeTruthy();
@@ -150,7 +157,7 @@ async function boxOf(page: Page, id: string, fraction = 0.5): Promise<Point> {
 }
 
 async function handleOf(page: Page, id: string): Promise<Point> {
-  const point = await page.evaluate((itemId) => window.tl.handleOf(itemId), id);
+  const point = await page.evaluate((itemId) => (window as unknown as { tl: DemoPage }).tl.handleOf(itemId), id);
   expect(point, `no handle: ${id}`).toBeTruthy();
   return point as Point;
 }
@@ -274,12 +281,12 @@ test.describe("real touch on an emulated phone", () => {
     ]);
     const anchors = await page.evaluate(
       ([a, b]) => {
-        const timeline = window.tl;
+        const timeline = (window as unknown as { tl: DemoPage }).tl;
         const span = timeline.domain[1] - timeline.domain[0];
-        const width = document.querySelector("#frame").clientWidth;
-        return [timeline.domain[0] + (a / width) * span, timeline.domain[0] + (b / width) * span];
+        const width = (document.querySelector("#frame") as HTMLElement).clientWidth;
+        return [timeline.domain[0] + (a / width) * span, timeline.domain[0] + (b / width) * span] as const;
       },
-      [left, right],
+      [left, right] as const,
     );
     for (let step = 1; step <= 6; step += 1) {
       await touch(fingers, "touchMove", [
@@ -302,13 +309,13 @@ test.describe("real touch on an emulated phone", () => {
     // The anchor: the instants under the fingers did not move.
     const errors = await page.evaluate(
       ([anchorA, anchorB, mainA, mainB]) => {
-        const timeline = window.tl;
-        const width = document.querySelector("#frame").clientWidth;
+        const timeline = (window as unknown as { tl: DemoPage }).tl;
+        const width = (document.querySelector("#frame") as HTMLElement).clientWidth;
         const span = timeline.domain[1] - timeline.domain[0];
-        const toMain = (time) => ((time - timeline.domain[0]) / span) * width;
+        const toMain = (time: number): number => ((time - timeline.domain[0]) / span) * width;
         return [Math.abs(toMain(anchorA) - mainA), Math.abs(toMain(anchorB) - mainB)];
       },
-      [anchors[0], anchors[1], movedLeft, movedRight],
+      [anchors[0], anchors[1], movedLeft, movedRight] as const,
     );
     // One CSS pixel: in the browser the coordinates round to pixels too.
     expect(Math.max(...errors)).toBeLessThan(1);

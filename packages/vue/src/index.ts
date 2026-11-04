@@ -173,7 +173,8 @@ function changedOf(before: Record<string, unknown>, next: Record<string, unknown
  */
 export const Timeline = defineComponent(
   <T = unknown>(props: TimelineProps<T>, { emit, expose, slots }: SetupContext<TimelineEmits<T>, TimelineSlots>) => {
-    const scope = scopeOf(useId());
+    // Vue 3.5.0 types useId() as possibly undefined (outside a setup); here it is in one.
+    const scope = scopeOf(useId() ?? "");
     const container = ref<HTMLDivElement | null>(null);
     const timeline = shallowRef<TimelineInstance<T> | null>(null);
     const drawn = shallowRef<ReadonlyMap<string, ItemSlot<T>>>(new Map());

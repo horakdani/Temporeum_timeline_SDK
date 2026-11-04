@@ -14,6 +14,7 @@
   },
   "scripts": {
     "build": "npm run --silent build -w @temporeum/timeline-core && npm run --silent build -w @temporeum/timeline-element && node scripts/build-site.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run --silent build && node --test \"test/*.test.mjs\"",
     "test:examples": "npm run --silent build && node ../../scripts/sdk_check_examples.mjs",
     "test:migration": "npm run --silent build && node ../../scripts/sdk_check_migration.mjs",
@@ -28,6 +29,7 @@
     "serve": "node e2e/serve.mjs",
     "test:e2e:touch": "npm run --silent build -w @temporeum/timeline-core && playwright test e2e/touch.spec.ts && node ../../scripts/sdk_check_e2e_touch.mjs",
     "test:e2e:touch:webkit": "npm run --silent build -w @temporeum/timeline-core && node -e \"for (const f of ['.e2e-touch-webkit-report.json','.ios-touch-report.json']) require('node:fs').rmSync(f,{force:true})\" && (playwright test -c playwright.webkit.config.ts; node ../../scripts/sdk_ios_touch.mjs; node ../../scripts/sdk_check_e2e_touch_webkit.mjs)",
+    "test:e2e:touch:webkit:linux": "npm run --silent build -w @temporeum/timeline-core && node -e \"require('node:fs').rmSync('.e2e-touch-webkit-report.json',{force:true})\" && (playwright test -c playwright.webkit.config.ts; node ../../scripts/sdk_check_e2e_touch_webkit.mjs --webkit-only)",
     "test:e2e:responsive": "npm run --silent build -w @temporeum/timeline-core && playwright test -c playwright.responsive.config.ts && node ../../scripts/sdk_check_responsive.mjs",
     "test:a11y": "npm run --silent build && node -e \"require('node:fs').rmSync('.axe-results.json',{force:true})\" && playwright test -c playwright.a11y.config.ts && node ../../scripts/sdk_check_a11y.mjs",
     "test:e2e:async": "npm run --silent build -w @temporeum/timeline-core && node -e \"require('node:fs').rmSync('.async-browser-log.json',{force:true})\" && playwright test -c playwright.async.config.ts",

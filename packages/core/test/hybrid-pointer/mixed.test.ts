@@ -169,6 +169,28 @@ describe("one machine, two hands", () => {
     expect(machines).toBe(1);
   });
 
+  it("takes a finger's tap and a mouse's click on the same spot as two taps, not a double tap", () => {
+    const tapOf = (effects: readonly InputEffect[]) => effects.find((effect) => effect.type === "tap") as { tapCount: number } | undefined;
+    const zooms = (effects: readonly InputEffect[]) => effects.some((effect) => effect.type === "viewport");
+    const tap = (machine: InputMachine, id: number, time: number, pointerType: PointerKind): readonly InputEffect[] => {
+      machine.handle(sample(id, "down", BODY_MAIN, time, pointerType));
+      return machine.handle(sample(id, "up", BODY_MAIN, time + 40, pointerType));
+    };
+    // The finger, then the mouse, 100 ms apart on the same pixel: a hybrid
+    // device's two hands, not one hand tapping twice.
+    const mixed = machineFor();
+    expect(tapOf(tap(mixed, 1, 1000, "touch"))?.tapCount).toBe(1);
+    const second = tap(mixed, 2, 1100, "mouse");
+    expect(tapOf(second)?.tapCount).toBe(1);
+    expect(zooms(second)).toBe(false);
+    // The control: the same two taps by one mouse are a double tap, and zoom.
+    const one = machineFor();
+    tap(one, 1, 1000, "mouse");
+    const double = tap(one, 1, 1100, "mouse");
+    expect(tapOf(double)?.tapCount).toBe(2);
+    expect(zooms(double)).toBe(true);
+  });
+
   it("lets a finger take a resize handle without the hold", () => {
     const machine = machineFor();
     const down = machine.handle({

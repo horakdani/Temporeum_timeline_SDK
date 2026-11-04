@@ -53,6 +53,13 @@ const spanOf = (page: Page): Promise<number> =>
 
 const opened = (page: Page): Promise<{ id: string; count: number }[]> =>
   page.evaluate(() => (window as unknown as { tl: { opened: { id: string; count: number }[] } }).tl.opened);
+/** Until the page has opened `count` clusters: the open is the signal, not a sleep. */
+const openedAtLeast = (page: Page, count: number): Promise<void> => expect.poll(async () => (await opened(page)).length).toBeGreaterThanOrEqual(count);
+/**
+ * Past the machine's double-tap window (320 ms, by the events' own clock):
+ * the next tap is a tap of its own, not the second of a double tap.
+ */
+const BEYOND_DOUBLE_TAP_MS = 400;
 
 /** The marker standing for `member` now, if any: its id and its box on the page. */
 async function markerHolding(page: Page, member: string): Promise<{ id: string; x: number; y: number } | undefined> {
@@ -148,9 +155,11 @@ test.describe("clustering in a real browser", () => {
       const marker = await markerHolding(page, target);
       if (marker === undefined) break;
       const before = await spanOf(page);
+      const count = (await opened(page)).length;
       await page.touchscreen.tap(marker.x, marker.y);
-      // Not a double tap: the machine would zoom on its own.
-      await page.waitForTimeout(400);
+      await openedAtLeast(page, count + 1);
+      // Not a double tap with the next: the machine would zoom on its own.
+      await page.waitForTimeout(BEYOND_DOUBLE_TAP_MS);
       const after = await spanOf(page);
       const last = (await opened(page)).at(-1);
       expect(last?.id).toBe(marker.id);
@@ -174,7 +183,7 @@ test.describe("clustering in a real browser", () => {
     if (marker === undefined) throw new Error("no marker");
     const before = await spanOf(page);
     await page.mouse.click(marker.x, marker.y);
-    await page.waitForTimeout(100);
+    await openedAtLeast(page, 1);
     expect((await opened(page)).at(-1)?.id).toBe(marker.id);
     expect(await spanOf(page)).toBeLessThan(before / 1.9);
     expectClean(await measure(page), "click");
@@ -198,7 +207,7 @@ test.describe("clustering in a real browser", () => {
     expect(label).toMatch(/^\d+ events, /);
     const before = await spanOf(page);
     await page.keyboard.press("Enter");
-    await page.waitForTimeout(100);
+    await openedAtLeast(page, 1);
     const last = (await opened(page)).at(-1);
     expect(`cl-c-${String(last?.id)}`).toBe(active);
     expect(await spanOf(page)).toBeLessThan(before / 1.9);

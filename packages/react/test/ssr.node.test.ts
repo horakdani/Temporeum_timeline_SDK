@@ -25,7 +25,8 @@ describe("the React adapter in Node", () => {
     for (const name of ["window", "document", "HTMLElement", "customElements"]) {
       expect(name in globalThis, name).toBe(false);
     }
-    expect(typeof Timeline).toBe("function");
+    // A forwardRef component (React 18 keeps `ref` out of a function's props): an object React renders.
+    expect((Timeline as unknown as { $$typeof?: symbol }).$$typeof).toBe(Symbol.for("react.forward_ref"));
   });
 
   it("server-renders the drawing the instance would draw", () => {

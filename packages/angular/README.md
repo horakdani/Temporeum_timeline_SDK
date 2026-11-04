@@ -7,9 +7,10 @@ instance of [`@temporeum/timeline-element`](https://github.com/horakdani/Tempore
 npm install @temporeum/timeline-angular
 ```
 
-The peer range is `@angular/core >=21`. The package is compiled the way the
-Angular Package Format asks — partially, for your build to link — so one
-build serves the Angular versions after 21 too.
+The peer range is `@angular/core >=21.0.0 <23.0.0`. The package is compiled
+the way the Angular Package Format asks — partially, for your build to link —
+so one build serves Angular 21 and 22; the suite runs on the newest 21 and,
+in CI, on 21.0.0, the lowest the range admits.
 
 ```ts excerpt:template/angular/src/app/app.ts
 import { Component, signal } from "@angular/core";

@@ -7,8 +7,11 @@ The timeline as a Svelte 5 component, built on the shared instance of
 npm install @temporeum/timeline-svelte
 ```
 
-The peer range is `svelte >=5.20` (`$props.id()` is new in 5.20). The
-package ships the component's source (`Timeline.svelte`), as Svelte
+The peer range is `svelte ^5.46.4`: the oldest Svelte the suite can run on
+(Vite's Svelte plugin under it needs 5.46.4), and it runs there in CI as well
+as on the newest Svelte 5. Under a Trusted Types policy
+(`require-trusted-types-for 'script'`) it needs Svelte 5.53 or later, whose own
+runtime builds its templates through Trusted Types. The package ships the component's source (`Timeline.svelte`), as Svelte
 libraries do: your compiler builds it with the rest of your app.
 
 ```svelte excerpt:template/svelte/src/App.svelte

@@ -7,7 +7,7 @@
  *
  * Statically it also checks that createTimeline calls the core's
  * resolveDependencyKey and dependencyKeyStep functions, and that the frame's
- * hooks go through ganttHooks.
+ * hooks go through ganttHooks — both through the /gantt plugin (gantt.ts).
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -24,8 +24,11 @@ const failures = checkReport({
 });
 
 const wc = (file) => codeOf(readFileSync(join(root, "packages", "web-component", "src", file), "utf8"));
+// createTimeline and the configuration reach them through the /gantt plugin (gantt.ts).
+if (!wc("timeline.ts").includes('plugin("gantt", "The gantt option").keys()')) failures.push("createTimeline does not take the dependency keys from the /gantt plugin");
 for (const needle of ["resolveDependencyKey(", "dependencyKeyStep("]) {
-  if (!wc("timeline.ts").includes(needle)) failures.push(`createTimeline does not use: ${needle}`);
+  if (!wc("gantt.ts").includes(needle)) failures.push(`the /gantt plugin's keys do not use: ${needle}`);
 }
-if (!wc("config.ts").includes("ganttHooks(")) failures.push("the frame's hooks do not go through ganttHooks");
+if (!wc("config.ts").includes('plugin("gantt", "The gantt option").hooks(')) failures.push("the frame's hooks do not go through the /gantt plugin");
+if (!wc("gantt.ts").includes("ganttHooks(")) failures.push("the /gantt plugin's hooks do not go through ganttHooks");
 finish("gantt-a11y", failures);

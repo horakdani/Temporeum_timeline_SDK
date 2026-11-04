@@ -76,7 +76,9 @@ describe("update: a value that says the same is no change", () => {
       { type: "move", x: from.x + 160, y: from.y, steps: 6 },
       { type: "up" },
     ]);
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // The release is handled when it arrives; a drawn frame later nothing more can come of it.
+    timeline.flush();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     expect(moved).not.toHaveBeenCalled();
     expect(timeline.items.find((item) => item.id === "a")?.start).toBe(T0 + DAY);
     timeline.destroy();
@@ -113,7 +115,9 @@ describe("update: a value that says the same is no change", () => {
     const calls = first.mock.calls.length;
     const second = vi.fn((range: Domain) => Promise.resolve(items.filter((item) => Number(item.start) < range[1])));
     timeline.update({ items: second });
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // The frame that would fetch, drawn now.
+    timeline.flush();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     expect(first.mock.calls.length).toBe(calls);
     expect(second).not.toHaveBeenCalled();
     expect(timeline.items).toHaveLength(2);

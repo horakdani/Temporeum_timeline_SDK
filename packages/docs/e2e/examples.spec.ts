@@ -157,10 +157,21 @@ test("a message from anywhere but the example's own frame is ignored", async ({ 
   const ran = await settle(section, Number(await section.getAttribute("data-run")));
   expect(ran.state, ran.status).toBe("ok");
   // The page itself, or any other window, forging the frame's report under every token a run could have.
-  await page.evaluate((id) => {
-    for (let run = 0; run < 50; run += 1) window.postMessage({ source: "tl-example", token: `${id}:${String(run)}`, type: "error", message: "forged" }, "*");
-  }, example.id);
-  await page.waitForTimeout(400);
+  // Then a message of our own: a window's messages to itself arrive in order,
+  // so when ours has come, the page's listener has had every forged one.
+  await page.evaluate(
+    (id) =>
+      new Promise<void>((resolve) => {
+        for (let run = 0; run < 50; run += 1) window.postMessage({ source: "tl-example", token: `${id}:${String(run)}`, type: "error", message: "forged" }, "*");
+        addEventListener("message", function done(event) {
+          if (event.data !== "tl-forged-sent") return;
+          removeEventListener("message", done);
+          resolve();
+        });
+        window.postMessage("tl-forged-sent", "*");
+      }),
+    example.id,
+  );
   expect(await section.getAttribute("data-state")).toBe("ok");
   expect(await section.locator(".example-status").textContent()).not.toContain("forged");
 });

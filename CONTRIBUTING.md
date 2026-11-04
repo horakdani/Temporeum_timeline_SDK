@@ -25,7 +25,11 @@ npm run test:all
 npm run test:examples -w @temporeum/timeline-docs   # every documented example, and the starter templates
 npm run test:a11y -w @temporeum/timeline-docs       # axe, WCAG 2.2 AA
 npm run test:ssr -w @temporeum/timeline-docs        # Next, Nuxt, Astro, SvelteKit, Angular
+node scripts/sdk_test_browsers.mjs                  # the element's browser suite in Firefox and WebKit
+node scripts/sdk_test_lowest_peers.mjs              # every framework peer range is closed
 ```
+
+The Firefox and WebKit run needs those browsers too (`npx playwright install --with-deps firefox webkit`). `node scripts/sdk_test_lowest_peers.mjs --throwaway` also runs the framework components on the lowest React, Vue, Svelte and Angular their ranges admit; it rewrites the manifests and the lockfile, so run it on a scratch clone — CI does.
 
 The template, server-rendering and exports checks install the frameworks from npm into a scratch directory, so they need the network.
 
@@ -46,7 +50,7 @@ The template, server-rendering and exports checks install the frameworks from np
 ## What a pull request needs
 
 1. **A test for the change.** Write it before the fix: a bug fix comes with the test that failed before it. If you cannot write a test, say why in the pull request.
-2. **Green checks:** `npm run lint`, `npm run typecheck`, `npm run test:all`. CI runs the lint, the type check and the core's suites on Node 22.12, 24 and 26, and every package's tests and the browser suites on Node 24 (`.github/workflows/ci.yml`).
+2. **Green checks:** `npm run lint`, `npm run typecheck`, `npm run test:all`. CI runs the lint, the type check and the core's suites on Node 22.12, 24 and 26; every package's tests and the browser suites on Node 24; the element's suite in Firefox and WebKit; and the framework components on their lowest peer versions (`.github/workflows/ci.yml`).
 3. **No new runtime dependency** in `@temporeum/timeline-core`. The engine has none, and a check enforces it (`npm run deps`).
 4. **No `any` on the public surface.** The typecheck enforces this too.
 5. **The size budget holds:** `npm run size`. Each entry point has its own limit. If a change needs more bytes, say why in the pull request; raising a budget is a decision, not a side effect.

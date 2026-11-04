@@ -49,8 +49,8 @@
     "@temporeum/timeline-element": "^1.0.0"
   },
   "peerDependencies": {
-    "@angular/common": ">=21.0.0",
-    "@angular/core": ">=21.0.0"
+    "@angular/common": ">=21.0.0 <23.0.0",
+    "@angular/core": ">=21.0.0 <23.0.0"
   },
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && ngc -p tsconfig.build.json && rollup -c && node scripts/types.mjs",

@@ -45,6 +45,10 @@ async function tl<K extends Exclude<keyof Tl, "ready">>(page: Page, method: K): 
 }
 
 async function open(page: Page): Promise<void> {
+  // The page's timers on Playwright's clock: time flows as usual, and a test
+  // that says "it is still there after the wait" jumps past the wait instead
+  // of sleeping through it.
+  await page.clock.install();
   await page.goto("/time-tools.html");
   await page.waitForFunction(() => (window as unknown as { tl?: Tl }).tl?.ready === true);
 }
@@ -95,7 +99,7 @@ test("[claim:hoverable] the pointer can move onto the tooltip, and it stays; [cl
   expect(box).toBeDefined();
   // Onto the tooltip, in steps — past the gap between the item and it.
   await page.mouse.move((box?.x ?? 0) + (box?.width ?? 0) / 2, (box?.y ?? 0) + (box?.height ?? 0) / 2, { steps: 8 });
-  await page.waitForTimeout(1500);
+  await page.clock.fastForward(1500);
   const stayed = await tl(page, "shown");
   // And away from both: it goes.
   await page.mouse.move(5, 5);
@@ -139,7 +143,7 @@ test("[claim:long-press] a long press of a finger shows the tooltip, and a press
   const at = await centreOf(page, "c");
   const session = await context.newCDPSession(page);
   await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: at.x, y: at.y }] });
-  await page.waitForTimeout(800);
+  await page.clock.fastForward(800);
   const shownWhileHeld = await tl(page, "shown");
   await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   const text = await tl(page, "text");

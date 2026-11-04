@@ -7,8 +7,9 @@ instance of [`@temporeum/timeline-element`](https://github.com/horakdani/Tempore
 npm install @temporeum/timeline-react
 ```
 
-The peer range is `react >=18` (everything it uses — `useSyncExternalStore`,
-`useId` — is in 18), but the suite runs on React 19 only.
+The peer range is `react ^18.0.0 || ^19.0.0` (everything it uses —
+`useSyncExternalStore`, `useId` — is in 18). The suite runs on the newest
+React 19 and, in CI, on React 18.0.0, the lowest the range admits.
 
 ```jsx excerpt:template/react/src/App.jsx
 import { Timeline, useTimelineState } from "@temporeum/timeline-react";
@@ -55,7 +56,7 @@ Every [`TimelineConfig`](https://horakdani.github.io/Temporeum_timeline_SDK/refe
 every event an `on…` prop (`onItemMoved`, `onSelectionChanged`,
 `onViewportChanged`, …). A new callback on every render does not
 resubscribe; the latest committed one is what runs. `id`, `data-*`,
-`aria-*`, `role`, `title` and, on React 19, `ref` go on the box.
+`aria-*`, `role`, `title` and `ref` go on the box.
 `timelineRef` may change after mount: the new ref gets the instance, the old
 one `null`.
 

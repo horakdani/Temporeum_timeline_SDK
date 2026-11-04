@@ -1,4 +1,5 @@
 import { flushSync, hydrate, mount, unmount } from "svelte";
+import { VERSION } from "svelte/compiler";
 import { afterAll, expect, it, vi } from "vitest";
 import { commands } from "vitest/browser";
 
@@ -25,8 +26,8 @@ const items: Item[] = [
 const domain: [number, number] = [T0, T0 + 10 * DAY];
 const mounted: Record<string, unknown>[] = [];
 
-afterAll(() => {
-  for (const each of mounted) unmount(each);
+afterAll(async () => {
+  for (const each of mounted) await unmount(each);
 });
 
 function host(): HTMLElement {
@@ -36,7 +37,16 @@ function host(): HTMLElement {
   return element;
 }
 
-it("hydrates the server's drawing, and mounts on the client alone, without an HTML sink", async () => {
+/**
+ * Svelte's own runtime builds its templates through Trusted Types since 5.51
+ * (TrustedHTML in `{@html}` since 5.52, `<select>` since 5.53, its changelog
+ * says): below that the framework itself writes a string into innerHTML,
+ * which no component can prevent. The lowest-peers job runs the rest of the
+ * suite there; this runs from 5.53.
+ */
+const svelteTrustsTypes = ((major, minor) => major > 5 || (major === 5 && minor >= 53))(...VERSION.split(".").map(Number) as [number, number]);
+
+it.runIf(svelteTrustsTypes)("hydrates the server's drawing, and mounts on the client alone, without an HTML sink", async () => {
   const base = { items, defaultDomain: domain, height: 200, ssrWidth: 800 };
   const container = host();
   // The server's markup, before the policy: as a page would deliver it.

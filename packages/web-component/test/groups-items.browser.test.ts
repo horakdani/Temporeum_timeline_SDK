@@ -231,7 +231,14 @@ describe("templates", () => {
       items,
       template: (item) => `<b>${item.label ?? ""}</b><img src="/nope.png" onerror="window.__p19='ran'"><script>window.__p19='ran'</script>`,
     });
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // The browser's own answer for that address: once a control image's
+    // error has come, a planted image's onerror would have run too.
+    await new Promise((resolve) => {
+      const control = new Image();
+      control.addEventListener("error", resolve, { once: true });
+      control.addEventListener("load", resolve, { once: true });
+      control.src = "/nope.png";
+    });
     expect(element.querySelectorAll(".tl-template b")).toHaveLength(3);
     expect(element.querySelector(".tl-template img, .tl-template script")).toBeNull();
     expect(win.__p19).toBeUndefined();

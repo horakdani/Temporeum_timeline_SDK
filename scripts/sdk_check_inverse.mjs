@@ -221,7 +221,7 @@ if (!existsSync(typesFile)) {
   failures.push(`missing: ${typesFile}`);
 } else {
   const source = readFileSync(typesFile, "utf8");
-  const patch = /export interface ItemPatch \{([\s\S]*?)\n\}/.exec(source);
+  const patch = /export interface ItemPatch(?:<[^>]*>)? \{([\s\S]*?)\n\}/.exec(source);
   if (patch === null) {
     failures.push("ItemPatch not found");
   } else if (!/laneId\?:\s*string\s*\|\s*null/.test(patch[1])) {

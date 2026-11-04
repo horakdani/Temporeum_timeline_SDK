@@ -51,6 +51,20 @@ export default [
     },
   },
   {
+    // The tests and the end-to-end specs, with type information: a promise a
+    // test forgets to await is an assertion that never runs, and only the
+    // types can tell a promise from a value. Each file is in its package's
+    // tsconfig (packages/docs/tsconfig.json for the specs and the configs).
+    files: ["packages/*/test/**/*.ts", "packages/docs/e2e/**/*.ts"],
+    languageOptions: {
+      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
+    },
+    rules: {
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/await-thenable": "error",
+    },
+  },
+  {
     // The core's source must not touch the DOM at runtime. The types are
     // available (lib: DOM), the globals are not — this enforces the design
     // decision statically. It was expected that the renderer would need this

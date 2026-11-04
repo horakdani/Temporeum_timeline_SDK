@@ -22,6 +22,8 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { intlStable } from "../packages/core/test/intl-text.mjs";
+
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const corePackage = join(repoRoot, "packages", "core");
 const visualDir = join(corePackage, "test", "visual");
@@ -137,14 +139,15 @@ async function main() {
   for (const [name, svg] of rendered) {
     const path = join(fixturesDir, name);
     if (!existsSync(path)) failures.push(`missing RTL fixture: ${name} — a missing fixture is a FAILURE, not a skip`);
-    else if (readFileSync(path, "utf8") !== svg) failures.push(`RTL fixture drifted: ${name}`);
+    // An ICU update's spacing in the accessible names' dates is no drift (intl-text.mjs).
+    else if (intlStable(readFileSync(path, "utf8")) !== intlStable(svg)) failures.push(`RTL fixture drifted: ${name}`);
   }
   if (failures.length > 0) {
     for (const failure of failures) console.error(`  ERROR ${failure}`);
     console.error(`\nrtl (fixtures) FAILED: ${String(failures.length)} errors.`);
     process.exit(1);
   }
-  console.log(`rtl fixtures: all ${String(rendered.size)} RTL cases match byte for byte.`);
+  console.log(`rtl fixtures: all ${String(rendered.size)} RTL cases match (byte for byte, but for an ICU update's spacing in a date).`);
 }
 
 if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

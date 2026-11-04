@@ -30,6 +30,7 @@ import type { RenderOptions } from "../../src/render.js";
 import { countSceneNodes, renderToSvgString } from "../../src/scene.js";
 import { THEMES } from "../../src/theme.js";
 import type { Density, Item, Lane, Orientation } from "../../src/types.js";
+import { intlStable } from "../intl-text.mjs";
 
 interface Matrix {
   readonly widths: readonly number[];
@@ -132,7 +133,8 @@ for (const width of matrix.widths) {
 
         it("matches the committed fixture, so the build changed nothing", () => {
           const fixture = read(`./fixtures/${name}.svg`);
-          expect(`${renderToSvgString(result.scene, { pretty: true })}\n`).toBe(fixture);
+          // The accessible names' dates are the platform's: an ICU update's spacing is no change (intl-text.mjs).
+          expect(intlStable(`${renderToSvgString(result.scene, { pretty: true })}\n`)).toBe(intlStable(fixture));
         });
 
         it("draws every visible item inside the container", () => {

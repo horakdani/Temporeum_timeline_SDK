@@ -161,6 +161,23 @@ describe("<temporeum-timeline>", () => {
     await vi.waitFor(() => expect(selections.at(-1)?.ids).toEqual([]));
   });
 
+  it("a selection-changed listener, and a caller right after focusItem, read the new state, not the last frame's", async () => {
+    const el = await place();
+    const read: { element: readonly string[]; snapshot: readonly string[] | undefined }[] = [];
+    el.addEventListener("selection-changed", () => read.push({ element: el.selectedIds, snapshot: el.timeline?.getSnapshot().selectedIds }));
+    await userEvent.click(nodeOf(el, "b"));
+    await vi.waitFor(() => expect(read).toHaveLength(1));
+    expect(read[0]).toEqual({ element: ["b"], snapshot: ["b"] });
+    el.timeline?.select([]);
+    expect(read[1]).toEqual({ element: [], snapshot: [] });
+    // The focus too: right after focusItem, not at the next frame.
+    expect(el.timeline?.focusItem("c")).toBe(true);
+    expect(el.timeline?.getSnapshot().focusedId).toBe("c");
+    // And a key that moves it: the snapshot says so before the key's handler returns.
+    svgOf(el).dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true, composed: true }));
+    expect(el.timeline?.getSnapshot().focusedId).toBe("b");
+  });
+
   it("dispatches every instance event, the items changing included", async () => {
     const el = await place();
     const changed = record<{ items: Item[] }>(document, "items-changed");
@@ -561,10 +578,10 @@ describe("createTimeline — the instance and its store", () => {
     await userEvent.click(el.querySelector('[data-tl-id="a"]') as Element);
     await userEvent.click(el.querySelector('[data-tl-id="c"]') as Element, { delay: 400 } as never);
     await vi.waitFor(() => expect(timeline.getSnapshot().selectedIds).toEqual(["a", "c"]));
-    await new Promise((done) => setTimeout(done, 400));
+    // The items are some 200 px apart, past a double tap's reach: one tap after
+    // another on two of them is two taps, however close in time.
     await userEvent.click(el.querySelector('[data-tl-id="a"]') as Element);
     await vi.waitFor(() => expect(timeline.getSnapshot().selectedIds).toEqual(["c"]));
-    await new Promise((done) => setTimeout(done, 400));
     await userEvent.dblClick(el.querySelector('[data-tl-id="b"]') as Element);
     await vi.waitFor(() => expect(doubles).toEqual(["b"]));
     timeline.destroy();
@@ -800,12 +817,13 @@ describe("createTimeline — a large timeline draws in a scene space", () => {
     const zoomed = timeline.getSnapshot().domain;
     expect(zoomed[1] - zoomed[0]).toBeLessThan(view[1] - view[0]);
     expect(itemWrites(mutations)).toEqual([]);
-    // When the run has ended, the frame is exact again: re-anchored, every item rewritten.
-    await new Promise((done) => setTimeout(done, 400));
-    for (let frame = 0; frame < 3; frame += 1) await nextFrame();
-    mutations.push(...observer.takeRecords());
+    // When the run has ended (150 ms after its last notch, by the events' own
+    // clock), the frame is exact again: re-anchored, every item rewritten.
+    await vi.waitFor(() => {
+      mutations.push(...observer.takeRecords());
+      expect(new Set(itemWrites(mutations).map((write) => write.split(":")[0])).size).toBeGreaterThan(100);
+    });
     observer.disconnect();
-    expect(new Set(itemWrites(mutations).map((write) => write.split(":")[0])).size).toBeGreaterThan(100);
     timeline.destroy();
   });
 

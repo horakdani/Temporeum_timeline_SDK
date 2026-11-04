@@ -25,6 +25,7 @@ import { ORIENTATIONS } from "../../src/geometry.js";
 import type { Density, Item, Orientation } from "../../src/types.js";
 import { describeBothOrientations } from "../orientation.js";
 import { makeRandom } from "../property/harness.js";
+import { intlStable } from "../intl-text.mjs";
 
 const DAY = 86_400_000;
 const T0 = Date.UTC(2026, 0, 5);
@@ -279,7 +280,8 @@ describe("the right-to-left visual matrix", () => {
             ariaLabel: scenario.ariaLabel,
           });
           const svg = `${renderToSvgString(mirrorScene(result.scene), { pretty: true })}\n`;
-          expect(svg).toBe(readFileSync(new URL(`./fixtures/${name}.svg`, import.meta.url), "utf8"));
+          // The accessible names' dates are the platform's: an ICU update's spacing is no change (intl-text.mjs).
+          expect(intlStable(svg)).toBe(intlStable(readFileSync(new URL(`./fixtures/${name}.svg`, import.meta.url), "utf8")));
         });
       }
     }
