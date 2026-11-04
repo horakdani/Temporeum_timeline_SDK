@@ -33,7 +33,9 @@ test("a sanitised template runs nothing, keeps the names, and matches the server
   await page.waitForFunction(() => (window as unknown as { tl?: Tl }).tl?.ready === true);
   // Long enough for a failed image to fire its error handler, had it one.
   await page.waitForTimeout(1000);
-  await page.locator("#timeline .tl-template span").first().click({ force: true }).catch(() => undefined);
+  // A click on the template's content, had a handler survived the sanitiser. A click that
+  // cannot happen fails the test: a negative proof needs the event to have been sent.
+  await page.locator("#timeline .tl-template span").first().click({ force: true });
   const state = await page.evaluate(() => {
     const tl = (window as unknown as { tl: Tl }).tl;
     return { ran: (window as unknown as { __ran?: string }).__ran ?? null, live: tl.live, server: tl.server, names: tl.names };

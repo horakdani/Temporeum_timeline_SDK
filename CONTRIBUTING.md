@@ -10,21 +10,24 @@ Thank you for considering a contribution. This file explains how the repository 
 
 ## Setting up
 
-You need Node 22.12 or later.
+You need Node 22.12 or later. Many suites run in a real Chromium, the core's among them (SVG and PNG export), so install it first — on Linux with the system libraries it needs (`--with-deps`, which asks for `sudo`):
 
 ```bash
 npm ci
+npx playwright install --with-deps chromium chromium-headless-shell
 npm run build
-npm test
+npm run test:all
 ```
 
-The browser suites (examples, accessibility, touch, server rendering) run in Chromium through Playwright:
+`npm run test:all` runs every package's tests and fails when one has none. The browser suites beyond them:
 
 ```bash
-npx playwright install chromium
-npm run test:examples -w @temporeum/timeline-docs
-npm run test:a11y -w @temporeum/timeline-docs
+npm run test:examples -w @temporeum/timeline-docs   # every documented example, and the starter templates
+npm run test:a11y -w @temporeum/timeline-docs       # axe, WCAG 2.2 AA
+npm run test:ssr -w @temporeum/timeline-docs        # Next, Nuxt, Astro, SvelteKit, Angular
 ```
+
+The template, server-rendering and exports checks install the frameworks from npm into a scratch directory, so they need the network.
 
 ### When a visual fixture fails
 
@@ -43,7 +46,7 @@ npm run test:a11y -w @temporeum/timeline-docs
 ## What a pull request needs
 
 1. **A test for the change.** Write it before the fix: a bug fix comes with the test that failed before it. If you cannot write a test, say why in the pull request.
-2. **Green checks:** `npm run lint`, `npm run typecheck`, `npm test`. CI runs these on Node 22 and 24.
+2. **Green checks:** `npm run lint`, `npm run typecheck`, `npm run test:all`. CI runs the lint, the type check and the core's suites on Node 22.12, 24 and 26, and every package's tests and the browser suites on Node 24 (`.github/workflows/ci.yml`).
 3. **No new runtime dependency** in `@temporeum/timeline-core`. The engine has none, and a check enforces it (`npm run deps`).
 4. **No `any` on the public surface.** The typecheck enforces this too.
 5. **The size budget holds:** `npm run size`. Each entry point has its own limit. If a change needs more bytes, say why in the pull request; raising a budget is a decision, not a side effect.

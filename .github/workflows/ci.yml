@@ -1,5 +1,6 @@
-# Every push and pull request: the unit and property suites, the size budgets,
-# the zero-dependency rule, and the browser suites in Chromium.
+# Every push and pull request: the core's suites on the lowest supported Node and
+# the current LTS lines, the size budgets, the zero-dependency rule, every package's
+# tests, the browser suites in Chromium, and what npm would receive.
 #
 # Performance is NOT measured here: a shared CI runner's timing is not a
 # yardstick. The benchmark (packages/docs/bench) runs on a quiet machine.
@@ -15,16 +16,19 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # A newer push replaces a pull request's run; on main every commit is checked.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   verify:
     name: verify (node ${{ matrix.node }})
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        node: ["22", "24"]
+        # The lowest Node the packages support (engines), and the current LTS lines.
+        node: ["22.12.0", "24", "26"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -38,17 +42,17 @@ jobs:
       - run: npm run build -w packages/core -w packages/web-component
       - run: npm run typecheck --workspaces --if-present
       - run: npm run lint
-      - run: npm run test -w packages/core
-      - name: core without a DOM
-        run: npm run test:node -w packages/core
+      # The core's whole suite, once, with the per-file coverage threshold.
+      - name: core suite and coverage
+        run: npm run test:coverage -w packages/core
+      - name: the built core without a DOM
+        run: node scripts/sdk_check_nodom.mjs
       - name: both orientations
         run: npm run test:orientation -w packages/core
       - name: property suites
         run: npm run test:property -w packages/core
       - name: visual regression
         run: npm run test:visual -w packages/core
-      - name: coverage
-        run: npm run test:coverage -w packages/core
       - name: size budgets
         run: npm run size -w packages/core
       - name: tree-shaking and entry-point isolation
@@ -59,6 +63,7 @@ jobs:
   browser:
     name: browser suites
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -67,13 +72,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium chromium-headless-shell
-      - name: element and the framework packages
-        run: |
-          npm run test -w @temporeum/timeline-element
-          npm run test -w @temporeum/timeline-react
-          npm run test -w @temporeum/timeline-vue
-          npm run test -w @temporeum/timeline-svelte
-          npm run test -w @temporeum/timeline-angular
+      # Every workspace's own tests — the element, the four components and the
+      # docs site's builder — and a workspace without a test script fails.
+      - name: every package's tests
+        run: npm run test:all
       - name: every documented example
         run: npm run test:examples -w @temporeum/timeline-docs
       - name: accessibility (axe, WCAG 2.2 AA)
@@ -92,10 +94,15 @@ jobs:
         run: |
           npm run test:passthrough -w @temporeum/timeline-element
           npm run test:gesture-parity -w @temporeum/timeline-element
+      - name: the changelogs have an entry for the version
+        run: node scripts/sdk_changelog.mjs --check-entry
+      - name: what npm would receive (dry run)
+        run: node scripts/sdk_check_pack.mjs
 
   audit:
     name: audit
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

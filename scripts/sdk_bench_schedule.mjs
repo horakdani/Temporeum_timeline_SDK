@@ -91,6 +91,22 @@ if (moved < TASKS / 2) failures.push(`only ${moved} tasks moved — the measured
 console.log(`  ${TASKS} tasks, ${DEPENDENCIES} dependencies, Budapest work calendar: median ${median.toFixed(1)} ms (runs: ${times.map((t) => t.toFixed(1)).join(" ")} ms), budget ${BUDGET_MS} ms`);
 console.log(`  moved ${moved}, critical ${result.critical.length}, conflicts ${result.conflicts.length}, broken dependencies ${broken}`);
 if (!(median <= BUDGET_MS)) failures.push(`the median is ${median.toFixed(1)} ms, the budget ${BUDGET_MS} ms`);
+
+// A cycle is reported in finite time: a ring of 10 000 tasks, within a second
+// (the unit test counts the work instead of timing it).
+const ring = Array.from({ length: 10_000 }, (_, index) => ({ id: `r${index}`, start: BASE + index * HOUR, end: BASE + (index + 1) * HOUR }));
+const around = ring.map((item, index) => ({ from: item.id, to: `r${(index + 1) % ring.length}` }));
+const ringTimes = [];
+for (let run = 0; run < RUNS; run += 1) {
+  const started = performance.now();
+  const found = scheduleTasks(ring, around);
+  ringTimes.push(performance.now() - started);
+  if (found.cycles.length !== 1 || found.cycles[0].length !== ring.length) failures.push(`the ring's cycle was not reported whole (${found.cycles.map((c) => c.length).join(", ")})`);
+}
+ringTimes.sort((a, b) => a - b);
+const ringMedian = ringTimes[Math.floor(RUNS / 2)];
+console.log(`  a ring of 10 000 tasks, one cycle: median ${ringMedian.toFixed(1)} ms, budget 1000 ms`);
+if (!(ringMedian <= 1000)) failures.push(`the ring's cycle takes ${ringMedian.toFixed(1)} ms, the budget 1000 ms`);
 if (failures.length > 0) {
   console.error("schedule-perf: FAILED");
   for (const failure of failures) console.error(`  x ${failure}`);

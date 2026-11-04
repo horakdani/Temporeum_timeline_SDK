@@ -49,7 +49,7 @@ Before anything public is removed it is deprecated for at least one minor releas
   - In the real Mobile Safari 26.5, in Xcode's iOS Simulator, on an iPhone 17 and an iPad Pro 11: a drag on the timeline does not scroll the page, not even when it carries on past the timeline's edge; with `touchAction: "cooperative"` a vertical swipe scrolls the page and the timeline lets go of the gesture; a long press picks an item up, and iOS does not take the touch away. A control run with `touch-action: auto` scrolls the page, so the measurement is able to fail.
   - Not measured: a physical iPhone or iPad, and whether a two-finger pinch on iOS zooms the timeline rather than the page. The simulator's automation delivers one finger, so the pinch is measured in WebKit's emulation only. Firefox is supported, and not tested.
   - The WebKit and iOS measurements run on a developer machine before a release, not in CI: the simulator needs macOS and Xcode.
-- **Node**: 20.11 and later (the `engines` range) for server rendering and the CommonJS build; the suites run on Node 22.
+- **Node**: 22.12 and later (the `engines` range) for server rendering and the CommonJS build; CI runs the core's suites on Node 22.12, 24 and 26, and the rest on 24.
 - **React**: 18 and 19 are the peer range; the test suite runs on 19 only.
 - **TypeScript**: the packages are built and checked with TypeScript 6, and a packed tarball is compiled in a foreign project under `moduleResolution` `node10`, `node16` (CommonJS and ESM) and `bundler`. Older compilers are likely to work and are not tested.
 

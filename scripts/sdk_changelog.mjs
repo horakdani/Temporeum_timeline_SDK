@@ -4,6 +4,7 @@
  *
  *   node scripts/sdk_changelog.mjs --date [YYYY-MM-DD]   # "## <version> — Unreleased" → "## <version> — <date>"
  *   node scripts/sdk_changelog.mjs --check               # fails unless every changelog dates the version
+ *   node scripts/sdk_changelog.mjs --check-entry         # every changelog has an entry for the version, dated or not (CI)
  *
  * Until a release is prepared, the entry being written is "Unreleased". The
  * pull request that prepares the release dates it (`--date`, today by
@@ -45,8 +46,23 @@ if (args[0] === "--date") {
     else if (!/^\d{4}-\d{2}-\d{2}$/.test(match[1])) failures.push(`packages/${name}/CHANGELOG.md does not date ${version} ("${match[1]}"): run node scripts/sdk_changelog.mjs --date`);
   }
   if (failures.length === 0) console.log(`every changelog dates ${version}`);
+} else if (args[0] === "--check-entry") {
+  // On every change, not only at release: the version's heading is there and
+  // says something, so a release is never prepared from an empty entry.
+  for (const name of PACKAGES) {
+    const text = readFileSync(join(repo, "packages", name, "CHANGELOG.md"), "utf8");
+    const match = heading.exec(text);
+    if (match === null) {
+      failures.push(`packages/${name}/CHANGELOG.md has no "## ${version} — …" heading`);
+      continue;
+    }
+    const rest = text.slice(match.index + match[0].length);
+    const body = rest.slice(0, rest.search(/^## /m) === -1 ? rest.length : rest.search(/^## /m));
+    if (!/^\s*- \S/m.test(body)) failures.push(`packages/${name}/CHANGELOG.md: the ${version} entry lists nothing`);
+  }
+  if (failures.length === 0) console.log(`every changelog has an entry for ${version}`);
 } else {
-  console.error("usage: node scripts/sdk_changelog.mjs --date [YYYY-MM-DD] | --check");
+  console.error("usage: node scripts/sdk_changelog.mjs --date [YYYY-MM-DD] | --check | --check-entry");
   process.exit(2);
 }
 for (const failure of failures) console.error(`FAIL ${failure}`);

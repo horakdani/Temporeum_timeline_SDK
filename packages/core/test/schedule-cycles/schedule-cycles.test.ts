@@ -57,6 +57,22 @@ function referenceCycles(count: number, dependencies: readonly Dependency[]): st
   return groups;
 }
 
+/** At most this many reads of `from`/`to` per dependency (the scheduler makes 2): linear work, with room for a few passes. */
+const READS_PER_EDGE = 8;
+
+/** The dependencies, each end a getter that counts its reads. */
+function counted(list: readonly Dependency[]): { dependencies: Dependency[]; reads: () => number } {
+  let reads = 0;
+  const dependencies = list.map((dependency) => {
+    const copy = { ...dependency };
+    return Object.defineProperties({ ...dependency }, {
+      from: { enumerable: true, get: () => ((reads += 1), copy.from) },
+      to: { enumerable: true, get: () => ((reads += 1), copy.to) },
+    });
+  });
+  return { dependencies, reads: () => reads };
+}
+
 describe("cycle", () => {
   it("[claim:cycle-members] reports exactly the groups of tasks that reach each other, and every task that depends on itself", () => {
     const random = makeRandom(SEED);
@@ -84,15 +100,16 @@ describe("cycle", () => {
     expect(selfLoops).toBeGreaterThan(20);
   });
 
-  it("[claim:finite] reports a ring of 10 000 and a dense tangle of 2 000 well inside a second each", () => {
+  // Not timed here: a test's clock is the machine's load. The work is counted —
+  // reads of a dependency's ends — and must grow with the edges, not their
+  // square; the time is measured by `npm run bench:schedule`.
+  it("[claim:finite] reports a ring of 10 000 and a dense tangle of 2 000 with work linear in the edges", () => {
     const ring = tasks(10_000);
-    const around = ring.map((item, index) => ({ from: item.id, to: `t${String((index + 1) % ring.length)}` }));
-    let started = performance.now();
-    const one = scheduleTasks(ring, around);
-    const ringMs = performance.now() - started;
+    const around = counted(ring.map((item, index) => ({ from: item.id, to: `t${String((index + 1) % ring.length)}` })));
+    const one = scheduleTasks(ring, around.dependencies);
     expect(one.cycles.length).toBe(1);
     expect(one.cycles[0]?.length).toBe(10_000);
-    expect(ringMs).toBeLessThan(1000);
+    expect(around.reads()).toBeLessThanOrEqual(READS_PER_EDGE * around.dependencies.length);
 
     const random = makeRandom(SEED + 1);
     const tangle = tasks(2000);
@@ -100,12 +117,17 @@ describe("cycle", () => {
     for (let edge = 0; edge < 20_000; edge += 1) {
       knots.push({ from: `t${String(Math.floor(random() * 2000))}`, to: `t${String(Math.floor(random() * 2000))}` });
     }
-    started = performance.now();
-    const many = scheduleTasks(tangle, knots);
-    const tangleMs = performance.now() - started;
+    const tangled = counted(knots);
+    const many = scheduleTasks(tangle, tangled.dependencies);
     expect(many.cycles.length).toBeGreaterThan(0);
     expect(many.cycles.flat().length).toBeGreaterThan(1000);
-    expect(tangleMs).toBeLessThan(1000);
+    expect(tangled.reads()).toBeLessThanOrEqual(READS_PER_EDGE * tangled.dependencies.length);
+  });
+
+  it("the read counter sees a quadratic pass (its negative control)", () => {
+    const edges = counted(Array.from({ length: 200 }, (_, index) => ({ from: `t${String(index)}`, to: `t${String(index + 1)}` })));
+    for (const outer of edges.dependencies) for (const inner of edges.dependencies) void (outer.from === inner.to);
+    expect(edges.reads()).toBeGreaterThan(READS_PER_EDGE * edges.dependencies.length);
   });
 
   it("[claim:nothing-changed] places nothing and makes no command when there is a cycle, and the inputs stay as they were", () => {

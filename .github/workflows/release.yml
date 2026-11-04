@@ -1,6 +1,11 @@
 # Publishes the six packages to npm with provenance, the engine first. Started by hand only
-# (Actions → Release → Run workflow) by a maintainer with release rights;
-# see RELEASING.md.
+# (Actions → Release → Run workflow) by a maintainer with release rights, from main, on a
+# commit CI passed; see RELEASING.md.
+#
+# Four jobs, each with only the rights it needs: the guard reads; the build installs, tests
+# and packs with read-only rights and no secret, and hands the tarballs on; the publish job
+# installs nothing and runs no package script — it publishes the tarballs through npm's
+# trusted publishing (OIDC, no token); the tag job alone may write to the repository.
 name: Release
 
 on:
@@ -14,27 +19,36 @@ on:
         options: [latest, next]
 
 permissions:
-  contents: write # the v<version> tag
-  id-token: write # npm provenance
+  contents: read
 
 concurrency:
   group: release
   cancel-in-progress: false
 
 jobs:
-  publish:
+  guard:
     runs-on: ubuntu-latest
-    environment: npm
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
+      - name: from main only
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::releases are made from main, not ${{ github.ref }}"
+          exit 1
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
         with:
-          node-version: "24"
-          cache: npm
-          registry-url: "https://registry.npmjs.org"
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium chromium-headless-shell
-
+          persist-credentials: false
+      - name: CI passed on this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          conclusion=$(gh run list --repo "${{ github.repository }}" --workflow ci.yml --commit "${{ github.sha }}" --event push --json conclusion --jq '.[0].conclusion')
+          [ "$conclusion" = "success" ] || { echo "::error::CI on ${{ github.sha }} is '${conclusion:-not run}', not success"; exit 1; }
       - name: version
         id: version
         run: |
@@ -44,10 +58,23 @@ jobs:
             *-*) [ "${{ inputs.dist-tag }}" = "next" ] || { echo "::error::$version is a pre-release: publish it under next"; exit 1; } ;;
             *)   [ "${{ inputs.dist-tag }}" = "latest" ] || { echo "::error::$version is a release: publish it under latest"; exit 1; } ;;
           esac
-          if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null; then
-            echo "::error::v$version is already tagged"; exit 1
-          fi
 
+  build:
+    needs: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium chromium-headless-shell
       - name: build and test
         run: |
           node scripts/sdk_changelog.mjs --check
@@ -55,17 +82,68 @@ jobs:
           npm test
           npm run deps
           node scripts/sdk_check_exports.mjs
-          node scripts/sdk_check_pack.mjs
+          node scripts/sdk_check_pack.mjs ${{ inputs.dist-tag == 'next' && '--allow-prerelease' || '' }}
+      - name: pack
+        run: |
+          mkdir -p tarballs
+          for pkg in packages/core packages/web-component packages/react packages/vue packages/svelte packages/angular; do
+            (cd "$pkg" && npm pack --ignore-scripts --pack-destination ../../tarballs)
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tarballs
+          path: tarballs/*.tgz
+          if-no-files-found: error
 
+  publish:
+    needs: [guard, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing and provenance
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install --global npm@11
+      - uses: actions/download-artifact@v4
+        with:
+          name: tarballs
+          path: tarballs
+      # In dependency order. A version already on npm is skipped, so a run that
+      # stopped half-way can be started again.
       - name: publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          VERSION: ${{ needs.guard.outputs.version }}
         run: |
           for pkg in packages/core packages/web-component packages/react packages/vue packages/svelte packages/angular; do
-            (cd "$pkg" && npm publish --provenance --access public --tag "${{ inputs.dist-tag }}")
+            short=$(basename "$pkg" | sed 's/^web-component$/element/')
+            if npm view "@temporeum/timeline-$short@$VERSION" version >/dev/null 2>&1; then
+              echo "@temporeum/timeline-$short@$VERSION is already on npm — skipped"
+              continue
+            fi
+            npm publish "tarballs/temporeum-timeline-$short-$VERSION.tgz" --provenance --access public --tag "${{ inputs.dist-tag }}"
           done
 
+  tag:
+    needs: [guard, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write # the v<version> tag
+    steps:
+      - uses: actions/checkout@v4
       - name: tag
+        env:
+          VERSION: ${{ needs.guard.outputs.version }}
         run: |
-          git tag "v${{ steps.version.outputs.version }}"
-          git push origin "v${{ steps.version.outputs.version }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
+            echo "v$VERSION is already tagged"
+          else
+            git tag "v$VERSION"
+            git push origin "v$VERSION"
+          fi

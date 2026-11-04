@@ -15,7 +15,7 @@
  *     (package.json, README, LICENSE, CHANGELOG). No source, test, map with
  *     a path pointing to the source, .env or dotfile.
  *  3. The version is IDENTICAL in every package, and not a prerelease (no
- *     `-`). The packages point to each other with exactly this version (not
+ *     `-`; `--allow-prerelease` admits one, for the `next` dist-tag). The packages point to each other with exactly this version (not
  *     a range and not workspace:), and the VERSION constant is this too.
  *  4. The manifest is ready for release: MIT licence and a LICENSE in the
  *     tarball; repository/homepage/bugs as in packages/docs/site/project.json,
@@ -69,6 +69,8 @@ const PACKAGES = [
   { dir: "svelte", name: "@temporeum/timeline-svelte", esmOnly: true },
   { dir: "angular", name: "@temporeum/timeline-angular", esmOnly: true },
 ];
+/** `--allow-prerelease`: the release workflow packs a pre-release for the `next` dist-tag. */
+const ALLOW_PRERELEASE = process.argv.includes("--allow-prerelease");
 const ALWAYS = /^(package\.json|README(\.md)?|LICEN[CS]E(\.md)?|CHANGELOG(\.md)?)$/i;
 const FORBIDDEN = /(^|\/)(src|test|tests|e2e|scripts|node_modules)\/|\.test\.|\.spec\.|(^|\/)\.[^/]+$|\.env/;
 
@@ -125,13 +127,20 @@ function judgeMaps(dir, files) {
   return problems;
 }
 
+/** A copy of a dependency map with the six packages' ranges on `^version`. */
+function rewriteInternal(deps, version) {
+  if (deps === undefined) return undefined;
+  return Object.fromEntries(Object.entries(deps).map(([name, range]) => [name, name.startsWith("@temporeum/timeline-") ? `^${version}` : range]));
+}
+
 /** The versions and the cross-references. Returns the problems. */
-function judgeVersions(manifests) {
+function judgeVersions(manifests, { allowPrerelease = false } = {}) {
   const problems = [];
   const versions = new Set(manifests.map((m) => m.version));
   if (versions.size !== 1) problems.push(`the versions do not match: ${[...versions].join(", ")}`);
   const [version] = versions;
-  if (typeof version !== "string" || version.includes("-") || !/^\d+\.\d+\.\d+$/.test(version)) problems.push(`the version is a prerelease or invalid: ${String(version)}`);
+  const shape = allowPrerelease ? /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/ : /^\d+\.\d+\.\d+$/;
+  if (typeof version !== "string" || !shape.test(version)) problems.push(`the version is ${allowPrerelease ? "invalid" : "a prerelease or invalid (a pre-release is packed with --allow-prerelease, for the next dist-tag)"}: ${String(version)}`);
   const names = new Set(manifests.map((m) => m.name));
   for (const manifest of manifests) {
     for (const [dep, range] of Object.entries({ ...manifest.dependencies, ...manifest.peerDependencies })) {
@@ -202,6 +211,21 @@ export function judgeExports(manifest, files) {
 }
 
 /** The release workflow's publish step: all six, the core first, the element before the adapters. */
+/**
+ * The release workflow's rights: nothing writes at the workflow's level, no
+ * long-lived npm token (trusted publishing), releases only from main, and a
+ * checkout that does not leave its token in .git/config for the steps after it.
+ */
+export function judgeReleaseRights(text) {
+  const problems = [];
+  const top = text.slice(0, text.search(/^jobs:/m));
+  if (/:\s*write/.test(top)) problems.push("the release workflow grants a write permission to every job (workflow-level permissions)");
+  if (/NPM_TOKEN|NODE_AUTH_TOKEN/.test(text)) problems.push("the release workflow uses a long-lived npm token instead of trusted publishing");
+  if (!/refs\/heads\/main/.test(text)) problems.push("the release workflow does not refuse a run from a branch other than main");
+  if (!/persist-credentials:\s*false/.test(text)) problems.push("the release workflow's checkout keeps its token in .git/config");
+  return problems;
+}
+
 export function judgeWorkflowPackages(text) {
   const problems = [];
   const order = [...text.matchAll(/packages\/(core|web-component|react|vue|svelte|angular)\b/g)].map((m) => m[1]);
@@ -242,7 +266,7 @@ for (const [index, pkg] of PACKAGES.entries()) {
   failures.push(...judgePeers(manifest, sourcesOf(pkg.dir)));
   if (fileProblems.length === 0) notes.push(`${pkg.name}@${run.version}: ${String(run.files.length)} files, all from files`);
 }
-failures.push(...judgeVersions(manifests));
+failures.push(...judgeVersions(manifests, { allowPrerelease: ALLOW_PRERELEASE }));
 const versionTs = readFileSync(join(repo, "packages", "core", "src", "version.ts"), "utf8").match(/VERSION = "([^"]+)"/)?.[1];
 if (versionTs !== manifests[0].version) failures.push(`the VERSION constant is "${String(versionTs)}", the manifest says "${manifests[0].version}"`);
 
@@ -258,6 +282,12 @@ else {
   const publishProblems = judgeWorkflowPackages(text);
   failures.push(...publishProblems);
   if (publishProblems.length === 0) notes.push("the release workflow publishes all six packages, starting with the core, the element before the adapters");
+  const rightsProblems = judgeReleaseRights(text);
+  failures.push(...rightsProblems);
+  if (rightsProblems.length === 0) notes.push("the release workflow writes only in its tag job, publishes without a token, from main only");
+  const loose = "permissions:\n  contents: write\n  id-token: write\njobs:\n  publish:\n    env:\n      NODE_AUTH_TOKEN: x\n";
+  if (judgeReleaseRights(loose).length < 4) failures.push(`NEGATIVE CONTROL: a workflow with write rights for every job and a token does NOT fail (${judgeReleaseRights(loose).join("; ")})`);
+  else notes.push("the negative control fails, as it should — workflow-level write, a token, any branch, a kept checkout token");
   // 9. negative control for the workflow
   if (judgeWorkflowPackages(text.replace(" packages/vue", "")).length === 0) failures.push("NEGATIVE CONTROL: a workflow that leaves out a package does NOT fail");
   else notes.push("the negative control fails, as it should — the workflow without vue");
@@ -337,6 +367,11 @@ console.log(JSON.stringify(out));
 const prerelease = judgeVersions(manifests.map((m, i) => (i === 0 ? { ...m, version: "1.0.0-rc.9" } : m)));
 if (prerelease.length === 0) failures.push("NEGATIVE CONTROL: a prerelease version does NOT fail — the measure checks nothing");
 else notes.push(`the negative control fails, as it should — prerelease version: ${prerelease[0]}`);
+// --allow-prerelease lets a pre-release through, and nothing else that is not a version
+const rcAllowed = judgeVersions(manifests.map((m) => ({ ...m, version: "1.0.0-rc.9" })).map((m) => ({ ...m, dependencies: rewriteInternal(m.dependencies, "1.0.0-rc.9"), peerDependencies: rewriteInternal(m.peerDependencies, "1.0.0-rc.9") })), { allowPrerelease: true });
+const junkAllowed = judgeVersions(manifests.map((m) => ({ ...m, version: "1.0" })), { allowPrerelease: true });
+if (rcAllowed.length !== 0 || junkAllowed.length === 0) failures.push(`NEGATIVE CONTROL: --allow-prerelease is wrong (rc: ${rcAllowed.join("; ") || "passes"}, "1.0": ${junkAllowed.length === 0 ? "passes" : "fails"})`);
+else notes.push("--allow-prerelease passes 1.0.0-rc.9 and still fails \"1.0\"");
 {
   const angular = manifests.find((m) => m.name.endsWith("-angular"));
   const extra = angular === undefined ? [] : judgePeers({ ...angular, peerDependencies: { ...angular.peerDependencies, rxjs: "^7.4.0" } }, sourcesOf("angular"));

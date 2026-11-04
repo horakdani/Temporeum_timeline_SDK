@@ -19,11 +19,11 @@ Releases are published by a GitHub Actions workflow, never from a laptop. As a r
    - Update `VERSION` in `packages/core/src/version.ts`.
    - Date each `CHANGELOG.md`'s "Unreleased" heading: `node scripts/sdk_changelog.mjs --date` (today, or `--date YYYY-MM-DD`). The release workflow refuses to publish a version whose six changelogs do not date it. (The first publication is 1.0.0.)
 2. **Run the measurements** below on a quiet machine, on the release branch, and merge it once they and CI are green.
-3. **Run the release workflow:** **Actions → Release → Run workflow**, with the dist-tag (`latest` or `next`). The workflow then:
-   - builds and tests everything;
-   - checks the packages with `npm publish --dry-run`;
-   - publishes `@temporeum/timeline-core`, then `@temporeum/timeline-element`, then the four framework packages (`-react`, `-vue`, `-svelte`, `-angular`), each with `--provenance`;
-   - tags the commit `v<version>`.
+3. **Run the release workflow** from `main`: **Actions → Release → Run workflow**, with the dist-tag (`latest` or `next`). It refuses another branch, and a commit whose CI did not pass. Then, in four jobs with only the rights each needs:
+   - **guard** checks the branch, the CI run and that the version fits the dist-tag;
+   - **build** (read-only, no secret) builds and tests everything, checks the packages with `npm publish --dry-run` (a pre-release with `--allow-prerelease`), and packs the six tarballs;
+   - **publish** installs nothing and runs no package script: it publishes those tarballs — `@temporeum/timeline-core`, then `@temporeum/timeline-element`, then `-react`, `-vue`, `-svelte`, `-angular` — with `--provenance`, skipping a version already on npm, so a run that stopped half-way can simply be started again;
+   - **tag** tags the commit `v<version>`, unless it is tagged already.
 4. **Write the GitHub release** from the changelog entries.
 
 ## Measurements
@@ -50,8 +50,9 @@ Each prints `<name>: passed` or fails with what it measured. `test:e2e:touch:web
 
 ## Secrets and permissions
 
-- The workflow runs in the `npm` environment. Its `NPM_TOKEN` secret is an npm automation token with publish rights for the `@temporeum` scope. Once npm trusted publishing is set up for the six packages, the token can be removed.
-- The workflow requests `id-token: write`, which npm provenance needs.
+- There is no npm token. The publish job runs in the `npm` environment and publishes through npm's **trusted publishing**: on npmjs.com, each of the six packages names this repository and the `release.yml` workflow as its trusted publisher (Settings → Trusted publishing). Only that job requests `id-token: write`, which trusted publishing and provenance need.
+- Only the tag job may write to the repository (`contents: write`); every other job reads.
+- **The first publication.** If npm lets a trusted publisher be set only on a package that already exists, the six names have to exist before 1.0.0 goes out through the workflow: publish them once by hand from the build job's tarballs (download the `tarballs` artifact of a run whose publish job was not approved, then `npm publish <tgz> --access public` for each, in the order above), set the trusted publisher on each, and from then on the workflow publishes alone.
 - Only maintainers with release rights can approve the `npm` environment.
 
 ## If a release goes wrong
