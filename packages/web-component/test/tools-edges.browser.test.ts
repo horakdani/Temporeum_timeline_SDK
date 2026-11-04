@@ -203,7 +203,8 @@ describe("time bars and presets, turned and changed", () => {
     const presets = element.querySelector(".tl-presets") as HTMLElement;
     const strip = element.querySelector("[data-tl-minimap]")?.getBoundingClientRect();
     expect(presets.style.right).not.toBe("0px");
-    expect(presets.getBoundingClientRect().right).toBeLessThanOrEqual((strip?.left ?? 0) + 0.5);
+    // Half a pixel of layout rounding, and Firefox's layout unit (1/60 px) on top: 464.0000153 once.
+    expect(presets.getBoundingClientRect().right).toBeLessThanOrEqual((strip?.left ?? 0) + 0.5 + 1e-3);
     const week = presets.querySelector('[data-tl-preset="week"]') as HTMLElement;
     week.click();
     timeline.flush();
