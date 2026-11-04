@@ -40,8 +40,10 @@ if (!entries.some((entry) => entry.name === "intl" && entry.input === "src/intl/
 
 const read = (file) => codeOf(readFileSync(join(element, file), "utf8"));
 const needles = [
-  ["config.ts", ['directionOf(config, state) === "rtl" ? mirrorScene(scene) : scene']],
-  ["timeline.ts", ["direction: () => direction", "mirrorTextNodes(flattenHtmlText(scene))", 'direction === "rtl" ? box.right - event.clientX']],
+  // The mirror is the intl plugin's: the frame at the end of frameScene, and a PDF's text.
+  ["config.ts", ['directionOf(config, state) === "rtl" ? plugin("intl", \'The direction "rtl" option\').mirrorScene(scene) : scene']],
+  ["export.ts", ['plugin("intl", "A right-to-left PDF").mirrorTextNodes', "mirror(flattenHtmlText(scene))"]],
+  ["timeline.ts", ["direction: () => direction", 'direction === "rtl" ? box.right - event.clientX']],
   ["tools/layer.ts", ["function setX(", "MIRRORED_KEYS[event.key]", "box.right - event.clientX"]],
   ["groups/layer.ts", ["mirrorStyle(", "MIRRORED_KEYS[sample.key]", "box.right - event.clientX"]],
 ];

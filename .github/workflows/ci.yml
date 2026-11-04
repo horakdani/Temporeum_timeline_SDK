@@ -53,6 +53,10 @@ jobs:
         run: npm run test:property -w packages/core
       - name: visual regression
         run: npm run test:visual -w packages/core
+      - name: right to left, and the dependency arrows' routing
+        run: |
+          npm run test:rtl -w packages/core
+          npm run test:dep-routing -w packages/core
       - name: size budgets
         run: npm run size -w packages/core
       - name: tree-shaking and entry-point isolation

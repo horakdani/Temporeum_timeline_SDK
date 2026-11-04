@@ -27,11 +27,13 @@ const failures = checkReport({
 });
 
 const wc = (file) => codeOf(readFileSync(join(root, "packages", "web-component", "src", file), "utf8"));
-const config = wc("config.ts");
-// A path per look since the perf-gantt check: the element draws through dependencyPaths
-// and routePath, and the under-items claim is tested on both drawings.
+// frameScene hands the frame to the Gantt plugin's layer; the layer (gantt.ts) routes
+// and draws the arrows: a path per look, through dependencyPaths and routePath, and the
+// under-items claim is tested on both drawings.
+if (!wc("config.ts").includes('plugin("gantt", "The gantt option").layer(config, state, result, scene)')) failures.push("frameScene (web-component/src/config.ts) does not draw the Gantt plugin's layer");
+const gantt = wc("gantt.ts");
 for (const needle of ["routeDependencies(", "dependencyPaths(", "routePath(", "withDependencyLayer("]) {
-  if (!config.includes(needle)) failures.push(`frameScene (web-component/src/config.ts) does not use: ${needle}`);
+  if (!gantt.includes(needle)) failures.push(`the Gantt layer (web-component/src/gantt.ts) does not use: ${needle}`);
 }
 if (!wc("timeline.ts").includes("frameScene(config, state, result)")) failures.push("createTimeline does not draw through frameScene");
 if (!wc("ssr.ts").includes("frameScene(config, state, result)")) failures.push("SSR does not draw through frameScene");

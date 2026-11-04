@@ -17,12 +17,12 @@ describe("the core without a DOM", () => {
   it("runs in an environment that has none", () => {
     expect(typeof globalThis.window).toBe("undefined");
     expect(typeof globalThis.document).toBe("undefined");
-    expect(typeof globalThis.localStorage).toBe("undefined");
-    expect(typeof globalThis.sessionStorage).toBe("undefined");
-    // `navigator` and `fetch` are NOT asserted here: Node has shipped both as
-    // globals since v21, so their presence is not a DOM leak and their
-    // absence cannot be checked. Those two are held by the lint rule in
-    // eslint.config.mjs, which is the static half of the same promise.
+    // `navigator` and `fetch` (Node 21+), and `localStorage` and
+    // `sessionStorage` (Node 25+, Web Storage) are NOT asserted here: Node
+    // ships them as globals itself, so their presence is not a DOM leak and
+    // their absence cannot be checked. They are held by the lint rule in
+    // eslint.config.mjs (the static half of the same promise) and by the
+    // probe of the built package, which booby-traps every one of them.
   });
 
   it("computes a whole axis and projection there anyway", () => {

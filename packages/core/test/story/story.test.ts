@@ -39,6 +39,15 @@ const APOLLO: TimelineJSData = {
   eras: [{ start_date: { year: 1961 }, end_date: { year: 1972 }, text: { headline: "Project <b>Apollo</b>" } }],
 };
 
+/**
+ * A range as Intl writes it, with one space around the dash: ICU versions differ in
+ * the spacing alone (Node 24's \"1914 – 1918\", Node 22.12's and 26's \"1914–1918\"),
+ * and the text is Intl's, not the library's.
+ */
+function spaced(text: string): string {
+  return text.replace(/\s+/gu, " ").replace(/ ?– ?/gu, " – ");
+}
+
 describe("fromTimelineJS", () => {
   const story = fromTimelineJS(APOLLO);
 
@@ -70,8 +79,8 @@ describe("fromTimelineJS", () => {
     ]);
     // The finer of the two units is the item's: the span is exact in it.
     expect(mixed.items.map((item) => item.granularity)).toEqual(["day", "day", "year"]);
-    expect(storyDateText(mixed.items[1] as Item, { locale: "en-GB" }).replace(/\s+/gu, " ")).toBe("16 July 1969 – 31 December 1972");
-    expect(storyDateText(mixed.items[2] as Item, { locale: "en-GB" }).replace(/\s+/gu, " ")).toBe("1914 – 1918");
+    expect(spaced(storyDateText(mixed.items[1] as Item, { locale: "en-GB" }))).toBe("16 July 1969 – 31 December 1972");
+    expect(spaced(storyDateText(mixed.items[2] as Item, { locale: "en-GB" }))).toBe("1914 – 1918");
   });
 
   it("keeps each slide in data.story, and the headline as plain text in the label", () => {
@@ -332,7 +341,7 @@ describe("storyMedia", () => {
 describe("storyDateText", () => {
   const en = { locale: "en-GB" };
   // ICU's spaces around a range's dash differ by version (thin, narrow no-break); the words do not.
-  const say = (...args: Parameters<typeof storyDateText>) => storyDateText(...args).replace(/\s+/gu, " ");
+  const say = (...args: Parameters<typeof storyDateText>) => spaced(storyDateText(...args));
   it("writes a date to its precision", () => {
     expect(say({ start: utc(1969), granularity: "year" }, en)).toBe("1969");
     expect(say({ start: utc(1969, 7), granularity: "month" }, en)).toBe("July 1969");
@@ -346,7 +355,7 @@ describe("storyDateText", () => {
     expect(say({ start: utc(1969, 7, 16), end: utc(1969, 7, 24), granularity: "day" }, en)).toBe("16 – 24 July 1969");
     expect(say({ start: utc(1969, 7, 16), end: utc(1969, 7, 16), granularity: "day" }, en)).toBe("16 July 1969");
     // Without a granularity the end is not part of the span.
-    expect(say({ start: utc(1969, 7, 16), end: utc(1969, 7, 17) }, { locale: "en-GB" })).toBe("16 July 1969, 00:00–23:59");
+    expect(say({ start: utc(1969, 7, 16), end: utc(1969, 7, 17) }, { locale: "en-GB" })).toBe("16 July 1969, 00:00 – 23:59");
   });
 
   it("gives a year before 1 AD its era", () => {
