@@ -30,7 +30,7 @@ Items are treated as immutable: to change one, replace it (and the array). The l
   ],
 ```
 
-A lane is a row block, so grouping is not a mode — and for groups inside groups, with headers you can collapse and reorder, give `groups` instead, with `groupsPlugin` from `@temporeum/timeline-element/groups` registered ([groups and item kinds](groups-and-item-kinds.md)): put everything in one lane for the densest packing, give items a `laneId` to group them. A `pinned` lane keeps its place when the rest scroll. `packMode` decides how its items share rows.
+A lane is a row block, so grouping is not a mode — and for groups inside groups, with headers you can collapse and reorder, give `groups` instead, with `groupsPlugin` from `@temporeum/timeline-element/groups` registered ([groups and item kinds](groups-and-item-kinds.md)): put everything in one lane for the densest packing, give items a `laneId` to group them. A `pinned` lane comes first, ahead of the others, with its own fill (`tl-lane--pinned`); it scrolls with them. `packMode` decides how its items share rows.
 
 ## The packing
 

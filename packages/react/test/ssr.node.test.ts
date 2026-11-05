@@ -77,3 +77,15 @@ describe("the plugin registry", () => {
     expect(adapter.hasPlugin).toBe(element.hasPlugin);
   });
 });
+
+describe("an explicit undefined in the box's props (R47)", () => {
+  it("is accepted, as the configuration's fields are, and draws as if absent", () => {
+    // Under exactOptionalPropertyTypes a host forwarding its own optional
+    // className or ssrWidth got TS2375, while every config prop took it.
+    const maybe = <V,>(value: V): V | undefined => (Date.now() < 0 ? value : undefined);
+    const props: TimelineProps = { items, className: maybe("box"), style: maybe({ height: 200 }), ssrWidth: maybe(640), id: maybe("t"), renderItem: maybe(() => null) };
+    const html = renderToString(createElement(Timeline, props));
+    expect(html).toContain("<svg");
+    expect(html).not.toContain('class="box"');
+  });
+});

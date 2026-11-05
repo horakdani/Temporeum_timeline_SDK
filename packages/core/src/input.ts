@@ -304,6 +304,8 @@ export interface EditingInputOptions<T = unknown> {
   readonly snapMs?: number;
   /** Where the snap grid is anchored. The epoch by default. */
   readonly snapOrigin?: TimeMs;
+  /** The zone a grid of whole days lies in, and an item known to the day is drawn in. UTC by default. */
+  readonly timeZone?: string;
   /** Smallest duration a resize may squash an item to. */
   readonly minDurationMs?: number;
   /** Veto a move or resize before it is proposed. */
@@ -697,6 +699,15 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
     into.push({ type: "viewport", domain, crossOffset, reason, atLimit });
   }
 
+  /**
+   * Zoom about `focus` with the span held to the limits first, so the instant
+   * under the focus stays there; `commit` then only moves the position.
+   */
+  function zoomAt(from: Domain, focus: number, factor: number): Domain {
+    const span = spanOf(clampDomain(zoomDomainAt(from, mainSize, focus, factor, { warp }), limits));
+    return zoomDomainAt(from, mainSize, focus, spanOf(from) / span, { warp });
+  }
+
   /** Put `time` back under `main`, without changing the zoom. */
   function panTimeTo(time: TimeMs, main: number, from: Domain): Domain {
     const current = createTimeScale(from, mainSize, warp);
@@ -774,7 +785,11 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
    */
   function applyPinch(a: TrackedPointer, b: TrackedPointer, into: InputEffect<T>[]): void {
     const separation = b.main - a.main;
-    const anchorSeparation = b.anchorTime - a.anchorTime;
+    // Where the two instants are drawn now, in pixels: with hidden dates a
+    // week of real time between the fingers is five days of shown time, and
+    // the zoom works in shown time.
+    const now = scale();
+    const anchorSeparation = now.toMain(b.anchorTime) - now.toMain(a.anchorTime);
     const scaleable =
       zoomEnabled &&
       Math.abs(separation) >= minPinchSeparation &&
@@ -791,9 +806,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
       commit(panTimeTo(anchorMidpoint, midpoint, domain), crossMidpointOffset(a, b), "pan", into);
       return;
     }
-    const wantMsPerPx = anchorSeparation / separation;
-    const factor = spanOf(domain) / mainSize / wantMsPerPx;
-    const zoomed = zoomDomainAt(domain, mainSize, 0, factor, { warp });
+    const zoomed = zoomDomainAt(domain, mainSize, 0, separation / anchorSeparation, { warp });
     const nextDomain = panTimeTo(a.anchorTime, a.main, zoomed);
     commit(nextDomain, crossMidpointOffset(a, b), "zoom", into);
   }
@@ -923,6 +936,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
         deltaMs,
         snapMs: editing.snapMs,
         snapOrigin: editing.snapOrigin,
+        timeZone: editing.timeZone,
         minDurationMs: editing.minDurationMs,
       });
       return patch === undefined ? [] : [patch];
@@ -932,6 +946,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
       laneId,
       snapMs: editing.snapMs,
       snapOrigin: editing.snapOrigin,
+      timeZone: editing.timeZone,
     });
     const patches: ItemPatch<T>[] = [first];
     const shift = (first.start ?? 0) - toTimeMs(primary.item.start);
@@ -1462,7 +1477,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
           anchor = createTimeScale(target.domain, mainSize, warp).toMain((from + to) / 2);
         }
         const factor = action === "zoomIn" ? tapZoom : 1 / tapZoom;
-        travel(zoomDomainAt(target.domain, mainSize, anchor, factor, { warp }), target.cross, "zoom", time, into);
+        travel(zoomAt(target.domain, anchor, factor), target.cross, "zoom", time, into);
         keepFocusShown(1, into);
         return true;
       }
@@ -1533,14 +1548,14 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
       // Two fingers tapped: the gesture every map has for "out one step".
       lastTap = undefined;
       if (zoomEnabled) {
-        commit(zoomDomainAt(domain, mainSize, at.main, 1 / tapZoom, { warp }), crossOffset, "zoom", into);
+        commit(zoomAt(domain, at.main, 1 / tapZoom), crossOffset, "zoom", into);
       }
       return;
     }
     if (isDouble) {
       lastTap = undefined;
       if (zoomEnabled) {
-        commit(zoomDomainAt(domain, mainSize, at.main, tapZoom, { warp }), crossOffset, "zoom", into);
+        commit(zoomAt(domain, at.main, tapZoom), crossOffset, "zoom", into);
       }
       return;
     }
@@ -1789,7 +1804,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
         // timeline runs, because that is what the hardware reports.
         if (zoomEnabled) {
           commit(
-            zoomDomainAt(domain, mainSize, at.main, Math.exp(-input.deltaY * wheelZoomRate), { warp }),
+            zoomAt(domain, at.main, Math.exp(-input.deltaY * wheelZoomRate)),
             crossOffset,
             "zoom",
             effects,
@@ -1844,7 +1859,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
         return effects;
       }
       stopTransition(effects);
-      commit(zoomDomainAt(domain, mainSize, focusMain, factor, { warp }), crossOffset, "zoom", effects);
+      commit(zoomAt(domain, focusMain, factor), crossOffset, "zoom", effects);
       reanchor();
       return effects;
     },

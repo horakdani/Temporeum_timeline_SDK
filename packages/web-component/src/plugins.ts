@@ -174,13 +174,19 @@ export type PluginName = keyof Features;
  */
 export type TimelinePlugin = { readonly [K in PluginName]: { readonly name: K; readonly feature: Features[K] } }[PluginName];
 
+/** This package's version; `scripts/sdk_check_pack.mjs` holds it to the manifest. */
+const RELEASE = "1.0.0";
+
 /**
  * The registry, on the global object under a registered symbol: a page with
- * two copies of this module — the ESM and the CJS build, or a bundle that
- * did not dedupe — has one registry, so a plugin registered through one is
- * there for a timeline made by the other.
+ * two copies of this module of one release — the ESM and the CJS build, or a
+ * bundle that did not dedupe — has one registry, so a plugin registered
+ * through one is there for a timeline made by the other. Each release has its
+ * own: what a plugin hands the element is internal and changes between
+ * releases, so a copy never draws with another release's plugin — without its
+ * own, it says which import is missing.
  */
-const REGISTRY = Symbol.for("@temporeum/timeline/plugins");
+const REGISTRY = Symbol.for(`@temporeum/timeline/plugins@${RELEASE}`);
 
 type Registry = { -readonly [K in PluginName]?: Features[K] };
 

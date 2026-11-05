@@ -42,6 +42,7 @@ const resources = [
 
 - **A resource is a lane.** `{ id, label, capacity }`; the capacity is 1 when it is not given. An item whose `laneId` is a resource's id is work assigned to it.
 - **`unitsOf` says how much of a resource an item takes** — 1 by default, all of a capacity of one. A half-time task is 0.5; a test lab with two benches has a capacity of 2.
+- **A booking by the day takes the whole day.** An item with a `granularity` loads its resource over the units it is drawn over, in the timeline's `timeZone`; `resourceLoad` takes the same `timeZone` when you call it yourself.
 - **With `lanes` or `groups`, the resources say which of those lanes are resources.** A team can be a group, and its people the groups inside it, each a resource.
 
 ## The load
@@ -60,7 +61,7 @@ With `editing.crossLane`, the move that changes an item's lane is the move betwe
 
 ```js excerpt:example/resources
 // The tasks still to place, beside it.
-mountBacklog(document.querySelector("#backlog"), timeline, { tasks, label: "Unscheduled tasks", focusTarget: element });
+mountBacklog(document.querySelector("#backlog"), timeline, { tasks, ariaLabel: "Unscheduled tasks", focusTarget: element });
 ```
 
 `mountBacklog(container, timeline, options)` lists the tasks no item has the id of. A task is an item without its time, with a `durationMs`.

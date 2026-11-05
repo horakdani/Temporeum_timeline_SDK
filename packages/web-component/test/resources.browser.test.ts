@@ -217,8 +217,16 @@ describe("the backlog", () => {
     expect(empty?.hidden).toBe(false);
     expect(list.hasAttribute("aria-activedescendant")).toBe(false);
     expect(backlog.tasks).toEqual([]);
-    backlog.update([{ id: "new", label: "New" }]);
+    backlog.update({ tasks: [{ id: "new", label: "New" }] });
     expect(options(list).map((row) => row.textContent)).toEqual(["New"]);
+    // R22: update takes options, as every update does; the rest stay.
+    backlog.update({ ariaLabel: "To do", theme: "dark", describe: (task) => `• ${task.id}` });
+    expect(list.getAttribute("aria-label")).toBe("To do");
+    expect(box.querySelector(".tl-backlog")?.getAttribute("data-tl-theme")).toBe("dark");
+    expect(options(list).map((row) => row.textContent)).toEqual(["• new"]);
+    backlog.update({ theme: "light" });
+    expect(list.getAttribute("aria-label")).toBe("To do");
+    expect(box.querySelector(".tl-backlog")?.getAttribute("data-tl-theme")).toBe("light");
     backlog.destroy();
     backlog.destroy();
     expect(box.children).toHaveLength(0);
@@ -320,8 +328,9 @@ describe("the backlog", () => {
     const timeline = element.timeline as Timeline;
     const box = document.createElement("div");
     document.body.append(box);
-    const dark = mountBacklog(box, timeline, { tasks, theme: "dark", label: "To do", empty: "All done", describe: (task) => `• ${task.id}`, focusTarget: element });
+    const dark = mountBacklog(box, timeline, { tasks, theme: "dark", ariaLabel: "To do", empty: "All done", describe: (task) => `• ${task.id}`, focusTarget: element });
     const list = box.querySelector<HTMLElement>("[role=listbox]") as HTMLElement;
+    expect(list.getAttribute("aria-label")).toBe("To do");
     expect(box.querySelector(".tl-backlog")?.getAttribute("data-tl-theme")).toBe("dark");
     expect(options(list)[0]?.textContent).toBe("• ui");
     expect(box.querySelector(".tl-backlog-empty")?.textContent).toBe("All done");

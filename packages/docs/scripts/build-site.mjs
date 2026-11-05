@@ -6,7 +6,7 @@
  *   site/pages/**.md         the pages (the Markdown subset of markdown.mjs)
  *   site/examples/<id>/      the live examples: example.js, meta.json,
  *                            and an optional example.html (the body markup)
- *   site/assets/             the stylesheet and the playground script
+ *   site/assets/             the stylesheet, the playground script and the icon
  *   site/benchmark/          results.json, written by the comparison benchmark
  *   site/migration/<lib>.json the migration guides' mapping tables ({{migration:<lib>}})
  *   site/conformance/<name>.json the conformance report's table ({{acr:<name>}}), and the
@@ -609,8 +609,9 @@ function pageShell({ title, base, nav, current, body, outline, hasExamples, vers
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(title)} — ${SITE_NAME}</title>
+<title>${title === SITE_NAME ? SITE_NAME : `${escapeHtml(title)} — ${SITE_NAME}`}</title>
 <meta name="description" content="${escapeHtml(description)}">
+<link rel="icon" href="${base}assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="${base}assets/site.css">
 </head>
 <body>

@@ -7,8 +7,10 @@ import {
   layoutItems,
   resolveSpan,
 } from "../src/layout.js";
+import { fitDensity } from "../src/responsive.js";
 import { createTimeScale } from "../src/scale.js";
 import type { Item, Lane } from "../src/types.js";
+import { makeRandom } from "./property/harness.js";
 
 const DAY = 86_400_000;
 const T0 = Date.UTC(2025, 2, 10);
@@ -61,6 +63,56 @@ describe("packing into sublanes", () => {
   });
 });
 
+describe("packing cost", () => {
+  /** First fit the slow, obvious way: every placed span of every sublane. */
+  function naiveRows(items: readonly Item[]): Record<string, number> {
+    const occupied: { start: number; end: number }[][] = [];
+    const rows: Record<string, number> = {};
+    const sorted = items
+      .map((item, index) => ({ item, index, span: resolveSpan(item) }))
+      .sort((a, b) => a.span.start - b.span.start || a.index - b.index);
+    for (const { item, span } of sorted) {
+      const height = item.sublaneSpan ?? 1;
+      const busy = (row: number) => (occupied[row] ?? []).some((o) => o.start < span.end && span.start < o.end);
+      let base = 0;
+      while (Array.from({ length: height }, (_, k) => busy(base + k)).some(Boolean)) base += 1;
+      for (let k = 0; k < height; k += 1) (occupied[base + k] ??= []).push(span);
+      rows[item.id] = base;
+    }
+    return rows;
+  }
+
+  it("places every item where a first fit over all placed spans would", () => {
+    const random = makeRandom(0x4a11);
+    for (let round = 0; round < 200; round += 1) {
+      const items: Item[] = Array.from({ length: 1 + Math.floor(random() * 40) }, (_, n) => {
+        const start = T0 + Math.floor(random() * 30) * DAY;
+        const kind = random();
+        return {
+          id: `i${String(n)}`,
+          start,
+          ...(kind < 0.3 ? {} : { end: start + Math.floor(random() * 6) * DAY }),
+          ...(kind > 0.8 ? { sublaneSpan: 1 + Math.floor(random() * 3) } : {}),
+          ...(kind > 0.9 ? { granularity: "day" as const } : {}),
+        };
+      });
+      expect(rowsById(layoutItems(items).items)).toEqual(naiveRows(items));
+    }
+  });
+
+  it("costs the sublanes it looks at, not the items already placed", () => {
+    // R4: every placement scanned every span already in a sublane, so one lane
+    // of back-to-back items was quadratic (30k items: 384 ms), and the density
+    // fit ran the layout three times. 200k items took 126 s.
+    const items: Item[] = Array.from({ length: 200_000 }, (_, n) => days(`i${String(n)}`, n, 1));
+    const started = performance.now();
+    const layout = layoutItems(items);
+    fitDensity({ items, domain: [T0, T0 + 200_000 * DAY], width: 1000, height: 400, orientation: "horizontal" });
+    expect(layout.rowCount).toBe(1);
+    expect(performance.now() - started).toBeLessThan(3000);
+  });
+});
+
 describe("lanes", () => {
   it("derives lanes from the items in order of first appearance", () => {
     const layout = layoutItems([
@@ -100,6 +152,10 @@ describe("lanes", () => {
     });
     expect(layout.items).toHaveLength(1);
     expect(layout.items[0]?.laneId).toBe(DEFAULT_LANE_ID);
+  });
+
+  it("rejects two items with one id (R8)", () => {
+    expect(() => layoutItems([days("a", 0, 1), days("b", 1, 2), days("a", 3, 4)])).toThrow(/Duplicate item id/);
   });
 
   it("rejects two lanes with one id", () => {
@@ -167,6 +223,9 @@ describe("per-item height", () => {
   it("rejects a height that is not a positive whole number", () => {
     expect(() => layoutItems([days("a", 0, 1, { sublaneSpan: 0 })])).toThrow(/positive integer/);
     expect(() => layoutItems([days("a", 0, 1, { sublaneSpan: 1.5 })])).toThrow(/positive integer/);
+    // R27: a span past the cap is refused before the packing loops and allocates for every row of it.
+    expect(() => layoutItems([days("a", 0, 1, { sublaneSpan: 200_000_000 })])).toThrow(/at most 1000/);
+    expect(layoutItems([days("a", 0, 1, { sublaneSpan: 1000 })]).items[0]?.sublaneSpan).toBe(1000);
   });
 });
 

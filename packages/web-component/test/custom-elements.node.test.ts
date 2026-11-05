@@ -23,6 +23,8 @@ interface Manifest {
       readonly attributes?: readonly { readonly name: string; readonly description: string; readonly fieldName?: string }[];
       readonly members?: readonly { readonly name: string; readonly description: string }[];
       readonly events?: readonly { readonly name: string; readonly description: string; readonly type: { readonly text: string } }[];
+      readonly cssProperties?: readonly { readonly name: string; readonly description: string }[];
+      readonly cssParts?: readonly { readonly name: string; readonly description: string }[];
     }[];
     readonly exports: readonly { readonly kind: string; readonly name: string }[];
   }[];
@@ -46,6 +48,17 @@ describe("custom-elements.json", () => {
     const undescribed = [...(element?.attributes ?? []), ...(element?.members ?? []), ...(element?.events ?? [])].filter((each) => each.description.trim() === "").map((each) => each.name);
     expect(undescribed).toEqual([]);
     expect(element?.attributes?.find((each) => each.name === "theme")?.fieldName).toBe("theme");
+    // R49: every attribute but the platform's aria-* pairs with a property the element has.
+    const paired = (element?.attributes ?? []).filter((each) => !each.name.startsWith("aria-"));
+    expect(paired.filter((each) => each.fieldName === undefined || !members.includes(each.fieldName)).map((each) => each.name)).toEqual([]);
+    expect(element?.attributes?.find((each) => each.name === "start")?.fieldName).toBe("domain");
+    // R50: the tokens and the parts, public API by stability.md, each described.
+    const tokens = element?.cssProperties ?? [];
+    expect(tokens.map((each) => each.name)).toEqual(expect.arrayContaining(["--tl-surface", "--tl-item-fill", "--tl-focus", "--tl-era-text"]));
+    expect(tokens).toHaveLength(15);
+    const parts = element?.cssParts ?? [];
+    expect(parts.map((each) => each.name)).toEqual(expect.arrayContaining(["timeline", "item", "item-selected", "tick-label", "group", "tooltip"]));
+    expect([...tokens, ...parts].filter((each) => each.description.trim() === "")).toEqual([]);
     expect(manifest.modules.flatMap((module) => module.exports).find((each) => each.kind === "custom-element-definition")?.name).toBe("temporeum-timeline");
   });
 

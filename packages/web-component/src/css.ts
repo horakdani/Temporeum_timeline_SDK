@@ -8,9 +8,10 @@
  * adopted there applies exactly as the `<style>` did, which reached the
  * whole of the same root too.
  *
- * Where there is no such root — a box not yet in a document, a browser
- * without constructable stylesheets — the `<style>` is written as before,
- * with the host's nonce, which such a policy needs.
+ * A box not yet in a document has no such root yet: its sheet is adopted
+ * once it is in one, before the first frame that paints it. Only a browser
+ * without constructable stylesheets gets the `<style>`, with the host's
+ * nonce, which such a policy needs.
  */
 
 /** Each root's sheets by their text, with how many holders keep each. */
@@ -26,7 +27,25 @@ const held = new WeakMap<Node, Map<string, [CSSStyleSheet, number]>>();
 export function adoptCss(parent: Element | DocumentFragment, css: string, nonce?: string): () => void {
   const root = parent.getRootNode() as Node & Partial<DocumentOrShadowRoot>;
   const doc = parent.ownerDocument as Document;
-  const Sheet = doc.defaultView?.CSSStyleSheet;
+  const win = doc.defaultView;
+  const Sheet = win?.CSSStyleSheet;
+  if (Sheet !== undefined && doc.adoptedStyleSheets !== undefined && !parent.isConnected && win !== null) {
+    // Detached: a `<style>` here would be blocked by the policy the moment the
+    // box is put in, and nothing would adopt the sheet after (R78). Animation
+    // frames run before the paint, so the first paint has the sheet.
+    let release: (() => void) | undefined;
+    let frame = 0;
+    const wait = (): void => {
+      if (parent.isConnected) release = adoptCss(parent, css, nonce);
+      else frame = win.requestAnimationFrame(wait);
+    };
+    frame = win.requestAnimationFrame(wait);
+    return () => {
+      win.cancelAnimationFrame(frame);
+      release?.();
+      release = () => undefined;
+    };
+  }
   if (root.adoptedStyleSheets === undefined || Sheet === undefined) {
     if (Array.from(parent.children).some((child) => child.localName === "style")) return () => undefined;
     const style = doc.createElement("style");

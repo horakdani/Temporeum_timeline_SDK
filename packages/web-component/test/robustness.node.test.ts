@@ -34,4 +34,23 @@ describe("a server render with a bad item or option", () => {
       expect(renderTimelineHtml({ height: 200, items: [good], ...option }, { width: 800 })).toContain('data-tl-id="ok"');
     }
   });
+
+  it("reads an enumerated option it does not know as its default, and says which (R20, R52)", async () => {
+    // A capital letter or a typo in a choice threw from the render, and the
+    // element was left with an empty shadow root.
+    const { renderTimelineHtml } = await import("../src/index.js");
+    const { readableOptionsOf } = await import("../src/config.js");
+    const good = { id: "ok", start: 0, end: 86_400_000, label: "Fine" };
+    const wrong = { orientation: "Vertical", density: "Compact", theme: "Dark", packMode: "stack", direction: "sideways", labelOverflow: "wrap", touchAction: "none" };
+    for (const [key, value] of Object.entries(wrong)) {
+      expect(renderTimelineHtml({ height: 200, items: [good], [key]: value } as never, { width: 800 }), key).toContain('data-tl-id="ok"');
+      const said: { option?: string }[] = [];
+      const read = readableOptionsOf({ [key]: value } as never, (skipped) => said.push(skipped));
+      expect(read, key).not.toHaveProperty(key);
+      expect(said.map((each) => each.option), key).toEqual([key]);
+    }
+    // What is right is kept, as the same object.
+    const right = { orientation: "vertical", density: "dense", theme: "dark", packMode: "single", direction: "rtl", labelOverflow: "drop", touchAction: "cooperative" } as const;
+    expect(readableOptionsOf(right)).toBe(right);
+  });
 });

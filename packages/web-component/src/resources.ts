@@ -60,7 +60,7 @@ function lanes<T>(config: TimelineConfig<T>, given: readonly Lane[] | undefined)
 /** The load of a frame's items. */
 function loadOf<T>(config: TimelineConfig<T>, items: readonly Item<T>[], resources: readonly Resource[]): ResourceLoad {
   const unitsOf = config.resourceOptions?.unitsOf;
-  return resourceLoad(items, resources, unitsOf === undefined ? {} : { unitsOf });
+  return resourceLoad(items, resources, { ...(unitsOf === undefined ? {} : { unitsOf }), ...(config.timeZone === undefined ? {} : { timeZone: config.timeZone }) });
 }
 
 const resourceHookCache = new WeakMap<

@@ -14,14 +14,14 @@ import { mountStory } from "@temporeum/timeline-element/story";
 import { fromTimelineJS } from "@temporeum/timeline-core/story";
 // …
 const log = document.querySelector("#log");
-mountStory(document.querySelector("#story"), timeline, {
+const tale = mountStory(document.querySelector("#story"), timeline, {
   title: story.title,
   hash: true,
   headingLevel: 3,
   locale: "en-GB",
-  onChange: ({ index, id, source }) => {
-    log.textContent = `Slide ${String(index)}: ${id ?? "the title"}, moved by the ${source}.`;
-  },
+});
+tale.on("slideChanged", ({ index, id, source }) => {
+  log.textContent = `Slide ${String(index)}: ${id ?? "the title"}, moved by the ${source}.`;
 });
 ```
 
@@ -36,11 +36,10 @@ The slides are the items', in time order: each item's `data.story`, which is wha
 | `media` | `"click"` (default): a provider's player loads when the reader asks for it. `"eager"`: with the slide. |
 | `reveal` | Move the timeline to the slide's item. On by default: an instant is scrolled to the middle, a span longer than the view is zoomed to. |
 | `start` | The slide to open on, by id or index; the address's comes first with `hash`. |
-| `formatDate`, `locale`, `timeZone` | The date line of a slide that does not say its own. By default the item's date to its precision: "1969", "July 1969", "20 July 1969 at 20:17"; a span by its ends, "16 – 24 July 1969"; a year before 1 AD with its era. |
+| `formatDate`, `locale`, `timeZone` | The date line of a slide that does not say its own. By default the item's date to its precision: "1969", "July 1969", "20 July 1969 at 20:17"; a span by its ends, "16 – 24 July 1969", each to its own precision when the story gave them to different ones ("1914 – 11 November 1918"); a year before 1 AD with its era. |
 | `strings`, `theme` | The panel's words (`STORY_STRINGS`) and colours. |
-| `onChange` | After every change of slide: its index, the item's id (`null` on the title), the slide, and who moved — `panel`, `timeline` or `hash`. |
 
-The handle it returns has `go(idOrIndex)`, `next()`, `previous()`, `index`, `id`, `count` and `destroy()`. The timeline keeps doing everything it does: zoom, pan, clustering, live data. When items change, the panel reorders and stays on its slide.
+The handle it returns has `go(idOrIndex)`, `next()` and `previous()` (`false` when there is no such slide), `index`, `id`, `count`, `on("slideChanged", handler)` and `destroy()`. `slideChanged` comes after every change of slide, the opening one too: its index, the item's id (`null` on the title), the slide, and who moved — `panel`, `timeline` or `hash`. The timeline keeps doing everything it does: zoom, pan, clustering, live data. When items change, the panel reorders and stays on its slide.
 
 ## A slide
 

@@ -94,7 +94,7 @@ if (narrow) document.querySelector("#plan").classList.add("narrow");
 else {
   const stream = { id: "stream", header: "Stream", width: 100, value: (row) => row.items[0]?.data?.stream ?? "" };
   const [name, start] = defaultTaskColumns({ locale: "en-GB" });
-  mountTaskGrid(document.querySelector("#grid"), timeline, { columns: [stream, name, start], label: "Launch tasks", focusTarget: element });
+  mountTaskGrid(document.querySelector("#grid"), timeline, { columns: [stream, name, start], ariaLabel: "Launch tasks", focusTarget: element });
 }
 
 // The critical path, worked out again after every edit: red bars have no slack.

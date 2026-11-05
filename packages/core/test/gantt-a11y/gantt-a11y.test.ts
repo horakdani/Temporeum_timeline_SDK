@@ -135,6 +135,17 @@ describe("a task's dependencies, without the arrows", () => {
     expect(resolveDependencyKey({ ...sample, key: "a" })).toBeUndefined();
   });
 
+  it("reads a bracket typed with AltGr or Option, as most keyboards outside the US type it (R42)", () => {
+    const sample = { key: "[", shiftKey: false, altKey: true, ctrlKey: false, metaKey: false, time: 0 };
+    // macOS, a Hungarian or German layout: Option+5 / Option+6 or Option+8 / Option+9.
+    expect(resolveDependencyKey(sample)).toBe("predecessor");
+    // Windows: AltGr is Ctrl+Alt.
+    expect(resolveDependencyKey({ ...sample, key: "]", ctrlKey: true })).toBe("successor");
+    // A shortcut is not typing.
+    expect(resolveDependencyKey({ ...sample, altKey: false, ctrlKey: true })).toBeUndefined();
+    expect(resolveDependencyKey({ ...sample, metaKey: true })).toBeUndefined();
+  });
+
   it("says the type and the lag", () => {
     const dependencies: Dependency[] = [{ from: "a", to: "b", type: "SS", lagMs: 2 * DAY }, { from: "b", to: "c", lagMs: -3_600_000 }];
     const names = new Map([["a", "Design"], ["b", "Build"], ["c", "Launch"]]);

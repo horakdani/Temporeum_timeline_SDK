@@ -50,10 +50,10 @@ const timeline = createTimeline(element, {
 
 // Who each row is: a column of names, on the lanes' lines — the load row is "Ben load".
 const names = [{ id: "name", header: "Resource", value: (row) => row.lane.label ?? "" }];
-mountTaskGrid(document.querySelector("#people"), timeline, { columns: names, label: "Resources", focusTarget: element });
+mountTaskGrid(document.querySelector("#people"), timeline, { columns: names, ariaLabel: "Resources", focusTarget: element });
 
 // The tasks still to place, beside it.
-mountBacklog(document.querySelector("#backlog"), timeline, { tasks, label: "Unscheduled tasks", focusTarget: element });
+mountBacklog(document.querySelector("#backlog"), timeline, { tasks, ariaLabel: "Unscheduled tasks", focusTarget: element });
 
 // Every edit is one command; the host keeps them for undo.
 const undo = [];

@@ -4,8 +4,15 @@ The timeline as a Vue component, built on the shared instance of
 [`@temporeum/timeline-element`](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/web-component#readme).
 
 ```bash
-npm install @temporeum/timeline-vue
+npm install @temporeum/timeline-vue @temporeum/timeline-element
 ```
+
+The element is the adapter's own dependency; list it beside the adapter, as
+above, to import its plugins (`@temporeum/timeline-element/items`, `/gantt`,
+`/resources` …): pnpm and Yarn PnP let an app import only what it lists. The
+types an app writes — `Item`, `Lane`, `Group`, `TimeMs` and every event's
+payload (`ItemMovedPayload`, `SelectionChangedPayload` …) — come from
+`@temporeum/timeline-vue` itself.
 
 The peer range is `vue ^3.5.0` (`useId` is new in 3.5). The suite runs on
 the newest Vue 3 and, in CI, on 3.5.0, the lowest the range admits.

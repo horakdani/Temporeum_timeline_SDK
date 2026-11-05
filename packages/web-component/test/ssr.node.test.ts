@@ -145,6 +145,16 @@ describe("resolveView", () => {
     expect(resolveView({ density: "dense" }, items, domain, 800, 0).density).toBe("dense");
     expect(["comfortable", "compact", "dense"]).toContain(resolveView({ density: "auto", lanes, packMode: "pack", timeZone: "UTC" }, items, domain, 800, 0).density);
   });
+
+  it("lays nothing out for a fixed density", () => {
+    // R4: the fit lays out every item, and it ran on every resize and live
+    // change even when its answer was thrown away. Two lanes with one id make
+    // a layout throw, so only a view that never lays out survives them.
+    const domain = initialDomain({ items });
+    const twins = [{ id: "a" }, { id: "a" }];
+    expect(resolveView({ density: "compact", lanes: twins }, items, domain, 800, 0).density).toBe("compact");
+    expect(() => resolveView({ density: "auto", lanes: twins }, items, domain, 800, 0)).toThrow(/Duplicate lane id/);
+  });
 });
 
 describe("serializeConfig and renderTimelineHtml", () => {
@@ -187,6 +197,15 @@ describe("serializeConfig and renderTimelineHtml", () => {
     const html = renderTimelineHtml({ items }, { tagName: "my-timeline", attributes: { title: 'a "b" <c>' } });
     expect(html.startsWith('<my-timeline title="a &quot;b&quot; &lt;c&gt;">')).toBe(true);
     expect(html.endsWith("</my-timeline>")).toBe(true);
+  });
+
+  it("refuses a tag or an attribute name that would print markup of its own (R88)", () => {
+    // Names were printed as they came: a name could close the tag and open a script.
+    expect(() => renderTimelineHtml({ items }, { tagName: "x><script>alert(1)</script><x-y" })).toThrow(TypeError);
+    expect(() => renderTimelineHtml({ items }, { tagName: "timeline" })).toThrow("is not a custom element name");
+    expect(() => renderTimelineHtml({ items }, { attributes: { 'x><script>alert(1)</script><b c': "" } })).toThrow(TypeError);
+    expect(() => renderTimelineHtml({ items }, { attributes: { onmouseover: "alert(1)" } })).toThrow("is not an attribute the timeline prints");
+    expect(renderTimelineHtml({ items }, { tagName: "my-timeline.v2", attributes: { "data-x": "1", "aria-label": "Plan", "xml:lang": "hu" } })).toMatch(/^<my-timeline\.v2 data-x="1" aria-label="Plan" xml:lang="hu">/);
   });
 });
 

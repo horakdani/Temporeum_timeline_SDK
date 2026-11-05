@@ -12,6 +12,17 @@ import type { Projector } from "./geometry.js";
 import type { SceneElement } from "./scene.js";
 import type { MainCross, MainCrossRect } from "./types.js";
 
+/**
+ * `base` and the host's own classes. A `tl-` class is the timeline's: given
+ * in data (`tl-item--selected`, `tl-groups`) it would draw a node as selected
+ * or have it taken for a control, so it is left out. `tl-background` is the
+ * one a decoration may carry: the items plugin draws a background item as an
+ * era with it.
+ */
+export function withClass(base: string, extra: string | undefined): string {
+  return extra === undefined ? base : [base, ...extra.split(/\s+/).filter((name) => name !== "" && !/^tl(-(?!background$)|$)/i.test(name))].join(" ");
+}
+
 /** `x`/`y`/`width`/`height` for a box, in the given orientation. */
 export function rectAttrs(
   rect: MainCrossRect,

@@ -10,10 +10,15 @@
  * configuration field each one sets; the properties are the class's
  * accessors and their JSDoc; the events are `TIMELINE_EVENTS`, under the
  * names the element dispatches them by, each a `CustomEvent` of its payload.
+ * Every attribute but the platform's `aria-*` names the property it pairs
+ * with. The CSS custom properties are the theme's tokens, described by the
+ * theming guide's table; the parts are the drawing's classes read as parts
+ * (`core/src/parts.ts`), each found in the source — the `stability.md`
+ * promise that both are public API, in the form tooling reads.
  *
  *   node scripts/sdk_custom_elements.mjs [out]   (default: packages/web-component/dist/custom-elements.json)
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -36,8 +41,69 @@ const SAYS = {
   height: "The height in pixels.",
   "aria-labelledby": "The ids of the page's elements whose text names the timeline, when there is no `aria-label`.",
 };
-/** The property an attribute is reflected by, when there is one. */
-const PROPERTY = { orientation: "orientation", density: "density", theme: "theme", height: "height", editable: "editable" };
+/** The property an attribute pairs with, where it is not the attribute's name in camelCase. */
+const PROPERTY = { start: "domain", end: "domain" };
+const camel = (name) => name.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+
+/** The parts a page styles with `::part()`, each the class `tl-<part>` (a state, `tl-<what>--<state>`). */
+const PARTS = {
+  timeline: "The drawing's root `svg`.",
+  surface: "The background.",
+  lane: "A lane's band.",
+  "lane-pinned": "A pinned lane's band.",
+  item: "An item: the box, bar or dot.",
+  "item-selected": "A selected item.",
+  "item-instant": "An item that is an instant.",
+  "item-open": "An open-ended item.",
+  label: "An item's label.",
+  "label-after": "A label drawn after its item, outside it.",
+  tick: "An axis tick line.",
+  "tick-major": "A major tick line.",
+  "tick-label": "An axis tick label.",
+  "tick-label-major": "A major tick label.",
+  "tick-label-context": "The axis's context label: the larger unit the ticks are in.",
+  cluster: "A cluster marker.",
+  "cluster-selected": "A cluster marker holding a selected item.",
+  "cluster-count": "The count on a cluster marker.",
+  now: "The now line.",
+  "now-label": "The now line's label.",
+  marker: "A marker line.",
+  "marker-label": "A marker's label.",
+  era: "An era band.",
+  "era-label": "An era's label.",
+  "focus-ring": "The keyboard focus ring.",
+  loading: "The loading dashes of a window still being fetched.",
+  groups: "The group tree beside the lanes.",
+  group: "A group header.",
+  "group-label": "A group header's label.",
+  tooltip: "The tooltip.",
+};
+
+/** Every source file's text, for finding the parts' classes. */
+function sources(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => (entry.isDirectory() ? sources(join(dir, entry.name)) : entry.name.endsWith(".ts") ? [readFileSync(join(dir, entry.name), "utf8")] : []));
+}
+
+/** The theme's tokens as CSS custom properties, each with the theming guide's description. */
+function cssProperties() {
+  const theme = readFileSync(join(repo, "packages/core/src/theme.ts"), "utf8");
+  const light = /export const LIGHT_THEME: Theme = \{[\s\S]*?tokens: \{([\s\S]*?)\}/.exec(theme)?.[1] ?? "";
+  const tokens = [...light.matchAll(/^\s*(\w+):/gm)].map((match) => `--tl-${match[1].replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`);
+  const guide = readFileSync(join(repo, "packages/docs/site/pages/guides/theming.md"), "utf8");
+  const described = new Map();
+  for (const row of guide.matchAll(/^\| (`--tl-[^|]+) \| ([^|]+) \|$/gm)) for (const name of row[1].match(/--tl-[a-z-]+/g)) described.set(name, row[2].trim());
+  const missing = tokens.filter((name) => !described.has(name));
+  if (tokens.length === 0 || missing.length > 0) throw new Error(`sdk_custom_elements: the theming guide's token table does not describe ${missing.join(", ") || "the tokens (none found)"}`);
+  return tokens.map((name) => ({ name, description: `Paints ${described.get(name)}.` }));
+}
+
+/** The parts, each checked against the source's classes. */
+function cssParts() {
+  const text = [...sources(join(repo, "packages/core/src")), ...sources(join(repo, "packages/web-component/src"))].join("\n");
+  const missing = Object.keys(PARTS).filter((part) => part !== "timeline" && !text.includes(`tl-${part}`) && !text.includes(`tl-${part.replace(/-(?=[a-z]+$)/, "--")}`));
+  if (missing.length > 0) throw new Error(`sdk_custom_elements: no class in the source for the part(s) ${missing.join(", ")}`);
+  return Object.entries(PARTS).map(([name, description]) => ({ name, description }));
+}
 
 const docOf = (node) =>
   ts
@@ -70,7 +136,10 @@ export function manifest() {
     if (ts.isVariableStatement(node)) {
       for (const each of node.declarationList.declarations) {
         if (each.name.getText() !== "OBSERVED_ATTRIBUTES") continue;
-        const list = ts.isAsExpression(each.initializer) ? each.initializer.expression : each.initializer;
+        // `Object.freeze([...] as const)`, or the bare list.
+        let list = each.initializer;
+        if (ts.isCallExpression(list)) list = list.arguments[0];
+        if (ts.isAsExpression(list)) list = list.expression;
         attributes = list.elements.map((item) => item.text);
       }
     }
@@ -132,9 +201,11 @@ export function manifest() {
               name,
               type: { text: "string" },
               description: SAYS[name] ?? fields.get(FIELD[name] ?? name) ?? "",
-              ...(PROPERTY[name] === undefined ? {} : { fieldName: PROPERTY[name] }),
+              ...(name.startsWith("aria-") ? {} : { fieldName: PROPERTY[name] ?? camel(name) }),
             })),
             members,
+            cssProperties: cssProperties(),
+            cssParts: cssParts(),
             events,
             superclass: { name: "HTMLElement" },
           },

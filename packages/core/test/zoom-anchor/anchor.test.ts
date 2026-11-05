@@ -228,6 +228,39 @@ describe("zoom anchoring", () => {
     });
   });
 
+  it("keeps the instant under the cursor when the span limits stop the zoom", () => {
+    // R3: the zoom was computed with the unclamped span and the limits then
+    // fixed the span from the start, so every step at the limit slid the view
+    // further — [0h, 2h] with a one-hour floor ended near 3.7h..4.7h.
+    const mainSize = 1000;
+    const cursor = 990;
+    const wheelAt = (deltaY: number, step: number) => ({
+      x: cursor,
+      y: 40,
+      deltaX: 0,
+      deltaY,
+      ctrlKey: true,
+      shiftKey: false,
+      time: step * 16,
+    });
+    const zoomIn = createInputMachine({ domain: [0, 2 * HOUR], mainSize, limits: { minSpanMs: HOUR } });
+    const zoomOut = createInputMachine({ domain: [0, 2 * HOUR], mainSize, limits: { maxSpanMs: 3 * HOUR } });
+    const anchor = createTimeScale([0, 2 * HOUR], mainSize).toTime(cursor);
+    for (let step = 0; step < 10; step += 1) {
+      zoomIn.wheel(wheelAt(-240, step));
+      zoomOut.wheel(wheelAt(240, step));
+    }
+    expect(spanOf(zoomIn.domain)).toBe(HOUR);
+    expect(spanOf(zoomOut.domain)).toBe(3 * HOUR);
+    expect(Math.abs(mainOf(zoomIn.domain, mainSize, anchor) - cursor)).toBeLessThan(TOLERANCE_PX);
+    expect(Math.abs(mainOf(zoomOut.domain, mainSize, anchor) - cursor)).toBeLessThan(TOLERANCE_PX);
+
+    // The programmatic zoom and the double tap go through the same step.
+    const method = createInputMachine({ domain: [0, 2 * HOUR], mainSize, limits: { minSpanMs: HOUR } });
+    for (let step = 0; step < 10; step += 1) method.zoom(4, cursor);
+    expect(Math.abs(mainOf(method.domain, mainSize, anchor) - cursor)).toBeLessThan(TOLERANCE_PX);
+  });
+
   it("reports an anchor that drifts", () => {
     // The guard on the guard. If the measurement could not fail, every
     // scenario above would be decoration.

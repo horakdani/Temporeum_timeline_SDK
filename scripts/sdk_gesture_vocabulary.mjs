@@ -108,8 +108,9 @@ export const RULES = ["rule.veto", "rule.locked", "rule.disabled"];
 export const KEY_ROUTES = {
   "view.pan.later": { actions: ["panLater"], calls: ["panDomainBy("] },
   "view.pan.earlier": { actions: ["panEarlier"], calls: ["panDomainBy("] },
-  "view.zoom.in": { actions: ["zoomIn"], calls: ["zoomDomainAt("] },
-  "view.zoom.out": { actions: ["zoomOut"], calls: ["zoomDomainAt("] },
+  // zoomAt: the double tap's and the two-finger tap's own zoom — zoomDomainAt held to the span limits around the focus (R3).
+  "view.zoom.in": { actions: ["zoomIn"], calls: ["zoomAt("] },
+  "view.zoom.out": { actions: ["zoomOut"], calls: ["zoomAt("] },
   "view.cross.forward": { actions: ["crossForward"], calls: ["travel("] },
   "view.cross.back": { actions: ["crossBack"], calls: ["travel("] },
   "item.select": { actions: ["activate"], calls: ['type: "activate"'] },

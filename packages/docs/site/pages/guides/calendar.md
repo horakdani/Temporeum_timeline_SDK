@@ -14,7 +14,7 @@ const { events, name } = parseICal(file);
 
 Times are read the way the file writes them:
 
-- **A time with a `TZID`** is a time in that zone. A `TZID` that is not an IANA name — Outlook writes `Eastern Standard Time`, some tools a vendor prefix — is found by its last `Area/City` part, by the file's `X-LIC-LOCATION`, or by the file's own `VTIMEZONE` rules, matched against the zones the platform knows. Only a zone none of these finds is read as UTC, and `warnings` says so.
+- **A time with a `TZID`** is a time in that zone. A `TZID` that is not an IANA name — Outlook writes `Eastern Standard Time`, some tools a vendor prefix — is found by its last `Area/City` part, by the file's `X-LIC-LOCATION`, or by the file's own `VTIMEZONE` rules, matched against the zones the platform knows. Where many zones keep the same rules, the match is the zone the most common Windows name of those rules means (`Eastern Standard Time` is `America/New_York`, `W. Europe Standard Time` is `Europe/Berlin`), and that is the name `formatICal` writes back. Only a zone none of these finds is read as UTC, and `warnings` says so — as it does for the zones of a file whose rules, all together, take too long to search.
 - **A date** (`VALUE=DATE`) is an all-day event, and a **floating time** (no zone) is read in the `timeZone` you give, else the file's `X-WR-TIMEZONE`, else UTC.
 - **A cancelled occurrence** (`STATUS:CANCELLED` with a `RECURRENCE-ID`) leaves its series as an `EXDATE`.
 
@@ -62,12 +62,12 @@ const week = mountCalendarView(document.querySelector("#week"), {
 
 - **Events that overlap go side by side.** Each goes into the first column free where it starts and reaches over the columns nothing it overlaps is in. No event covers another: an event is drawn at least 15 minutes tall (`minDurationMs`), and that is what overlap is measured on.
 - **The hours are the wall clock's**, on the days the clocks change too, so nine o'clock is on one line across the week.
-- **The keyboard reaches every event.** The view is one focus stop, a listbox: ↓ and ↑ walk the events in reading order — a day's all-day events, then its events from the top — across the days; → and ← go to the nearest event of the next and the previous day that has one; `Home` and `End` to the first and last of the day, with `Ctrl` of the week. `Enter` or `Space` chooses the event, the same as a click, and the view says `select`.
-- **The period** pages with the toolbar's buttons, with `PageDown` and `PageUp`, and `t` goes to today; the view says `rangeChange`, and the toolbar's range is read out.
+- **The keyboard reaches every event.** The view is one focus stop, a listbox: ↓ and ↑ walk the events in reading order — a day's all-day events, then its events from the top — across the days; → and ← go to the nearest event of the next and the previous day that has one; `Home` and `End` to the first and last of the day, with `Ctrl` of the week. `Enter` or `Space` chooses the event, the same as a click, and the view says `itemSelect`.
+- **The period** pages with the toolbar's buttons, with `PageDown` and `PageUp`, and `t` goes to today; the view says `rangeChanged`, and the toolbar's range is read out.
 - **Right to left** (`direction: "rtl"`), the first day is on the right and the arrows move the way they point. Every word is a key of `DEFAULT_STRINGS` (`weekView`, `allDay`, `event`, `previousPeriod`…), and `strings` and `locale` work as for the timeline.
 
 ```js excerpt:example/calendar
-week.on("select", ({ item, via }) => {
+week.on("itemSelect", ({ item, via }) => {
   log.textContent = `${item.label} (${via})`;
 });
 ```

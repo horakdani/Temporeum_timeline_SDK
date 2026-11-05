@@ -127,7 +127,9 @@ export function headerPlacements(
       orientation === "horizontal"
         ? `top:${String(at)}px;left:0;height:${String(crossSize)}px;max-width:40%;padding:0 6px 0 ${String(indent)}px`
         : `left:${String(at)}px;top:0;width:${String(crossSize)}px;max-height:40%;padding:${String(indent)}px 0 6px 0`;
-    const className = row.group.className === undefined ? "tl-group" : `tl-group ${row.group.className}`;
+    // A `tl-` class in data would have the header taken for another of the timeline's nodes.
+    const own = row.group.className?.split(/\s+/).filter((name) => name !== "" && !/^tl(-|$)/i.test(name)) ?? [];
+    const className = ["tl-group", ...own].join(" ");
     return {
       row,
       attrs: {

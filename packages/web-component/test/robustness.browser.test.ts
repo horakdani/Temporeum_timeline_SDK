@@ -25,6 +25,7 @@ const bad: unknown[] = [
   { id: "huge", start: 1e20 },
   { id: "end", start: T0, end: -1e20 },
   { id: "span", start: T0, end: T0 + DAY, sublaneSpan: 1.5 },
+  { id: "tall", start: T0, end: T0 + DAY, sublaneSpan: 200_000_000 },
   { start: T0 },
   null,
 ];
@@ -93,6 +94,33 @@ describe("a bad item or option is left out, and said", () => {
     expect(skipped[0]?.message).toMatch(/accent/);
   });
 
+  it("a second item with an id already taken is left out, so each id is one node and one keyboard stop (R8)", async () => {
+    const twin: Item = { id: "ok", start: T0 + 5 * DAY, end: T0 + 6 * DAY, label: "Twin" };
+    const other: Item = { id: "other", start: T0 + 7 * DAY, label: "Other" };
+    const skipped: InputSkippedPayload[] = [];
+    const timeline = createTimeline(host(), { items: [good, twin, other], domain });
+    timeline.on("inputSkipped", (payload) => skipped.push(payload));
+    await vi.waitFor(() => expect(timeline.result).toBeDefined());
+    expect(timeline.items).toEqual([good, other]);
+    expect(document.querySelectorAll('[data-tl-id="ok"]')).toHaveLength(1);
+    const positions = [...document.querySelectorAll("[aria-posinset]")].map((node) => node.getAttribute("aria-posinset"));
+    expect(new Set(positions).size).toBe(positions.length);
+    expect(skipped.map((each) => each.item)).toEqual([twin]);
+    expect(skipped[0]?.message).toMatch(/same id/);
+    timeline.update({ items: [other, twin, good] });
+    expect(timeline.items).toEqual([other, twin]);
+  });
+
+  it("a NaN height falls back to the container's, and is said (R31)", async () => {
+    const skipped: InputSkippedPayload[] = [];
+    const timeline = createTimeline(host(), { items: [good], domain, height: Number.NaN });
+    timeline.on("inputSkipped", (payload) => skipped.push(payload));
+    await vi.waitFor(() => expect(timeline.result).toBeDefined());
+    expect(document.querySelector('[data-tl-id="ok"]')).not.toBeNull();
+    expect(document.querySelector("svg")?.getAttribute("viewBox")).not.toContain("NaN");
+    expect(skipped.map((each) => each.option)).toEqual(["height"]);
+  });
+
   it("through live changes: a bad added item is left out", async () => {
     const timeline = createTimeline(host(), { items: [good], domain });
     await vi.waitFor(() => expect(timeline.result).toBeDefined());
@@ -134,7 +162,7 @@ describe("two timelines in the light DOM", () => {
     const element = host();
     element.innerHTML = renderTimelineSvg({ items: [good], domain }, { width: 800 }).svg;
     expect(element.querySelector("svg")?.hasAttribute("data-tl-instance")).toBe(false);
-    const hydrated = createTimeline(element, { items: [good], domain }, { hydrate: true, measureText: false });
+    const hydrated = createTimeline(element, { items: [good], domain }, { hydrate: true, measureLabels: false });
     await vi.waitFor(() => expect(hydrated.result).toBeDefined());
     expect(element.querySelector("svg")?.hasAttribute("data-tl-instance")).toBe(false);
   });
@@ -166,5 +194,39 @@ describe("a story destroyed before the timeline's first frame", () => {
     expect(stops).toHaveLength(1);
     story.destroy();
     expect(stops[0]).toHaveBeenCalled();
+  });
+});
+
+describe("a container without a height of its own (R29)", () => {
+  const frames = async (n: number): Promise<void> => {
+    for (let i = 0; i < n; i += 1) await new Promise((done) => requestAnimationFrame(() => done(undefined)));
+  };
+
+  it("takes the default height and keeps it, instead of growing by the drawing's line gap every frame", async () => {
+    const element = document.createElement("div");
+    element.style.width = "800px";
+    document.body.append(element);
+    const timeline = createTimeline(element, { items: [good], domain });
+    await vi.waitFor(() => expect(timeline.result).toBeDefined());
+    await frames(10);
+    const settled = element.getBoundingClientRect().height;
+    await frames(30);
+    expect(element.getBoundingClientRect().height).toBe(settled);
+    expect(settled).toBe(300);
+    expect(element.querySelector("svg")?.getAttribute("height")).toBe("300");
+  });
+
+  it("on the element too, with no height attribute and no CSS height", async () => {
+    defineTimelineElement();
+    const element = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
+    element.style.width = "800px";
+    element.items = [good];
+    document.body.append(element);
+    await vi.waitFor(() => expect(element.shadowRoot?.querySelector("svg")).not.toBeNull());
+    await frames(10);
+    const settled = element.getBoundingClientRect().height;
+    await frames(30);
+    expect(element.getBoundingClientRect().height).toBe(settled);
+    expect(settled).toBeLessThanOrEqual(300);
   });
 });

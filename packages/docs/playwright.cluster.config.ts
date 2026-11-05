@@ -11,6 +11,8 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = Number(process.env.TL_CLUSTER_PORT ?? 41745);
 
 export default defineConfig({
+  // A stray test.only would quietly run one test and call the suite green.
+  forbidOnly: true,
   testDir: "./e2e",
   testMatch: "cluster.spec.ts",
   workers: 1,

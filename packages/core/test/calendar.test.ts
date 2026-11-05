@@ -40,7 +40,7 @@ describe("zoneOffsetMs", () => {
   it("answers UTC without Intl, as Intl would", () => {
     // A fast path: ticks ask this hundreds of times a frame. The
     // same zone under another name still goes through Intl, and agrees.
-    const spy = vi.spyOn(Intl.DateTimeFormat.prototype, "formatToParts");
+    const spy = vi.spyOn(Intl.DateTimeFormat.prototype as unknown as { format: unknown }, "format", "get");
     const times = [0, -1, 1, Date.UTC(1890, 0, 1), Date.UTC(2025, 2, 30, 1, 0, 0, 1), 8.64e15, -8.64e15];
     for (const time of times) {
       expect(zoneOffsetMs(time, "UTC")).toBe(0);
@@ -73,8 +73,8 @@ describe("zoneOffsetMs", () => {
     // fallback is unreachable on this engine, so it is stubbed rather than
     // left as an untested branch in a cross-engine code path.
     class BareGmtFormat {
-      formatToParts(): { type: string; value: string }[] {
-        return [{ type: "timeZoneName", value: "GMT" }];
+      format(): string {
+        return "1/1/1970, GMT";
       }
     }
     vi.stubGlobal("Intl", { ...Intl, DateTimeFormat: BareGmtFormat });
@@ -159,6 +159,61 @@ describe("parts and instants", () => {
     // Europe/Budapest skips 02:00-03:00 on 2025-03-30.
     const missing = wall(BUDAPEST, 2025, 3, 30, 2, 30);
     expect(toCalendarParts(missing, BUDAPEST)).toMatchObject({ hour: 3, minute: 30 });
+  });
+});
+
+describe("a wall-clock time that happens twice (R32)", () => {
+  it("is the first of the two, east and west of Greenwich alike", () => {
+    // New York read 01:30 as the earlier (EDT) and Budapest 02:30 as the
+    // later (CET): the second pass converged on whichever offset the first
+    // guess fell on. Temporal's "compatible", which the comment promised, is
+    // the earlier one.
+    expect(new Date(wall("America/New_York", 2026, 11, 1, 1, 30)).toISOString()).toBe("2026-11-01T05:30:00.000Z");
+    expect(new Date(wall(BUDAPEST, 2026, 10, 25, 2, 30)).toISOString()).toBe("2026-10-25T00:30:00.000Z");
+    expect(new Date(wall("Australia/Lord_Howe", 2026, 4, 5, 1, 45)).toISOString()).toBe("2026-04-04T14:45:00.000Z");
+    // So a day after 02:30 summer time is the first 02:30, still summer
+    // time, 24 hours on — it was the second, 25 hours on.
+    const before = wall(BUDAPEST, 2026, 10, 24, 2, 30);
+    expect(addCalendar(before, "day", 1, BUDAPEST) - before).toBe(24 * 3_600_000);
+  });
+
+  it("still lands past a gap, and round-trips every instant around both changes", () => {
+    expect(new Date(wall("America/New_York", 2026, 3, 8, 2, 30)).toISOString()).toBe("2026-03-08T07:30:00.000Z");
+    expect(new Date(wall(BUDAPEST, 2026, 3, 29, 2, 30)).toISOString()).toBe("2026-03-29T01:30:00.000Z");
+    for (const [zone, change] of [
+      ["America/New_York", Date.UTC(2026, 10, 1, 6)],
+      [BUDAPEST, Date.UTC(2026, 9, 25, 1)],
+      ["Australia/Lord_Howe", Date.UTC(2026, 3, 4, 15)],
+      ["Pacific/Chatham", Date.UTC(2026, 3, 4, 14)],
+    ] as const) {
+      for (let t = change - 3 * 3_600_000; t <= change + 3 * 3_600_000; t += 15 * 60_000) {
+        const back = fromCalendarParts(toCalendarParts(t, zone), zone);
+        // The second of an hour that happens twice reads back as the first.
+        expect(back === t || (back < t && toCalendarParts(back, zone).hour === toCalendarParts(t, zone).hour), `${zone} ${new Date(t).toISOString()}`).toBe(true);
+      }
+    }
+  });
+});
+
+describe("the zone's offset, remembered (R34)", () => {
+  it("asks Intl once per hour of a zone, and gives the same offsets", () => {
+    const spy = vi.spyOn(Intl.DateTimeFormat.prototype as unknown as { format: unknown }, "format", "get");
+    try {
+      const zone = "America/Sao_Paulo";
+      const day = Date.UTC(2026, 5, 1);
+      const first = Array.from({ length: 1000 }, (_, i) => zoneOffsetMs(day + (i % 10) * 60_000, zone));
+      const calls = spy.mock.calls.length;
+      expect(calls).toBeGreaterThan(0);
+      // Ten minutes of one hour, a thousand times: a couple of calls, not a thousand.
+      expect(calls).toBeLessThanOrEqual(3);
+      expect(new Set(first)).toEqual(new Set([-3 * 3_600_000]));
+    } finally {
+      spy.mockRestore();
+    }
+    // An hour a change falls in is not remembered whole: each side keeps its offset.
+    expect(zoneOffsetMs(Date.UTC(2026, 3, 4, 14, 59), "Australia/Lord_Howe")).toBe(11 * 3_600_000);
+    expect(zoneOffsetMs(Date.UTC(2026, 3, 4, 15, 0), "Australia/Lord_Howe")).toBe(10.5 * 3_600_000);
+    expect(zoneOffsetMs(Date.UTC(2026, 3, 4, 15, 1), "Australia/Lord_Howe")).toBe(10.5 * 3_600_000);
   });
 });
 

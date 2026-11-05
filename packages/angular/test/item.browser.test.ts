@@ -78,6 +78,28 @@ describe("<tl-timeline> item template and outputs", () => {
     expect(document.querySelector(".card")?.textContent).toBe("Plan");
   });
 
+  it("keeps the template's boxes when the config changes after mount (R17)", async () => {
+    // The first render added `slots: true` for the template, the config effect
+    // did not, so the first change sent `slots: undefined` and the cards went.
+    app = await createApplication({ providers: [provideZonelessChangeDetection()] });
+    const hostElement = document.createElement("tl-host");
+    hostElement.style.display = "block";
+    hostElement.style.width = "800px";
+    document.body.append(hostElement);
+    const ref = createComponent(Host, { environmentInjector: app.injector, hostElement });
+    app.attachView(ref.hostView);
+    app.tick();
+    await vi.waitFor(() => expect(document.querySelectorAll(".card")).toHaveLength(2));
+    ref.instance.config.set({ items, defaultDomain: [T0, T0 + 24 * DAY], height: 240 });
+    app.tick();
+    const timeline = ref.instance.timeline as TimelineInstance;
+    timeline.flush();
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    timeline.flush();
+    expect(document.querySelectorAll(".card")).toHaveLength(2);
+    expect(timeline.slots.size).toBe(2);
+  });
+
   it("types let-item through its context guard", () => {
     const directive = Object.create(TimelineItemDirective.prototype) as TimelineItemDirective;
     expect(TimelineItemDirective.ngTemplateContextGuard(directive, { $implicit: items[0], item: items[0] })).toBe(true);

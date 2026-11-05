@@ -2,7 +2,10 @@
  * The shared half of the suite-report checks: reading a vitest JSON report.
  *
  * Every such check asks the report the same things: did it run (a missing
- * report is a FAILURE, not a skip), did enough tests run, are they all green,
+ * report is a FAILURE, not a skip), did every test file load (one that throws
+ * on import has no tests to fail, so only its own status says so — and the
+ * package script drops vitest's exit code, leaving this check the judge),
+ * did enough tests run, are they all green,
  * and does every claim (`[claim:<name>]`) appear in the test names — in both
  * orientations if required. A claim whose test has disappeared is not proven.
  */
@@ -18,6 +21,11 @@ export function checkReport(spec) {
     return [`no vitest report (${spec.file}) — the ${spec.label} suite did NOT run, so FAIL`];
   }
   const report = JSON.parse(readFileSync(spec.file, "utf8"));
+  for (const file of report.testResults ?? []) {
+    if (file.status === "failed" && (file.assertionResults ?? []).every((test) => test.status === "passed")) {
+      failures.push(`${spec.label} test file failed outside its tests: ${String(file.name)} — ${String(file.message ?? "").split("\n")[0]}`);
+    }
+  }
   const tests = (report.testResults ?? []).flatMap((file) => file.assertionResults ?? []);
   if (tests.length < spec.minTests) {
     failures.push(`${String(tests.length)} ${spec.label} tests ran, at least ${String(spec.minTests)} are required`);

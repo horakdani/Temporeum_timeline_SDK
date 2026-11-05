@@ -26,6 +26,8 @@ export interface RangeSelectOptions {
   /** The grid its ends land on. */
   readonly snapMs?: number;
   readonly snapOrigin?: TimeMs;
+  /** The zone a grid of whole days lies in: local midnights all year. UTC by default. */
+  readonly timeZone?: string;
 }
 
 /**
@@ -33,8 +35,8 @@ export interface RangeSelectOptions {
  * ends in order, snapped. `undefined` for a range with no length.
  */
 export function selectRange(a: TimeMs, b: TimeMs, options: RangeSelectOptions = {}): TimeRange | undefined {
-  const from = snapTime(Math.min(a, b), options.snapMs, options.snapOrigin);
-  const to = snapTime(Math.max(a, b), options.snapMs, options.snapOrigin);
+  const from = snapTime(Math.min(a, b), options.snapMs, options.snapOrigin, options.timeZone);
+  const to = snapTime(Math.max(a, b), options.snapMs, options.snapOrigin, options.timeZone);
   return to > from ? { start: from, end: to } : undefined;
 }
 
@@ -73,7 +75,7 @@ export function rangeKeyStep(
   options: RangeSelectOptions & { readonly domain: Domain; readonly stepMs: number },
 ): RangeDraft {
   if (action === "start" || draft === undefined) {
-    const middle = snapTime((options.domain[0] + options.domain[1]) / 2, options.snapMs, options.snapOrigin);
+    const middle = snapTime((options.domain[0] + options.domain[1]) / 2, options.snapMs, options.snapOrigin, options.timeZone);
     return { anchor: middle, head: middle };
   }
   return { anchor: draft.anchor, head: draft.head + (stepsOf(action) ?? 0) * options.stepMs };

@@ -1,0 +1,47 @@
+{
+  "measuredAt": "2026-11-05",
+  "views": {
+    "pan": {
+      "createTimeline": 0,
+      "engine": 0,
+      "withoutSceneSpace": [
+        0.31966097804882043,
+        0.3770389678519319
+      ]
+    },
+    "zoom": {
+      "createTimeline": 0.00803330406218472,
+      "engine": 0.008180461974786502,
+      "withoutSceneSpace": [
+        0.3790122262008452,
+        0.3983446346976277
+      ]
+    },
+    "zoomDeep": {
+      "createTimeline": 0.008133632106435473,
+      "engine": 0.016328939602596737,
+      "withoutSceneSpace": [
+        0.4227360684261021,
+        0.45156867489313657
+      ]
+    },
+    "panLabelled": {
+      "createTimeline": 0.008081695042034376,
+      "engine": 0.00808169504203482,
+      "withoutSceneSpace": [
+        0.519669910863334,
+        0.5714081622934424
+      ]
+    },
+    "wheel": {
+      "createTimeline": 0.030391176559706468,
+      "engine": 0.046124496138342574,
+      "withoutSceneSpace": [
+        0.25327359522095083,
+        0.31575346070845844
+      ]
+    }
+  },
+  "deepWithoutSteps": 0.032520325203251876,
+  "wheelWithoutRuns": 0.4444107723700427
+}

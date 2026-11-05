@@ -54,31 +54,34 @@ export interface TaskGridColumn<T = unknown> {
 /** How a grid is set up. */
 export interface TaskGridOptions<T = unknown> {
   /** Name, start, end and progress by default. */
-  readonly columns?: readonly TaskGridColumn<T>[];
+  readonly columns?: readonly TaskGridColumn<T>[] | undefined;
   /** The grid's accessible name. */
-  readonly label?: string;
+  readonly ariaLabel?: string | undefined;
   /** Rows kept beyond each edge of the view. 4 by default. */
-  readonly overscan?: number;
-  readonly theme?: ThemeSetting;
+  readonly overscan?: number | undefined;
+  readonly theme?: ThemeSetting | undefined;
   /** Where `Enter` and a click move the keyboard: the timeline's element. */
-  readonly focusTarget?: HTMLElement;
+  readonly focusTarget?: HTMLElement | undefined;
   /**
    * The grid's words in the host's language: `tasks` and the `*Column`
-   * phrases of `DEFAULT_STRINGS` (`/intl`). `label` and `columns` still win.
+   * phrases of `DEFAULT_STRINGS` (`/intl`). `ariaLabel` and `columns` still win.
    */
-  readonly strings?: Partial<Strings>;
+  readonly strings?: Partial<Strings> | undefined;
   /**
    * The default columns' dates and percentages in a locale (`Intl`, a short
    * date in `timeZone`). Without it, ISO dates in UTC, as before.
    */
-  readonly locale?: string;
-  readonly timeZone?: string;
+  readonly locale?: string | undefined;
+  readonly timeZone?: string | undefined;
 }
 
 /** A mounted grid. */
-export interface TaskGrid {
-  /** Draw again — after the host changed something the timeline did not announce. */
-  update(): void;
+export interface TaskGrid<T = unknown> {
+  /**
+   * Change any option; the rest stay. Without options it draws again — after
+   * the host changed something the timeline did not announce.
+   */
+  update(options?: Partial<TaskGridOptions<T>>): void;
   /** The focused row's position among all rows, from 0. */
   readonly focusedIndex: number;
   destroy(): void;
@@ -167,31 +170,16 @@ function sampleOf(event: KeyboardEvent): KeySample {
  * the grid's box: give it the timeline's height (across a horizontal
  * timeline) and the width the columns need.
  */
-export function mountTaskGrid<T>(container: HTMLElement, timeline: Timeline<T>, options: TaskGridOptions<T> = {}): TaskGrid {
+export function mountTaskGrid<T>(container: HTMLElement, timeline: Timeline<T>, first: TaskGridOptions<T> = {}): TaskGrid<T> {
+  let options = first;
   const doc = container.ownerDocument;
-  const columns =
-    options.columns ??
-    defaultTaskColumns<T>({
-      ...(options.strings === undefined ? {} : { strings: options.strings }),
-      ...(options.locale === undefined ? {} : { locale: options.locale }),
-      ...(options.timeZone === undefined ? {} : { timeZone: options.timeZone }),
-    });
+  let columns: readonly TaskGridColumn<T>[] = [];
   const grid = doc.createElement("div");
   grid.setAttribute("role", "grid");
-  grid.setAttribute("aria-label", options.label ?? fill(resolveStrings(options.strings).tasks, {}, options.locale));
-  grid.setAttribute("aria-colcount", String(columns.length));
   const head = doc.createElement("div");
   head.className = "tl-grid-head";
   head.setAttribute("role", "row");
   head.setAttribute("aria-rowindex", "1");
-  for (const column of columns) {
-    const cell = doc.createElement("div");
-    cell.className = `tl-grid-header tl-grid-header--${column.id}`;
-    cell.setAttribute("role", "columnheader");
-    cell.textContent = column.header;
-    if (column.width !== undefined) cell.style.flex = `0 0 ${String(column.width)}px`;
-    head.append(cell);
-  }
   const body = doc.createElement("div");
   body.className = "tl-grid-body";
   body.setAttribute("role", "rowgroup");
@@ -208,6 +196,32 @@ export function mountTaskGrid<T>(container: HTMLElement, timeline: Timeline<T>, 
   let total = 0;
   let pageRows = 10;
   let lastLayout = timeline.layout;
+
+  /** What the options say, again: at mount and after every `update` given options. */
+  function apply(): void {
+    columns =
+      options.columns ??
+      defaultTaskColumns<T>({
+        ...(options.strings === undefined ? {} : { strings: options.strings }),
+        ...(options.locale === undefined ? {} : { locale: options.locale }),
+        ...(options.timeZone === undefined ? {} : { timeZone: options.timeZone }),
+      });
+    grid.setAttribute("aria-label", options.ariaLabel ?? fill(resolveStrings(options.strings).tasks, {}, options.locale));
+    grid.setAttribute("aria-colcount", String(columns.length));
+    head.replaceChildren(
+      ...columns.map((column) => {
+        const cell = doc.createElement("div");
+        cell.className = `tl-grid-header tl-grid-header--${column.id}`;
+        cell.setAttribute("role", "columnheader");
+        cell.textContent = column.header;
+        if (column.width !== undefined) cell.style.flex = `0 0 ${String(column.width)}px`;
+        return cell;
+      }),
+    );
+    // The rows are built for the columns: build them again.
+    for (const row of shown.values()) row.remove();
+    shown.clear();
+  }
 
   function laneAt(index: number): { readonly lane: Lane; readonly first: LayoutItem<T> | undefined } | undefined {
     const layout = timeline.layout;
@@ -263,7 +277,7 @@ export function mountTaskGrid<T>(container: HTMLElement, timeline: Timeline<T>, 
     grid.className = `tl-grid tl-grid--${orientation}`;
     if (resolved === undefined) grid.removeAttribute("data-tl-theme");
     else grid.dataset.tlTheme = custom ? "custom" : resolved.name;
-    if (custom) grid.style.cssText = tokens(resolved);
+    grid.style.cssText = custom ? tokens(resolved) : "";
     head.style.cssText =
       orientation === "horizontal" ? `top:0;left:0;right:0;height:${String(inset)}px` : `left:0;top:0;bottom:0;width:${String(inset)}px`;
     body.style.cssText =
@@ -381,10 +395,15 @@ export function mountTaskGrid<T>(container: HTMLElement, timeline: Timeline<T>, 
     timeline.on("groupMoved", afterFrame),
     timeline.on("command", afterFrame),
   ];
+  apply();
   render(true);
 
   return {
-    update() {
+    update(next) {
+      if (next !== undefined) {
+        options = { ...options, ...next };
+        apply();
+      }
       render(true);
     },
     get focusedIndex() {

@@ -60,6 +60,13 @@ describe("the Svelte adapter in Node", () => {
     expect(body).toContain("height:300px;margin:4px");
     expect(body).not.toContain("onItemMoved");
   });
+
+  it("puts id, role, title, data-* and aria-* on the box, as React's and Vue's components do (R85)", () => {
+    // They went into the configuration, where nothing reads them.
+    const { body } = render(Timeline, { props: { items, id: "plan", role: "region", title: "Plan", "data-test": "t1", "aria-describedby": "help" } });
+    expect(body).toMatch(/<div[^>]* id="plan"[^>]*data-tl-svelte=""/);
+    for (const attribute of ['role="region"', 'title="Plan"', 'data-test="t1"', 'aria-describedby="help"']) expect(body).toContain(attribute);
+  });
 });
 
 describe("the plugin registry", () => {

@@ -116,6 +116,7 @@ export const CLASSIFICATION = {
     longPressMs: CONFIG("interactions"),
     snapMs: CONFIG("editing"),
     snapOrigin: CONFIG("editing"),
+    timeZone: CONFIG(),
     minDurationMs: CONFIG("editing"),
     canMove: CONFIG("editing"),
     multiSelect: CONFIG("editing"),

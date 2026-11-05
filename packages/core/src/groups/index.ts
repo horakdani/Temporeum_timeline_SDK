@@ -110,23 +110,40 @@ function parentsOf(groups: readonly Group[]): Map<string, string | undefined> {
     }
     byId.set(group.id, group);
   }
-  const parents = new Map<string, string | undefined>();
+  // Whether a group's chain of parents ends without a loop, worked out once
+  // per group: a walk stops at the first group already known (R28 — a chain
+  // walked from every group was quadratic).
+  const rooted = new Map<string, boolean>();
+  const walking = new Set<string>();
   for (const group of groups) {
-    const seen = new Set([group.id]);
-    let at = group.parentId;
-    let rooted = true;
+    const path: string[] = [];
+    let at: string | undefined = group.id;
+    let ends = true;
     while (at !== undefined) {
-      const parent = byId.get(at);
-      if (parent === undefined) break;
-      if (seen.has(at)) {
-        rooted = false;
+      const known = rooted.get(at);
+      if (known !== undefined) {
+        ends = known;
         break;
       }
-      seen.add(at);
-      at = parent.parentId;
+      const node = byId.get(at);
+      if (node === undefined) break;
+      if (walking.has(at)) {
+        ends = false;
+        break;
+      }
+      walking.add(at);
+      path.push(at);
+      at = node.parentId;
     }
+    for (const id of path) {
+      rooted.set(id, ends);
+      walking.delete(id);
+    }
+  }
+  const parents = new Map<string, string | undefined>();
+  for (const group of groups) {
     const parentId = group.parentId;
-    parents.set(group.id, rooted && parentId !== undefined && byId.has(parentId) ? parentId : undefined);
+    parents.set(group.id, rooted.get(group.id) === true && parentId !== undefined && byId.has(parentId) ? parentId : undefined);
   }
   return parents;
 }
@@ -171,44 +188,43 @@ export function groupView<T>(groups: readonly Group[], items: readonly Item<T>[]
   const hidden = new Set<string>();
   const shown = new Set<string>();
 
-  const hide = (group: Group): void => {
-    for (const child of children.get(group.id) ?? []) {
-      hidden.add(child.id);
-      hide(child);
+  // Depth first, in the groups' order, with a stack of its own: a chain of
+  // groups as deep as the host likes does not run out of call stack (R28).
+  const roots = children.get(undefined) ?? [];
+  const stack: { group: Group; depth: number; position: number; siblings: number; parent: string | undefined }[] = [];
+  const push = (siblings: readonly Group[], depth: number, parent: string | undefined): void => {
+    for (let index = siblings.length - 1; index >= 0; index -= 1) {
+      stack.push({ group: siblings[index] as Group, depth, position: index + 1, siblings: siblings.length, parent });
     }
   };
-  const visit = (parent: string | undefined, depth: number): void => {
-    const siblings = children.get(parent) ?? [];
-    siblings.forEach((group, index) => {
-      const hasChildren = (children.get(group.id)?.length ?? 0) > 0;
-      const expanded = !collapsed.has(group.id);
-      const headerLaneId = groupHeaderLane(group.id);
-      lanes.push({ id: headerLaneId, ...(group.label === undefined ? {} : { label: group.label }) });
-      const content = expanded && (!hasChildren || owning.has(group.id));
-      if (content) {
-        lanes.push({
-          id: group.id,
-          ...(group.label === undefined ? {} : { label: group.label }),
-          ...(group.packMode === undefined ? {} : { packMode: group.packMode }),
-        });
-        shown.add(group.id);
-      }
-      rows.push({
-        group,
-        depth,
-        headerLaneId,
-        laneId: content ? group.id : undefined,
-        hasChildren,
-        expanded,
-        position: index + 1,
-        siblings: siblings.length,
-        parentId: parent,
+  push(roots, 0, undefined);
+  for (let next = stack.pop(); next !== undefined; next = stack.pop()) {
+    const { group, depth, position, siblings, parent } = next;
+    const kids = children.get(group.id) ?? [];
+    const hasChildren = kids.length > 0;
+    const expanded = !collapsed.has(group.id);
+    const headerLaneId = groupHeaderLane(group.id);
+    lanes.push({ id: headerLaneId, ...(group.label === undefined ? {} : { label: group.label }) });
+    const content = expanded && (!hasChildren || owning.has(group.id));
+    if (content) {
+      lanes.push({
+        id: group.id,
+        ...(group.label === undefined ? {} : { label: group.label }),
+        ...(group.packMode === undefined ? {} : { packMode: group.packMode }),
       });
-      if (expanded) visit(group.id, depth + 1);
-      else hide(group);
-    });
-  };
-  visit(undefined, 0);
+      shown.add(group.id);
+    }
+    rows.push({ group, depth, headerLaneId, laneId: content ? group.id : undefined, hasChildren, expanded, position, siblings, parentId: parent });
+    if (expanded) push(kids, depth + 1, group.id);
+    else {
+      // Everything under a collapsed group is hidden.
+      const under = [...kids];
+      for (let child = under.pop(); child !== undefined; child = under.pop()) {
+        hidden.add(child.id);
+        for (const grandchild of children.get(child.id) ?? []) under.push(grandchild);
+      }
+    }
+  }
 
   if (orphans) lanes.push({ id: DEFAULT_LANE_ID });
   const kept = items.filter((item) => {

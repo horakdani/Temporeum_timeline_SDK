@@ -19,6 +19,7 @@ import {
   peakLoad,
   resourceHooks,
   resourceLanes,
+  overloads,
   resourceLoad,
   unscheduledTasks,
   withLoadLanes,
@@ -147,5 +148,23 @@ describe("the backlog", () => {
     const tasks = [{ id: "x" }, { id: "new", label: "New", durationMs: HOUR }, { id: "w" }, { id: "later" }];
     expect(unscheduledTasks(tasks, items).map((task) => task.id)).toEqual(["new", "later"]);
     expect(unscheduledTasks(tasks, [])).toEqual(tasks);
+  });
+});
+
+describe("an assignment with a granularity (R12)", () => {
+  it("takes its resource for the units it is drawn over, in the timeline's zone", () => {
+    // Two bookings of the same day, as a host writes them: the layout draws
+    // each over the whole day, so the load has to count both there. Read raw,
+    // their end was their start, and they took nothing.
+    const day = Date.UTC(2026, 2, 2);
+    const booking = (id: string): Item => ({ id, laneId: "a", start: day, end: day, granularity: "day" });
+    const items = [booking("one"), booking("two")];
+    const load = resourceLoad(items, [{ id: "a" }]);
+    expect(overloads(load, "a").map(({ start, end, load: units }) => [start, end, units])).toEqual([[day, day + DAY, 2]]);
+    // The day is the timeline's: in Budapest it begins an hour earlier in UTC.
+    const there = resourceLoad(items, [{ id: "a" }], { timeZone: "Europe/Budapest" });
+    expect(overloads(there, "a").map(({ start, end }) => [start, end])).toEqual([[day - HOUR, day + DAY - HOUR]]);
+    // A plain instant still takes nothing.
+    expect(overloads(resourceLoad([{ id: "x", laneId: "a", start: day }, { id: "y", laneId: "a", start: day }], [{ id: "a" }]), "a")).toEqual([]);
   });
 });

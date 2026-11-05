@@ -29,12 +29,12 @@ const timeline = createTimeline(document.querySelector("#timeline"), {
 
 // The panel and the timeline move together; with `hash`, the address names the slide.
 const log = document.querySelector("#log");
-mountStory(document.querySelector("#story"), timeline, {
+const tale = mountStory(document.querySelector("#story"), timeline, {
   title: story.title,
   hash: true,
   headingLevel: 3,
   locale: "en-GB",
-  onChange: ({ index, id, source }) => {
-    log.textContent = `Slide ${String(index)}: ${id ?? "the title"}, moved by the ${source}.`;
-  },
+});
+tale.on("slideChanged", ({ index, id, source }) => {
+  log.textContent = `Slide ${String(index)}: ${id ?? "the title"}, moved by the ${source}.`;
 });

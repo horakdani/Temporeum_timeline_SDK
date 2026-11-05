@@ -265,8 +265,9 @@ export interface CreateTimelineOptions {
   /**
    * Measure label text with the page's font. On by default; off draws
    * exactly what the server drew, which is what a hydration test compares.
+   * (A configuration's `measureText` is the measuring function itself.)
    */
-  readonly measureText?: boolean;
+  readonly measureLabels?: boolean;
 }
 
 /** A live timeline. */
@@ -302,8 +303,8 @@ export interface Timeline<T = unknown> {
   setItems(items: TimelineConfig<T>["items"] | undefined): void;
   /** Apply a command's patches — `command.inverse` is an undo. Group commands reorder the groups. */
   applyCommand(command: Command | GroupCommand): void;
-  /** Collapse (`true`) or expand (`false`) a group; without `collapsed`, toggle it. */
-  toggleGroup(id: string, collapsed?: boolean): void;
+  /** Collapse (`{ collapsed: true }`) or expand (`{ collapsed: false }`) a group; without `collapsed`, toggle it. */
+  toggleGroup(id: string, options?: { readonly collapsed?: boolean }): void;
   /**
    * Add an item the way a drop adds one, at the keyboard's place: the middle
    * of the view, in the focused item's lane. The keyboard twin of dragging an
@@ -363,22 +364,29 @@ export interface Timeline<T = unknown> {
   revealLane(laneId: string): void;
   /** The last frame, for hit testing or export. */
   readonly result: RenderResult<T> | undefined;
-  /** The current drawing as a standalone SVG document. An `auto` theme is pinned to what the screen shows. */
+  /**
+   * The current drawing as a standalone SVG document. An `auto` theme is
+   * pinned to what the screen shows. Throws before the first frame: there is
+   * nothing drawn to export yet.
+   */
   exportSvg(): string;
-  /** The current drawing as a PNG, `scale` device pixels per CSS pixel (2 by default). */
+  /**
+   * The current drawing as a PNG, `scale` device pixels per CSS pixel (2 by
+   * default). Rejects before the first frame, and without the export plugin.
+   */
   exportPng(options?: PngOptions): Promise<Blob>;
   /**
    * The whole range as a PDF, with no server: vector, its text selectable,
    * the lanes cut between rows onto as many pages as they need — each item
-   * on exactly one. The drawing is the one at the call; no bytes at all
-   * (an empty array) before the first frame. Throws, as `exportPng` does,
-   * when the export plugin is not registered.
+   * on exactly one. The drawing is the one at the call. Rejects before the
+   * first frame, and without the export plugin, naming its import.
    */
   exportPdf(options?: TimelinePrintOptions): Promise<Uint8Array>;
   /**
    * Print the whole range through the browser's dialog, a page a sheet, cut
    * as {@link exportPdf} cuts it. Resolves when the dialog is closed and the
-   * print view has left the document — at once before the first frame.
+   * print view has left the document. Rejects before the first frame, and
+   * without the export plugin.
    */
   print(options?: TimelinePrintOptions): Promise<void>;
   /** Draw now instead of on the next animation frame. */
@@ -390,6 +398,12 @@ export interface Timeline<T = unknown> {
    * `mountTaskGrid` take it from here.
    */
   readonly nonce: string | undefined;
+  /**
+   * Let go of the container, the listeners and the timers. After it a method
+   * that would change something does nothing and emits nothing — one that
+   * answers with a `boolean` answers `false` — and the getters, the snapshot
+   * and the exports read the last frame.
+   */
   destroy(): void;
 }
 
@@ -703,7 +717,7 @@ export function createTimeline<T = unknown>(
   const nonce = config.nonce;
   const mount: SceneMount = mountScene(options.root ?? element, { hydrate: options.hydrate === true, parts: inShadow, ...(nonce === undefined ? {} : { nonce }) });
   const measured =
-    options.measureText === false
+    options.measureLabels === false
       ? undefined
       : canvasMeasure(doc, () => (view === undefined ? densityMetrics("comfortable", "horizontal") : sizesOf(view)).fontFamily);
   // The labels are measured with the spacing they are drawn with (WCAG
@@ -786,6 +800,7 @@ export function createTimeline<T = unknown>(
         ...(edit.crossLane === undefined ? {} : { crossLane: edit.crossLane }),
         ...(edit.snapOrigin === undefined ? {} : { snapOrigin: toTimeMs(edit.snapOrigin) }),
         ...(edit.minDurationMs === undefined ? {} : { minDurationMs: edit.minDurationMs }),
+        ...zoneOf(),
       },
     });
   }
@@ -796,6 +811,9 @@ export function createTimeline<T = unknown>(
   const loop: FrameLoop = createFrameLoop(element, draw);
   let binding: InputBinding = attachInput(element, { machine, onEffects: handle, direction: () => direction });
   element.addEventListener("pointerdown", onPress, true);
+  element.addEventListener("pointerup", onRelease, true);
+  element.addEventListener("pointermove", onHover);
+  element.addEventListener("pointerleave", onHover);
   element.addEventListener("keydown", onKey);
   element.addEventListener("dragover", onDragOver);
   element.addEventListener("drop", onDrop);
@@ -851,6 +869,24 @@ export function createTimeline<T = unknown>(
    * The view as one exact picture — not the drawn space with its overscan —
    * with an `auto` theme pinned to what the screen shows.
    */
+  /** What every export says before the first frame. */
+  function nothingDrawn(): Error {
+    return new Error("Nothing drawn yet to export: export after the first frame, once timeline.result is set");
+  }
+
+  /**
+   * One asynchronous export, run now: a missing plugin and an empty frame
+   * reject its promise, as its own failure would — a method that returns a
+   * promise does not also throw.
+   */
+  function exported<R>(what: string, run: (exporter: ReturnType<typeof plugin<"export">>, at: FrameState<T>) => R | Promise<R>): Promise<R> {
+    return new Promise<R>((resolve) => {
+      const exporter = plugin("export", what);
+      if (result === undefined || view === undefined) throw nothingDrawn();
+      resolve(run(exporter, frameState(view)));
+    });
+  }
+
   function exportScene(): SceneElement | undefined {
     if (result === undefined || view === undefined) return undefined;
     const state = frameState(view);
@@ -884,7 +920,7 @@ export function createTimeline<T = unknown>(
       direction: () => direction,
       nonce,
       toggle: (id, next) => {
-        instance.toggleGroup(id, next);
+        instance.toggleGroup(id, next === undefined ? {} : { collapsed: next });
       },
       command: (command) => {
         groups = tree.applyGroupPatches(groups ?? [], command.after);
@@ -899,11 +935,17 @@ export function createTimeline<T = unknown>(
     );
   }
 
-  function addOptions(): { readonly snapMs?: number; readonly snapOrigin?: TimeMs } {
+  /** The zone a day grid lies in: the timeline's own, so a day snaps to its midnight all year. */
+  function zoneOf(): { readonly timeZone?: string } {
+    return config.timeZone === undefined ? {} : { timeZone: config.timeZone };
+  }
+
+  function addOptions(): { readonly snapMs?: number; readonly snapOrigin?: TimeMs; readonly timeZone?: string } {
     const edit = config.editing ?? {};
     return {
       ...(edit.snapMs === undefined ? {} : { snapMs: edit.snapMs }),
       ...(edit.snapOrigin === undefined ? {} : { snapOrigin: toTimeMs(edit.snapOrigin) }),
+      ...zoneOf(),
     };
   }
 
@@ -984,6 +1026,30 @@ export function createTimeline<T = unknown>(
   function onPress(event: Event): void {
     const origin = event.composedPath()[0];
     pressTarget = origin instanceof Element ? origin : undefined;
+  }
+
+  /** The release a tap ends with: `itemClick`'s `originalEvent`, its modifier keys with it. */
+  let releaseEvent: PointerEvent | undefined;
+  function onRelease(event: PointerEvent): void {
+    releaseEvent = event;
+  }
+
+  /** The item a mouse or pen is over, for `itemHover`: said when it changes, `null` once it left every item. */
+  let hovered: string | null = null;
+  function onHover(event: PointerEvent): void {
+    if (event.pointerType === "touch" || destroyed) return;
+    let item: Item<T> | undefined;
+    if (event.type === "pointermove" && view !== undefined) {
+      const box = element.getBoundingClientRect();
+      // As the tools layer reads a pointer: `x` from the right in a mirrored frame.
+      const x = direction === "rtl" ? box.right - event.clientX : event.clientX - box.left;
+      const y = event.clientY - box.top;
+      item = tester?.hitTest(view.orientation === "vertical" ? { main: y, cross: x } : { main: x, cross: y }, event.pointerType === "pen" ? "pen" : "mouse")?.item;
+    }
+    const id = item?.id ?? null;
+    if (id === hovered) return;
+    hovered = id;
+    emitter.emit("itemHover", { item: item ?? null, originalEvent: event });
   }
 
   /** `[` and `]` along a dependency, once a Gantt chart asks for them: they remember where the last press landed. */
@@ -1220,6 +1286,7 @@ export function createTimeline<T = unknown>(
     const { moveTimeBar } = plugin("tools", "The timeBars option");
     const moved = moveTimeBar(bars, id, time, {
       ...(settings.snapMs === undefined ? {} : { snapMs: settings.snapMs }),
+      ...zoneOf(),
       ...(limits?.min === undefined && limits?.max === undefined
         ? {}
         : { limits: [limits.min === undefined ? -8.64e15 : toTimeMs(limits.min), limits.max === undefined ? 8.64e15 : toTimeMs(limits.max)] as const }),
@@ -1255,7 +1322,7 @@ export function createTimeline<T = unknown>(
     const setting = config.rangeSelect;
     if (setting === undefined || setting === false) return undefined;
     const snapMs = config.editing?.snapMs;
-    return setting === true ? (snapMs === undefined ? {} : { snapMs }) : setting;
+    return { ...zoneOf(), ...(setting === true ? (snapMs === undefined ? {} : { snapMs }) : setting) };
   }
 
   /** An item's box in the element, along and across. */
@@ -1615,9 +1682,9 @@ export function createTimeline<T = unknown>(
           if (effect.tapCount === 1) {
             choose(hit?.item.id ?? null);
             machine.setFocus(hit?.item.id ?? null);
-            if (hit !== undefined) emitter.emit("itemClick", { item: hit.item });
+            if (hit !== undefined) emitter.emit("itemClick", { item: hit.item, ...(releaseEvent === undefined ? {} : { originalEvent: releaseEvent }) });
           } else if (effect.tapCount === 2 && hit !== undefined) {
-            emitter.emit("itemDblClick", { item: hit.item });
+            emitter.emit("itemDblClick", { item: hit.item, ...(releaseEvent === undefined ? {} : { originalEvent: releaseEvent }) });
           }
           changed = true;
           break;
@@ -1736,7 +1803,8 @@ export function createTimeline<T = unknown>(
       } else if ("items" in next && next.items !== before.items) {
         useSource(next.items);
       }
-      if ("groups" in next && next.groups !== before.groups) {
+      // By what they say: groups written anew on each render keep the reader's order.
+      if ("groups" in next && !sameValue(next.groups, before.groups)) {
         const known = new Set((groups ?? []).map((group) => group.id));
         groups = next.groups;
         // A group kept keeps its state; a new one starts as it says.
@@ -1784,6 +1852,7 @@ export function createTimeline<T = unknown>(
       instance.update({ items: source });
     },
     applyCommand(command) {
+      if (destroyed) return;
       if (isGroupCommand(command)) {
         if (groups !== undefined) groups = plugin("groups", "A group command").applyGroupPatches(groups, command.after);
       } else {
@@ -1791,10 +1860,11 @@ export function createTimeline<T = unknown>(
       }
       loop.request();
     },
-    toggleGroup(id, next) {
+    toggleGroup(id, options = {}) {
+      if (destroyed) return;
       const group = groups?.find((each) => each.id === id);
       if (group === undefined) return;
-      const value = next ?? !collapsed.has(id);
+      const value = options.collapsed ?? !collapsed.has(id);
       if (value === collapsed.has(id)) return;
       const changed = new Set(collapsed);
       if (value) changed.add(id);
@@ -1805,11 +1875,13 @@ export function createTimeline<T = unknown>(
       loop.request();
     },
     dropItem(payload) {
+      if (destroyed) return false;
       if (!allowed("drop")) return false;
       const { itemFromDrop, addTargetFromFocus } = plugin("items", "The editing.drop option");
       return commitAdd(itemFromDrop(items, JSON.stringify(payload), addTargetFromFocus(domain, focusedLane(), addOptions()), newItemLabel()));
     },
     dropItemAt(payload, at) {
+      if (destroyed) return false;
       if (!allowed("drop")) return false;
       const box = element.getBoundingClientRect();
       if (at.clientX < box.left || at.clientX > box.right || at.clientY < box.top || at.clientY > box.bottom) return false;
@@ -1819,46 +1891,56 @@ export function createTimeline<T = unknown>(
       return items;
     },
     addItems(added) {
+      if (destroyed) return;
       commitLive({ add: added });
     },
     updateItems(updates) {
+      if (destroyed) return;
       commitLive({ update: updates });
     },
     removeItems(ids) {
+      if (destroyed) return;
       commitLive({ remove: ids });
     },
     changeItems(changes) {
+      if (destroyed) return;
       commitLive(changes);
     },
     get timeBars() {
       return bars;
     },
     zoomToPreset(id, around) {
+      if (destroyed) return false;
       const preset = presetsOf()?.find((each) => each.id === id);
       if (preset === undefined) return false;
       moveView(plugin("tools", "The zoomPresets option").presetDomain(preset, domain, { ...(around === undefined ? {} : { around: toTimeMs(around) }), ...(config.timeZone === undefined ? {} : { timeZone: config.timeZone }) }), "zoom");
       return true;
     },
     follow() {
+      if (destroyed) return;
       if (rollingOf(config) === undefined) return;
       following = true;
       startRolling();
     },
     zoomTo(next) {
+      if (destroyed) return;
       machine.setDomain([toTimeMs(next[0]), toTimeMs(next[1])]);
       domain = machine.domain;
       reason = "api";
       loop.request();
     },
     zoomBy(factor, around) {
+      if (destroyed) return;
       const scale = scaleOf(Math.max(1, view?.mainSize ?? 1));
       const anchor = around === undefined ? scale.mainSize / 2 : scale.toMain(toTimeMs(around));
       run(machine.zoom(factor, anchor));
     },
     scrollTo(time) {
+      if (destroyed) return;
       run(machine.goTo(time, view_?.performance.now() ?? 0));
     },
     select(ids) {
+      if (destroyed) return;
       setSelection(ids);
       loop.request();
     },
@@ -1872,6 +1954,7 @@ export function createTimeline<T = unknown>(
       return view === undefined ? undefined : sizesOf(view);
     },
     focusItem(id) {
+      if (destroyed) return false;
       const placed = result?.layout.items.find((each) => each.item.id === id);
       if (placed === undefined || view === undefined) return false;
       machine.setFocus(id);
@@ -1886,10 +1969,12 @@ export function createTimeline<T = unknown>(
       return true;
     },
     scrollLanes(delta) {
+      if (destroyed) return;
       if (!Number.isFinite(delta) || delta === 0) return;
       run(machine.pan(0, delta));
     },
     revealLane(laneId) {
+      if (destroyed) return;
       const lane = result?.layout.lanes.find((each) => each.lane.id === laneId);
       if (lane === undefined || view === undefined) return;
       const offset = machine.crossOffset;
@@ -1901,7 +1986,7 @@ export function createTimeline<T = unknown>(
     },
     exportSvg() {
       const scene = exportScene();
-      if (scene === undefined) return "";
+      if (scene === undefined) throw nothingDrawn();
       // A file of its own is XML: what XML allows nowhere (a C0 control, half
       // a surrogate pair) leaves the text, as in the core's `standaloneSvg`.
 // eslint-disable-next-line no-control-regex -- these are the characters it is about
@@ -1909,21 +1994,22 @@ export function createTimeline<T = unknown>(
       return svg.includes("xmlns=") ? svg : svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
     },
     exportPng(options) {
-      const exporter = plugin("export", "exportPng()");
-      const scene = exportScene();
-      return scene === undefined ? Promise.reject(new Error("Nothing drawn yet to export")) : exporter.png(doc, scene, options);
+      return exported("exportPng()", (exporter) => {
+        const scene = exportScene();
+        if (scene === undefined) throw nothingDrawn();
+        return exporter.png(doc, scene, options);
+      });
     },
     exportPdf(options = {}) {
-      const exporter = plugin("export", "exportPdf()");
-      // No bytes at all before the first frame. The pages are cut now, from
-      // the frame the call saw, not from whatever is drawn when it resolves.
-      return Promise.resolve(result === undefined || view === undefined ? new Uint8Array(0) : exporter.pdf(config, frameState(view), result.layout, options));
+      // The pages are cut now, from the frame the call saw, not from
+      // whatever is drawn when it resolves.
+      return exported("exportPdf()", (exporter, at) => exporter.pdf(config, at, (result as RenderResult<T>).layout, options));
     },
     print(options = {}) {
-      const exporter = plugin("export", "print()");
-      return result === undefined || view === undefined ? Promise.resolve() : exporter.print(doc, config, frameState(view), result.layout, options);
+      return exported("print()", (exporter, at) => exporter.print(doc, config, at, (result as RenderResult<T>).layout, options));
     },
     flush() {
+      if (destroyed) return;
       loop.request();
       loop.flush();
     },
@@ -1945,6 +2031,9 @@ export function createTimeline<T = unknown>(
       stopSpacingWatch();
       binding.destroy();
       element.removeEventListener("pointerdown", onPress, true);
+      element.removeEventListener("pointerup", onRelease, true);
+      element.removeEventListener("pointermove", onHover);
+      element.removeEventListener("pointerleave", onHover);
       element.removeEventListener("keydown", onKey);
       element.removeEventListener("dragover", onDragOver);
       element.removeEventListener("drop", onDrop);

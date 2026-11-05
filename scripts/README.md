@@ -19,7 +19,7 @@ that need a quiet machine run before each release
 | Script | Check | What it does |
 |---|---|---|
 | `sdk_check_a11y.mjs` | axe | Axe found 0 violations in EVERY measured state of the pages, with the WCAG 2.2 AA tags, in a real browser — and that the harness is not blind. |
-| `sdk_check_acr.mjs` | acr | The conformance report (packages/docs/site/conformance/ wcag22.json) lists EVERY A and AA success criterion of WCAG 2.2, and every "supports" row is backed by an existing, PASSING test. |
+| `sdk_check_acr.mjs` | acr | The conformance report (packages/docs/site/conformance/ wcag22.json) lists EVERY A and AA success criterion of WCAG 2.2, and every "supports" row is backed by an existing, PASSING test; no shipped page claims WCAG 2.2 AA without axe or the report behind it. `--static` (in CI) leaves out running the tests. |
 | `sdk_check_add_remove.mjs` | add-remove | Adding and removing issue the same command by gesture and by keyboard, the inverse restores the exact starting point, and the host's veto is atomic. |
 | `sdk_check_api_docs.mjs` | api-docs | Every name on a public entry point is documented, and every public function is called the way the naming rule says. |
 | `sdk_check_async.mjs` | async | During fast zooming the results of cancelled requests NEVER reach the canvas. |
@@ -117,11 +117,12 @@ that need a quiet machine run before each release
 | `sdk_property_reset.mjs` | Deletes the property reports BEFORE the run. |
 | `sdk_rtl_snapshots.mjs` | The visual half of the rtl check: the visual matrix right-to-left, on the SHIPPED bundle. |
 | `sdk_size.mjs` | The size budget of the non-base entry points: marginal cost. |
+| `sdk_size_packages.mjs` | The size budgets of the element (with its engine, and the UMD file) and of the four components (their own bytes), with the core's meter; CI runs it on every Node. |
 | `sdk_suite_report.mjs` | The shared half of the suite-report checks: reading a vitest JSON report. |
 | `sdk_test_all.mjs` | The full suite (`npm run test:all`) is green, in EVERY package, not just in core. |
 | `sdk_test_browsers.mjs` | The element's browser suite in Firefox and WebKit too, not only in Chromium, and proof that each run ran in the engine it was asked for. |
 | `sdk_test_claims.mjs` | Every claim check of the core and the docs site (`test:<name>`: a suite and the checker that reads its report) in CI, and none forgotten. |
-| `sdk_test_lowest_peers.mjs` | Every framework package's suite on the LOWEST version its peer range admits, and every peer range closed. |
+| `sdk_test_lowest_peers.mjs` | Every framework package's suite on the LOWEST version its peer range admits (with `--highest`: on the NEWEST, where development is not already there), and every peer range closed. |
 | `sdk_vis_compat_vectors.mjs` | The vis-compat reference: vis-timeline 8.5.6 itself. |
 | `sdk_visual_snapshots.mjs` | The first half of the visual check: visual regression on the SHIPPED bundle. |
 

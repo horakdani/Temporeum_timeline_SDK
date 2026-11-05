@@ -99,6 +99,20 @@ describe("a page with none of the four plugins", () => {
     expect(element.childElementCount).toBe(0);
   });
 
+  it("an export that needs the plugin rejects its promise, naming the import, and does not throw (R51)", async () => {
+    const { timeline } = await mount();
+    for (const run of [() => timeline.exportPng(), () => timeline.exportPdf(), () => timeline.print()]) {
+      let promise: Promise<unknown> | undefined;
+      expect(() => {
+        promise = run();
+      }).not.toThrow();
+      await expect(promise).rejects.toThrow('import { exportPlugin } from "@temporeum/timeline-element/export"');
+    }
+    // The SVG needs no plugin.
+    expect(timeline.exportSvg()).toContain("<svg");
+    timeline.destroy();
+  });
+
   it("an update, a live change or a command that needs one throws, and the instance is as it was", async () => {
     const { element, timeline } = await mount();
     expect(thrown(() => timeline.update({ minimap: true }))).toContain("The minimap option needs the tools plugin");

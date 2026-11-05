@@ -140,6 +140,27 @@ describe("under style-src 'self' and Trusted Types", () => {
     timeline.destroy();
   });
 
+  it("tells a story mounted in a box not yet on the page: its stylesheet is adopted once the box is put in (R78)", async () => {
+    const timeline = createTimeline(box(), { items, domain });
+    await drawn(timeline);
+    const panel = document.createElement("div");
+    const story = mountStory(panel, timeline, { title: { headline: "Later", text: "<p>Put in afterwards</p>" }, slide: () => undefined });
+    expect(panel.querySelector("style")).toBeNull();
+    document.body.append(panel);
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(getComputedStyle(panel.querySelector(".tl-story") as Element).display).toBe("flex");
+    // Released before it was put in, nothing is adopted and nothing waits.
+    const unused = document.createElement("div");
+    const early = mountStory(unused, timeline, { slide: () => undefined });
+    early.destroy();
+    const before = document.adoptedStyleSheets.length;
+    document.body.append(unused);
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(document.adoptedStyleSheets.length).toBe(before);
+    story.destroy();
+    timeline.destroy();
+  });
+
   it("prints: the view is built with the DOM, and its stylesheet applies", async () => {
     const timeline = createTimeline(box(), { items, domain });
     await drawn(timeline);

@@ -42,41 +42,41 @@ import type { Strings } from "@temporeum/timeline-core/words";
 /** How a calendar view is set up. */
 export interface CalendarViewOptions<T = unknown> {
   /** Calendar events, recurring or not; expanded for the period shown. */
-  readonly events?: readonly CalendarEvent<T>[];
+  readonly events?: readonly CalendarEvent<T>[] | undefined;
   /** Items to show as they are, beside the events. */
-  readonly items?: readonly Item<T>[];
+  readonly items?: readonly Item<T>[] | undefined;
   /** A week (the default) or a day. */
-  readonly view?: "week" | "day";
+  readonly view?: "week" | "day" | undefined;
   /** Any moment of the period to show. Now by default. */
-  readonly date?: TimeInput;
-  readonly timeZone?: string;
+  readonly date?: TimeInput | undefined;
+  readonly timeZone?: string | undefined;
   /**
    * The nonce of the view's `<style>`s, for a Content-Security-Policy without
    * `'unsafe-inline'` in a browser that cannot adopt a constructed sheet.
    * Where it can, no `<style>` is written. Read once, when the view mounts.
    */
-  readonly nonce?: string;
+  readonly nonce?: string | undefined;
   /** Dates and names in this locale. `"en"` by default. */
-  readonly locale?: string;
+  readonly locale?: string | undefined;
   /** 1 = Monday (the default) to 7 = Sunday. */
-  readonly weekStartsOn?: number;
-  readonly dayStartHour?: number;
-  readonly dayEndHour?: number;
-  readonly minDurationMs?: number;
+  readonly weekStartsOn?: number | undefined;
+  readonly dayStartHour?: number | undefined;
+  readonly dayEndHour?: number | undefined;
+  readonly minDurationMs?: number | undefined;
   /** The drawing's height in CSS pixels. 720 by default. */
-  readonly height?: number;
-  readonly theme?: ThemeSetting;
-  readonly density?: Density;
+  readonly height?: number | undefined;
+  readonly theme?: ThemeSetting | undefined;
+  readonly density?: Density | undefined;
   /** Right to left: the first day on the right. `"auto"` reads the container's `direction`. */
-  readonly direction?: "ltr" | "rtl" | "auto";
+  readonly direction?: "ltr" | "rtl" | "auto" | undefined;
   /** The view's words: `DEFAULT_STRINGS` keys of `/intl`. */
-  readonly strings?: Partial<Strings>;
+  readonly strings?: Partial<Strings> | undefined;
   /** The drawing's accessible name. "Week of …" by default. */
-  readonly ariaLabel?: string;
+  readonly ariaLabel?: string | undefined;
   /** The current-time line: on (now), off, or at a given moment. On by default. */
-  readonly now?: boolean | TimeInput;
+  readonly now?: boolean | TimeInput | undefined;
   /** The previous / today / next buttons. On by default. */
-  readonly toolbar?: boolean;
+  readonly toolbar?: boolean | undefined;
 }
 
 /** What `select` says. */
@@ -87,7 +87,7 @@ export interface CalendarSelectPayload<T = unknown> {
   readonly via: "pointer" | "keyboard";
 }
 
-/** What `rangeChange` says: the period now shown. */
+/** What `rangeChanged` says: the period now shown. */
 export interface CalendarRangePayload {
   readonly start: TimeMs;
   readonly end: TimeMs;
@@ -95,8 +95,10 @@ export interface CalendarRangePayload {
 
 /** The events of a calendar view. */
 export interface CalendarViewEventMap<T = unknown> {
-  readonly select: CalendarSelectPayload<T>;
-  readonly rangeChange: CalendarRangePayload;
+  /** An event was chosen — a click, `Enter`, or `choose` — whether or not it was selected before. */
+  readonly itemSelect: CalendarSelectPayload<T>;
+  /** The period shown changed. */
+  readonly rangeChanged: CalendarRangePayload;
 }
 
 /** A mounted calendar view. */
@@ -110,8 +112,10 @@ export interface CalendarView<T = unknown> {
   readonly selectedId: string | undefined;
   /** The key the keyboard is on. */
   readonly focusedKey: string | undefined;
-  next(): void;
-  previous(): void;
+  /** Show the next period. `true`: a calendar always has one — the same signature as the story's. */
+  next(): boolean;
+  /** Show the period before. `true`, as `next`. */
+  previous(): boolean;
   today(): void;
   /** Choose an event by its layout key, as a click or `Enter` would. */
   choose(key: string, via?: "pointer" | "keyboard"): void;
@@ -225,7 +229,7 @@ export function mountCalendarView<T = unknown>(container: HTMLElement, initial: 
     nextButton.textContent = say("nextPeriod");
     const format = new Intl.DateTimeFormat(locale(), { dateStyle: "medium", timeZone: zone() });
     rangeText.textContent = days === 1 || last === undefined ? format.format(start) : format.formatRange(start, last.start);
-    if (changed) emit("rangeChange", { start: range[0], end: range[1] });
+    if (changed) emit("rangeChanged", { start: range[0], end: range[1] });
   }
 
   function svg(): SVGSVGElement | undefined {
@@ -247,7 +251,7 @@ export function mountCalendarView<T = unknown>(container: HTMLElement, initial: 
     focusedKey = key;
     selectedId = piece.item.id;
     draw();
-    emit("select", { item: piece.item, key, via });
+    emit("itemSelect", { item: piece.item, key, via });
   }
 
   function run(action: CalendarKeyAction): void {
@@ -336,8 +340,14 @@ export function mountCalendarView<T = unknown>(container: HTMLElement, initial: 
     get focusedKey() {
       return focusedKey;
     },
-    next: () => run("nextPeriod"),
-    previous: () => run("previousPeriod"),
+    next() {
+      run("nextPeriod");
+      return true;
+    },
+    previous() {
+      run("previousPeriod");
+      return true;
+    },
     today: () => run("today"),
     choose,
     on(event, handler) {

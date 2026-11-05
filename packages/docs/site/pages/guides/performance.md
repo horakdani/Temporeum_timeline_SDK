@@ -10,13 +10,13 @@ Measured in Chromium at a 4× CPU slowdown, 1440 × 900, 10 000 items, missed fr
 
 | View | `createTimeline` | The engine, by hand | Without a scene space |
 |---|---|---|---|
-| pan, ~2 050 items visible | 0% | 0% | ~40% |
-| 2× pinch zoom from there | ~2–3% | ~2–3% | ~35–40% |
-| 4× pinch zoom from there | ~2–3% | ~2–3% | ~30–40% |
-| pan at 2×, ~1 050 items and ~1 030 labels | 0–2% | 0% | ~50% |
-| 4.3× ctrl+wheel zoom from a fresh page, 8 notches in and out | ~1–2% | ~0–2% | ~15–20% |
+| pan, ~2 050 items visible | 0% | 0% | ~32–38% |
+| 2× pinch zoom from there | 0.8% | 0.8% | ~38–40% |
+| 4× pinch zoom from there | 0.8% | 1.6% | ~42–45% |
+| pan at 2×, ~1 050 items and ~1 030 labels | 0.8% | 0.8% | ~52–57% |
+| 4.3× ctrl+wheel zoom from a fresh page, 8 notches in and out | 3.0% | 4.6% | ~25–32% |
 
-The budget is 5%, and both of the first two columns are checked by scripts in the repository, which fail when a view goes over it: `npm run bench:assert -w @temporeum/timeline-core` drives the engine the way the [engine guide](core-engine.md) shows, `npm run bench:public -w @temporeum/timeline-docs` drives `createTimeline` from the shipped bundle, with nothing but `density: "dense"` set, `bench:deep` runs the 4× pinch on both, and `bench:wheel` the [benchmark](../benchmark.md)'s ctrl+wheel zoom, on a fresh page, the median of three. Each also runs its page without a scene space, and that run has to fail the budget, or the measurement could not tell good from bad; the 4× pinch also runs without steps (below), and fails at about 9–12%, and the wheel zoom without wheel runs (below), and fails at about 37%. The numbers move by a point or two with what else the machine is doing.
+The budget is 5%, and both of the first two columns are checked by scripts in the repository, which fail when a view goes over it: `npm run bench:assert -w @temporeum/timeline-core` drives the engine the way the [engine guide](core-engine.md) shows, `npm run bench:public -w @temporeum/timeline-docs` drives `createTimeline` from the shipped bundle, with nothing but `density: "dense"` set, `bench:deep` runs the 4× pinch on both, and `bench:wheel` the [benchmark](../benchmark.md)'s ctrl+wheel zoom, on a fresh page, the median of three. Each also runs its page without a scene space, and that run has to fail the budget, or the measurement could not tell good from bad; the 4× pinch also runs without steps (below), at about 3.3%, and has to miss measurably more than with them; the wheel zoom runs without wheel runs (below), and fails at about 44%. The numbers move by a point or two with what else the machine is doing.
 
 By hand, with the engine alone, the loop that keeps the space is this — `createTimeline` runs the same one:
 

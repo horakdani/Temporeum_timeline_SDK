@@ -1,6 +1,8 @@
 node_modules/
 dist/
 coverage/
+packages/svelte/.svelte-kit/
+packages/svelte/.ssr/
 test-results/
 playwright-report/
 .bench-*.json

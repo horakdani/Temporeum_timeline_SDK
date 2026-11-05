@@ -37,10 +37,53 @@ import type {
   TimelineUpdate,
 } from "@temporeum/timeline-element";
 import { defineComponent, h, inject, onBeforeUnmount, onMounted, onUpdated, ref, shallowRef, ssrContextKey, Teleport, toRaw, toValue, useId, watch } from "vue";
-import type { MaybeRefOrGetter, SetupContext, ShallowRef, SlotsType } from "vue";
+import type {
+  AllowedComponentProps,
+  ComponentCustomProps,
+  ComponentOptionsMixin,
+  CreateComponentPublicInstanceWithMixins,
+  MaybeRefOrGetter,
+  PublicProps,
+  SetupContext,
+  ShallowRef,
+  SlotsType,
+  VNodeProps,
+} from "vue";
 
 export type { TimelineComponentConfig, TimelineConfig, TimelineSnapshot } from "@temporeum/timeline-element";
 /** The element's plugin registry, from the adapter too: an app that installs only the adapter still registers the plugins its configuration needs. */
+// The data and the event payloads, handed on: one install types an app.
+export type {
+  ClusterOpenedPayload,
+  CommandPayload,
+  DensityChangedPayload,
+  Domain,
+  Group,
+  GroupMovedPayload,
+  GroupToggledPayload,
+  HoverPayload,
+  InputSkippedPayload,
+  Item,
+  ItemEventPayload,
+  ItemMovedPayload,
+  ItemResizedPayload,
+  ItemsAddedPayload,
+  ItemsChangedPayload,
+  ItemsRemovedPayload,
+  JumpRequestPayload,
+  Lane,
+  LayoutChangedPayload,
+  OrientationChangedPayload,
+  SelectionChangedPayload,
+  SlotsChangedPayload,
+  TimeBar,
+  TimeBarMovedPayload,
+  TimelineInstanceEventMap,
+  TimelineInstanceEventName,
+  TimeMs,
+  TimeRange,
+  ViewportChangedPayload,
+} from "@temporeum/timeline-element";
 export { hasPlugin, registerPlugin } from "@temporeum/timeline-element";
 export type { PluginName, TimelinePlugin } from "@temporeum/timeline-element";
 export type { TimelineInstance };
@@ -58,6 +101,33 @@ export type TimelineProps<T = unknown> = TimelineComponentConfig<T> & {
 
 /** The `#item` slot: each drawn item's content. */
 export type TimelineSlots<T = unknown> = SlotsType<{ readonly item: { readonly item: Item<T> } }>;
+
+/** A handler prop for every event — `onItemMoved`, `onReady`, … — its payload typed by the items' data. */
+export type TimelineListeners<T = unknown> = { readonly [K in keyof TimelineEmits<T> & string as `on${Capitalize<K>}`]?: TimelineEmits<T>[K] };
+
+/**
+ * The component's type, generic over the items' data: every prop, every
+ * handler and the `#item` slot typed by it, and a template ref's `timeline`.
+ * Written out because Vue types the runtime `emits` list — the names — as
+ * handlers of `(...args: any[]) => any`, and the options' slots as `unknown`.
+ */
+export type TimelineComponent = new <T = unknown>(
+  props: TimelineProps<T> & TimelineListeners<T> & VNodeProps & AllowedComponentProps & ComponentCustomProps,
+) => CreateComponentPublicInstanceWithMixins<
+  TimelineProps<T> & TimelineListeners<T>,
+  { readonly timeline: TimelineInstance<T> | null },
+  Record<never, never>,
+  Record<never, never>,
+  Record<never, never>,
+  ComponentOptionsMixin,
+  ComponentOptionsMixin,
+  TimelineEmits<T>,
+  PublicProps,
+  Record<never, never>,
+  false,
+  Record<never, never>,
+  TimelineSlots<T>
+>;
 
 /** An item, as the element's types name it (the adapter depends on the element alone). */
 type Item<T> = ItemSlot<T>["item"];
@@ -171,7 +241,7 @@ function changedOf(before: Record<string, unknown>, next: Record<string, unknown
  * act on the item, and its `label` stays its accessible name. Needs the
  * `/items` plugin, as `template` does.
  */
-export const Timeline = defineComponent(
+export const Timeline: TimelineComponent = defineComponent(
   <T = unknown>(props: TimelineProps<T>, { emit, expose, slots }: SetupContext<TimelineEmits<T>, TimelineSlots>) => {
     // Vue 3.5.0 types useId() as possibly undefined (outside a setup); here it is in one.
     const scope = scopeOf(useId() ?? "");
@@ -258,7 +328,7 @@ export const Timeline = defineComponent(
     emits: [...TIMELINE_EVENTS, "ready"],
     slots: Object as TimelineSlots,
   },
-);
+) as unknown as TimelineComponent;
 
 /** One instance event, emitted under its own name: the payload is that event's. */
 function forward<T, K extends TimelineInstanceEventName>(emit: SetupContext<TimelineEmits<T>>["emit"], type: K, payload: TimelineInstanceEventMap<T>[K]): void {

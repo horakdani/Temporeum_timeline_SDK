@@ -59,7 +59,8 @@ describe("the story panel", () => {
   it("tells the slides in time order after the title, and moves the timeline with them", async () => {
     const { timeline, panel } = await mount();
     const changes: StoryChange<StoryData>[] = [];
-    const handle = mountStory(panel, timeline, { title: story.title, locale: "en-GB", onChange: (change) => changes.push(change) });
+    const handle = mountStory(panel, timeline, { title: story.title, locale: "en-GB" });
+    handle.on("slideChanged", (change) => changes.push(change));
     await vi.waitFor(() => expect(headline(panel)).toBe("Apollo 11"));
     expect(handle.count).toBe(4);
     expect(handle.id).toBeNull();
@@ -80,11 +81,13 @@ describe("the story panel", () => {
     expect(panel.querySelector(".tl-story-said")?.textContent).toBe("Slide 1 of 3: Launch, 16 July 1969 at 13:32");
 
     expect(handle.go("splash")).toBe(true);
-    // The jump is animated, as the keyboard's is: it lands with the item in the middle.
+    // The jump is animated, as the keyboard's is: it lands with the item in
+    // the middle. The splashdown is known to the day and drawn over 24 July,
+    // so its middle is noon, not the midnight its stored date names.
     await vi.waitFor(() => {
       timeline.flush();
       const [from, to] = timeline.getSnapshot().domain;
-      expect(Math.abs((from + to) / 2 - Date.UTC(1969, 6, 24))).toBeLessThan(60_000);
+      expect(Math.abs((from + to) / 2 - Date.UTC(1969, 6, 24, 12))).toBeLessThan(60_000);
     });
     expect(panel.querySelector<HTMLButtonElement>(".tl-story-next")?.disabled).toBe(true);
     expect(handle.next()).toBe(false);
@@ -159,7 +162,8 @@ describe("the story panel", () => {
     history.replaceState(null, "", "#tale-splash");
     const { timeline, panel } = await mount();
     const changes: string[] = [];
-    const handle = mountStory(panel, timeline, { title: story.title, hash: "tale-", onChange: ({ id, source }) => changes.push(`${String(id)}:${source}`) });
+    const handle = mountStory(panel, timeline, { title: story.title, hash: "tale-" });
+    handle.on("slideChanged", ({ id, source }) => changes.push(`${String(id)}:${source}`));
     await vi.waitFor(() => expect(headline(panel)).toBe("Splashdown"));
     handle.go("launch");
     expect(location.hash).toBe("#tale-launch");
@@ -356,6 +360,23 @@ describe("the story panel's edges", () => {
     titled.destroy();
   });
 
+  it("frames the items as they are drawn: a year is the whole year (R41)", async () => {
+    const years = fromTimelineJS({ title: { text: { headline: "Years" } }, events: [1969, 1970, 1971, 1972].map((year) => ({ start_date: { year }, text: { headline: String(year) } })) });
+    const { timeline, panel } = await mount(years.items);
+    const handle = mountStory(panel, timeline, { title: years.title, reveal: true });
+    handle.go(0);
+    await vi.waitFor(() => expect(timeline.getSnapshot().domain[1]).toBeGreaterThanOrEqual(Date.UTC(1973, 0, 1)));
+    expect(timeline.getSnapshot().domain[0]).toBeLessThanOrEqual(Date.UTC(1969, 0, 1));
+    // A year's slide puts the middle of its year in the middle of the view, not 1 January.
+    timeline.zoomTo([Date.UTC(1970, 0, 1), Date.UTC(1975, 0, 1)]);
+    handle.go(2);
+    await vi.waitFor(() => {
+      const [low, high] = timeline.getSnapshot().domain;
+      expect(Math.abs((low + high) / 2 - (Date.UTC(1970, 0, 1) + Date.UTC(1971, 0, 1)) / 2)).toBeLessThan(DAY);
+    });
+    handle.destroy();
+  });
+
   it("keeps two items of one time in their order, and goes nowhere with a title and no items", async () => {
     const { timeline, panel } = await mount([
       { id: "second", label: "B", laneId: "group-flight", start: T0, data: { story: {} } },
@@ -381,7 +402,8 @@ describe("the story panel's edges", () => {
     document.body.append(panel, element);
     const timeline = createTimeline<StoryData>(element, { items: story.items, lanes: story.lanes, domain: [T0, T0 + 10 * DAY], height: 200 });
     const changes: string[] = [];
-    const handle = mountStory(panel, timeline, { onChange: ({ id }) => changes.push(String(id)) });
+    const handle = mountStory(panel, timeline);
+    handle.on("slideChanged", ({ id }) => changes.push(String(id)));
     handle.destroy();
     await vi.waitFor(() => {
       if (timeline.result === undefined) throw new Error("not drawn yet");

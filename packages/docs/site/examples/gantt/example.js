@@ -43,7 +43,7 @@ const timeline = createTimeline(element, {
 });
 
 // The table beside it: one row per lane, on the lane's line.
-mountTaskGrid(document.querySelector("#grid"), timeline, { label: "Release tasks", focusTarget: element });
+mountTaskGrid(document.querySelector("#grid"), timeline, { ariaLabel: "Release tasks", focusTarget: element });
 
 const log = document.querySelector("#log");
 let focused = null;

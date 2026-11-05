@@ -45,7 +45,7 @@ const story = fromTimelineJS({
 | TimelineJS | Here |
 |---|---|
 | `events[]` | items, in `items`; the slide in `item.data.story` |
-| `start_date`, `end_date` (`year`, `month`, `day`, `hour`, `minute`, `second`, `millisecond`) | `start`, `end`, and `granularity` from the precision given: a year alone covers its year. The end's unit is part of the span: 1914 to 1918 runs to the end of 1918. Read in UTC, as TimelineJS reads them. |
+| `start_date`, `end_date` (`year`, `month`, `day`, `hour`, `minute`, `second`, `millisecond`) | `start`, `end`, and `granularity` from the precision given: a year alone covers its year. The end's unit is part of the span: 1914 to 1918 runs to the end of 1918. Two ends known to different units (1914 to 11 November 1918) make the finer one the item's, and the slide keeps each end's own in `story.precision`, so its date line says "1914 – 11 November 1918". Read in UTC, as TimelineJS reads them — or, with `fromTimelineJS(data, { timeZone })`, as the wall clock of the zone the timeline draws in: give the timeline's `timeZone`, and a year is drawn as that year there. |
 | a negative `year` | the same astronomical year TimelineJS gives the browser's `Date`: `-500` is the axis's 501 BC. A `display_date` keeps the story's wording on the slide. |
 | `display_date` (the slide's, or the dates') | the slide's date line; without one, the item's date to its precision |
 | `text.headline`, `text.text` | the slide's headline and text, HTML kept as far as it is safe; the headline as plain text is the item's `label` |
@@ -68,8 +68,9 @@ Each is a warning with a `code`, the list it is in, and the index:
 - **`cosmological`.** The scale of billions of years. The axis is the calendar's, within 275 000 years of now; an event outside it is `out-of-range` and left out.
 - **`no-date`, `out-of-range`, `end-before-start`.** An event without a start year, or with one that is not a date, is left out; an end that is before the start, or not a date, makes the event an instant.
 - **`duplicate-id`.** Two events with one `unique_id`: the second gets a suffix.
+- **`media`.** Media the panel does not show as media: an address it cannot open (anything but http, https, or an image as `data:`) is left out, and a kind it does not embed — TimelineJS's cards for Wikipedia, X and other sites, a PDF, any page — is a link.
 
-And without a warning, because they are not data: TimelineJS's `autolink` (links in the text are links as written), its embed generator (your page reads the sheet), and its media cards for Wikipedia, X and other sites — those are links here.
+And without a warning, because they are not data: TimelineJS's `autolink` (links in the text are links as written) and its embed generator (your page reads the sheet).
 
 ## What you gain
 

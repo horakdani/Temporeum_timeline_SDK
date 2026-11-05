@@ -131,7 +131,9 @@ export function describeSpan(
   }
   // A date-granular span ends where the next unit begins: the last day it
   // covers is the one before that. An end without a granularity is an instant.
-  const to = formatter.format(item.granularity === undefined || withTime ? span.end : Math.max(start, span.end - 1));
+  // An item at the edge of the accepted range ends one millisecond past what
+  // a date can hold; one bad label took the whole frame (R30).
+  const to = formatter.format(Math.min(item.granularity === undefined || withTime ? span.end : Math.max(start, span.end - 1), 8.64e15));
   return hasEnd && span.end > start && to !== from ? `${from} – ${to}` : from;
 }
 

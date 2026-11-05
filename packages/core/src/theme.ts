@@ -111,7 +111,8 @@ export function resolveTheme(setting: ThemeSetting): Theme | undefined {
     return DARK_THEME;
   }
   for (const [name, value] of Object.entries(setting.tokens)) {
-    if (!/^[a-z]+:(?![^]*url\()[\w\s#%.,()/-]*$/i.test(`${name}:${value}`)) throw new RangeError(`Theme token ${name}: not a colour`);
+    // Parentheses closed, two deep at most (`color-mix(in srgb, rgb(…) 40%, …)`): an open one swallowed the rest of the stylesheet (R77).
+    if (!/^[a-z]+:(?![^]*url\()[\w\s#%.,/-]*(?:\([\w\s#%.,/-]*(?:\([\w\s#%.,/-]*\)[\w\s#%.,/-]*)*\)[\w\s#%.,/-]*)*$/i.test(`${name}:${value}`)) throw new RangeError(`Theme token ${name}: not a colour`);
   }
   return setting;
 }
@@ -219,7 +220,11 @@ export function timelineStyleCss(options: StyleOptions): string {
     // A reader's letter or word spacing, set or taken away after load, ends
     // a transition here: no other event says a stylesheet changed, and the
     // element listens for it to measure its labels again (WCAG 1.4.12).
-    `${root}{font-family:${metrics.fontFamily};transition:letter-spacing 1ms,word-spacing 1ms;transition-behavior:allow-discrete}`,
+    // A block, not the inline default: an inline <svg> sits on a text line, and
+    // the line's descender gap under it makes a container without a height of
+    // its own a few pixels taller than the drawing — which the next frame
+    // measures and draws, for ever.
+    `${root}{font-family:${metrics.fontFamily};transition:letter-spacing 1ms,word-spacing 1ms;transition-behavior:allow-discrete;display:block}`,
     `${root} .tl-surface{fill:var(--tl-surface)}`,
     `${root} .tl-band{fill:var(--tl-surface-alt)}`,
     `${root} .tl-lane{fill:none}`,

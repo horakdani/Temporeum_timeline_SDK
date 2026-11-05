@@ -11,5 +11,37 @@ export type { TimelineItemContext } from "./timeline.component.js";
 export { timelineState } from "./state.js";
 export type { Timeline as TimelineInstance, TimelineComponentConfig, TimelineConfig, TimelineSnapshot } from "@temporeum/timeline-element";
 /** The element's plugin registry, from the adapter too: an app that installs only the adapter still registers the plugins its configuration needs. */
+// The data and the event payloads, handed on: one install types an app.
+export type {
+  ClusterOpenedPayload,
+  CommandPayload,
+  DensityChangedPayload,
+  Domain,
+  Group,
+  GroupMovedPayload,
+  GroupToggledPayload,
+  HoverPayload,
+  InputSkippedPayload,
+  Item,
+  ItemEventPayload,
+  ItemMovedPayload,
+  ItemResizedPayload,
+  ItemsAddedPayload,
+  ItemsChangedPayload,
+  ItemsRemovedPayload,
+  JumpRequestPayload,
+  Lane,
+  LayoutChangedPayload,
+  OrientationChangedPayload,
+  SelectionChangedPayload,
+  SlotsChangedPayload,
+  TimeBar,
+  TimeBarMovedPayload,
+  TimelineInstanceEventMap,
+  TimelineInstanceEventName,
+  TimeMs,
+  TimeRange,
+  ViewportChangedPayload,
+} from "@temporeum/timeline-element";
 export { hasPlugin, registerPlugin } from "@temporeum/timeline-element";
 export type { PluginName, TimelinePlugin } from "@temporeum/timeline-element";

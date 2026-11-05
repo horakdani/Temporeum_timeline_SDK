@@ -5,7 +5,10 @@
     "outDir": "dist",
     "types": [],
     // The declaration maps would point at src/, which is not published.
-    "declarationMap": false
+    "declarationMap": false,
+    // What is marked @internal (formatNumber, shared by the scene and the
+    // mount) is exported between modules, not to hosts.
+    "stripInternal": true
   },
   "include": ["src/**/*.ts"]
 }

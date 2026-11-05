@@ -62,6 +62,11 @@ export default [
     rules: {
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/await-thenable": "error",
+      // A focused test runs alone and leaves the rest of its file unrun, green.
+      "no-restricted-properties": [
+        "error",
+        ...["it", "test", "describe", "suite"].map((object) => ({ object, property: "only", message: "A focused test leaves the others unrun." })),
+      ],
     },
   },
   {

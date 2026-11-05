@@ -39,6 +39,8 @@ export interface TimeBarMoveOptions {
   /** The grid a moved bar lands on. */
   readonly snapMs?: number;
   readonly snapOrigin?: TimeMs;
+  /** The zone a grid of whole days lies in: local midnights all year. UTC by default. */
+  readonly timeZone?: string;
   /** Bounds a bar cannot be moved past. */
   readonly limits?: Domain;
 }
@@ -59,7 +61,7 @@ export function moveTimeBar(
   const bar = bars.find((each) => each.id === id);
   if (bar === undefined || bar.movable === false || !Number.isFinite(time)) return undefined;
   const previous = toTimeMs(bar.time);
-  let next = snapTime(time, options.snapMs, options.snapOrigin);
+  let next = snapTime(time, options.snapMs, options.snapOrigin, options.timeZone);
   if (options.limits !== undefined) next = Math.min(Math.max(next, options.limits[0]), options.limits[1]);
   if (next === previous) return undefined;
   return { bars: bars.map((each) => (each === bar ? { ...each, time: next } : each)), moved: { id, time: next, previous } };

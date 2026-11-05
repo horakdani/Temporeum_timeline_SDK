@@ -79,3 +79,33 @@ it.runIf(svelteTrustsTypes)("hydrates the server's drawing, and mounts on the cl
   // The check above is the one HTML sink; it is reported in a task of its own.
   expect(violations.filter((each) => !each.endsWith("|<b>x</b>"))).toEqual([]);
 });
+
+it.runIf(svelteTrustsTypes)("a client mount with the instanceId of a drawing on the page does not take it for its own (R80)", async () => {
+  // The policy of the test above is still in force in this frame. A
+  // page-wide look-up for the instance scope said \"hydrating\" to a client
+  // mount whose instanceId a served drawing already carries, and handed
+  // {@html} a string, which the policy refuses.
+  expect(() => {
+    document.createElement("div").innerHTML = "<b>x</b>";
+  }).toThrow(/TrustedHTML/);
+  expect(document.querySelector('svg[data-tl-instance="served"]')).not.toBeNull();
+  const errors: unknown[] = [];
+  const onError = (event: ErrorEvent): void => {
+    errors.push(event.error);
+  };
+  window.addEventListener("error", onError);
+  const target = host();
+  const twin = reactiveProps<Record<string, unknown>>({ items, defaultDomain: domain, height: 200, instanceId: "served", timeline: null });
+  let thrown: unknown;
+  try {
+    mounted.push(mount(Timeline, { target, props: twin }));
+    flushSync();
+  } catch (error: unknown) {
+    thrown = error;
+  }
+  expect(thrown).toBeUndefined();
+  await vi.waitFor(() => expect((twin.timeline as TimelineInstance | null)?.result).toBeDefined());
+  expect(target.querySelectorAll("svg")).toHaveLength(1);
+  window.removeEventListener("error", onError);
+  expect(errors).toEqual([]);
+});

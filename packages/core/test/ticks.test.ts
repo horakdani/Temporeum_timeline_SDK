@@ -216,3 +216,23 @@ describe("generateTicks", () => {
     );
   });
 });
+
+describe("ticks across the hour the clocks go back, in zones whose offsets are not whole hours (R33)", () => {
+  it("skips no step: every tick follows the last by the step", async () => {
+    const { generateTicks } = await import("../src/ticks.js");
+    // The repeated hour read as its later copy, and the realignment skipped
+    // to the next round value: a 75- or 90-minute hole in a 15- or 30-minute axis.
+    const H = 3_600_000;
+    for (const [zone, change] of [
+      ["Pacific/Chatham", Date.UTC(2026, 3, 4, 14)],
+      ["Australia/Lord_Howe", Date.UTC(2026, 3, 4, 15)],
+      ["Europe/Budapest", Date.UTC(2026, 9, 25, 1)],
+    ] as const) {
+      for (const hours of [3, 6]) {
+        const ticks = generateTicks([change - (hours * H) / 2, change + (hours * H) / 2], 1200, { timeZone: zone });
+        const gaps = new Set(ticks.slice(1).map((tick, i) => tick.time - (ticks[i] as { time: number }).time));
+        expect([...gaps], `${zone}, ${String(hours)} h`).toEqual([hours === 3 ? 15 * 60_000 : 30 * 60_000]);
+      }
+    }
+  });
+});

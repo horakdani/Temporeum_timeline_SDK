@@ -451,20 +451,20 @@ const story = mountStory(document.querySelector("#story"), timeline, {
   // The page flies the camera itself, rather than the panel's plain scroll.
   reveal: false,
   strings: { previous: "Earlier", next: "Later" },
-  onChange: ({ index, item, source }) => {
-    progress.style.width = `${String((index / slides.length) * 100)}%`;
-    // Drawn from an attribute by CSS: a decoration, not text for a reader.
-    numeral.dataset.year = item === undefined ? "5000" : item.data.numeral;
-    // The slide comes in: the page restarts its own animation.
-    stage.classList.remove("turn");
-    void stage.offsetWidth;
-    stage.classList.add("turn");
-    if (source !== "timeline") fly(item === undefined ? WHOLE : viewOf(item));
-    if (item !== undefined) timeline.revealLane(item.laneId);
-    for (const dot of moments.children) dot.classList.toggle("current", dot.dataset.id === item?.id);
-    log.textContent = item === undefined ? "The title: the whole five thousand years." : `${String(index)} of ${String(slides.length)} · ${item.label} · ${years(item)}`;
-    if (playing) schedule();
-  },
+});
+story.on("slideChanged", ({ index, item, source }) => {
+  progress.style.width = `${String((index / slides.length) * 100)}%`;
+  // Drawn from an attribute by CSS: a decoration, not text for a reader.
+  numeral.dataset.year = item === undefined ? "5000" : item.data.numeral;
+  // The slide comes in: the page restarts its own animation.
+  stage.classList.remove("turn");
+  void stage.offsetWidth;
+  stage.classList.add("turn");
+  if (source !== "timeline") fly(item === undefined ? WHOLE : viewOf(item));
+  if (item !== undefined) timeline.revealLane(item.laneId);
+  for (const dot of moments.children) dot.classList.toggle("current", dot.dataset.id === item?.id);
+  log.textContent = item === undefined ? "The title: the whole five thousand years." : `${String(index)} of ${String(slides.length)} · ${item.label} · ${years(item)}`;
+  if (playing) schedule();
 });
 
 // A slide taller than its panel (on a phone) scrolls, and a scrolling region must take the keyboard too.

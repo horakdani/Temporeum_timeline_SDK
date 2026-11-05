@@ -183,19 +183,15 @@ export function shortenLabel(
     return undefined;
   }
   let best: { readonly text: string; readonly need: MainCross } = { text: shortest, need: shortestNeed };
-  let low = MIN_SHORT_LABEL_CHARACTERS + 1;
-  let high = length - 1;
-  while (low <= high) {
-    const middle = (low + high) >>> 1;
-    const candidate = cut(middle);
+  // The first longer cut that does not fit. Every probe that fits moves the
+  // search past it, so the last one that fitted is the longest that does.
+  search(length - MIN_SHORT_LABEL_CHARACTERS - 1, (offset) => {
+    const candidate = cut(MIN_SHORT_LABEL_CHARACTERS + 1 + offset);
     const need = measure(candidate);
-    if (fits(need)) {
-      best = { text: candidate, need };
-      low = middle + 1;
-    } else {
-      high = middle - 1;
-    }
-  }
+    if (!fits(need)) return true;
+    best = { text: candidate, need };
+    return false;
+  });
   return best;
 }
 
@@ -299,8 +295,19 @@ interface Interval {
  */
 const CLEARANCE = 1e-6;
 
-function overlapsInterval(a: Interval, start: number, end: number): boolean {
-  return !(a.end <= start || a.start >= end);
+/**
+ * The first of `count` indices where `past` holds, for a test that stays
+ * true once it does. Not public: the renderer shares it.
+ */
+export function search(count: number, past: (index: number) => boolean): number {
+  let low = 0;
+  let high = count;
+  while (low < high) {
+    const mid = (low + high) >> 1;
+    if (past(mid)) high = mid;
+    else low = mid + 1;
+  }
+  return low;
 }
 
 function rowsOf(candidate: Pick<LabelCandidate, "row" | "rowSpan">): readonly number[] {
@@ -321,44 +328,63 @@ export function placeLabels(
   candidates: readonly LabelCandidate[],
   options: LabelOptions,
 ): LabelLayout {
-  const occupied = new Map<number, Interval[]>();
-  const claim = (rows: readonly number[], interval: Interval): void => {
+  // Each row's item extents sorted by start, with the furthest end so far
+  // beside them: what can reach past `from` begins at the first index whose
+  // reach does, so a query costs a binary search and its neighbours, not the
+  // row. A label starts at or after its own item's start, inside the item or
+  // just after it, so it is kept on the item's extent rather than spliced
+  // into the list — a splice per label moved the rest of the row each time.
+  type Extent = Interval & { label?: Interval };
+  type Row = { list: Extent[]; reach: number[]; index: Map<Extent, number> };
+  const occupied = new Map<number, Row>();
+  const rowOf = (row: number): Row => {
+    let bucket = occupied.get(row);
+    if (bucket === undefined) occupied.set(row, (bucket = { list: [], reach: [], index: new Map() }));
+    return bucket;
+  };
+  const extentOf = new Map<LabelCandidate, Extent>();
+  const claim = (rows: readonly number[], owner: LabelCandidate, interval: Interval): void => {
+    const extent = extentOf.get(owner) as Extent;
+    extent.label = interval;
     for (const row of rows) {
-      const bucket = occupied.get(row);
-      if (bucket === undefined) {
-        occupied.set(row, [interval]);
-      } else {
-        bucket.push(interval);
-      }
+      const { reach, index } = rowOf(row);
+      let at = index.get(extent) as number;
+      for (; at < reach.length && (reach[at] as number) < interval.end; at += 1) reach[at] = interval.end;
     }
   };
-  const isFree = (rows: readonly number[], start: number, end: number, ownId: string): boolean => {
+  /**
+   * Every interval but `ownId`'s in `rows` that ends after `from` and starts
+   * at or before `to` — or only the first that `enough` accepts.
+   */
+  const near = (rows: readonly number[], from: number, to: number, ownId: string, enough?: (taken: Interval) => boolean): Interval[] => {
+    const out: Interval[] = [];
     for (const row of rows) {
-      for (const taken of occupied.get(row) ?? []) {
-        if (taken.id !== ownId && overlapsInterval(taken, start, end)) {
-          return false;
+      const { list, reach } = rowOf(row);
+      for (let k = search(reach.length, (i) => (reach[i] as number) > from); k < list.length && (list[k] as Extent).start <= to; k += 1) {
+        for (const taken of [list[k] as Extent, (list[k] as Extent).label]) {
+          if (taken !== undefined && taken.id !== ownId && taken.end > from && taken.start <= to) {
+            if (enough?.(taken)) return [taken];
+            out.push(taken);
+          }
         }
       }
     }
-    return true;
+    return out;
   };
+  const isFree = (rows: readonly number[], start: number, end: number, ownId: string): boolean =>
+    near(rows, start, end, ownId, (taken) => taken.start < end).every((taken) => taken.start >= end);
   /**
    * Where the room inside an item starts: past anything that reaches into
    * its start — the minimum width of an instant just before it. Items in a
    * row never overlap in time, but an instant is drawn a few pixels wide.
+   * Past `until`, the item's end, there is no room inside, and how far past
+   * does not matter: instants drawn wider than their time overlap in a chain
+   * that, followed to its end, crossed the whole row for every item.
    */
-  const startPast = (rows: readonly number[], start: number, ownId: string): number => {
+  const startPast = (rows: readonly number[], start: number, ownId: string, until: number): number => {
     let at = start;
-    for (let moved = true; moved; ) {
-      moved = false;
-      for (const row of rows) {
-        for (const taken of occupied.get(row) ?? []) {
-          if (taken.id !== ownId && taken.start <= at && taken.end > at) {
-            at = taken.end;
-            moved = true;
-          }
-        }
-      }
+    for (let over = near(rows, at, at, ownId); over.length > 0 && at <= until; over = near(rows, at, at, ownId)) {
+      at = over.reduce((most, taken) => Math.max(most, taken.end), at);
     }
     return at;
   };
@@ -366,9 +392,11 @@ export function placeLabels(
   const freeUntil = (rows: readonly number[], start: number, ownId: string): number => {
     let end = Number.POSITIVE_INFINITY;
     for (const row of rows) {
-      for (const taken of occupied.get(row) ?? []) {
-        if (taken.id !== ownId && taken.end > start) {
-          end = Math.min(end, Math.max(taken.start, start));
+      const { list, reach } = rowOf(row);
+      // Past an item that starts beyond `end`, nothing — its label neither — can come nearer.
+      for (let k = search(reach.length, (i) => (reach[i] as number) > start); k < list.length && (list[k] as Extent).start < end; k += 1) {
+        for (const taken of [list[k] as Extent, (list[k] as Extent).label]) {
+          if (taken !== undefined && taken.id !== ownId && taken.end > start) end = Math.min(end, Math.max(taken.start, start));
         }
       }
     }
@@ -376,12 +404,18 @@ export function placeLabels(
   };
 
   // Every item reserves its own extent up front, so placement order cannot
-  // let one label steal the room another item is drawn in.
+  // let one label steal the room another item is drawn in. Pushed, then
+  // sorted once.
   for (const candidate of candidates) {
-    claim(rowsOf(candidate), {
-      id: candidate.id,
-      start: candidate.box.main,
-      end: candidate.box.main + candidate.box.mainSize,
+    const extent: Extent = { id: candidate.id, start: candidate.box.main, end: candidate.box.main + candidate.box.mainSize };
+    extentOf.set(candidate, extent);
+    for (const row of rowsOf(candidate)) rowOf(row).list.push(extent);
+  }
+  for (const { list, reach, index } of occupied.values()) {
+    list.sort((x, y) => x.start - y.start);
+    list.forEach((taken, k) => {
+      reach[k] = Math.max(reach[k - 1] ?? -Infinity, taken.end);
+      index.set(taken, k);
     });
   }
 
@@ -432,7 +466,7 @@ export function placeLabels(
     // only where there is room for it — a box sized to its label, a
     // cluster's marker to its count, keeps the label at its start.
     const boxEnd = box.main + box.mainSize;
-    const insideFrom = startPast(rows, box.main, candidate.id);
+    const insideFrom = startPast(rows, box.main, candidate.id, boxEnd);
     const insideRoom = boxEnd - insideFrom;
     const inside = insideFrom + Math.min(CLEARANCE, Math.max(insideRoom - need.main, 0));
     const insideFits = crossFits && need.main <= insideRoom;
@@ -463,7 +497,7 @@ export function placeLabels(
         rowSpan: candidate.rowSpan,
       };
       kept.push(placed);
-      claim(rows, { id: `label:${candidate.id}`, start: inside, end: inside + need.main });
+      claim(rows, candidate, { id: `label:${candidate.id}`, start: inside, end: inside + need.main });
       continue;
     }
 
@@ -477,7 +511,7 @@ export function placeLabels(
         rowSpan: candidate.rowSpan,
       };
       kept.push(placed);
-      claim(rows, { id: `label:${candidate.id}`, start: afterMain, end: afterMain + need.main });
+      claim(rows, candidate, { id: `label:${candidate.id}`, start: afterMain, end: afterMain + need.main });
       continue;
     }
 
@@ -505,7 +539,7 @@ export function placeLabels(
           rowSpan: candidate.rowSpan,
           shortened: true,
         });
-        claim(rows, { id: `label:${candidate.id}`, start, end: start + short.need.main });
+        claim(rows, candidate, { id: `label:${candidate.id}`, start, end: start + short.need.main });
         continue;
       }
     }

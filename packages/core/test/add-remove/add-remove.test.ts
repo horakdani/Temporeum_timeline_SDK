@@ -216,6 +216,9 @@ describe("add and remove", () => {
     expect(hostile).toEqual({ id: "item-2", label: "Kept", kind: "box", data: { any: "thing" }, start: ORIGIN, end: ORIGIN + DAY, laneId: "b" });
     // And what is left lays out.
     expect(() => layoutItems([hostile as Item])).not.toThrow();
+    // A span the layout would loop and allocate for, row by row, until the tab runs out of memory (R27).
+    expect(itemFromDrop([], JSON.stringify({ id: "tall", sublaneSpan: 200_000_000 }), target)).not.toHaveProperty("sublaneSpan");
+    expect(itemFromDrop([], JSON.stringify({ id: "tall", sublaneSpan: 1000 }), target)).toHaveProperty("sublaneSpan", 1000);
     expect(itemFromDrop([], JSON.stringify({ sublaneSpan: 2, progress: 0.5, durationMs: Infinity }), target)).toMatchObject({
       sublaneSpan: 2,
       progress: 0.5,

@@ -344,7 +344,7 @@ describe("a server frame with the time tools", () => {
     const before = element.querySelector("svg") as SVGSVGElement;
     const markup = before.outerHTML;
     const nodes = [...before.querySelectorAll("*")];
-    const timeline = createTimeline(element, config, { hydrate: true, measureText: false });
+    const timeline = createTimeline(element, config, { hydrate: true, measureLabels: false });
     await vi.waitFor(() => {
       if (timeline.result === undefined) throw new Error("not drawn yet");
     });

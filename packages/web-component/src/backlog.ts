@@ -36,29 +36,29 @@ export interface BacklogOptions<T = unknown> {
   /** Every task that could be on the timeline; those that are not yet are listed. */
   readonly tasks: readonly BacklogTask<T>[];
   /** The list's accessible name. */
-  readonly label?: string;
+  readonly ariaLabel?: string | undefined;
   /** A row's text. The task's label and its length by default. */
-  readonly describe?: (task: BacklogTask<T>) => string;
+  readonly describe?: ((task: BacklogTask<T>) => string) | undefined;
   /** What the list says when every task is placed. */
-  readonly empty?: string;
+  readonly empty?: string | undefined;
   /** Movement in pixels before a press on a row becomes a drag. 6 by default. */
-  readonly dragThreshold?: number;
-  readonly theme?: ThemeSetting;
+  readonly dragThreshold?: number | undefined;
+  readonly theme?: ThemeSetting | undefined;
   /** Where the keyboard goes after `Enter` placed a task: the timeline's element. */
-  readonly focusTarget?: HTMLElement;
+  readonly focusTarget?: HTMLElement | undefined;
   /**
    * The list's words in the host's language: `backlog`, `backlogEmpty`,
    * `backlogTask` and the `duration*` phrases of `DEFAULT_STRINGS` (`/intl`),
-   * with numbers in `locale`. `label`, `empty` and `describe` still win.
+   * with numbers in `locale`. `ariaLabel`, `empty` and `describe` still win.
    */
-  readonly strings?: Partial<Strings>;
-  readonly locale?: string;
+  readonly strings?: Partial<Strings> | undefined;
+  readonly locale?: string | undefined;
 }
 
 /** A mounted backlog. */
 export interface Backlog<T = unknown> {
-  /** Hand over another list of tasks. */
-  update(tasks: readonly BacklogTask<T>[]): void;
+  /** Change any option — another list of tasks, say; the rest stay. */
+  update(options: Partial<BacklogOptions<T>>): void;
   /** The tasks listed now: those not on the timeline. */
   readonly tasks: readonly BacklogTask<T>[];
   destroy(): void;
@@ -130,33 +130,37 @@ let backlogCount = 0;
  * timeline needs `editing: { enabled: true, drop: true }`: a timeline that
  * does not take drops takes no task.
  */
-export function mountBacklog<T>(container: HTMLElement, timeline: Timeline<T>, options: BacklogOptions<T>): Backlog<T> {
+export function mountBacklog<T>(container: HTMLElement, timeline: Timeline<T>, first: BacklogOptions<T>): Backlog<T> {
+  let options = first;
   const doc = container.ownerDocument;
   const prefix = `tl-backlog-${String((backlogCount += 1))}`;
-  const say = options.strings === undefined ? undefined : sayIn(resolveStrings(options.strings), options.locale);
-  const describe = options.describe ?? ((task: BacklogTask<T>) => describeBacklogTask(task, say));
-  const threshold = options.dragThreshold ?? 6;
   const box = doc.createElement("div");
   box.className = "tl-backlog";
-  const resolved = options.theme === undefined ? undefined : resolveTheme(options.theme);
-  if (resolved !== undefined) {
-    const custom = resolved !== LIGHT_THEME && resolved !== DARK_THEME;
-    box.dataset.tlTheme = custom ? "custom" : resolved.name;
-    if (custom) box.style.cssText = tokens(resolved);
-  }
   const list = doc.createElement("ul");
   list.className = "tl-backlog-list";
   list.setAttribute("role", "listbox");
-  list.setAttribute("aria-label", options.label ?? say?.("backlog") ?? "Unscheduled tasks");
   list.tabIndex = 0;
   const empty = doc.createElement("div");
   empty.className = "tl-backlog-empty";
-  empty.textContent = options.empty ?? say?.("backlogEmpty") ?? "Nothing left to schedule";
   box.append(list, empty);
   container.append(box);
   const unstyle = adoptCss(box, backlogCss(), timeline.nonce);
+  let say: ReturnType<typeof sayIn> | undefined;
+  let threshold = 6;
 
-  let all = options.tasks;
+  /** What the options say, again: at mount and after every `update`. */
+  function apply(): void {
+    say = options.strings === undefined ? undefined : sayIn(resolveStrings(options.strings), options.locale);
+    threshold = options.dragThreshold ?? 6;
+    const resolved = options.theme === undefined ? undefined : resolveTheme(options.theme);
+    const custom = resolved !== undefined && resolved !== LIGHT_THEME && resolved !== DARK_THEME;
+    if (resolved === undefined) delete box.dataset.tlTheme;
+    else box.dataset.tlTheme = custom ? "custom" : resolved.name;
+    box.style.cssText = custom ? tokens(resolved) : "";
+    list.setAttribute("aria-label", options.ariaLabel ?? say?.("backlog") ?? "Unscheduled tasks");
+    empty.textContent = options.empty ?? say?.("backlogEmpty") ?? "Nothing left to schedule";
+  }
+
   let shown: readonly BacklogTask<T>[] = [];
   let active = 0;
   let destroyed = false;
@@ -166,7 +170,7 @@ export function mountBacklog<T>(container: HTMLElement, timeline: Timeline<T>, o
   }
 
   function draw(): void {
-    shown = unscheduledTasks(all, timeline.items);
+    shown = unscheduledTasks(options.tasks, timeline.items);
     active = Math.min(active, Math.max(shown.length - 1, 0));
     const rows = shown.map((task, index) => {
       const row = doc.createElement("li");
@@ -175,7 +179,7 @@ export function mountBacklog<T>(container: HTMLElement, timeline: Timeline<T>, o
       row.setAttribute("role", "option");
       row.setAttribute("aria-selected", String(index === active));
       row.dataset.tlTask = task.id;
-      row.textContent = describe(task);
+      row.textContent = options.describe?.(task) ?? describeBacklogTask(task, say);
       return row;
     });
     list.replaceChildren(...rows);
@@ -292,11 +296,13 @@ export function mountBacklog<T>(container: HTMLElement, timeline: Timeline<T>, o
   list.addEventListener("pointerup", onPointerUp);
   list.addEventListener("pointercancel", onPointerCancel);
   const stop = timeline.on("itemsChanged", draw);
+  apply();
   draw();
 
   return {
-    update(tasks) {
-      all = tasks;
+    update(next) {
+      options = { ...options, ...next };
+      apply();
       draw();
     },
     get tasks() {

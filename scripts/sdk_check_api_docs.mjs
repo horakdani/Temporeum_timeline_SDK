@@ -86,16 +86,25 @@ function check(files) {
       const onStatement = statement !== undefined && ts.getJSDocCommentsAndTags(statement).some((doc) => ts.isJSDoc(doc) && doc.comment !== undefined && String(typeof doc.comment === "string" ? doc.comment : doc.comment.map((part) => part.text).join("")).trim() !== "");
       if (!documented && !onStatement && symbol.getDocumentationComment(checker).length === 0) problems.push(`${where} has no JSDoc`);
       for (const each of declarations) {
-        if (!ts.isFunctionDeclaration(each)) continue;
-        const params = each.parameters;
-        const last = params[params.length - 1];
-        const optionsLast = last !== undefined && isObjectish(checker.getTypeAtLocation(last), checker);
-        const positional = optionsLast ? params.length - 1 : params.length;
-        if (positional > 4) problems.push(`${where} takes ${String(positional)} positional parameters (at most four, then an options object)`);
-        for (const param of params) {
-          if (param.dotDotDotToken !== undefined) continue;
-          const type = checker.getTypeAtLocation(param);
-          if (isBoolean(type)) problems.push(`${where} takes a positional boolean, \`${param.name.getText()}\` (an options object says what it means)`);
+        // A function, and the methods of an interface or a class (R44: `toggleGroup(id, true)` was a method).
+        const callables = ts.isFunctionDeclaration(each)
+          ? [[where, each]]
+          : ts.isInterfaceDeclaration(each) || ts.isClassDeclaration(each)
+            ? each.members
+                .filter((member) => (ts.isMethodSignature(member) || ts.isMethodDeclaration(member)) && !ts.isPrivateIdentifier(member.name) && !(ts.getCombinedModifierFlags(member) & (ts.ModifierFlags.Private | ts.ModifierFlags.Protected)))
+                .map((member) => [`${where}.${member.name.getText()}`, member])
+            : [];
+        for (const [name, callable] of callables) {
+          const params = callable.parameters;
+          const last = params[params.length - 1];
+          const optionsLast = last !== undefined && isObjectish(checker.getTypeAtLocation(last), checker);
+          const positional = optionsLast ? params.length - 1 : params.length;
+          if (positional > 4) problems.push(`${name} takes ${String(positional)} positional parameters (at most four, then an options object)`);
+          for (const param of params) {
+            if (param.dotDotDotToken !== undefined) continue;
+            const type = checker.getTypeAtLocation(param);
+            if (isBoolean(type)) problems.push(`${name} takes a positional boolean, \`${param.name.getText()}\` (an options object says what it means)`);
+          }
         }
       }
     }
@@ -129,11 +138,15 @@ writeFileSync(
     "export function many(a: number, b: number, c: number, d: number, e: number): number { return a + b + c + d + e; }",
     "/** Four, then options: allowed. */",
     "export function fine(a: number, b: number, c: number, d: number, options: { readonly e?: number } = {}): number { return a + b + c + d + (options.e ?? 0); }",
+    "/** A handle whose method takes a flag. */",
+    "export interface Handle { toggle(id: string, open?: boolean): void; /** Fine. */ open(id: string, options?: { readonly open?: boolean }): void }",
+    "/** A class: its private method is its own business. */",
+    "export class Box { /** A flag. */ fold(shut: boolean): void {} private keep(flag: boolean): boolean { return flag; } }",
   ].join("\n"),
 );
 const caught = check([control]);
 rmSync(scratch, { recursive: true, force: true });
-const wanted = ["undocumented has no JSDoc", "flagged takes a positional boolean", "many takes 5 positional parameters"];
+const wanted = ["undocumented has no JSDoc", "flagged takes a positional boolean", "many takes 5 positional parameters", "Handle.toggle takes a positional boolean", "Box.fold takes a positional boolean"];
 const controlOk = caught.length === wanted.length && wanted.every((text) => caught.some((problem) => problem.includes(text)));
 
 if (!controlOk) problems.push(`the negative control did not fail as it should: ${JSON.stringify(caught)}`);

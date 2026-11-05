@@ -64,11 +64,11 @@ const timeline = createTimeline(document.querySelector("#timeline"), {
 const status = document.querySelector("#status");
 status.dataset.slides = String(story.items.length + 1);
 status.dataset.warnings = String(story.warnings.length);
-mountStory(document.querySelector("#story"), timeline, {
+const tale = mountStory(document.querySelector("#story"), timeline, {
   title: story.title,
   locale: "en-GB",
   theme: "light",
-  onChange: ({ index, id, source }) => {
-    status.textContent = id === null ? "The title slide: the whole story on the timeline." : `Slide ${String(index)} of ${String(story.items.length)} (${id}), moved by the ${source}.`;
-  },
+});
+tale.on("slideChanged", ({ index, id, source }) => {
+  status.textContent = id === null ? "The title slide: the whole story on the timeline." : `Slide ${String(index)} of ${String(story.items.length)} (${id}), moved by the ${source}.`;
 });

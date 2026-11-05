@@ -47,15 +47,19 @@ What a scan cannot judge is measured in the same browser, on the element and on 
 
 The criterion-by-criterion picture, with the test behind each line, is the [conformance report](../conformance.md).
 
-## Where the report says "partially"
+## Where the report says "partially", and the limits under a "Supports"
 
-What a host can do about each gap until the library closes it:
+What a host can do about each gap until the library closes it. The first four are the report's "Partially supports" rows:
 
 - **One-pointer panning and zooming out.** Turn on `zoomPresets` for one-tap zoom buttons (with `toolsPlugin` from `@temporeum/timeline-element/tools` registered — see [time tools](time-tools.md#the-plugin)), and add previous and next buttons that call `scrollTo`.
 - **Moving an item without a drag.** Keep `editing` on: the keyboard moves and resizes the focused item. For pointer-only users, a form in the item's detail that sets its dates and calls `updateItems` is the alternative WCAG 2.5.7 asks for.
 - **Small mouse targets.** `density: "dense"` raises every mouse target to 24 pixels, and under touch every item is hit from beyond its edges.
 - **A refused edit.** `canMove` is the host's rule, so the host's message says why: listen for `command` and say so in a live region of the page.
+The next three stand under a "Supports" — the criterion is met, with a limit worth knowing:
+
 - **Text spacing.** The element measures its labels with the reader's own spacing (WCAG 1.4.12) and lays them out again when it changes, so they keep their whole text where the item has room. A host that draws with the core's `renderTimeline` measures its own text: pass a `measureText` that adds the spacing the labels are drawn with — the letter spacing after every character, the word spacing at every space — or the font-free estimate fits each box without it, and a label the spacing widens ends in an ellipsis. Either way the whole label stays in the item's accessible name and its native tooltip; `tooltip` (see [time tools](time-tools.md#tooltips)) shows it on keyboard focus and on a long press too.
 - **Text-only enlargement.** The timeline's type sizes are pixels, so a larger root font or default font does not reach them; the browser's zoom does, and the timeline lays itself out again at 200% and at 400% (320 CSS pixels). For larger text inside the timeline itself, set `metrics` (see [theming](theming.md#sizes-and-type)).
 - **Lanes at 320 pixels.** Below the breakpoint the timeline turns vertical and its lanes run across; when they are wider than the view they scroll across inside it, and the keys bring the focused item into view.
+And one thing has not been done at all:
+
 - **A screen reader.** No manual test with one has been done yet; what it announces rests on the roles, names and states the tests check. Reports from screen-reader users are welcome in the issue tracker.

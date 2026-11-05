@@ -654,3 +654,55 @@ describe("focus and forced colours", () => {
     }
   });
 });
+
+describe("the edges of what it accepts (R30, R31)", () => {
+  it("refuses a NaN width or height, instead of a NaN viewBox or a throw from deep inside", () => {
+    expect(() => renderTimeline({ items: [], domain: [0, 1000], width: 300, height: Number.NaN })).toThrow(RangeError);
+    expect(() => renderTimeline({ items: [], domain: [0, 1000], width: Number.NaN, height: 200 })).toThrow(RangeError);
+    expect(() => renderTimeline({ items: [], domain: [0, 1000], width: 300, height: Number.POSITIVE_INFINITY })).toThrow(RangeError);
+  });
+
+  it("names an item at the edge of the accepted range without taking the frame down", () => {
+    const edge = 8.64e15;
+    const result = renderTimeline({ items: [{ id: "edge", start: edge, label: "Last" }], domain: [edge - 86_400_000, edge], width: 600, height: 200 });
+    expect(result.layout.items).toHaveLength(1);
+  });
+});
+
+describe("a dense lane", () => {
+  it("places labels in time that grows with the items, not with their square", () => {
+    // R5: 10k items in one lane, more than fit the width, took 1094 ms a frame
+    // without a scene space; 80k took ~38 s. An instant drawn wider than its
+    // time overlaps its neighbours, and the inside-room search followed that
+    // chain across the whole row for every item.
+    const day = 86_400_000;
+    const items: Item[] = Array.from({ length: 80_000 }, (_, i) => ({ id: `i${String(i)}`, start: i * day, end: i * day + day / 2, label: `Event ${String(i)}` }));
+    const started = performance.now();
+    renderTimeline({ items, domain: [0, 80_000 * day], width: 1200, height: 400 });
+    // ~1.8 s alone; 7.5 s under the gate's coverage on a loaded machine. The
+    // old code took 45 s, so 15 s still tells the two apart.
+    expect(performance.now() - started).toBeLessThan(15_000);
+  });
+});
+
+describe("the start index (R83)", () => {
+  it("measures long against the items with a length, not against instants", async () => {
+    const { startIndexOf } = await import("../src/render.js");
+    const { layoutItems } = await import("../src/layout.js");
+    const T = Date.UTC(2025, 0, 1);
+    const items: Item[] = [
+      ...Array.from({ length: 900 }, (_, i) => ({ id: `i${String(i)}`, start: T + i * 60_000 })),
+      ...Array.from({ length: 100 }, (_, i) => ({ id: `h${String(i)}`, start: T + i * 3_600_000, end: T + (i + 1) * 3_600_000 })),
+      { id: "year", start: T, end: T + 365 * DAY },
+      { id: "open", start: T, open: true },
+    ];
+    const layout = layoutItems(items);
+    const index = startIndexOf(layout);
+    // The median instant is a millisecond: every hour was "long" and looked at in every tile.
+    const long = index.long.map((position) => layout.items[position]?.item.id).sort();
+    expect(long).toEqual(["open", "year"]);
+    // Only instants: only the open one is apart.
+    const instants = layoutItems([...items.slice(0, 900), { id: "open", start: T, open: true }]);
+    expect(startIndexOf(instants).long.map((position) => instants.items[position]?.item.id)).toEqual(["open"]);
+  });
+});

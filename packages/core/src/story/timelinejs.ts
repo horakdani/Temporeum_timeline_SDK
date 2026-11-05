@@ -20,6 +20,9 @@
  * day. An era has no granularity, so its end is the instant after.
  */
 
+import { fromCalendarParts, toCalendarParts } from "../calendar.js";
+import { decodeEntities } from "../shared/entities.js";
+import { storyMedia } from "./media.js";
 import type { EraDecoration } from "../decorations.js";
 import type { Granularity, Item, Lane, TimeMs } from "../types.js";
 
@@ -98,6 +101,12 @@ export interface StorySlide {
   readonly media?: StoryMedia;
   /** The slide's background colour, any CSS colour. */
   readonly background?: string;
+  /**
+   * The unit each end was given in, when the two differ ("1914" to
+   * "11 November 1918"): the item's `granularity` is the finer one, and
+   * `storyDateText` says each end to its own.
+   */
+  readonly precision?: readonly [start: Granularity, end: Granularity];
 }
 
 /** What an item made from a story carries. */
@@ -120,6 +129,12 @@ export interface FromTimelineJSOptions {
   readonly ungroupedLabel?: string;
   /** Prefix of the lane ids made from groups. "group-" by default. */
   readonly lanePrefix?: string;
+  /**
+   * The zone the story's dates are wall-clock times in: give the timeline's
+   * `timeZone`, and "1969" is drawn as 1969 there, not as the last hours of
+   * 1968 that 1969 in UTC is in New York. UTC by default, as TimelineJS reads them.
+   */
+  readonly timeZone?: string;
 }
 
 /** A story, converted. */
@@ -138,20 +153,14 @@ export interface StoryConversion {
   readonly warnings: StoryWarning[];
 }
 
-const ENTITIES: Readonly<Record<string, string>> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
-
 /** Text without its tags and with its character references read: TimelineJS headlines may be HTML. */
 export function storyPlainText(html: string): string {
-  return html
-    .replace(/<br\s*\/?>/gi, " ")
-    // A tag does not hold a `<`: an unclosed one is text, read once.
-    .replace(/<[^<>]*>/g, "")
-    .replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (whole, name: string) => {
-      if (!name.startsWith("#")) return Object.hasOwn(ENTITIES, name.toLowerCase()) ? (ENTITIES[name.toLowerCase()] as string) : whole;
-      const code = name[1] === "x" || name[1] === "X" ? Number.parseInt(name.slice(2), 16) : Number.parseInt(name.slice(1), 10);
-      // A reference to no character — zero, half a surrogate pair, past U+10FFFF — is U+FFFD, as in HTML.
-      return code > 0 && code <= 0x10ffff && (code < 0xd800 || code > 0xdfff) ? String.fromCodePoint(code) : "\uFFFD";
-    })
+  return decodeEntities(
+    html
+      .replace(/<br\s*\/?>/gi, " ")
+      // A tag does not hold a `<`: an unclosed one is text, read once.
+      .replace(/<[^<>]*>/g, ""),
+  )
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -190,7 +199,7 @@ interface ReadDate {
 /** The units a TimelineJS date is known to, coarsest first. */
 const UNITS: readonly Granularity[] = ["year", "month", "day", "hour", "minute", "second", "millisecond"];
 
-function readDate(date: TimelineJSDate | undefined): ReadDate | null | undefined {
+function readDate(date: TimelineJSDate | undefined, zone?: string): ReadDate | null | undefined {
   if (date === undefined) return undefined;
   const year = field(date.year);
   if (year === undefined) return undefined;
@@ -207,7 +216,9 @@ function readDate(date: TimelineJSDate | undefined): ReadDate | null | undefined
   if (!Number.isFinite(time)) return null;
   const granularity = UNITS[given] ?? "millisecond";
   NEXT[granularity]?.(at);
-  return { time, granularity, after: at.getTime() };
+  // The fields were set as UTC: read them again as the zone's wall clock.
+  const wall = (t: TimeMs): TimeMs => (zone === undefined ? t : fromCalendarParts(toCalendarParts(t), zone));
+  return { time: wall(time), granularity, after: wall(at.getTime()) };
 }
 
 function hasYear(date: TimelineJSDate | undefined): boolean {
@@ -222,15 +233,20 @@ function slideOf(slide: TimelineJSSlide, index: number, list: NonNullable<StoryW
   if (slide.background?.url !== undefined && slide.background.url.trim() !== "") {
     warnings.push({ code: "background-image", index, list, message: "A background image is not drawn: the panel keeps its own colours, so the text stays readable. The colour is kept." });
   }
+  // What the panel will make of the media, said now rather than found missing on the slide.
+  const url = media?.url?.trim() ?? "";
+  const sorted = url === "" ? null : storyMedia(url);
+  if (sorted === undefined) warnings.push({ code: "media", index, list, message: "The media address is not one the panel opens (http, https, or an image as data:); the media is left out." });
+  else if (sorted?.kind === "link") warnings.push({ code: "media", index, list, message: "The media is not a kind the panel shows (an image, a video, audio, YouTube, Vimeo, SoundCloud, Spotify or a Google map); it is a link." });
   return {
     ...(slide.text?.headline === undefined || slide.text.headline === "" ? {} : { headline: slide.text.headline }),
     ...(slide.text?.text === undefined || slide.text.text === "" ? {} : { text: slide.text.text }),
     ...(display === undefined || display === "" ? {} : { date: end === undefined || end === "" || slide.display_date !== undefined ? display : `${display} – ${end}` }),
-    ...(media?.url === undefined || media.url.trim() === ""
+    ...(media === undefined || sorted === null || sorted === undefined
       ? {}
       : {
           media: {
-            url: media.url.trim(),
+            url,
             ...(media.caption ? { caption: media.caption } : {}),
             ...(media.credit ? { credit: media.credit } : {}),
             ...(media.alt ? { alt: media.alt } : {}),
@@ -270,11 +286,23 @@ export function fromTimelineJS(data: TimelineJSData, options: FromTimelineJSOpti
   const prefix = options.lanePrefix ?? "group-";
   const laneIds = new Map<string, string>();
   const ids = new Set<string>();
+  const laneNames = new Set<string>();
+  // The next free suffix of a taken id or lane name: a file of 20 000 events
+  // sharing one id does not look for it from -2 again each time.
+  const suffixes = new Map<Set<string>, Map<string, number>>();
+  const free = (taken: Set<string>, base: string): string => {
+    const next = suffixes.get(taken) ?? new Map<string, number>();
+    suffixes.set(taken, next);
+    let n = next.get(base) ?? 2;
+    while (taken.has(`${base}-${String(n)}`)) n += 1;
+    next.set(base, n + 1);
+    return `${base}-${String(n)}`;
+  };
   const items: Item<StoryData>[] = [];
   let ungrouped = false;
 
   (data.events ?? []).forEach((event, index) => {
-    const start = readDate(event.start_date);
+    const start = readDate(event.start_date, options.timeZone);
     if (start === undefined || start === null) {
       warnings.push(
         start === undefined
@@ -289,22 +317,22 @@ export function fromTimelineJS(data: TimelineJSData, options: FromTimelineJSOpti
     // 1914 to 11 November 1918 ends that day, 16 July 1969 to 1972 with 1972.
     let end: TimeMs | undefined;
     let granularity = start.granularity;
+    let precision: readonly [Granularity, Granularity] | undefined;
     if (hasYear(event.end_date)) {
-      const read = readDate(event.end_date);
+      const read = readDate(event.end_date, options.timeZone);
       if (read === null || read === undefined) warnings.push({ code: "out-of-range", index, list: "events", message: "The end date cannot be placed; the event is an instant." });
       else if (read.after <= start.time) warnings.push({ code: "end-before-start", index, list: "events", message: "The end is before the start; the event is an instant." });
       else if (read.granularity === granularity) end = read.time;
       else {
         end = UNITS.indexOf(read.granularity) > UNITS.indexOf(granularity) ? read.time : read.after - 1;
+        precision = [granularity, read.granularity];
         granularity = UNITS[Math.max(UNITS.indexOf(read.granularity), UNITS.indexOf(granularity))] as Granularity;
       }
     }
     let id = event.unique_id?.trim() || `slide-${String(index + 1)}`;
     if (ids.has(id)) {
       const base = id;
-      let n = 2;
-      while (ids.has(`${base}-${String(n)}`)) n += 1;
-      id = `${base}-${String(n)}`;
+      id = free(ids, base);
       warnings.push({ code: "duplicate-id", index, list: "events", message: `The id "${base}" is taken; this event is "${id}".` });
     }
     ids.add(id);
@@ -314,14 +342,13 @@ export function fromTimelineJS(data: TimelineJSData, options: FromTimelineJSOpti
     else {
       laneId = laneIds.get(group);
       if (laneId === undefined) {
-        let candidate = `${prefix}${slug(group)}`;
-        const taken = new Set(laneIds.values());
-        for (let n = 2; taken.has(candidate); n += 1) candidate = `${prefix}${slug(group)}-${String(n)}`;
-        laneId = candidate;
+        const base = `${prefix}${slug(group)}`;
+        laneId = laneNames.has(base) ? free(laneNames, base) : base;
+        laneNames.add(laneId);
         laneIds.set(group, laneId);
       }
     }
-    const story = slideOf(event, index, "events", warnings);
+    const story: StorySlide = { ...slideOf(event, index, "events", warnings), ...(precision === undefined ? {} : { precision }) };
     const label = story.headline === undefined ? undefined : storyPlainText(story.headline);
     items.push({
       id,
@@ -347,8 +374,8 @@ export function fromTimelineJS(data: TimelineJSData, options: FromTimelineJSOpti
 
   const decorations: EraDecoration[] = [];
   (data.eras ?? []).forEach((era, index) => {
-    const start = readDate(era.start_date);
-    const end = readDate(era.end_date);
+    const start = readDate(era.start_date, options.timeZone);
+    const end = readDate(era.end_date, options.timeZone);
     if (start === undefined || start === null || end === undefined || end === null) {
       warnings.push({ code: start === undefined || end === undefined ? "no-date" : "out-of-range", index, list: "eras", message: "An era needs a start and an end it can place; this one is left out." });
       return;

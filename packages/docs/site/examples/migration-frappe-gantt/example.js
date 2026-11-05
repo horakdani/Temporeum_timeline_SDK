@@ -53,7 +53,7 @@ const timeline = createTimeline(element, {
   ariaLabel: "Release plan, converted from frappe-gantt tasks",
 });
 timeline.zoomToPreset("month");
-mountTaskGrid(document.querySelector("#grid"), timeline, { label: "Release tasks", focusTarget: element });
+mountTaskGrid(document.querySelector("#grid"), timeline, { ariaLabel: "Release tasks", focusTarget: element });
 
 // on_date_change(task, start, end)
 timeline.on("itemMoved", ({ item, to }) => {

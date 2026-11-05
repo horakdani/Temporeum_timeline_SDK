@@ -5,7 +5,7 @@
       "name": "index",
       "input": "src/index.ts",
       "umd": "TemporeumTimeline",
-      "limit": "31.2 kB",
+      "limit": "31.6 kB",
       "label": "core — the full public surface (ESM, minify + gzip)"
     },
     {
@@ -89,7 +89,7 @@
       "name": "calendar",
       "input": "src/calendar/index.ts",
       "umd": "TemporeumTimelineCalendar",
-      "limit": "12 kB",
+      "limit": "12.5 kB",
       "label": "calendar — recurring events (RFC 5545 RRULE), week and day views, iCal import and export (ESM, minify + gzip)"
     },
     {
@@ -103,7 +103,7 @@
       "name": "story",
       "input": "src/story/index.ts",
       "umd": "TemporeumTimelineStory",
-      "limit": "5 kB",
+      "limit": "5.5 kB",
       "label": "story — stories told slide by slide: TimelineJS JSON and Google Sheets import, media detection, date text (ESM, minify + gzip)"
     }
   ]

@@ -73,7 +73,7 @@
           template: () => evil,
           ...(params.get("unsafe") === "1" ? { templateOptions: { sanitize: false } } : {}),
         };
-        createTimeline(element, config, { measureText: false });
+        createTimeline(element, config, { measureLabels: false });
         const signature = (root) =>
           [...root.querySelectorAll(".tl-template")]
             .map((node) => {

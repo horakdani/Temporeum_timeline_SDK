@@ -169,6 +169,27 @@ describe("<temporeum-timeline>", () => {
     await vi.waitFor(() => expect(selections.at(-1)?.ids).toEqual([]));
   });
 
+  it("says which item the mouse is over, and hands a click its pointer event (R15, R16)", async () => {
+    // itemHover was on every event surface and never sent; itemClick's
+    // originalEvent was never filled, so a host could not read Shift or Ctrl.
+    const el = await place();
+    const hovers = record<{ item: Item | null; originalEvent?: PointerEvent }>(document, "item-hover");
+    const clicks = record<{ item: Item; originalEvent?: PointerEvent }>(document, "item-click");
+    await userEvent.hover(nodeOf(el, "b"));
+    await vi.waitFor(() => expect(hovers.at(-1)?.item?.id).toBe("b"));
+    expect(hovers.at(-1)?.originalEvent).toBeInstanceOf(PointerEvent);
+    const count = hovers.length;
+    await userEvent.hover(nodeOf(el, "b"), { position: { x: 2, y: 2 } });
+    expect(hovers).toHaveLength(count);
+    await userEvent.unhover(el);
+    await vi.waitFor(() => expect(hovers.at(-1)?.item).toBeNull());
+    await userEvent.keyboard("{Shift>}");
+    await userEvent.click(nodeOf(el, "b"));
+    await userEvent.keyboard("{/Shift}");
+    await vi.waitFor(() => expect(clicks).toHaveLength(1));
+    expect(clicks[0]?.originalEvent?.shiftKey).toBe(true);
+  });
+
   it("a selection-changed listener, and a caller right after focusItem, read the new state, not the last frame's", async () => {
     const el = await place();
     const read: { element: readonly string[]; snapshot: readonly string[] | undefined }[] = [];
@@ -333,6 +354,115 @@ describe("<temporeum-timeline>", () => {
     await vi.waitFor(() => expect(el.timeline?.getSnapshot().domain).toEqual([T0, T0 + 2 * DAY]));
   });
 
+  it("pairs every attribute with a property, and editable leaves multi-select and snap-ms speaking (R48, R49)", async () => {
+    const el = await place((each) => each.setAttribute("snap-ms", String(DAY)));
+    const updates: Record<string, unknown>[] = [];
+    const timeline = el.timeline as Timeline;
+    const update = timeline.update.bind(timeline);
+    timeline.update = (next) => {
+      updates.push(next as Record<string, unknown>);
+      update(next);
+    };
+    // R48: the property set first froze the attributes' editing fields.
+    el.editable = true;
+    el.setAttribute("multi-select", "");
+    el.setAttribute("snap-ms", String(2 * DAY));
+    expect(el.config.editing).toEqual({ enabled: true, snapMs: 2 * DAY, multiSelect: true });
+    expect(updates.at(-1)).toEqual({ editing: { enabled: true, snapMs: 2 * DAY, multiSelect: true } });
+    expect([el.editable, el.multiSelect, el.snapMs]).toEqual([true, true, 2 * DAY]);
+    // A property wins over its attribute; undefined hands it back.
+    el.snapMs = DAY / 2;
+    expect(updates.at(-1)).toEqual({ editing: { enabled: true, snapMs: DAY / 2, multiSelect: true } });
+    el.snapMs = undefined;
+    expect(el.snapMs).toBe(2 * DAY);
+    el.setAttribute("editable", "false");
+    expect(el.editable).toBe(true);
+    // R49: the rest, each the configuration field its attribute sets.
+    el.locale = "de";
+    el.timeZone = "Europe/Budapest";
+    el.breakpoint = 300;
+    el.packMode = "single";
+    el.cluster = false;
+    el.direction = "ltr";
+    el.touchAction = "cooperative";
+    expect(updates.slice(-7)).toEqual([
+      { locale: "de" },
+      { timeZone: "Europe/Budapest" },
+      { breakpoint: 300 },
+      { packMode: "single" },
+      { cluster: false },
+      { direction: "ltr" },
+      { touchAction: "cooperative" },
+    ]);
+    // The calendar draws with the intl plugin; unconnected, the property is the configuration's.
+    const loose = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
+    loose.setAttribute("calendar", "hebrew");
+    loose.calendar = "japanese";
+    expect(loose.config.calendar).toBe("japanese");
+    loose.calendar = undefined;
+    expect(loose.calendar).toBe("hebrew");
+    el.setAttribute("locale", "fr");
+    expect(el.locale).toBe("de");
+    el.locale = undefined;
+    expect(updates.at(-1)).toEqual({ locale: "fr" });
+    // The start and end attributes are the domain property: the view as it is now, and a move.
+    el.domain = [T0 + DAY, T0 + 3 * DAY];
+    await vi.waitFor(() => expect(el.domain).toEqual([T0 + DAY, T0 + 3 * DAY]));
+  });
+
+  it("reads each attribute through its property, and a property set to undefined goes back to it (R49)", () => {
+    const loose = document.createElement("temporeum-timeline") as TemporeumTimelineElement & Record<string, unknown>;
+    const pairs: [attribute: string, property: string, said: unknown, own: unknown][] = [
+      ["orientation", "orientation", "vertical", "horizontal"],
+      ["density", "density", "dense", "comfortable"],
+      ["theme", "theme", "dark", "light"],
+      ["height", "height", 420, 200],
+      ["locale", "locale", "de", "fr"],
+      ["time-zone", "timeZone", "Europe/Budapest", "UTC"],
+      ["breakpoint", "breakpoint", 300, 500],
+      ["pack-mode", "packMode", "single", "overlap"],
+      ["cluster", "cluster", true, false],
+      ["direction", "direction", "rtl", "ltr"],
+      ["calendar", "calendar", "hebrew", "japanese"],
+      ["touch-action", "touchAction", "cooperative", "own"],
+      ["multi-select", "multiSelect", true, false],
+      ["snap-ms", "snapMs", 60_000, 1_000],
+    ];
+    for (const [attribute, property, said, own] of pairs) {
+      expect(loose[property], property).toBeUndefined();
+      loose.setAttribute(attribute, String(said));
+      expect(loose[property], property).toEqual(said);
+      loose[property] = own;
+      expect(loose[property], property).toEqual(own);
+      loose[property] = undefined;
+      expect(loose[property], property).toEqual(said);
+    }
+    expect(loose.editable).toBe(false);
+    loose.setAttribute("editable", "");
+    expect(loose.editable).toBe(true);
+    loose.editable = false;
+    expect(loose.config.editing).toEqual({ enabled: false, multiSelect: true, snapMs: 60_000 });
+    expect(loose.domain).toBeUndefined();
+    loose.setAttribute("start", String(T0));
+    loose.setAttribute("end", String(T0 + DAY));
+    expect(loose.domain).toEqual([T0, T0 + DAY]);
+    loose.domain = [T0, T0 + 2 * DAY];
+    expect(loose.config.domain).toEqual([T0, T0 + 2 * DAY]);
+  });
+
+  it("takes the new properties before it is upgraded", async () => {
+    const el = document.createElement("temporeum-timeline-later") as TemporeumTimelineElement;
+    Object.assign(el, { locale: "de", snapMs: DAY, editable: true, domain: [T0, T0 + 4 * DAY] });
+    el.style.width = "800px";
+    el.items = items;
+    document.body.append(el);
+    defineTimelineElement("temporeum-timeline-later");
+    await drawn(el);
+    expect(el.locale).toBe("de");
+    expect(el.config.editing).toEqual({ enabled: true, snapMs: DAY });
+    expect(el.timeline?.getSnapshot().domain).toEqual([T0, T0 + 4 * DAY]);
+  });
+
   it("registers under another name, and twice is harmless", () => {
     defineTimelineElement();
     defineTimelineElement("other-timeline");
@@ -404,7 +534,7 @@ describe("hydration — the client takes over the server's drawing", () => {
     const mutations: MutationRecord[] = [];
     const observer = new MutationObserver((records) => mutations.push(...records));
     observer.observe(container, { childList: true, subtree: true, attributes: true, characterData: true });
-    const timeline = createTimeline(container, { ...config, domain: frame.domain }, { hydrate: true, measureText: false });
+    const timeline = createTimeline(container, { ...config, domain: frame.domain }, { hydrate: true, measureLabels: false });
     await vi.waitFor(() => expect(timeline.result).toBeDefined());
     await nextFrame();
     mutations.push(...observer.takeRecords());
@@ -931,7 +1061,7 @@ describe("createTimeline — a large timeline draws in a scene space", () => {
     const mutations: MutationRecord[] = [];
     const observer = new MutationObserver((records) => mutations.push(...records));
     observer.observe(container, { childList: true, subtree: true, attributes: true, characterData: true });
-    const timeline = createTimeline(container, { items: many, domain: frame.domain }, { hydrate: true, measureText: false });
+    const timeline = createTimeline(container, { items: many, domain: frame.domain }, { hydrate: true, measureLabels: false });
     await vi.waitFor(() => expect(timeline.result).toBeDefined());
     for (let each = 0; each < 12; each += 1) await nextFrame();
     mutations.push(...observer.takeRecords());
@@ -1025,6 +1155,32 @@ describe("createTimeline — core options the configuration passes on", () => {
     ]);
     await vi.waitFor(() => expect(moved).toHaveLength(1));
     expect(((moved[0] ?? 1) - origin) % DAY).toBe(0);
+    timeline.destroy();
+  });
+
+  it("a day grid snaps to the timeline zone's midnight in summer (R10)", async () => {
+    const el = document.createElement("div");
+    el.style.cssText = "width:800px;height:300px;position:relative";
+    document.body.append(el);
+    const timeline = createTimeline(el, {
+      items: [{ id: "s", start: Date.UTC(2024, 6, 10, 8), end: Date.UTC(2024, 6, 11, 8) }],
+      domain: [Date.UTC(2024, 6, 5), Date.UTC(2024, 6, 20)],
+      timeZone: "Europe/Budapest",
+      editing: { enabled: true, snapMs: DAY },
+    });
+    await vi.waitFor(() => expect(timeline.result).toBeDefined());
+    const moved: number[] = [];
+    timeline.on("itemMoved", (payload) => moved.push(payload.item.start as number));
+    const from = centre(el.querySelector('[data-tl-id="s"]') as Element);
+    await commands.mouse([
+      { type: "move", x: from.x, y: from.y },
+      { type: "down" },
+      { type: "move", x: from.x + 120, y: from.y, steps: 8 },
+      { type: "up" },
+    ]);
+    await vi.waitFor(() => expect(moved).toHaveLength(1));
+    // Midnight in Budapest in July is 22:00 UTC the day before; a fixed grid put it on 00:00 UTC, 02:00 local.
+    expect(new Date(moved[0] ?? 0).getUTCHours()).toBe(22);
     timeline.destroy();
   });
 

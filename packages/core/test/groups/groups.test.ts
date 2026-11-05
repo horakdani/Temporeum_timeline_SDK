@@ -281,6 +281,70 @@ describe("group view", () => {
     expect(() => groupView([{ id: "a" }, { id: "a" }], [])).toThrow(RangeError);
   });
 
+  it("walks a chain of groups as deep as the host likes, in time linear in the groups (R28)", () => {
+    // The walk was recursive and the parents were found by walking the chain
+    // from every group: 2 000 levels ran out of call stack on a server.
+    const depth = 100_000;
+    const chain: Group[] = Array.from({ length: depth }, (_, at) => ({ id: `g${String(at)}`, ...(at > 0 ? { parentId: `g${String(at - 1)}` } : {}) }));
+    const leaf: Item = { id: "x", start: ORIGIN, laneId: `g${String(depth - 1)}` };
+    const started = performance.now();
+    const view = groupView(chain, [leaf]);
+    expect(performance.now() - started).toBeLessThan(1500);
+    expect(view.rows).toHaveLength(depth);
+    expect(view.rows[depth - 1]?.depth).toBe(depth - 1);
+    expect(view.rows[depth - 1]?.parentId).toBe(`g${String(depth - 2)}`);
+    expect(view.items).toEqual([leaf]);
+    const folded = groupView(chain, [leaf], { collapsed: ["g10"] });
+    expect(folded.rows.map((row) => row.group.id)).toEqual(Array.from({ length: 11 }, (_, at) => `g${String(at)}`));
+    expect(folded.items).toEqual([]);
+  });
+
+  it("gives the tree the recursive walk gave, on generated forests with loops and unknown parents", () => {
+    // The walk before R28, kept here as the reference.
+    const reference = (groups: readonly Group[], collapsed: ReadonlySet<string>): unknown[] => {
+      const byId = new Map(groups.map((group) => [group.id, group]));
+      const parents = new Map<string, string | undefined>();
+      for (const group of groups) {
+        const seen = new Set([group.id]);
+        let at = group.parentId;
+        let rooted = true;
+        while (at !== undefined) {
+          const parent = byId.get(at);
+          if (parent === undefined) break;
+          if (seen.has(at)) {
+            rooted = false;
+            break;
+          }
+          seen.add(at);
+          at = parent.parentId;
+        }
+        parents.set(group.id, rooted && group.parentId !== undefined && byId.has(group.parentId) ? group.parentId : undefined);
+      }
+      const rows: unknown[] = [];
+      const visit = (parent: string | undefined, depth: number): void => {
+        const siblings = groups.filter((group) => parents.get(group.id) === parent);
+        siblings.forEach((group, index) => {
+          rows.push([group.id, depth, index + 1, siblings.length, parent, !collapsed.has(group.id)]);
+          if (!collapsed.has(group.id)) visit(group.id, depth + 1);
+        });
+      };
+      visit(undefined, 0);
+      return rows;
+    };
+    const random = makeRandom(SEED + 28);
+    for (let n = 0; n < 300; n += 1) {
+      const count = 1 + Math.floor(random() * 30);
+      const groups: Group[] = Array.from({ length: count }, (_, at) => {
+        const roll = random();
+        const parentId = roll < 0.2 ? undefined : roll < 0.3 ? "unknown" : `g${String(Math.floor(random() * count))}`;
+        return { id: `g${String(at)}`, ...(parentId === undefined ? {} : { parentId }) };
+      });
+      const collapsed = new Set(groups.filter(() => random() < 0.15).map((group) => group.id));
+      const view = groupView(groups, [], { collapsed: [...collapsed] });
+      expect(view.rows.map((row) => [row.group.id, row.depth, row.position, row.siblings, row.parentId, row.expanded]), `case ${String(n)}`).toEqual(reference(groups, collapsed));
+    }
+  });
+
   it("leaves an unknown id, an out-of-range position and an unknown patch alone", () => {
     const groups: Group[] = [{ id: "a" }, { id: "b" }];
     expect(moveGroupCommand(groups, "zzz", 0)).toBeUndefined();

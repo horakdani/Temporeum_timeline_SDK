@@ -12,8 +12,8 @@
       "labelsKept": 9,
       "labelsDropped": 1,
       "ticks": 3,
-      "bytes": 13867,
-      "sha256": "f22a0ea08ad54cc3693b120b3f95641af725c909ae6ecff36cc75dec960ab6db"
+      "bytes": 13881,
+      "sha256": "f35fe9fd864d88a446dc87db8bb4281d896a63fc77d8e53f7ba90e345193a8b8"
     },
     {
       "name": "360-horizontal-dark",
@@ -23,8 +23,8 @@
       "labelsKept": 9,
       "labelsDropped": 1,
       "ticks": 3,
-      "bytes": 13807,
-      "sha256": "f83b62d73311ab11fc2aea7d4a8aeb5b5341cfbda0ed16cfe8aaf51aa17b6f9f"
+      "bytes": 13821,
+      "sha256": "82a81ee9a7769476264f670a8a6412a12269fb5f3e41fdbc8491bea1b93c5585"
     },
     {
       "name": "360-vertical-light",
@@ -34,8 +34,8 @@
       "labelsKept": 8,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 12912,
-      "sha256": "499cb78eb8504f3e20bff3536f340a4511b40c0ce521f61128a03e35b402cf33"
+      "bytes": 12926,
+      "sha256": "8059482e317662eefeb973a891c538d084f85c82bed22c49b31226c2e70c6045"
     },
     {
       "name": "360-vertical-dark",
@@ -45,8 +45,8 @@
       "labelsKept": 8,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 12854,
-      "sha256": "64d86fc3f31fb4d54f0936f36f2f6d257ee4fad2ea7c2a9fb0848d50972d1b12"
+      "bytes": 12868,
+      "sha256": "d106e63bb07a6c643fdab314529c77c8a9d2a246395570a02ebdcf0913234b66"
     },
     {
       "name": "768-horizontal-light",
@@ -56,8 +56,8 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 14120,
-      "sha256": "8f0d5d935904d4144a5d412adb4031a261a0fa2a18ce8c7c9561d6b838dae087"
+      "bytes": 14134,
+      "sha256": "af9dfee2db3c7705955ea8f6faff48dcf7dea7a9a6efe70603146d3e2540ccd9"
     },
     {
       "name": "768-horizontal-dark",
@@ -67,8 +67,8 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 14060,
-      "sha256": "c5688e731a9b64210ca28ea80815b81512293825ac87d4876909d52d5f16405b"
+      "bytes": 14074,
+      "sha256": "8317135591b07a4b5bbe6f180bd90172500cec9cc8c2b13c81ef0a874b1b4069"
     },
     {
       "name": "768-vertical-light",
@@ -78,8 +78,8 @@
       "labelsKept": 9,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 13861,
-      "sha256": "99e9c21a742dfc0640f588f0d3887f55d7bf6800617c34638684593d76511748"
+      "bytes": 13875,
+      "sha256": "753e4ac185a4375fb83c620bb12cdf8b84f35fce2bcc754744f36d2cb4f34882"
     },
     {
       "name": "768-vertical-dark",
@@ -89,8 +89,8 @@
       "labelsKept": 9,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 13801,
-      "sha256": "dc81f13fce4fca72e4fd4041e62a69034b7a5126d8706b311b33efe9846ba811"
+      "bytes": 13815,
+      "sha256": "822c31c8e52c8a5789a390a2c3d1d33cc59110abae4fbb6456a7e73bbe465abc"
     },
     {
       "name": "1440-horizontal-light",
@@ -100,8 +100,8 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 15,
-      "bytes": 16858,
-      "sha256": "dc4a4edae80bf649d99ea3284948503e81d3c0ae377c82995921c285f0c2e690"
+      "bytes": 16872,
+      "sha256": "8236dc9c7150815f48b6e94056251af3ae17d08bc89980f29739a7e15852a8f2"
     },
     {
       "name": "1440-horizontal-dark",
@@ -111,8 +111,8 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 15,
-      "bytes": 16798,
-      "sha256": "44f5da9b907eb019305ed6e37b876e6f3a41757af9b9c4124141e9d72bb57193"
+      "bytes": 16812,
+      "sha256": "f1ab4a838d6fd3ad7a175d721cab8557de85855f476bed1288abc706b53ec7e4"
     },
     {
       "name": "1440-vertical-light",
@@ -122,8 +122,8 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 14222,
-      "sha256": "d5c8141eb11722ce93bcb5734c6d9b4a5e57ac0b66427beb29ec06d4f6eb3259"
+      "bytes": 14236,
+      "sha256": "70654b93f281494aff47b9b774f5aa975552db67f8188bf51e178e1ff5c1b03d"
     },
     {
       "name": "1440-vertical-dark",
@@ -133,8 +133,8 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 14162,
-      "sha256": "dcec2c0af5222503c738cb64108faffdf84d5136874b6420a32850c8311733e6"
+      "bytes": 14176,
+      "sha256": "20dda3500c7f8e51d7cbab1d78f244ff3f28a4f63f232ea5e3cd1e0fd2f2491c"
     }
   ]
 }

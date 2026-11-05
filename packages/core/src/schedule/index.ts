@@ -18,7 +18,9 @@
  * push a task past is reported in `conflicts`, not obeyed by breaking one.
  */
 
+import { DEFAULT_TIME_ZONE, startOf } from "../calendar.js";
 import { createCommand } from "../editing.js";
+import { resolveSpan } from "../layout.js";
 import type { Dependency } from "../gantt/index.js";
 import { toTimeMs } from "../time.js";
 import type { Command, Item, ItemPatch, TimeInput, TimeMs } from "../types.js";
@@ -57,13 +59,23 @@ export interface ScheduleOptions<T = unknown> {
   readonly projectStart?: TimeInput;
   /** What slack is measured against, and where "as late as possible" ends. The last finish when omitted. */
   readonly projectFinish?: TimeInput;
+  /**
+   * The timeline's zone. A task with a `granularity` is scheduled over the
+   * units it is drawn over there (`end: "2026-03-03"` by the day runs to the
+   * end of the 3rd), and written back the way such an item writes its end:
+   * the start of its last unit. UTC by default.
+   */
+  readonly timeZone?: string;
 }
 
 /** One task as the schedule places it: its start and end, its working duration, its slack, and whether it is critical or moved. */
 export interface ScheduledTask {
   readonly id: string;
   readonly start: TimeMs;
-  /** Absent for a task without an end: an instant, or a milestone. */
+  /**
+   * Absent for a task without an end: an instant, or a milestone. For a task
+   * with a `granularity`, the start of its last unit, as the item writes it.
+   */
   readonly end?: TimeMs;
   /** Working time between start and end. */
   readonly durationMs: number;
@@ -224,8 +236,10 @@ export function scheduleTasks<T>(items: readonly Item<T>[], dependencies: readon
       throw new RangeError(`The ${constraint.type} constraint of "${item.id}" needs a date`);
     }
     const hasEnd = item.end !== undefined && item.kind !== "milestone";
-    const startMs = toTimeMs(item.start);
-    const endMs = hasEnd ? toTimeMs(item.end as TimeInput) : undefined;
+    // Where the layout draws it: a task by the day covers its whole days.
+    const span = item.granularity !== undefined && item.granularity !== "millisecond" && item.open !== true ? resolveSpan(item, options.timeZone) : undefined;
+    const startMs = span?.start ?? toTimeMs(item.start);
+    const endMs = hasEnd ? (span?.end ?? toTimeMs(item.end as TimeInput)) : undefined;
     const start = time.work(startMs);
     const task: Task = {
       item: item as Item<unknown>,
@@ -339,10 +353,16 @@ export function scheduleTasks<T>(items: readonly Item<T>[], dependencies: readon
     task.late = late;
   }
   for (const task of order) {
-    const start = edge(task, task.at, false);
-    const end = task.hasEnd ? edge(task, task.at, true) : undefined;
-    const slack = task.late - task.at;
     const item = task.item;
+    const unit = item.granularity !== undefined && item.granularity !== "millisecond" && item.open !== true ? item.granularity : undefined;
+    // Back in the item's own terms: where nothing moved, what it says; a moved
+    // end by units is the start of its last unit, as the item writes it.
+    const drawnStart = edge(task, task.at, false);
+    const drawnEnd = task.hasEnd ? edge(task, task.at, true) : undefined;
+    const start = drawnStart === task.startMs ? toTimeMs(item.start) : drawnStart;
+    const end =
+      drawnEnd === undefined ? undefined : drawnEnd === task.endMs ? toTimeMs(item.end as TimeInput) : unit === undefined ? drawnEnd : startOf(drawnEnd - 1, unit, options.timeZone ?? DEFAULT_TIME_ZONE);
+    const slack = task.late - task.at;
     const entry: { -readonly [K in keyof ScheduledTask]: ScheduledTask[K] } = {
       id: item.id,
       start,

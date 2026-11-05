@@ -107,7 +107,13 @@ describe("<Timeline> props", () => {
       // @ts-expect-error — `height` is a number.
       h(Timeline, { height: "tall" });
       h(Timeline, { height: 200, laneHeaders: true });
+      // R18: every handler was `(...args: any[]) => any`, so this compiled.
+      // @ts-expect-error — itemMoved's payload is not a number.
+      h(Timeline, { onItemMoved: (payload: number) => payload });
+      h(Timeline, { onItemMoved: (payload) => expectTypeOf(payload.item.id).toEqualTypeOf<string>(), onReady: (timeline) => expectTypeOf(timeline).toEqualTypeOf<TimelineInstance | null>() });
     };
+    // A template ref's `timeline` (R46).
+    expectTypeOf<InstanceType<typeof Timeline>["timeline"]>().toEqualTypeOf<TimelineInstance | null>();
     expect(check).toBeTypeOf("function");
   });
 });

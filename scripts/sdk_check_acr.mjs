@@ -26,11 +26,21 @@
  *     title) fails at point 3, and a "supports" row without a test fails at
  *     point 2 — otherwise the checker is blind.
  *
+ *  6. CLAIMS. No shipped page claims WCAG 2.2 AA (or conformance, compliance)
+ *     without saying what stands behind it: a line that names the standard
+ *     that way also names axe, its violations, or the conformance report.
+ *     The report itself says "Partially supports" for some criteria, so a
+ *     bare "WCAG 2.2 AA" on a package page (the npm page) is a false claim.
+ *     NEGATIVE CONTROL: the bare claim FAILS, the qualified one passes.
+ *
+ * `--static` runs points 1-3, 5 and 6 only — they do not depend on the
+ * machine, so CI runs them on every change; point 4 runs before a release.
+ *
  * Prerequisite: none; the checker builds the docs itself (the Playwright
  * specs measure the built pages).
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -169,6 +179,39 @@ notes.push(`${String(data.criteria.length)} criteria (${WCAG22.filter(([, level]
   if (bare.length === 0) failures.push('NEGATIVE CONTROL: a "supports" without a test does NOT fail');
   if (!short.some((problem) => problem.startsWith("missing: 1.1.1"))) failures.push("NEGATIVE CONTROL: a missing criterion does NOT fail");
   else notes.push("negative control fails, as it should — invented title, supports without a test, missing criterion");
+}
+
+// --- 6. claims -----------------------------------------------------------------------
+const CLAIM = /WCAG 2\.2[^.\n]{0,12}\bAA\b|\b(?:conform(?:s|ant)|complian(?:t|ce))\b[^.\n]{0,40}\bWCAG\b|\bWCAG\b[^.\n]{0,40}\b(?:conformant|compliant)\b/;
+const BACKED = /\baxe\b|violations|conformance report|conformance\.(?:md|html)/i;
+/** The problem with one line of a shipped page, or null. */
+export function judgeClaim(line) {
+  return CLAIM.test(line) && !BACKED.test(line) ? "claims WCAG 2.2 AA without what stands behind it (axe and its violations, or the conformance report)" : null;
+}
+const pagesDir = join(repo, "packages", "docs", "site", "pages");
+const shipped = [
+  ...[join(repo, "README.md"), join(repo, "sdk", "standalone", "README.md")].filter((path) => existsSync(path) && readFileSync(path, "utf8").includes("@temporeum/")).slice(0, 1),
+  ...readdirSync(join(repo, "packages")).map((dir) => join(repo, "packages", dir, "README.md")).filter(existsSync),
+  ...readdirSync(pagesDir, { recursive: true }).filter((file) => String(file).endsWith(".md") && !/^(?:conformance|vpat)\.md$/.test(String(file))).map((file) => join(pagesDir, String(file))),
+];
+let claims = 0;
+for (const path of shipped) {
+  readFileSync(path, "utf8").split("\n").forEach((line, index) => {
+    if (CLAIM.test(line)) claims += 1;
+    const problem = judgeClaim(line);
+    if (problem !== null) failures.push(`${relative(repo, path)}:${String(index + 1)} ${problem}`);
+  });
+}
+notes.push(`${String(shipped.length)} shipped pages, ${String(claims)} lines that name WCAG 2.2 AA`);
+if (judgeClaim("- **accessible** — every gesture has a keyboard equivalent, WCAG 2.2 AA") === null) failures.push("NEGATIVE CONTROL: a bare WCAG 2.2 AA claim does NOT fail");
+else if (judgeClaim("The docs site is checked against WCAG 2.2 AA with axe, with 0 violations.") !== null) failures.push("NEGATIVE CONTROL: a qualified claim fails");
+else notes.push("negative control fails, as it should — a bare WCAG 2.2 AA claim");
+
+if (process.argv.includes("--static")) {
+  for (const note of notes) console.log(`  ok    ${note}`);
+  for (const failure of failures) console.log(`  FAIL  ${failure}`);
+  console.log(failures.length === 0 ? "acr (static): passed" : `acr (static): FAILED (${String(failures.length)} problems)`);
+  process.exit(failures.length === 0 ? 0 : 1);
 }
 
 // --- 4. passing -----------------------------------------------------------------------

@@ -48,7 +48,7 @@ const PACKAGES = [
       "test:dep-routing": "npm run test:dep-routing -w packages/core",
       "test:treeshake": "npm run test:treeshake -w packages/core",
     },
-    // The export leaves it out: it measures against code outside this repository.
+    // Where the package has it: the export leaves it out, as it measures against code outside this repository.
     notInCi: { "test:golden": "measures against the old renderer of the application the engine came from" },
   },
   {
@@ -67,7 +67,12 @@ const PACKAGES = [
 ];
 
 /** An ELSEWHERE entry the workflow does not run, or one the package does not have. Returns the problems. */
-export function judgeElsewhere(packageName, scripts, elsewhere, workflow) {
+export function judgeElsewhere(packageName, scripts, elsewhere, workflowText) {
+  // A step named in a comment is not run: only the lines that are not comments count.
+  const workflow = workflowText
+    .split("\n")
+    .filter((line) => !/^\s*#/.test(line))
+    .join("\n");
   const problems = [];
   for (const [name, needle] of Object.entries(elsewhere)) {
     if (!(name in scripts)) problems.push(`${packageName}: ELSEWHERE names ${name}, which the package does not have`);
@@ -92,6 +97,9 @@ for (const pkg of PACKAGES) {
 const control = judgeElsewhere("control", { "test:ghost": "vitest run" }, { "test:ghost": "npm run test:ghost -w packages/core" }, workflow);
 if (control.length === 0) problems.push("NEGATIVE CONTROL: an ELSEWHERE name the workflow lacks passes — the judge is blind");
 else console.log("  ok    negative control: an ELSEWHERE name the workflow does not run fails");
+const commented = judgeElsewhere("control", { "test:ghost": "vitest run" }, { "test:ghost": "npm run test:ghost -w packages/core" }, `${workflow}\n      # npm run test:ghost -w packages/core\n`);
+if (commented.length === 0) problems.push("NEGATIVE CONTROL: an ELSEWHERE step only in a YAML comment passes — the judge reads comments");
+else console.log("  ok    negative control: an ELSEWHERE step only in a comment fails");
 
 const results = [];
 if (problems.length === 0) {

@@ -158,3 +158,25 @@ describe("the scheduler at its edges", () => {
     expect(schedule.tasks.get("s")?.start).toBe(MONDAY + 12 * HOUR);
   });
 });
+
+describe("tasks with a granularity (R12)", () => {
+  it("follow a predecessor from where it is drawn to end, and keep their own way of writing an end", () => {
+    // A runs over 1–3 March inclusive — drawn to the end of the 3rd. Read raw,
+    // its end was the 3rd's midnight, and its successor was drawn over it.
+    const day = Date.UTC(2026, 2, 1);
+    const items = [
+      { id: "a", start: day, end: day + 2 * DAY, granularity: "day" as const },
+      { id: "b", start: day + DAY, end: day + DAY, granularity: "day" as const },
+    ];
+    const schedule = scheduleTasks(items, [{ id: "ab", from: "a", to: "b", type: "FS" }]);
+    expect(schedule.tasks.get("a")?.moved).toBe(false);
+    const b = schedule.tasks.get("b");
+    // B starts on the 4th and, one day long, ends on the 4th, the way the host wrote it.
+    expect([b?.start, b?.end, b?.moved]).toEqual([day + 3 * DAY, day + 3 * DAY, true]);
+    const command = scheduleCommand(items, schedule);
+    expect(command?.after).toEqual([{ id: "b", start: day + 3 * DAY, end: day + 3 * DAY }]);
+    // In the timeline's zone: the 1st of March starts at 23:00 UTC in Budapest.
+    const there = scheduleTasks(items, [{ id: "ab", from: "a", to: "b", type: "FS" }], { timeZone: "Europe/Budapest" });
+    expect(there.tasks.get("b")?.start).toBe(day + 3 * DAY - HOUR);
+  });
+});

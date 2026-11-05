@@ -4,8 +4,15 @@ The timeline as a Svelte 5 component, built on the shared instance of
 [`@temporeum/timeline-element`](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/web-component#readme).
 
 ```bash
-npm install @temporeum/timeline-svelte
+npm install @temporeum/timeline-svelte @temporeum/timeline-element
 ```
+
+The element is the adapter's own dependency; list it beside the adapter, as
+above, to import its plugins (`@temporeum/timeline-element/items`, `/gantt`,
+`/resources` …): pnpm and Yarn PnP let an app import only what it lists. The
+types an app writes — `Item`, `Lane`, `Group`, `TimeMs` and every event's
+payload (`ItemMovedPayload`, `SelectionChangedPayload` …) — come from
+`@temporeum/timeline-svelte` itself.
 
 The peer range is `svelte ^5.46.4`: the oldest Svelte the suite can run on
 (Vite's Svelte plugin under it needs 5.46.4), and it runs there in CI as well

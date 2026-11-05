@@ -20,6 +20,12 @@
  *     component for Svelte 5.46.4's runtime.
  *  4. Each package's `npm test` (build, typecheck, browser suite) passes.
  *
+ * With --highest it does the same on the NEWEST version each range admits,
+ * for every package whose development copy is not already that version — so a
+ * range is tested at both ends: `@angular/core >=21 <23` is developed on 21
+ * and runs here on the newest 22 (R26). A package whose suite already runs on
+ * its range's newest is skipped, and says so.
+ *
  * It rewrites package.json files and package-lock.json, so it runs only on a
  * throwaway checkout (CI, or a fresh export) and only with --throwaway.
  * NEGATIVE CONTROL: an open range and a range whose floor is not a release
@@ -32,6 +38,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const HIGHEST = process.argv.includes("--highest");
+const END = HIGHEST ? "newest" : "lowest";
 
 /**
  * The framework packages, the peer whose floor is tested, and its companions
@@ -106,7 +114,42 @@ if (!process.argv.includes("--throwaway")) {
   process.exit(0);
 }
 
-// 2. the floors in place of the development copies
+// --highest: the newest version each range admits, from the registry, and
+// only where the development copy is not already it.
+if (HIGHEST) {
+  for (const entry of [...manifests]) {
+    const { dir, manifest } = entry;
+    const { peer } = PACKAGES.find((p) => p.dir === dir);
+    const range = manifest.peerDependencies?.[peer];
+    const view = spawnSync("npm", ["view", `${peer}@${range}`, "version", "--json"], { cwd: repo, encoding: "utf8" });
+    const listed = view.status === 0 ? JSON.parse(view.stdout) : undefined;
+    const newest = (Array.isArray(listed) ? listed : [listed]).filter((v) => typeof v === "string" && !v.includes("-")).sort(compare).pop();
+    if (newest === undefined) {
+      problems.push(`${manifest.name}: the registry names no release in ${peer} "${range}" (npm view exited ${String(view.status)})`);
+      continue;
+    }
+    let developed;
+    try {
+      // Read from the file, not required: a required JSON stays in the module cache through the install.
+      developed = JSON.parse(readFileSync(createRequire(join(repo, "packages", dir, "package.json")).resolve(`${peer}/package.json`), "utf8")).version;
+    } catch {
+      developed = undefined;
+    }
+    if (developed === newest) {
+      console.log(`  ok    ${manifest.name}: develops on ${peer}@${newest}, the newest its range admits — its suite already runs there`);
+      manifests.splice(manifests.indexOf(entry), 1);
+      continue;
+    }
+    floors.set(`${dir}:${peer}`, newest);
+  }
+  if (problems.length > 0) finish();
+  if (manifests.length === 0) {
+    console.log("\nnewest peers: every framework package already develops on the newest version its range admits.");
+    process.exit(0);
+  }
+}
+
+// 2. the floors (or the newest) in place of the development copies
 for (const { dir, path, manifest } of manifests) {
   const { peer, companions } = PACKAGES.find((p) => p.dir === dir);
   const floor = floors.get(`${dir}:${peer}`);
@@ -161,7 +204,7 @@ for (const { dir, path, manifest } of manifests) {
   /** The version `name` resolves to from there; at the root, no copy at all is no other copy. */
   const versionOf = (from, name) => {
     try {
-      return from(`${name}/package.json`).version;
+      return JSON.parse(readFileSync(from.resolve(`${name}/package.json`), "utf8")).version;
     } catch {
       return undefined;
     }
@@ -185,10 +228,10 @@ finish();
 
 function finish() {
   if (problems.length > 0) {
-    console.error(`\nlowest peers FAILED — ${String(problems.length)} problems:`);
+    console.error(`\n${END} peers FAILED — ${String(problems.length)} problems:`);
     for (const problem of problems) console.error(`  ✗ ${problem}`);
     process.exit(1);
   }
-  console.log("\nlowest peers: every range is closed, and every framework package is green on the lowest version its range admits.");
+  console.log(`\n${END} peers: every range is closed, and every framework package is green on the ${END} version its range admits.`);
   process.exit(0);
 }

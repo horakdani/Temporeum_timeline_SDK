@@ -5,7 +5,8 @@ Thank you for considering a contribution. This file explains how the repository 
 ## Before you write code
 
 - **Bugs:** open an issue with a minimal reproduction. A failing example in a fork of one of the [starter templates](packages/docs/templates) is ideal. Say which package and version you use, and which browser.
-- **Features:** open an issue or a discussion before a pull request. The public API follows semantic versioning ([stability policy](https://horakdani.github.io/Temporeum_timeline_SDK/stability.html)), so every new option has to be kept until the next major version. We would rather agree on its shape first.
+- **Questions:** open an issue with the Question template.
+- **Features:** open an issue before a pull request. The public API follows semantic versioning ([stability policy](https://horakdani.github.io/Temporeum_timeline_SDK/stability.html)), so every new option has to be kept until the next major version. We would rather agree on its shape first.
 - **Security issues:** never in a public issue. See [SECURITY.md](SECURITY.md).
 
 ## Setting up
@@ -29,7 +30,7 @@ node scripts/sdk_test_browsers.mjs                  # the element's browser suit
 node scripts/sdk_test_lowest_peers.mjs              # every framework peer range is closed
 ```
 
-The Firefox and WebKit run needs those browsers too (`npx playwright install --with-deps firefox webkit`). `node scripts/sdk_test_lowest_peers.mjs --throwaway` also runs the framework components on the lowest React, Vue, Svelte and Angular their ranges admit; it rewrites the manifests and the lockfile, so run it on a scratch clone — CI does.
+The Firefox and WebKit run needs those browsers too (`npx playwright install --with-deps firefox webkit`). `node scripts/sdk_test_lowest_peers.mjs --throwaway` also runs the framework components on the lowest React, Vue, Svelte and Angular their ranges admit, and with `--highest` on the newest (Angular 22); it rewrites the manifests and the lockfile, so run it on a scratch clone — CI does.
 
 The template, server-rendering and exports checks install the frameworks from npm into a scratch directory, so they need the network.
 
@@ -52,7 +53,7 @@ The template, server-rendering and exports checks install the frameworks from np
 1. **A test for the change.** Write it before the fix: a bug fix comes with the test that failed before it. If you cannot write a test, say why in the pull request.
 2. **Green checks:** `npm run lint`, `npm run typecheck`, `npm run test:all`. CI runs the lint, the type check and the core's suites on Node 22.12, 24 and 26; every package's tests and the browser suites on Node 24; the element's suite in Firefox and WebKit; and the framework components on their lowest peer versions (`.github/workflows/ci.yml`).
 3. **No new runtime dependency** in `@temporeum/timeline-core`. The engine has none, and a check enforces it (`npm run deps`).
-4. **No `any` on the public surface.** The typecheck enforces this too.
+4. **No `any` on the public surface.** The core's typecheck enforces it while you work, and the pack check (`node scripts/sdk_check_pack.mjs`, in CI) on the declaration files all six packages ship — only the lines Angular's and Svelte's compilers write for themselves are exempt.
 5. **The size budget holds:** `npm run size`. Each entry point has its own limit. If a change needs more bytes, say why in the pull request; raising a budget is a decision, not a side effect.
 6. **Accessibility.** If you add an interaction, add its keyboard equivalent, and keep the accessibility suite at 0 violations.
 7. **A changelog line** under the next version in each `CHANGELOG.md` your change touches, written for the people who use the package.

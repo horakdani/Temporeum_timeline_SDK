@@ -15,7 +15,7 @@
  * the same array of ticks as the axis in the browser.
  */
 
-import { addCalendar, DEFAULT_TIME_ZONE, isoWeekday, startOf, toCalendarParts, fromCalendarParts, YEARS_PER_UNIT, zoneOffsetMs } from "./calendar.js";
+import { addCalendar, DEFAULT_TIME_ZONE, floorToMultiple, isoWeekday, startOf, toCalendarParts, fromCalendarParts, YEARS_PER_UNIT, zoneOffsetMs } from "./calendar.js";
 import { createTimeScale } from "./scale.js";
 import type { CalendarParts } from "./calendar.js";
 import type { Domain, Granularity, TimeMs } from "./types.js";
@@ -176,10 +176,6 @@ export function chooseTickStep(
   // Zoomed out past five millennia per label: the top of the ladder is the
   // honest answer, and the axis gets sparser rather than wrong.
   return LADDER[LADDER.length - 1] as TickStep;
-}
-
-function floorToMultiple(value: number, step: number): number {
-  return Math.floor(value / step) * step;
 }
 
 function alignedParts(parts: CalendarParts, step: TickStep): CalendarParts {

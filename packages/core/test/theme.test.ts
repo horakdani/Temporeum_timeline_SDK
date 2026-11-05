@@ -114,6 +114,16 @@ describe("resolveTheme", () => {
     }
     expect(() => timelineStyleCss({ theme: theme({ accent: "red}*{display:none" }), metrics: densityMetrics("comfortable", "horizontal") })).toThrow(RangeError);
   });
+
+  it("refuses a token whose parentheses do not close, which would swallow the rest of the stylesheet (R77)", () => {
+    const theme = (tokens: Record<string, string>): Theme => ({ name: "t", tokens: { ...LIGHT_THEME.tokens, ...tokens } });
+    for (const value of ["rgb(1 2 3", "color-mix(in srgb, rgb(1 2 3 40%, blue)", "red)", ")(", "a(b(c(d)))"]) {
+      expect(() => resolveTheme(theme({ accent: value })), value).toThrow(RangeError);
+    }
+    for (const value of ["color-mix(in srgb, rgb(1 2 3) 40%, hsl(0 0% 0%))", "light-dark(rgb(255 255 255), #000)"]) {
+      expect(resolveTheme(theme({ accent: value })), value).toBeDefined();
+    }
+  });
 });
 
 describe("timelineStyleCss", () => {

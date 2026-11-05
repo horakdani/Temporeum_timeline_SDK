@@ -8,7 +8,9 @@ Creates the live timeline in `container` and returns a `Timeline`. `options.hydr
 
 ## Configuration
 
-Every field is optional, and every field can change later through `timeline.update({ … })`: a key present with `undefined` goes back to its default, an absent key keeps its value. On the element, the same fields are properties (`element.items`), the simple ones also attributes in kebab-case; on the React component, props.
+Every field is optional, and every field can change later through `timeline.update({ … })`: a key present with `undefined` goes back to its default, an absent key keeps its value. On the element, `element.items`, `lanes`, `groups`, `template`, `gantt`, `resources`, `resourceOptions`, `hooks`, `orientation`, `density`, `theme`, `height`, `locale`, `timeZone`, `breakpoint`, `packMode`, `cluster`, `direction`, `calendar`, `touchAction`, `domain`, `editable`, `multiSelect`, `snapMs` and `selectedIds` are properties, and every other field goes through `element.config` (setting it again replaces what the previous `config` set). On the React component, every field is a prop.
+
+Every attribute of the element has one of those properties as its pair — `start` and `end` are `domain` — and a property wins over its attribute until it is set to `undefined`. `editable`, `multiSelect` and `snapMs` are each one field of `editing`, so setting one leaves the attributes' other fields in force.
 
 {{api:TimelineConfig}}
 
@@ -31,7 +33,7 @@ What `getSnapshot()` returns: frozen, a new object only when something in it cha
 ## Server rendering
 
 - `renderTimelineHtml(config, { width?, attributes? })` — the whole `<temporeum-timeline>` element as a string: the drawing in a declarative shadow root, and the configuration beside it as JSON.
-- `renderTimelineSvg(config, { width? })` — the drawing alone, and the stylesheet it needs.
+- `renderTimelineSvg(config, { width? })` — the drawing alone, as a `ServerFrame`: the SVG markup with its stylesheet in `.svg`, the group tree in `.groups`, and the `domain`, `width`, `height`, `orientation` and `density` it was drawn with.
 
 ## Plugins and the other entry points
 
@@ -45,8 +47,8 @@ What `getSnapshot()` returns: frozen, a new object only when something in it cha
 - `@temporeum/timeline-element/items` — `itemsPlugin`.
 - `@temporeum/timeline-element/intl` — `intlPlugin`.
 
-`@temporeum/timeline-element/calendar` (`mountCalendarView`, the week and day views) and `@temporeum/timeline-element/define` (registers the element) are entry points, not plugins.
+`@temporeum/timeline-element/calendar` (`mountCalendarView`, the week and day views), `@temporeum/timeline-element/story` (`mountStory`, the story panel) and `@temporeum/timeline-element/define` (registers the element) are entry points, not plugins.
 
 ## The engine
 
-`@temporeum/timeline-core` has its own, larger surface — the renderer, the layout, the input machine, the loader. Its types are its reference; [the engine guide](../guides/core-engine.md) is the map. Its entry points — `/dom`, `/live`, `/words`, `/groups`, `/items`, `/gantt`, `/schedule`, `/resources`, `/tools`, `/export`, `/intl`, `/calendar`, `/vis-compat` — are listed with their budgets under [entry points](entry-points.md).
+`@temporeum/timeline-core` has its own, larger surface — the renderer, the layout, the input machine, the loader. Its types are its reference; [the engine guide](../guides/core-engine.md) is the map. Its entry points — `/dom`, `/live`, `/words`, `/groups`, `/items`, `/gantt`, `/schedule`, `/resources`, `/tools`, `/export`, `/intl`, `/calendar`, `/vis-compat`, `/story` — are listed with their budgets under [entry points](entry-points.md).

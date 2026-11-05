@@ -32,6 +32,7 @@ import { describe, expect, it } from "vitest";
 import { renderTimeline } from "../../src/render.js";
 import { fromVis, fromVisItems, parseVisTime, visText } from "../../src/vis-compat/index.js";
 import type { VisCompatConfig, VisGroup, VisItem } from "../../src/vis-compat/index.js";
+import type { Item } from "../../src/types.js";
 
 interface Placed {
   readonly id: string;
@@ -248,6 +249,8 @@ describe("compat: vis-timeline's documentation examples through the compatibilit
     expect(b).toMatchObject({ id: "b", kind: "box", movable: false, resizable: false, removable: false, selectable: false });
     expect(a?.data).toMatchObject({ id: "a", title: "The build" });
     expect(visText({ textContent: "  from an element " })).toBe("from an element");
+    // R39: a named reference past the five basic ones is read too, on the axis and in the accessible name.
+    expect(visText("<b>Caf&eacute;</b> &amp;lt; &ndash; na&iuml;ve &#39;x&#39;")).toBe("Café &lt; – naïve 'x'");
   });
 
   it("[claim:options] a DataSet is read with its get(), and items without an id get one, with a warning", () => {
@@ -367,6 +370,26 @@ describe("the compatibility layer at its edges", () => {
     expect(config.hiddenDates).toEqual([]);
     // The converted configuration draws.
     expect(() => renderTimeline({ items: config.items, domain: [Date.UTC(2026, 2, 1), Date.UTC(2026, 2, 9)], width: 800, height: 200 })).not.toThrow();
+  });
+
+  it("lets an item opt in to editing on a timeline that is not editable, as vis-timeline does (R43)", () => {
+    const items = [
+      { id: "a", start: "2026-03-02", end: "2026-03-04", editable: true },
+      { id: "b", start: "2026-03-05", end: "2026-03-07" },
+      { id: "c", start: "2026-03-08", end: "2026-03-09", editable: { updateTime: true } },
+    ];
+    for (const options of [{}, { editable: false }]) {
+      const { config, warnings } = fromVis(items, null, options);
+      expect(config.editing).toEqual({ enabled: true, crossLane: true, remove: true });
+      const byId = new Map((config.items as readonly Item[]).map((item) => [item.id, item]));
+      expect([byId.get("a")?.movable, byId.get("a")?.removable]).toEqual([undefined, undefined]);
+      expect([byId.get("b")?.movable, byId.get("b")?.resizable, byId.get("b")?.removable]).toEqual([false, false, false]);
+      expect(byId.get("c")?.movable).toBeUndefined();
+      expect(byId.get("c")?.removable).toBe(false);
+      expect(warnings).toEqual([]);
+    }
+    // Nobody opts in: nothing changes.
+    expect(fromVis([{ id: "x", start: "2026-03-02" }], null, {}).config.editing).toBeUndefined();
   });
 
   it("takes editable: true for every right vis-timeline gives it, adding items included", () => {

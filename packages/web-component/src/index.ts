@@ -17,6 +17,12 @@
  *
  * Importing this module never touches `window` or `document`.
  */
+// The data a host writes and the payloads it reads, from the engine: a host
+// that installs only the element, or an adapter, types its items with what it
+// installed — under pnpm and Yarn PnP a package imports only what it lists.
+export type { CommandPayload, Domain, HoverPayload, Item, ItemEventPayload, ItemMovedPayload, ItemResizedPayload, Lane, LayoutChangedPayload, SelectionChangedPayload, TimeMs, ViewportChangedPayload } from "@temporeum/timeline-core";
+export type { Group } from "@temporeum/timeline-core/groups";
+export type { TimeBar, TimeBarMovedPayload, TimeRange } from "@temporeum/timeline-core/tools";
 export { DEFAULT_HEIGHT, DEFAULT_SERVER_WIDTH } from "./config.js";
 export type {
   InputSkippedPayload,

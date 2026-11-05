@@ -10,6 +10,8 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = Number(process.env.TL_EXAMPLES_PORT ?? 41765);
 
 export default defineConfig({
+  // A stray test.only would quietly run one test and call the suite green.
+  forbidOnly: true,
   testDir: "./e2e",
   testMatch: "examples.spec.ts",
   workers: 1,

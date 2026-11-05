@@ -174,6 +174,59 @@ describe("rrule: windows", () => {
   });
 });
 
+describe("rrule: the work an expansion may take (R13, R14)", () => {
+  const year = { from: Date.UTC(2026, 0, 1), to: Date.UTC(2027, 0, 1) };
+
+  it("finds a sub-daily rule's few times a day without stepping through every second", () => {
+    // R13: every second of the year was a period — 30.8 s.
+    const began = performance.now();
+    const starts = occurrences({ start: Date.UTC(2025, 0, 1, 9), rule: "FREQ=SECONDLY;BYHOUR=9;BYMINUTE=0;BYSECOND=0" }, year);
+    expect(performance.now() - began).toBeLessThan(2000);
+    expect(starts).toHaveLength(365);
+    expect(starts[0]).toBe(Date.UTC(2026, 0, 1, 9));
+    // Grid-aligned: every seventh minute from 09:00, within the hour BYHOUR allows.
+    const grid = occurrences({ start: Date.UTC(2026, 0, 1, 9), rule: "FREQ=MINUTELY;INTERVAL=7;BYHOUR=9,10" }, { from: Date.UTC(2026, 0, 1), to: Date.UTC(2026, 0, 2) });
+    expect(grid.map((t) => new Date(t).toISOString().slice(11, 16))).toEqual(["09:00", "09:07", "09:14", "09:21", "09:28", "09:35", "09:42", "09:49", "09:56", "10:03", "10:10", "10:17", "10:24", "10:31", "10:38", "10:45", "10:52", "10:59"]);
+  });
+
+  it("gives up on a rule that never matches, at the end of the range or the end of its work, and says so", () => {
+    // R13: the skip loop never looked at `to`, so a rule with no match ran to
+    // the year 9999 — 124 bytes, 29.8 s.
+    for (const rule of ["FREQ=SECONDLY;BYSECOND=60", "FREQ=DAILY;BYMONTH=2;BYMONTHDAY=30", "FREQ=MINUTELY;BYMONTH=2;BYMONTHDAY=31"]) {
+      const began = performance.now();
+      expect(occurrences({ start: Date.UTC(2025, 0, 1), rule }, year), rule).toEqual([]);
+      let cut = 0;
+      expect(occurrences({ start: Date.UTC(2025, 0, 1), rule }, { limit: 5, onLimit: () => (cut += 1) }), rule).toEqual([Date.UTC(2025, 0, 1)]);
+      expect(performance.now() - began, rule).toBeLessThan(3000);
+      expect(cut, rule).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("stops counting a COUNT rule from long before the range, and says so", () => {
+    // R14: a COUNT rule cannot skip the periods before the range, so it walked
+    // every second from its start — 20.5 s, then "Set maximum size exceeded".
+    const began = performance.now();
+    let cut = 0;
+    occurrences({ start: Date.UTC(2020, 0, 1), rule: "FREQ=SECONDLY;COUNT=9007199254740991" }, { ...year, onLimit: () => (cut += 1) });
+    expect(performance.now() - began).toBeLessThan(3000);
+    expect(cut).toBe(1);
+    // A limit that cuts says so too, once.
+    let limited = 0;
+    expect(occurrences({ start: 0, rule: "FREQ=DAILY" }, { limit: 3, onLimit: () => (limited += 1) })).toHaveLength(3);
+    expect(limited).toBe(1);
+  });
+
+  it("counts toward the limit only what it gives, and says when it cut (R37)", () => {
+    // The excluded dates were counted toward the limit: two days of a daily
+    // series, the limit 3 reached, and onLimit silent though more follow.
+    const day = (d: number): number => Date.UTC(2026, 0, d);
+    let cut = 0;
+    const got = occurrences({ start: day(1), rule: "FREQ=DAILY", exdates: [day(5), day(6)] }, { from: day(4), limit: 3, onLimit: () => (cut += 1) });
+    expect(got).toEqual([day(4), day(7), day(8)]);
+    expect(cut).toBe(1);
+  });
+});
+
 describe("rrule: parsing and formatting", () => {
   it("[claim:parse-format] every vector's rule survives formatting and parsing", () => {
     for (const vector of vectors.cases) {

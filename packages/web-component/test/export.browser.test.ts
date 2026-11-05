@@ -114,17 +114,20 @@ describe("export", () => {
     expect(document.querySelector("body > [data-tl-print]")).toBeNull();
   });
 
-  it("has nothing to export before the first frame", async () => {
+  it("says the same before the first frame, from every export (R51)", async () => {
+    // An empty string, an empty PDF, a silent print and a rejected PNG were
+    // four answers to one question; a host could not tell an empty export
+    // from a broken one.
     const element = document.createElement("div");
     document.body.append(element);
     const timeline = createTimeline(element, { items, lanes, domain: [T0, T0 + DAY] });
-    expect(timeline.exportSvg()).toBe("");
+    expect(() => timeline.exportSvg()).toThrow(/Nothing drawn yet/);
     const pdf = timeline.exportPdf();
     expect(pdf).toBeInstanceOf(Promise);
-    expect(await pdf).toHaveLength(0);
-    await expect(timeline.exportPng()).rejects.toThrow(/Nothing drawn/);
+    await expect(pdf).rejects.toThrow(/Nothing drawn yet/);
+    await expect(timeline.exportPng()).rejects.toThrow(/Nothing drawn yet/);
     const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
-    await expect(timeline.print()).resolves.toBeUndefined();
+    await expect(timeline.print()).rejects.toThrow(/Nothing drawn yet/);
     expect(print).not.toHaveBeenCalled();
     timeline.destroy();
   });

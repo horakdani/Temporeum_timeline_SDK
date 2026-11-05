@@ -32,6 +32,7 @@
  *    saving it is the host's.
  */
 
+import { withClass } from "../draw.js";
 import { describeItem } from "../a11y.js";
 import { DEFAULT_TIME_ZONE } from "../calendar.js";
 import { defaultItemNode } from "../render.js";
@@ -323,8 +324,7 @@ export interface DependencyNodeOptions {
 /** An arrow's classes, and whether it is drawn stronger. */
 function dependencyLook(route: DependencyRoute, selected: ReadonlySet<string> | undefined): [string, boolean] {
   const strong = selected !== undefined && (selected.has(route.dependency.from) || selected.has(route.dependency.to));
-  const className = route.dependency.className;
-  return [`tl-dep tl-dep--${route.type.toLowerCase()}${strong ? " tl-dep--selected" : ""}${className === undefined ? "" : ` ${className}`}`, strong];
+  return [withClass(`tl-dep tl-dep--${route.type.toLowerCase()}${strong ? " tl-dep--selected" : ""}`, route.dependency.className), strong];
 }
 
 /** The arrows' nodes, one path each. */
@@ -564,11 +564,11 @@ function milestoneNode(context: ItemRenderContext<unknown>): SceneElement {
     xy(context, centre + half, middle),
     xy(context, centre, middle + context.box.crossSize / 2),
   ];
-  const classes = ["tl-item", "tl-item--milestone", ...(context.selected ? ["tl-item--selected"] : []), ...(item.className === undefined ? [] : [item.className])];
+  const classes = withClass(`tl-item tl-item--milestone${context.selected ? " tl-item--selected" : ""}`, item.className);
   return {
     tag: "path",
     attrs: {
-      class: classes.join(" "),
+      class: classes,
       "data-tl-id": item.id,
       d: corners.map((point, at) => `${at === 0 ? "M" : "L"}${formatNumber(point.x)} ${formatNumber(point.y)}`).join(" ") + " Z",
     },
@@ -679,9 +679,14 @@ export function ganttHooks<T>(hooks: RenderHooks<T> = {}, options: GanttHookOpti
 /** What a dependency key asks for. */
 export type DependencyKeyAction = "predecessor" | "successor";
 
-/** `[` goes to a predecessor, `]` to a successor. Any modifier but Shift lets the key through. */
+/**
+ * `[` goes to a predecessor, `]` to a successor, as the layout types them.
+ * On most keyboards outside the US a bracket is AltGr (Ctrl+Alt on Windows)
+ * or Option on a Mac, so Alt counts as typing; Ctrl alone and Cmd are a
+ * shortcut, and let the key through.
+ */
 export function resolveDependencyKey(sample: KeySample): DependencyKeyAction | undefined {
-  if (sample.ctrlKey || sample.metaKey || sample.altKey) return undefined;
+  if (sample.metaKey || (sample.ctrlKey && !sample.altKey)) return undefined;
   return sample.key === "[" ? "predecessor" : sample.key === "]" ? "successor" : undefined;
 }
 

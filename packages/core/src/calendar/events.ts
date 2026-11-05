@@ -64,7 +64,11 @@ export interface ExpandOptions {
    * is 86 400 a day.
    */
   readonly limit?: number;
-  /** Called with an event's id when its occurrences in the range were more than `limit`. */
+  /**
+   * Called with an event's id when its expansion was cut: its occurrences in
+   * the range were more than `limit`, or its rule would take too long to
+   * search (see `OccurrenceRange.onLimit`).
+   */
   readonly onLimit?: (eventId: string, limit: number) => void;
 }
 
@@ -137,15 +141,10 @@ export function expandEvents<T>(events: readonly CalendarEvent<T>[], from: TimeI
     // An occurrence that starts before the range can still reach into it.
     const reach = endOf(event, start, zone) - start + DAY;
     const limit = options.limit ?? OCCURRENCE_LIMIT;
-    // One past the limit, to know whether there were more.
     const starts = occurrences(
       { start, timeZone: zone, ...(event.rrule === undefined ? {} : { rule: event.rrule }), ...(event.rdates === undefined ? {} : { rdates: event.rdates }), ...(event.exdates === undefined ? {} : { exdates: event.exdates }) },
-      { from: lo - reach, to: hi, limit: limit + 1 },
+      { from: lo - reach, to: hi, limit, onLimit: () => options.onLimit?.(event.id, limit) },
     );
-    if (starts.length > limit) {
-      starts.length = limit;
-      options.onLimit?.(event.id, limit);
-    }
     for (const at of starts) {
       if (!changed.has(`${event.id}\u0000${String(at)}`)) push(event, at, at, zone);
     }

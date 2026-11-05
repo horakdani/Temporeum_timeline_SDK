@@ -37,6 +37,11 @@
     Handlers & {
       class?: string;
       style?: string;
+      /** The box's, as `data-*` and `aria-*`. */
+      id?: string;
+      role?: string;
+      title?: string;
+      [attribute: `${"data" | "aria"}-${string}`]: unknown;
       /** Width the server draws at; the client redraws at the real one. */
       ssrWidth?: number;
       /** The live instance, after mount; `null` before and after. */
@@ -55,12 +60,16 @@
   const uid = $props.id();
   const scope = `tl${uid.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
+  const BOX = /^(id|role|title|(data|aria)-.*)$/;
+  // `class` only when given: beside a spread, an absent one is `class=""`.
+  const box = $derived({ ...Object.fromEntries(Object.entries(rest).filter(([key]) => BOX.test(key))), ...(className === undefined ? {} : { class: className }) });
+
   /** The configuration part of the props: everything that is not a callback. */
   function configOf(source: Record<string, unknown>): Record<string, unknown> {
     const config: Record<string, unknown> = {};
     for (const key of Object.keys(source)) {
       // An own `__proto__` is not a prop: assigned, it would set the configuration's prototype.
-      if (key !== "__proto__" && !HANDLERS.has(key) && !STARTS.has(key)) config[key] = source[key];
+      if (key !== "__proto__" && !HANDLERS.has(key) && !STARTS.has(key) && !BOX.test(key)) config[key] = source[key];
     }
     // Light DOM: two timelines on one page must not share one stylesheet.
     if (config.instanceId === undefined) config.instanceId = scope;
@@ -88,10 +97,13 @@
     ...(defaultSelectedIds === undefined ? {} : { selectedIds: defaultSelectedIds }),
   }));
   // Computed once, on the server and on a client that hydrates the server's
-  // markup (found by the instance scope the drawing carries): the string
-  // never changes. A client-only mount writes no HTML at all — the instance
-  // draws with the DOM, which a Trusted Types policy has no say over.
-  const hydrating = typeof document !== "undefined" && document.querySelector(`svg[data-tl-instance="${String(applied.instanceId)}"]`) !== null;
+  // markup: the string never changes. A client-only mount writes no HTML at
+  // all — the instance draws with the DOM, which a Trusted Types policy has
+  // no say over. Hydrating is when the id came from the server (a client-only
+  // mount's is Svelte's `c<n>`) and a drawing of this scope is on the page: the
+  // look-up alone took a client mount with a served drawing's instanceId for
+  // its hydration (R80). Should Svelte's ids change, the look-up decides, as before.
+  const hydrating = typeof document !== "undefined" && !/^c\d+$/.test(uid) && document.querySelector(`svg[data-tl-instance="${String(applied.instanceId)}"]`) !== null;
   const html = untrack(() => {
     if (typeof document !== "undefined" && !hydrating) return "";
     const frame = renderTimelineSvg(initial as TimelineConfig<T>, ssrWidth === undefined ? {} : { width: ssrWidth });
@@ -137,7 +149,7 @@
   });
 </script>
 
-<div bind:this={container} class={className} style="position:relative;overflow:hidden;height:{height}px;{style ?? ''}" data-tl-svelte="">{#if html !== ""}{@html html}{/if}</div>
+<div {...box} bind:this={container} style="position:relative;overflow:hidden;height:{height}px;{style ?? ''}" data-tl-svelte="">{#if html !== ""}{@html html}{/if}</div>
 {#if item !== undefined}
   {#each [...drawn] as [id, slot] (id)}
     <div use:into={slot.element} style="display:contents">{@render item(slot.item)}</div>

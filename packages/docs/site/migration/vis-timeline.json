@@ -520,7 +520,7 @@
       "vis": "item.editable: false",
       "status": "different",
       "temporeum": "movable: false, resizable: false",
-      "note": "Moving and resizing are separate.",
+      "note": "Moving and resizing are separate. An item's editable: true on a timeline that is not editable turns editing on in fromVis, with every other item held still, as vis-timeline lets an item opt in.",
       "uses": [
         "Item.movable",
         "Item.resizable"
@@ -629,7 +629,7 @@
         "TimelineConfig.groups",
         "Timeline.toggleGroup"
       ],
-      "after": "timeline.update({ groups: [{ id: \"team\", label: \"Team\" }, { id: \"work\", label: \"Engineering\", parentId: \"team\" }] });\ntimeline.toggleGroup(\"team\", true);"
+      "after": "timeline.update({ groups: [{ id: \"team\", label: \"Team\" }, { id: \"work\", label: \"Engineering\", parentId: \"team\" }] });\ntimeline.toggleGroup(\"team\", { collapsed: true });"
     },
     {
       "area": "Groups",
@@ -696,7 +696,7 @@
       "vis": "snap",
       "status": "different",
       "temporeum": "editing: { snapMs, snapOrigin }",
-      "note": "A fixed grid instead of a function.",
+      "note": "A fixed grid instead of a function. A grid of whole days lies on the timeline's `timeZone` midnights, all year.",
       "uses": [
         "TimelineEditingOptions.snapMs",
         "TimelineEditingOptions.snapOrigin"

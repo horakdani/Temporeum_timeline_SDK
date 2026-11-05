@@ -48,7 +48,7 @@ export function eventNameOf(type: TimelineInstanceEventName): string {
 }
 
 /** The attributes the element reads. Everything else is a property. */
-export const OBSERVED_ATTRIBUTES = [
+export const OBSERVED_ATTRIBUTES = Object.freeze([
   "orientation",
   "density",
   "theme",
@@ -68,7 +68,7 @@ export const OBSERVED_ATTRIBUTES = [
   "touch-action",
   "direction",
   "calendar",
-] as const;
+] as const);
 
 type Attribute = (typeof OBSERVED_ATTRIBUTES)[number];
 
@@ -162,7 +162,10 @@ function scriptConfig(host: HTMLElement): TimelineConfig {
 const Base = (typeof HTMLElement === "undefined" ? class {} : HTMLElement) as typeof HTMLElement;
 
 /** The element's properties a page may set before the element is defined. */
-const UPGRADED = ["config", "items", "lanes", "groups", "template", "gantt", "resources", "resourceOptions", "hooks", "selectedIds", "orientation", "density", "theme", "height", "editable"] as const;
+const UPGRADED = ["config", "items", "lanes", "groups", "template", "gantt", "resources", "resourceOptions", "hooks", "selectedIds", "orientation", "density", "theme", "height", "editable", "multiSelect", "snapMs", "locale", "timeZone", "breakpoint", "packMode", "cluster", "direction", "calendar", "touchAction", "domain"] as const;
+
+/** The configuration fields a property owns on its own: `undefined` hands one back to its attribute. */
+type Owned = "orientation" | "density" | "theme" | "height" | "locale" | "timeZone" | "breakpoint" | "packMode" | "cluster" | "direction" | "calendar" | "touchAction";
 
 /** `itemMoved` → `item-moved`, as a type. */
 type Kebab<S extends string> = S extends `${infer Head}${infer Rest}` ? `${Head extends Uppercase<Head> ? (Head extends Lowercase<Head> ? Head : `-${Lowercase<Head>}`) : Head}${Kebab<Rest>}` : S;
@@ -301,12 +304,105 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     this.#heightStyle(this.height);
   }
 
+  /** The `locale` attribute as a property, which wins over it. */
+  get locale(): string | undefined {
+    return this.#props.locale ?? this.#config().locale;
+  }
+  set locale(locale: string | undefined) {
+    this.#own("locale", locale);
+  }
+
+  /** The `time-zone` attribute as a property, which wins over it. */
+  get timeZone(): string | undefined {
+    return this.#props.timeZone ?? this.#config().timeZone;
+  }
+  set timeZone(timeZone: string | undefined) {
+    this.#own("timeZone", timeZone);
+  }
+
+  /** The `breakpoint` attribute as a property, which wins over it. */
+  get breakpoint(): number | undefined {
+    return this.#props.breakpoint ?? this.#config().breakpoint;
+  }
+  set breakpoint(breakpoint: number | undefined) {
+    this.#own("breakpoint", breakpoint);
+  }
+
+  /** The `pack-mode` attribute as a property, which wins over it. */
+  get packMode(): TimelineConfig<T>["packMode"] {
+    return this.#props.packMode ?? this.#config().packMode;
+  }
+  set packMode(packMode: TimelineConfig<T>["packMode"]) {
+    this.#own("packMode", packMode);
+  }
+
+  /** The `cluster` attribute as a property, which wins over it — and takes the clustering's options too. */
+  get cluster(): TimelineConfig<T>["cluster"] {
+    return this.#props.cluster ?? this.#config().cluster;
+  }
+  set cluster(cluster: TimelineConfig<T>["cluster"]) {
+    this.#own("cluster", cluster);
+  }
+
+  /** The `direction` attribute as a property, which wins over it. */
+  get direction(): TimelineConfig<T>["direction"] {
+    return this.#props.direction ?? this.#config().direction;
+  }
+  set direction(direction: TimelineConfig<T>["direction"]) {
+    this.#own("direction", direction);
+  }
+
+  /** The `calendar` attribute as a property, which wins over it. */
+  get calendar(): string | undefined {
+    return this.#props.calendar ?? this.#config().calendar;
+  }
+  set calendar(calendar: string | undefined) {
+    this.#own("calendar", calendar);
+  }
+
+  /** The `touch-action` attribute as a property, which wins over it. */
+  get touchAction(): TimelineConfig<T>["touchAction"] {
+    return this.#props.touchAction ?? this.#config().touchAction;
+  }
+  set touchAction(touchAction: TimelineConfig<T>["touchAction"]) {
+    this.#own("touchAction", touchAction);
+  }
+
+  /**
+   * The visible range — the `start` and `end` attributes as one property.
+   * Reading it gives the range the reader is looking at now; setting it
+   * moves the view there, as `timeline.zoomTo` does.
+   */
+  get domain(): readonly [TimeInput, TimeInput] | undefined {
+    return this.#timeline?.getSnapshot().domain ?? this.#effective().domain;
+  }
+  set domain(domain: readonly [TimeInput, TimeInput] | undefined) {
+    this.#props = { ...this.#props, domain };
+    if (domain !== undefined) this.#timeline?.zoomTo(domain);
+  }
+
   /** Whether the reader can move and resize items — the `editable` attribute as a property, which wins over it. */
   get editable(): boolean {
-    return (this.#props.editing ?? this.#config().editing)?.enabled === true;
+    return this.#effective().editing?.enabled === true;
   }
   set editable(editable: boolean) {
-    this.#set({ editing: { ...(this.#props.editing ?? this.#config().editing), enabled: editable } });
+    this.#editing({ enabled: editable });
+  }
+
+  /** Whether Shift and Ctrl/Cmd add to the selection — the `multi-select` attribute as a property, which wins over it. */
+  get multiSelect(): boolean | undefined {
+    return this.#effective().editing?.multiSelect;
+  }
+  set multiSelect(multiSelect: boolean | undefined) {
+    this.#editing({ multiSelect });
+  }
+
+  /** The grid moves and resizes snap to, in milliseconds — the `snap-ms` attribute as a property, which wins over it. */
+  get snapMs(): number | undefined {
+    return this.#effective().editing?.snapMs;
+  }
+  set snapMs(snapMs: number | undefined) {
+    this.#editing({ snapMs });
   }
 
   get selectedIds(): readonly string[] {
@@ -325,7 +421,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
    * (`items`, `theme`, …) set on its own stays.
    */
   get config(): TimelineConfig<T> {
-    return { ...this.#config(), ...this.#props };
+    return this.#effective();
   }
   set config(config: TimelineConfig<T>) {
     const attributes = this.#config() as Record<string, unknown>;
@@ -338,6 +434,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     }
     this.#props = props as TimelineConfig<T>;
     this.#fromConfig = new Set(Object.keys(config));
+    if ("editing" in next) next.editing = this.#effective().editing;
     this.#heightStyle(this.height);
     this.#timeline?.update(next as TimelineUpdate<T>);
   }
@@ -348,8 +445,28 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     this.#timeline?.update(next);
   }
 
+  /**
+   * The attributes, and the properties over them. `editing` field by field:
+   * three attributes and three properties each say a part of it, and setting
+   * `editable` must not silence `multi-select` or `snap-ms`.
+   */
+  #effective(): TimelineConfig<T> {
+    const attributes = this.#config();
+    const editing = this.#props.editing;
+    return { ...attributes, ...this.#props, ...(editing === undefined || attributes.editing === undefined ? {} : { editing: { ...attributes.editing, ...editing } }) };
+  }
+
+  /** Some editing fields as properties: an `undefined` one goes back to its attribute. */
+  #editing(fields: Record<string, unknown>): void {
+    const editing = { ...this.#props.editing, ...fields } as Record<string, unknown>;
+    for (const key of Object.keys(fields)) if (fields[key] === undefined) delete editing[key];
+    this.#props = { ...this.#props, editing } as TimelineConfig<T>;
+    this.#fromConfig.delete("editing");
+    this.#timeline?.update({ editing: this.#effective().editing } as TimelineUpdate<T>);
+  }
+
   /** A property that is also an attribute: `undefined` hands it back to the attribute. */
-  #own<K extends "orientation" | "density" | "theme" | "height">(key: K, value: TimelineConfig<T>[K]): void {
+  #own<K extends Owned>(key: K, value: TimelineConfig<T>[K]): void {
     if (value !== undefined) {
       this.#set({ [key]: value } as TimelineUpdate<T>);
       return;
@@ -400,7 +517,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     // the timeline inside.
     const root = existing ?? this.attachShadow({ mode: "open", delegatesFocus: true });
     this.#heightStyle(this.height);
-    let config = { ...scriptConfig(this), ...this.#config(), ...this.#props } as TimelineConfig<T>;
+    let config = { ...scriptConfig(this), ...this.#effective() } as TimelineConfig<T>;
     // The `nonce` attribute: the browser hides its value from the attribute
     // once the element is in the document, and keeps it in the property.
     if (config.nonce === undefined && this.nonce) config = { ...config, nonce: this.nonce };
@@ -450,8 +567,9 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     const changed: Record<string, unknown> = {};
     let any = false;
     for (const key of new Set([...Object.keys(was), ...Object.keys(config)])) {
-      if (key in this.#props || key === "domain" || sameValue(was[key], config[key])) continue;
-      changed[key] = config[key];
+      // `editing` is said field by field, so an attribute's field still counts beside a property's.
+      if ((key in this.#props && key !== "editing") || key === "domain" || sameValue(was[key], config[key])) continue;
+      changed[key] = key === "editing" ? this.#effective().editing : config[key];
       any = true;
     }
     if (any) this.#timeline.update(changed as TimelineUpdate<T>);

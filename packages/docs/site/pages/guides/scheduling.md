@@ -21,6 +21,7 @@ import { addWorkingMs, scheduleCommand, scheduleTasks } from "@temporeum/timelin
 - **`scheduleCommand` is the only way a schedule reaches the items.** It is one command, of type `"schedule"`, with a patch for each task that moves and none for the rest. Apply it with `timeline.applyCommand(command)`, keep it, and `command.inverse` puts every task back exactly. `undefined` means there is nothing to move.
 - **The library does not save.** Storing the plan is yours, like every other edit.
 - **The dependencies are the ones the arrows draw** — the same `Dependency` objects: `from`, `to`, `type` (`FS`, `SS`, `FF`, `SF`) and `lagMs`, which may be negative for a lead.
+- **A task by the day is scheduled as it is drawn.** An item with a `granularity` covers its whole units — `end: "2026-03-03"` by the day runs to the end of the 3rd — so its successor starts on the 4th. Give the timeline's `timeZone` to `scheduleTasks` so the days are the ones on screen; a moved end comes back the way such an item writes it, as the start of its last day.
 
 ## Working time
 

@@ -19,6 +19,8 @@ const PORT = Number(process.env.TL_E2E_PORT ?? 41738);
  * both together.
  */
 export default defineConfig({
+  // A stray test.only would quietly run one test and call the suite green.
+  forbidOnly: true,
   testDir: "./e2e",
   testMatch: "touch.spec.ts",
   grepInvert: /touch-action really takes effect|TAKES the gesture/,

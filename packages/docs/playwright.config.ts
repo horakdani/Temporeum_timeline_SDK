@@ -21,6 +21,8 @@ const PORT = Number(process.env.TL_E2E_PORT ?? 41737);
  * points — which is why we have a pinch test at all.
  */
 export default defineConfig({
+  // A stray test.only would quietly run one test and call the suite green.
+  forbidOnly: true,
   testDir: "./e2e",
   // The gesture state machine is serial: parallel runs would share one port.
   workers: 1,

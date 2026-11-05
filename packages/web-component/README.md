@@ -12,7 +12,9 @@ npm install @temporeum/timeline-element
 
 No bundler, no build: the UMD file carries the core and registers the
 element on load — `<script src="https://unpkg.com/@temporeum/timeline-element@1"></script>`,
-or `dist/timeline-element.umd.js` from the package.
+or `dist/timeline-element.umd.js` from the package. Everything the package
+and its entry points export is on one global, `window.TemporeumTimelineElement`
+(`const { createTimeline, mountStory } = TemporeumTimelineElement;`).
 
 ```html excerpt:example/element-html
 <temporeum-timeline height="280" theme="auto" aria-label="Release plan">
@@ -54,6 +56,9 @@ timeline.addEventListener("item-click", (event) => {
 | `cluster` | merge items too small to see one by one |
 | `editable`, `multi-select`, `snap-ms` | editing |
 | `touch-action` | `own` (the default) claims every touch gesture; `cooperative` leaves vertical scrolling to the page, for a timeline inside an article |
+| `direction` | `ltr`, `rtl`, `auto` (the page's): which way time runs — `rtl` and `auto` need the `/intl` plugin |
+| `calendar` | a Unicode calendar (`islamic-umalqura`, `hebrew`, `persian` …) for the axis labels — needs the `/intl` plugin |
+| `nonce` | the page's CSP nonce, for the element's stylesheets where it cannot adopt them ([CSP](https://horakdani.github.io/Temporeum_timeline_SDK/guides/content-security-policy.html)) |
 
 Items, lanes, hooks and the selection are **properties** (`items`, `lanes`,
 `hooks`, `selectedIds`); `orientation`, `density`, `theme`, `height` and
@@ -85,8 +90,10 @@ one exception to the rule is the instance's `command`, which is
 Input from outside — an attribute, the JSON child, a fetched window — can be
 anything, and one bad item does not take the whole frame. An item with no
 string id, a start or end that is not a time, or a fractional `sublaneSpan`
-is left out; a `locale` or `timeZone` the platform does not know, or a
-`theme` with a token that is not a colour, falls back to the default. Each
+is left out; a `locale` or `timeZone` the platform does not know, a
+`theme` with a token that is not a colour, or a word an enumerated option
+does not have (`orientation="Vertical"`, `pack-mode="stack"`) falls back to
+the default. Each
 is said with `input-skipped` (`inputSkipped`), whose `detail` holds a message
 and the item or the option. The server render leaves out the same and says
 nothing; the client says it when it hydrates.
@@ -261,11 +268,11 @@ SvelteKit and Angular.
 | `dist/resources.mjs` / `.cjs` | the `/resources` subpath | the resource view plugin (`resourcesPlugin`) and the backlog (`mountBacklog`) |
 | `dist/export.mjs` / `.cjs` | the `/export` subpath | PNG, PDF and print (`exportPlugin`) |
 | `dist/tools.mjs` / `.cjs` | the `/tools` subpath | the time tools plugin (`toolsPlugin`) |
-| `dist/groups.mjs` / `.cjs` | the `/groups` subpath | the nested groups plugin (`groupsPlugin`) and the group-header functions |
+| `dist/groups.mjs` / `.cjs` | the `/groups` subpath | the nested groups plugin (`groupsPlugin`) |
 | `dist/items.mjs` / `.cjs` | the `/items` subpath | item kinds, templates, adding and removing (`itemsPlugin`) |
 | `dist/intl.mjs` / `.cjs` | the `/intl` subpath | other languages, directions and calendars (`intlPlugin`) |
 | `dist/story.mjs` / `.cjs` | the `/story` subpath | slide-by-slide storytelling (`mountStory`) |
-| `dist/timeline-element.umd.js` | UMD | `<script>` tag: core included, every plugin and the element registered |
+| `dist/timeline-element.umd.js` | UMD | `<script>` tag: core included, every plugin and the element registered; the exports on `window.TemporeumTimelineElement` |
 
 ## Documentation
 

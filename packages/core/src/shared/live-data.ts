@@ -162,7 +162,7 @@ export function relayout<T>(previous: Layout<T>, items: readonly Item<T>[], touc
     } else {
       // layoutItems' own packing, for this lane.
       const mode: PackMode = lane.packMode ?? fallbackMode;
-      const occupied: ItemSpan[][] = [];
+      const occupied: number[] = [];
       const placements: { entry: { item: Item<T>; span: ItemSpan }; base: number; height: number }[] = [];
       let nextSingle = 0;
       for (const entry of fresh.get(lane.id) ?? []) {

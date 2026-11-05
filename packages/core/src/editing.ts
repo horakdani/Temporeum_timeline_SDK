@@ -17,9 +17,10 @@
  *    would find out the hard way.
  * 2. **Patches are built from the item's own values, not from its layout.**
  *    An item known to the day is *drawn* from midnight to midnight, but its
- *    stored `start` is some instant inside that day. Shifting the drawn extent
- *    would silently rewrite the data to the grid; shifting the stored value
- *    keeps the edit reversible and the data the host's own.
+ *    stored `start` is some instant inside that day. A move shifts the stored
+ *    values by what the drawn extent did, which keeps the edit reversible and
+ *    the data the host's own. A resize is the one exception: the new edge is a
+ *    day boundary, so it is stored as one.
  * 3. **The before-patch carries exactly the keys the after-patch does.**
  *    An absent key means "unchanged", so an inverse with a different key set
  *    would restore something it was never asked about. {@link createCommand}
@@ -31,10 +32,12 @@ import { itemRect } from "./layout.js";
 import type { ItemSpan, Layout, LayoutItem } from "./layout.js";
 import { hitSlopFor, slopForExtent } from "./responsive.js";
 import type { TimeScale } from "./scale.js";
+import { fromCalendarParts, startOf, toCalendarParts, zoneOffsetMs } from "./calendar.js";
 import { toTimeMs } from "./time.js";
 import type {
   Command,
   Density,
+  Granularity,
   Item,
   ItemPatch,
   MainCross,
@@ -145,15 +148,28 @@ function rawEnd(item: Item<unknown>): TimeMs | undefined {
 /**
  * Snap a time onto a grid.
  *
- * The grid is anchored at `origin` — the epoch by default, which puts a
- * day-sized grid on UTC midnights. A host that wants local midnights, or a
- * week starting on Monday, moves the origin rather than asking for a mode.
+ * The grid is anchored at `origin` — the epoch by default. A grid of whole
+ * days lies on the wall clock of `timeZone`: a day grid is on local midnights
+ * all year, across daylight saving, and an `origin` is read as its wall-clock
+ * time there. A fixed millisecond grid would put Budapest's days on midnight
+ * in January and on 01:00 in July. A finer grid stays on the instant line,
+ * where an hour is an hour even on the night the clocks go back.
  */
-export function snapTime(time: TimeMs, snapMs: number | undefined, origin: TimeMs = 0): TimeMs {
+export function snapTime(time: TimeMs, snapMs: number | undefined, origin?: TimeMs, timeZone = "UTC"): TimeMs {
   if (snapMs === undefined || !(snapMs > 0) || !Number.isFinite(snapMs)) {
     return time;
   }
-  return origin + Math.round((time - origin) / snapMs) * snapMs;
+  if (snapMs % 864e5 !== 0 || timeZone === "UTC") {
+    const from = origin ?? 0;
+    return from + Math.round((time - from) / snapMs) * snapMs;
+  }
+  const wall = (t: TimeMs): TimeMs => t + zoneOffsetMs(t, timeZone);
+  return fromCalendarParts(toCalendarParts(snapTime(wall(time), snapMs, origin === undefined ? 0 : wall(origin))), timeZone);
+}
+
+/** The unit an item is known to, or `undefined` for the millisecond. */
+function unitOf(item: Item<unknown>): Granularity | undefined {
+  return item.granularity === "millisecond" ? undefined : item.granularity;
 }
 
 /** How a move is tuned. */
@@ -164,6 +180,8 @@ export interface MoveOptions {
   readonly laneId?: string | null | undefined;
   readonly snapMs?: number | undefined;
   readonly snapOrigin?: TimeMs | undefined;
+  /** The zone a grid of whole days lies in, and an item known to the day is drawn in. UTC by default. */
+  readonly timeZone?: string | undefined;
 }
 
 /**
@@ -172,19 +190,21 @@ export interface MoveOptions {
  * The *start* is snapped and the duration is preserved, rather than snapping
  * both edges: snapping the end as well would stretch or squash an item whose
  * duration is not a multiple of the grid, which is not what dragging it
- * means.
+ * means. An item known to the day snaps by its drawn start, its midnight —
+ * snapping the stored 14:00 would round a drag of nothing to the next day —
+ * and both stored values shift by what the drawn start did.
  */
 export function movePatch<T>(hit: EditHit<T>, options: MoveOptions): ItemPatch<T> {
   const start = rawStart(hit.item);
   const end = rawEnd(hit.item);
-  const snapped = snapTime(start + options.deltaMs, options.snapMs, options.snapOrigin);
-  const shift = snapped - start;
+  const from = unitOf(hit.item) === undefined ? start : hit.span.start;
+  const shift = snapTime(from + options.deltaMs, options.snapMs, options.snapOrigin, options.timeZone) - from;
   const patch: {
     id: string;
     start: TimeMs;
     end?: TimeMs;
     laneId?: string | null;
-  } = { id: hit.item.id, start: snapped };
+  } = { id: hit.item.id, start: start + shift };
   if (end !== undefined) {
     patch.end = end + shift;
   }
@@ -201,6 +221,8 @@ export interface ResizeOptions {
   readonly deltaMs: number;
   readonly snapMs?: number | undefined;
   readonly snapOrigin?: TimeMs | undefined;
+  /** The zone a grid of whole days lies in, and an item known to the day is drawn in. UTC by default. */
+  readonly timeZone?: string | undefined;
   /** Smallest duration the item may be squashed to. One grid step by default. */
   readonly minDurationMs?: number | undefined;
 }
@@ -215,29 +237,37 @@ export interface ResizeOptions {
  * will not do it by accident.
  */
 export function resizePatch<T>(hit: EditHit<T>, options: ResizeOptions): ItemPatch<T> | undefined {
-  const start = rawStart(hit.item);
-  const end = rawEnd(hit.item);
-  const minDuration = options.minDurationMs ?? (options.snapMs !== undefined && options.snapMs > 0 ? options.snapMs : 1);
+  const { span, item } = hit;
+  const end = rawEnd(item);
+  const unit = unitOf(item);
+  const zone = options.timeZone;
+  const snap = (t: TimeMs): TimeMs => snapTime(t, options.snapMs, options.snapOrigin, zone);
+  // An item known to the day is at least that day long.
+  const minDuration = unit !== undefined ? 1 : (options.minDurationMs ?? (options.snapMs !== undefined && options.snapMs > 0 ? options.snapMs : 1));
 
+  // The pointer holds the edge it can see, so the edge moves from where it
+  // is drawn. For an item known to the day that is a midnight, not the
+  // stored instant inside the day.
   if (options.edge === "start") {
-    const wanted = snapTime(start + options.deltaMs, options.snapMs, options.snapOrigin);
-    const ceiling = end === undefined ? Number.POSITIVE_INFINITY : end - minDuration;
-    const next = Math.min(wanted, ceiling);
-    return next === start ? undefined : { id: hit.item.id, start: next };
+    const from = unit === undefined ? rawStart(item) : span.start;
+    const ceiling = end === undefined ? Number.POSITIVE_INFINITY : span.end - minDuration;
+    const wanted = Math.min(snap(from + options.deltaMs), ceiling);
+    const next = unit === undefined ? wanted : startOf(wanted, unit, zone);
+    return next === from ? undefined : { id: item.id, start: next };
   }
 
-  if (hit.item.open === true) {
+  if (item.open === true) {
     // No known end, so there is no end to drag. Reaching past the viewport is
     // the point of an open interval.
     return undefined;
   }
   // An instant has no stored end, but it does have a drawn one: dragging that
   // edge turns it into an interval, which is the shortest path from "it
-  // happened" to "it lasted".
-  const from = end ?? hit.span.end;
-  const wanted = snapTime(from + options.deltaMs, options.snapMs, options.snapOrigin);
-  const next = Math.max(wanted, start + minDuration);
-  return next === end ? undefined : { id: hit.item.id, end: next };
+  // happened" to "it lasted". The drawn end is exclusive — the midnight after
+  // the last day — and a stored end known to the day is inclusive: the last
+  // day itself. Stored as drawn, the item would gain a day.
+  const next = Math.max(snap(span.end + options.deltaMs), span.start + minDuration);
+  return next === span.end ? undefined : { id: item.id, end: unit === undefined ? next : startOf(next - 1, unit, zone) };
 }
 
 /**

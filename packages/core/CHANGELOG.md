@@ -9,8 +9,8 @@ The first release. From here on the package follows [semantic versioning](https:
 - The `(main, cross)` projector, the time scale and an adaptive axis: round ticks from milliseconds to millennia, in the reader's time zone, with daylight saving handled, without a date library. Hidden time as a `TimeWarp` (`RenderOptions.hiddenDates`), and the axis's ticks from a source of the host's (`RenderOptions.ticks`).
 - Layout: collision-free packing in time, lanes, pinned lanes, sublane spans, open intervals, granularity-aware instants; cached per items array, or given by the host (`RenderOptions.layout`).
 - Rendering: a DOM-free scene and `renderToSvgString`; themes as CSS custom properties, light and dark, contrast-checked, and a host's own tokens refused unless each is a colour (a token never writes a rule); density levels; labels placed, shortened with an ellipsis where they do not fit whole (`labelOverflow`), and reported; decorations (banding, now, eras, markers).
-- Input: one pointer pipeline for mouse, pen and touch — pan, pinch, double tap (two taps of the same pointer type: on a hybrid device a finger's tap and a mouse's click are not one), two-finger tap, wheel (a run of wheel steps is one gesture) — anchored to the instant under each pointer; cooperative touch.
-- Editing: move, resize, snap, `canMove`, cross-lane moves, multi-select, and reversible commands with an `inverse`.
+- Input: one pointer pipeline for mouse, pen and touch — pan, pinch, double tap (two taps of the same pointer type: on a hybrid device a finger's tap and a mouse's click are not one), two-finger tap, wheel (a run of wheel steps is one gesture) — anchored to the instant under each pointer, also where `minSpanMs` or `maxSpanMs` stops the zoom; cooperative touch.
+- Editing: move, resize, snap, `canMove`, cross-lane moves, multi-select, and reversible commands with an `inverse`. A grid of whole days lies on the wall clock of the `timeZone` the snap is given.
 - Responsive: orientation, density and detail surface resolved from the container; pointer-aware hit slop.
 - Performance: the scene space — tiles a sixteenth of a viewport, a deep zoom that re-anchors a step at a time, an overscan that grows while the view rests — with culling, node reuse and pooling in `mountScene`, and `createFrameLoop`.
 - The axis's context label: the month a view of days is in (the year of a view of months, the day of a view of hours), held at the start of the axis over a surface the ticks slide under — `formatTick` writes it too, with `tick.context` set; `axisContext: false` turns it off.
@@ -18,11 +18,14 @@ The first release. From here on the package follows [semantic versioning](https:
 - Data: `createItemLoader`, windowed and aborting. Clusters at dense zoom, with `clusterZoom`.
 - Server rendering: `mountScene(container, { hydrate: true })` adopts a server-rendered `<svg>`.
 - A strict Content-Security-Policy and Trusted Types: `mountScene` puts a scene's `<style>` into the `adoptedStyleSheets` of the container's document or shadow root and writes `style` attributes through the CSSOM, so `style-src` needs no `'unsafe-inline'`; where a sheet cannot be adopted it writes the `<style>` with `MountOptions.nonce`. `mountPrintView` builds the print view with the DOM, not markup, its stylesheet adopted too (`nonce` as the fourth argument for the fallback).
+- A host's `className` — on an item, a decoration, an arrow or a calendar event — is its own classes: a `tl-` class in data is left out, as it is from a template.
+- Time zones: a wall-clock time that happens twice is the first of the two, east and west of Greenwich alike (Temporal's "compatible"), so the ticks of the hour the clocks go back skip nothing; a zone's offsets are remembered by the hour, so a layout in a zone costs about what it does in UTC.
+- A zoom that comes back to where it started — a wheel run in and out — lands on the scale it left to within floating-point noise, and the scene space takes that for the scale: in the gesture it steps back onto it, and at rest it settles there around the same origin instead of drawing everything anew; of two scales as near, the tiles already on screen stand in.
 - `VERSION` is `"1.0.0"`.
 
 ### Entry points
 
-The engine keeps a budget of 31.2 kB minified and gzipped. Everything else is on an entry point of its own, budgeted by what it adds on top of the engine, and a page downloads only the ones it imports. `entries.json` lists them; the build, the `exports` map and the size checks follow from it.
+The engine keeps a budget of 31.6 kB minified and gzipped. Everything else is on an entry point of its own, budgeted by what it adds on top of the engine, and a page downloads only the ones it imports. `entries.json` lists them; the build, the `exports` map and the size checks follow from it.
 
 - **`/dom`** — the browser binding: `attachInput` (mirrored for right to left), mounting and hydration.
 - **`/gantt`** — dependencies (`FS`, `SS`, `FF`, `SF`, with a lag or a lead) routed as arrows in both orientations and culled to the view; progress, baselines and milestones; the task grid's rows and keys; accessible names that say what a task depends on.
@@ -34,7 +37,7 @@ The engine keeps a budget of 31.2 kB minified and gzipped. Everything else is on
 - **`/live`** — live data: `applyItemChanges` and `relayout`, which packs only the lanes a change touched.
 - **`/words`** — the library's words in English: `DEFAULT_STRINGS`, `resolveStrings`, `sayIn`, `fill`, `formatAmount`.
 - **`/intl`** — right to left (`mirrorScene`, `mirrorCss`), dictionaries (`describeHooks`, `pseudoStrings` to find a word a translation missed), and the axis in any calendar `Intl` knows (`calendarTicks`).
-- **`/calendar`** — RFC 5545 recurrence (`parseRRule`, `formatRRule`, `occurrences`), events and their expansion, iCalendar read and written (`parseICal`, `formatICal`), and the layout of the week and the day.
+- **`/calendar`** — RFC 5545 recurrence (`parseRRule`, `formatRRule`, `occurrences`), events and their expansion, iCalendar read and written (`parseICal`, `formatICal`), and the layout of the week and the day. A zone matched by its `VTIMEZONE` rules is the one its Windows name means (`Eastern Standard Time` is `America/New_York`), and a `limit` counts only the starts it gives, not the excluded ones.
 - **`/export`** — print pages across the whole range, a PDF writer of the library's own (`scenesToPdf`, with selectable text), standalone SVG and PNG, and the print view.
 - **`/vis-compat`** — `fromVis(items, groups, options)`: a vis-timeline 8 setup as a configuration, with a warning for everything that did not carry over; `parseVisTime` reads times by vis-timeline's rules.
 - **`/story`** — TimelineJS's JSON and Google Sheets template as items, lanes and eras (below).

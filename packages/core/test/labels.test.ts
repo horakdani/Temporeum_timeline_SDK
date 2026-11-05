@@ -350,3 +350,15 @@ describe("placeLabels across the lane axis", () => {
     }
   });
 });
+
+describe("placement cost", () => {
+  it("looks at an item's neighbours in its row, not at the whole row", () => {
+    // R5: every check walked every interval claimed in the row, so one row of
+    // 8k items took 708 ms a frame; these 80k took 52 s.
+    const candidates = Array.from({ length: 80_000 }, (_, n) => candidate(`i${String(n)}`, n * 10, 6, n % 3 === 0 ? "" : "a"));
+    const started = performance.now();
+    const layout = placeLabels(candidates, { mainSize: 800_000, measure: (text) => ({ main: text.length * 4, cross: 10 }) });
+    expect(performance.now() - started).toBeLessThan(3000);
+    expect(layout.kept.length + layout.dropped.length).toBe(candidates.filter((c) => c.text !== "").length);
+  });
+});

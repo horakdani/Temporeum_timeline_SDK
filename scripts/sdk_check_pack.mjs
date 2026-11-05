@@ -17,8 +17,9 @@
  *     leaves in dist only for the repo's own tools (`dist/build.json`, the
  *     source fingerprint the benchmarks compare: a user has no use for it).
  *  3. The version is IDENTICAL in every package, and not a prerelease (no
- *     `-`; `--allow-prerelease` admits one, for the `next` dist-tag). The packages point to each other with exactly this version (not
- *     a range and not workspace:), and the VERSION constant is this too.
+ *     `-`; `--allow-prerelease` admits one, for the `next` dist-tag). The packages point to each other with `^<version>` — a caret on
+ *     exactly this version, not an exact pin, another range or workspace: —
+ *     and the VERSION constant is this too.
  *  4. The manifest is ready for release: MIT licence and a LICENSE in the
  *     tarball; repository/homepage/bugs as in packages/docs/site/project.json,
  *     repository.directory the package's own directory; publishConfig.access
@@ -54,6 +55,25 @@
  *     no gate (`G-` and capitals) and no development phase (`P` and a number).
  *     NEGATIVE CONTROL: a planted gate and phase FAIL, and a C0 control, a
  *     `BYxxx` part, `VTODO` and `P-value` pass.
+ * 12. The release workflow's own `npm publish` argument starts with ./ (npm
+ *     reads `tarballs/x.tgz` as the GitHub repository tarballs/x.tgz) and,
+ *     filled in for each package, publishes the tarballs of point 8 as a dry
+ *     run, from a directory laid out as the workflow's download step lays it out.
+ *     NEGATIVE CONTROL: the argument without ./ FAILS.
+ * 13. Every package a packed declaration file imports (`from`, `import()`)
+ *     is the package's dependency or peer. NEGATIVE CONTROL: a stray import FAILS.
+ * 14. No packed declaration file of any of the six says `any`, outside
+ *     comments and strings — the type surface a user gets, which is what
+ *     "no `any` on the public surface" promises. The two framework compilers'
+ *     own lines are the exception, and only they: Angular's `static ɵfac`,
+ *     `ɵcmp` and `ɵdir` metadata and Svelte's `z_$$bindings`, which no user
+ *     code reads. NEGATIVE CONTROL: a handler typed `(...args: any[]) => any`
+ *     FAILS, an `any` in a comment or a string and a compiler line pass.
+ * 15. The element and every adapter hand on, from their main entry, the
+ *     types an app writes — the data (`Item`, `Lane`, `Group`, `TimeMs` …)
+ *     and every event's payload — so one install types an app: under pnpm
+ *     and Yarn PnP the engine, a dependency of a dependency, cannot be
+ *     imported. NEGATIVE CONTROL: an entry without `Lane` FAILS.
  * 11. publint, strict and at the suggestion level, finds nothing in the six
  *     tarballs of point 8 (the very files the registry would get).
  *     NEGATIVE CONTROL: a tarball whose `exports` names a missing file and
@@ -122,6 +142,82 @@ function judgeFiles(files, allowed) {
 }
 
 /** The repo-internal names in the packed text files. Returns the problems. */
+/**
+ * Every package a packed declaration file imports is one the package depends on
+ * (or has as a peer). TypeScript writes `import("@temporeum/timeline-core")` into
+ * an inferred type even when the package only depends on the element; under
+ * pnpm or Yarn PnP that import does not resolve, and with skipLibCheck the
+ * payload silently becomes any.
+ */
+export function judgeTypeImports(manifest, declarations) {
+  const allowed = new Set([manifest.name, ...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.peerDependencies ?? {})]);
+  const problems = [];
+  for (const [file, text] of declarations) {
+    const code = text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    for (const m of code.matchAll(/(?:\bfrom\s+|\bimport\s*\(\s*|\bimport\s+)["']([^"'./][^"']*)["']/g)) {
+      const spec = m[1];
+      if (spec.startsWith("node:")) continue;
+      const name = spec.startsWith("@") ? spec.split("/").slice(0, 2).join("/") : spec.split("/")[0];
+      if (!allowed.has(name)) problems.push(`${file} imports ${spec}, which ${manifest.name} does not depend on`);
+    }
+  }
+  return [...new Set(problems)];
+}
+
+/** The framework compilers' own declaration lines, which carry their `any` and no user code reads. */
+const COMPILER_LINE = /^\s*(?:static ɵ(?:fac|cmp|dir|inj|prov|mod)\b|z_\$\$bindings\?:)/;
+
+/** The types an app writes, which the element and each adapter export from their main entry (point 15). */
+export const HOST_TYPES = [
+  "Item", "Lane", "Group", "TimeMs", "Domain", "TimeBar", "TimeRange",
+  "TimelineInstanceEventMap", "TimelineInstanceEventName",
+  "ItemEventPayload", "HoverPayload", "SelectionChangedPayload", "ViewportChangedPayload", "LayoutChangedPayload", "ItemMovedPayload", "ItemResizedPayload", "CommandPayload",
+  "DensityChangedPayload", "OrientationChangedPayload", "ClusterOpenedPayload", "JumpRequestPayload", "ItemsAddedPayload", "ItemsRemovedPayload", "ItemsChangedPayload",
+  "GroupToggledPayload", "GroupMovedPayload", "TimeBarMovedPayload", "SlotsChangedPayload", "InputSkippedPayload",
+];
+
+/** The names a declaration file exports. */
+export function exportedNames(text) {
+  const code = text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  const names = new Set();
+  for (const m of code.matchAll(/\bexport\s+(?:type\s+)?\{([^}]*)\}/g)) {
+    for (const part of m[1].split(",")) {
+      const name = part.trim().replace(/^type\s+/, "").split(/\s+as\s+/).pop();
+      if (name) names.add(name);
+    }
+  }
+  for (const m of code.matchAll(/\bexport\s+(?:declare\s+)?(?:abstract\s+)?(?:interface|type|class|function|const|let|enum)\s+(\w+)/g)) names.add(m[1]);
+  return names;
+}
+
+export function judgeHostTypes(manifest, readMain) {
+  const root = manifest.exports?.["."];
+  const main = root?.import?.types ?? root?.types;
+  if (main === undefined) return [`${manifest.name}: no types for its main entry`];
+  const names = exportedNames(readMain(main.replace(/^\.\//, "")));
+  const missing = HOST_TYPES.filter((name) => !names.has(name));
+  return missing.length === 0 ? [] : [`${manifest.name}: its main entry (${main}) does not export ${missing.join(", ")}`];
+}
+
+export function judgePublicAny(declarations) {
+  const problems = [];
+  for (const [file, text] of declarations) {
+    const code = text
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "")
+      .replace(/"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g, '""');
+    code.split("\n").forEach((line, index) => {
+      if (/\bany\b/.test(line) && !COMPILER_LINE.test(line)) problems.push(`${file}:${String(index + 1)} says any: ${line.trim().slice(0, 120)}`);
+    });
+  }
+  return problems;
+}
+
+/** A name marked `@internal` in a declaration file: `stripInternal` keeps what modules share out of what hosts see. */
+export function judgeInternalDeclarations(declarations) {
+  return declarations.filter(([, text]) => /@internal\b/.test(text)).map(([file]) => `${file} declares a name marked @internal`);
+}
+
 function judgeInternalNames(dir, files) {
   const problems = [];
   for (const path of files.filter((file) => PACKED_TEXT.test(file))) {
@@ -243,8 +339,10 @@ export function judgeExports(manifest, files) {
 /** The release workflow's publish step: all six, the core first, the element before the adapters. */
 /**
  * The release workflow's rights: nothing writes at the workflow's level, no
- * long-lived npm token (trusted publishing), releases only from main, and a
- * checkout that does not leave its token in .git/config for the steps after it.
+ * long-lived npm token (trusted publishing), releases only from main, a
+ * checkout that does not leave its token in .git/config for the steps after it,
+ * and a global install pinned to an exact version: a job holding `id-token:
+ * write` runs only what was reviewed.
  */
 export function judgeReleaseRights(text) {
   const problems = [];
@@ -253,7 +351,29 @@ export function judgeReleaseRights(text) {
   if (/NPM_TOKEN|NODE_AUTH_TOKEN/.test(text)) problems.push("the release workflow uses a long-lived npm token instead of trusted publishing");
   if (!/refs\/heads\/main/.test(text)) problems.push("the release workflow does not refuse a run from a branch other than main");
   if (!/persist-credentials:\s*false/.test(text)) problems.push("the release workflow's checkout keeps its token in .git/config");
+  for (const m of text.matchAll(/npm install --global (\S+)/g)) if (!/@\d+\.\d+\.\d+$/.test(m[1])) problems.push(`the release workflow installs ${m[1]}, not an exact version`);
+  // A ref or an input is text the person who dispatches the run chooses: an env value, never spliced into a script.
+  for (const line of text.split("\n")) {
+    if (/\$\{\{\s*(?:github\.(?:ref|head_ref|ref_name)|inputs\.[\w-]+)\s*\}\}/.test(line) && !/^\s*[A-Z_]+:\s*\$\{\{/.test(line)) problems.push(`the release workflow splices a ref or an input into a script: ${line.trim()}`);
+  }
   return problems;
+}
+
+/**
+ * The publish step's tarball argument. npm reads an argument shaped `a/b` that
+ * does not start with `./`, `../` or `/` as GitHub shorthand, and runs
+ * `git ls-remote` against github.com/a/b instead of reading the file — so a
+ * release would stop at the first package and publish nothing.
+ */
+export function publishArgumentOf(text) {
+  const m = /npm publish\s+(?:"([^"]+)"|'([^']+)'|(\S+))/.exec(text);
+  return m === null ? undefined : (m[1] ?? m[2] ?? m[3]);
+}
+
+export function judgePublishArgument(arg) {
+  if (arg === undefined) return ["the release workflow's npm publish names no tarball"];
+  if (!/^(\.{1,2}\/|\/)/.test(arg)) return [`the release workflow publishes "${arg}", which npm reads as a GitHub repository (owner/repo), not as a file — start the path with ./`];
+  return [];
 }
 
 export function judgeWorkflowPackages(text) {
@@ -299,6 +419,19 @@ for (const [index, pkg] of PACKAGES.entries()) {
   const mapProblems = judgeMaps(join(repo, "packages", pkg.dir), run.files);
   failures.push(...mapProblems.map((problem) => `${pkg.name}: ${problem}`));
   failures.push(...judgeInternalNames(join(repo, "packages", pkg.dir), run.files).map((problem) => `${pkg.name}: ${problem}`));
+  const declarations = run.files.filter((file) => /\.d\.(?:[mc]?ts|svelte\.ts)$|\.svelte\.d\.ts$/.test(file)).map((file) => [file, readFileSync(join(repo, "packages", pkg.dir, file), "utf8")]);
+  const importProblems = judgeTypeImports(manifest, declarations);
+  failures.push(...importProblems.map((problem) => `${pkg.name}: ${problem}`));
+  if (importProblems.length === 0) notes.push(`${pkg.name}: its ${String(declarations.length)} declaration files import only what it depends on`);
+  const anyProblems = judgePublicAny(declarations);
+  failures.push(...anyProblems.map((problem) => `${pkg.name}: ${problem}`));
+  failures.push(...judgeInternalDeclarations(declarations).map((problem) => `${pkg.name}: ${problem}`));
+  if (anyProblems.length === 0) notes.push(`${pkg.name}: no \`any\` in its declaration files`);
+  if (pkg.dir !== "core") {
+    const hostProblems = judgeHostTypes(manifest, (file) => readFileSync(join(repo, "packages", pkg.dir, file), "utf8"));
+    failures.push(...hostProblems);
+    if (hostProblems.length === 0) notes.push(`${pkg.name}: its main entry exports the ${String(HOST_TYPES.length)} types an app writes`);
+  }
   failures.push(...judgeManifest(manifest, pkg.dir));
   failures.push(...judgePeers(manifest, sourcesOf(pkg.dir)));
   if (fileProblems.length === 0) notes.push(`${pkg.name}@${run.version}: ${String(run.files.length)} files, all from files`);
@@ -306,7 +439,12 @@ for (const [index, pkg] of PACKAGES.entries()) {
 failures.push(...judgeVersions(manifests, { allowPrerelease: ALLOW_PRERELEASE }));
 const versionTs = readFileSync(join(repo, "packages", "core", "src", "version.ts"), "utf8").match(/VERSION = "([^"]+)"/)?.[1];
 if (versionTs !== manifests[0].version) failures.push(`the VERSION constant is "${String(versionTs)}", the manifest says "${manifests[0].version}"`);
+// The element's plugin registry is per release (R45): its key names the version.
+const elementIndex = PACKAGES.findIndex((pkg) => pkg.dir === "web-component");
+const releaseTs = readFileSync(join(repo, "packages", "web-component", "src", "plugins.ts"), "utf8").match(/RELEASE = "([^"]+)"/)?.[1];
+if (releaseTs !== manifests[elementIndex]?.version) failures.push(`the element's plugin registry RELEASE is "${String(releaseTs)}", its manifest says "${String(manifests[elementIndex]?.version)}"`);
 
+let workflowText;
 const workflow = [
   join(repo, ".github", "workflows", "release.yml"),
 ].find((path) => existsSync(path) && readFileSync(path, "utf8").includes("npm publish"));
@@ -316,6 +454,11 @@ else {
   if (!/id-token:\s*write/.test(text)) failures.push("the release workflow lacks id-token: write — it would publish without provenance");
   if (!/npm publish[^\n]*--provenance/.test(text)) failures.push("the release workflow's npm publish does not use --provenance");
   if (!/workflow_dispatch/.test(text)) failures.push("the release workflow cannot be started by hand (workflow_dispatch)");
+  workflowText = text;
+  const argumentProblems = judgePublishArgument(publishArgumentOf(text));
+  failures.push(...argumentProblems);
+  if (judgePublishArgument("tarballs/temporeum-timeline-$short-$VERSION.tgz").length === 0) failures.push("NEGATIVE CONTROL: a publish argument without ./ (GitHub shorthand to npm) does NOT fail");
+  else notes.push("the negative control fails, as it should — a publish argument without ./ is GitHub shorthand to npm");
   const publishProblems = judgeWorkflowPackages(text);
   failures.push(...publishProblems);
   if (publishProblems.length === 0) notes.push("the release workflow publishes all six packages, starting with the core, the element before the adapters");
@@ -325,6 +468,10 @@ else {
   const loose = "permissions:\n  contents: write\n  id-token: write\njobs:\n  publish:\n    env:\n      NODE_AUTH_TOKEN: x\n";
   if (judgeReleaseRights(loose).length < 4) failures.push(`NEGATIVE CONTROL: a workflow with write rights for every job and a token does NOT fail (${judgeReleaseRights(loose).join("; ")})`);
   else notes.push("the negative control fails, as it should — workflow-level write, a token, any branch, a kept checkout token");
+  if (!judgeReleaseRights(text.replace(/npm install --global npm@\S+/, "npm install --global npm@11")).some((p) => p.includes("not an exact version"))) failures.push("NEGATIVE CONTROL: an unpinned npm install in the release workflow does NOT fail");
+  else notes.push("the negative control fails, as it should — npm@11 instead of an exact version");
+  if (!judgeReleaseRights(`${text}\n        run: echo "\${{ github.ref }}"\n`).some((p) => p.includes("splices"))) failures.push("NEGATIVE CONTROL: a ref spliced into a release script does NOT fail");
+  else notes.push("the negative control fails, as it should — a ref spliced into a script");
   // 9. negative control for the workflow
   if (judgeWorkflowPackages(text.replace(" packages/vue", "")).length === 0) failures.push("NEGATIVE CONTROL: a workflow that leaves out a package does NOT fail");
   else notes.push("the negative control fails, as it should — the workflow without vue");
@@ -362,6 +509,29 @@ try {
     else notes.push(`the negative control fails, as it should — publint: ${broken.join(" | ")}`);
   } catch (error) {
     failures.push(`publint did not run, so this is a FAILURE — ${String(error.message).split("\n")[0]}`);
+  }
+  // --- 12: the workflow's own publish argument, run as a dry run on the same tarballs
+  const argument = workflowText === undefined ? undefined : publishArgumentOf(workflowText);
+  if (argument !== undefined && judgePublishArgument(argument).length === 0) {
+    const release = join(clean, "release");
+    const dried = [];
+    PACKAGES.forEach((pkg, index) => {
+      const short = pkg.name.replace("@temporeum/timeline-", "");
+      const path = argument.replaceAll("$short", short).replace(/\$\{?VERSION\}?/g, manifests[index].version);
+      if (posix.basename(path) !== posix.basename(tarballs[index])) {
+        failures.push(`the release workflow publishes ${path}, but npm pack makes ${posix.basename(tarballs[index])}`);
+        return;
+      }
+      mkdirSync(dirname(join(release, path)), { recursive: true });
+      cpSync(tarballs[index], join(release, path));
+      try {
+        execFileSync("npm", ["publish", path, "--dry-run", "--provenance=false", "--ignore-scripts", "--access", "public"], { cwd: release, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 120_000, env: { ...process.env, GIT_SSH_COMMAND: "ssh -o BatchMode=yes" } });
+        dried.push(short);
+      } catch (error) {
+        failures.push(`the release workflow's own npm publish ${path} fails as a dry run — ${String(error.stderr ?? error.message).trim().split("\n").slice(-2).join(" | ")}`);
+      }
+    });
+    if (dried.length === PACKAGES.length) notes.push(`the release workflow's npm publish argument (${argument}) publishes all six tarballs as a dry run`);
   }
   // The loaded adapters' peers, as the user installs them: the React adapter also needs react-dom (portals).
   const peer = (dir, dep) => createRequire(join(repo, "packages", dir, "package.json"))(`${dep}/package.json`).version;
@@ -475,6 +645,24 @@ try {
   const named = judgeInternalNames(scratch, ["dist/c.d.ts", "dist/d.mjs", "dist/e.d.ts"]);
   if (named.length !== 2 || !named[0].startsWith("dist/c.d.ts") || !named[1].startsWith("dist/d.mjs")) failures.push(`NEGATIVE CONTROL: the internal-name measure is wrong (${named.join("; ") || "no problems"})`);
   else notes.push(`the negative control fails, as it should — ${named[0]} | ${named[1]}`);
+  const stray = judgeTypeImports({ name: "@x/adapter", dependencies: { "@x/element": "^1.0.0" }, peerDependencies: { react: "^19" } }, [["dist/a.d.ts", 'import type { A } from "@x/element";\nexport declare const b: import("@x/core").B;\nimport "react/jsx-runtime";\n']]);
+  if (stray.length !== 1 || !stray[0].includes("@x/core")) failures.push(`NEGATIVE CONTROL: a declaration importing a package it does not depend on does NOT fail (${stray.join("; ") || "no problems"})`);
+  else notes.push(`the negative control fails, as it should — ${stray[0]}`);
+  const internal = judgeInternalDeclarations([["dist/a.d.ts", "/**\n * Shared.\n *\n * @internal\n */\nexport declare function f(): string;\n"], ["dist/b.d.ts", "export declare const b = 1;\n"]]);
+  if (internal.length !== 1 || !internal[0].startsWith("dist/a.d.ts")) failures.push(`NEGATIVE CONTROL: an @internal declaration does NOT fail (${internal.join("; ") || "no problems"})`);
+  else notes.push(`the negative control fails, as it should — ${internal[0]}`);
+  const loose = judgePublicAny([
+    ["dist/a.d.ts", "/** any comment may say any */\nexport declare const a: { onX?: (...args: any[]) => any };\nexport type B = \"any\" | 'any';\n"],
+    ["dist/b.d.ts", "declare class C {\n    static ɵfac: i0.ɵɵFactoryDeclaration<C<any>, never>;\n    z_$$bindings?: ReturnType<R<any>['bindings']>;\n}\n"],
+  ]);
+  if (loose.length !== 1 || !loose[0].startsWith("dist/a.d.ts:2")) failures.push(`NEGATIVE CONTROL: the any measure is wrong (${loose.join("; ") || "no problems"})`);
+  else notes.push(`the negative control fails, as it should — ${loose[0]}`);
+  const all = HOST_TYPES.filter((name) => name !== "Lane");
+  const host = (text) => judgeHostTypes({ name: "@x/adapter", exports: { ".": { types: "./dist/index.d.ts" } } }, () => text);
+  const lacking = host(`export type { ${all.slice(0, 5).join(", ")} } from "@x/element";\nexport type { Lane as Row, ${all.slice(5).join(", ")} } from "@x/element";\n// export type { Lane }\n`);
+  const whole = host(`export type { ${all.join(", ")} } from "@x/element";\nexport interface Lane {}\n`);
+  if (lacking.length !== 1 || !lacking[0].endsWith("does not export Lane") || whole.length !== 0) failures.push(`NEGATIVE CONTROL: the host-types measure is wrong (${[...lacking, ...whole].join("; ") || "no problems"})`);
+  else notes.push(`the negative control fails, as it should — ${lacking[0]}`);
 } catch (error) {
   failures.push(`NEGATIVE CONTROL did not run — ${String(error.message).split("\n")[0]}`);
 } finally {

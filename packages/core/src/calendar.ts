@@ -43,6 +43,7 @@ export const DEFAULT_TIME_ZONE = "UTC";
 const MS_PER_SECOND = 1000;
 const MS_PER_MINUTE = 60 * MS_PER_SECOND;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
+const MS_PER_DAY = 24 * MS_PER_HOUR;
 
 /**
  * Granularities with a fixed length in milliseconds.
@@ -76,18 +77,11 @@ const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const
 const offsetFormatters = new Map<string, Intl.DateTimeFormat>();
 
 function offsetFormatterFor(timeZone: string): Intl.DateTimeFormat {
-  const cached = offsetFormatters.get(timeZone);
-  if (cached !== undefined) {
-    return cached;
-  }
+  let format = offsetFormatters.get(timeZone);
   // Throws RangeError for an unknown zone — the right failure, surfaced at
   // the first call rather than silently falling back to UTC.
-  const created = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    timeZoneName: "longOffset",
-  });
-  offsetFormatters.set(timeZone, created);
-  return created;
+  if (format === undefined) offsetFormatters.set(timeZone, (format = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "longOffset" })));
+  return format;
 }
 
 function assertFiniteTime(t: TimeMs): void {
@@ -95,6 +89,9 @@ function assertFiniteTime(t: TimeMs): void {
     throw new RangeError(`Invalid time value: ${String(t)}`);
   }
 }
+
+/** Offsets by zone and UTC hour: a layout in a zone asks for the same hours thousands of times. */
+const offsets = new Map<string, number>();
 
 /**
  * The zone's UTC offset in milliseconds at the given instant.
@@ -110,23 +107,27 @@ export function zoneOffsetMs(t: TimeMs, timeZone: string = DEFAULT_TIME_ZONE): n
   if (timeZone === "UTC") {
     return 0;
   }
+  // An hour remembered when it begins and ends on one offset; the hour a
+  // change falls in is asked each time.
+  const hour = floorToMultiple(t, MS_PER_HOUR);
+  const key = timeZone + hour;
+  let offset = offsets.get(key);
+  if (offset === undefined) {
+    offset = intlOffsetMs(hour, timeZone);
+    if (offset !== intlOffsetMs(hour + MS_PER_HOUR - 1, timeZone)) return intlOffsetMs(t, timeZone);
+    if (offsets.size > 4e3) offsets.clear();
+    offsets.set(key, offset);
+  }
+  return offset;
+}
+
+function intlOffsetMs(t: TimeMs, timeZone: string): number {
   // `Intl` takes the `Date` range only. Past its edges a zone keeps its
   // local mean time, which does not change, so the edge's offset holds.
-  const parts = offsetFormatterFor(timeZone).formatToParts(Math.min(Math.max(t, -8.64e15), 8.64e15));
-  let name = "";
-  for (const part of parts) {
-    if (part.type === "timeZoneName") {
-      name = part.value;
-    }
-  }
-  // "GMT" alone means exactly +00:00; otherwise "GMT±HH:MM" or "GMT±HH:MM:SS".
-  const match = /^GMT([+-])(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(name);
-  if (match === null) {
-    return 0;
-  }
-  const [, sign, hours = "0", minutes = "0", seconds = "0"] = match;
-  const magnitude =
-    Number(hours) * MS_PER_HOUR + Number(minutes) * MS_PER_MINUTE + Number(seconds) * MS_PER_SECOND;
+  // "…, GMT+01:00": the zone's name ends the text. "GMT" alone means exactly
+  // +00:00; otherwise "GMT±HH:MM" or "GMT±HH:MM:SS".
+  const [, sign, hours = 0, minutes = 0, seconds = 0] = / GMT([+-])(\d\d):(\d\d)(?::(\d\d))?$/.exec(offsetFormatterFor(timeZone).format(Math.min(Math.max(t, -8.64e15), 8.64e15))) ?? [];
+  const magnitude = ((+hours * 60 + +minutes) * 60 + +seconds) * MS_PER_SECOND;
   return sign === "-" ? -magnitude : magnitude;
 }
 
@@ -206,23 +207,23 @@ export function toCalendarParts(
  * does not exist (inside a spring-forward gap) is read with the offset from
  * before the gap, so it lands as far past the gap as it was into it: 02:30 on
  * the night New York springs forward is 03:30 EDT, and so is it in Budapest
- * (Temporal's "compatible"). West of Greenwich the second pass alone went
- * back an hour instead — to 01:30, or for a midnight gap to the day before.
+ * (Temporal's "compatible"). A time that happens twice (the hour the clocks
+ * go back) is the first of the two, east and west alike.
  */
 export function fromCalendarParts(
   parts: CalendarParts,
   timeZone: string = DEFAULT_TIME_ZONE,
 ): TimeMs {
   const asUtc = instantFromUtcParts(parts);
-  const first = asUtc - zoneOffsetMs(asUtc, timeZone);
-  const offset = zoneOffsetMs(first, timeZone);
-  const second = asUtc - offset;
-  // Neither candidate reads back as this wall clock: a gap, and the later one
-  // is the one with the earlier offset.
-  return first !== second && zoneOffsetMs(second, timeZone) !== offset ? Math.max(first, second) : second;
+  // The offsets a day before and a day after: no zone changes twice in two days.
+  const early = asUtc - zoneOffsetMs(asUtc - MS_PER_DAY, timeZone);
+  const late = asUtc - zoneOffsetMs(asUtc + MS_PER_DAY, timeZone);
+  const reads = (t: TimeMs): boolean => t + zoneOffsetMs(t, timeZone) === asUtc;
+  // Both read back: the earlier. Neither: a gap, crossed with the offset from before it.
+  return reads(early) && reads(late) ? Math.min(early, late) : reads(late) ? late : early;
 }
 
-function floorToMultiple(value: number, step: number): number {
+export function floorToMultiple(value: number, step: number): number {
   return Math.floor(value / step) * step;
 }
 

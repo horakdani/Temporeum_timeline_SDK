@@ -38,6 +38,38 @@ import { createPortal, flushSync } from "react-dom";
 
 export type { TimelineComponentConfig, TimelineConfig, TimelineSnapshot } from "@temporeum/timeline-element";
 /** The element's plugin registry, from the adapter too: an app that installs only the adapter still registers the plugins its configuration needs. */
+// The data and the event payloads, handed on: one install types an app.
+export type {
+  ClusterOpenedPayload,
+  CommandPayload,
+  DensityChangedPayload,
+  Domain,
+  Group,
+  GroupMovedPayload,
+  GroupToggledPayload,
+  HoverPayload,
+  InputSkippedPayload,
+  Item,
+  ItemEventPayload,
+  ItemMovedPayload,
+  ItemResizedPayload,
+  ItemsAddedPayload,
+  ItemsChangedPayload,
+  ItemsRemovedPayload,
+  JumpRequestPayload,
+  Lane,
+  LayoutChangedPayload,
+  OrientationChangedPayload,
+  SelectionChangedPayload,
+  SlotsChangedPayload,
+  TimeBar,
+  TimeBarMovedPayload,
+  TimelineInstanceEventMap,
+  TimelineInstanceEventName,
+  TimeMs,
+  TimeRange,
+  ViewportChangedPayload,
+} from "@temporeum/timeline-element";
 export { hasPlugin, registerPlugin } from "@temporeum/timeline-element";
 export type { PluginName, TimelinePlugin } from "@temporeum/timeline-element";
 export type { TimelineInstance };
@@ -58,24 +90,24 @@ export type TimelineHandlers<T = unknown> = {
  * `zoomTo` and `select` do.
  */
 export interface TimelineProps<T = unknown> extends TimelineComponentConfig<T>, TimelineHandlers<T> {
-  readonly className?: string;
-  readonly style?: CSSProperties;
+  readonly className?: string | undefined;
+  readonly style?: CSSProperties | undefined;
   /** The box's `id`; `data-*`, `aria-*`, `role` and `title` go on the box too. */
-  readonly id?: string;
-  readonly role?: string;
-  readonly title?: string;
+  readonly id?: string | undefined;
+  readonly role?: string | undefined;
+  readonly title?: string | undefined;
   readonly [attribute: `data-${string}`]: string | number | boolean | undefined;
   readonly [attribute: `aria-${string}`]: string | number | boolean | undefined;
   /** The box. */
-  readonly ref?: Ref<HTMLDivElement>;
+  readonly ref?: Ref<HTMLDivElement> | undefined;
   /** Width the server draws at; the client redraws at the real one. */
-  readonly ssrWidth?: number;
+  readonly ssrWidth?: number | undefined;
   /**
    * Receives the live instance after mount, and `null` on unmount. A state
    * setter works: `timelineRef={setTimeline}` then
    * `useTimelineState(timeline, …)`.
    */
-  readonly timelineRef?: Ref<TimelineInstance<T> | null>;
+  readonly timelineRef?: Ref<TimelineInstance<T> | null> | undefined;
   /**
    * Each item's content as React: rendered into the box over the item
    * (`slots`), by a portal, so it keeps its state and context while the
@@ -84,7 +116,7 @@ export interface TimelineProps<T = unknown> extends TimelineComponentConfig<T>, 
    * the pointer and the keyboard act on the item, and the item's `label`
    * stays its accessible name. Needs the `/items` plugin, as `template` does.
    */
-  readonly renderItem?: (item: Item<T>) => ReactNode;
+  readonly renderItem?: ((item: Item<T>) => ReactNode) | undefined;
 }
 
 /** An item, as the element's types name it (the adapter depends on the element alone). */

@@ -38,7 +38,7 @@
  * address names the slide, so a link opens on it.
  */
 
-import { DARK_THEME, LIGHT_THEME, resolveTheme, toTimeMs } from "@temporeum/timeline-core";
+import { DARK_THEME, LIGHT_THEME, resolveSpan, resolveTheme, toTimeMs } from "@temporeum/timeline-core";
 import type { Item, Theme, ThemeSetting } from "@temporeum/timeline-core";
 import { storyDateText, storyMedia } from "@temporeum/timeline-core/story";
 import type { StoryData, StoryMedia, StoryMediaSource, StorySlide } from "@temporeum/timeline-core/story";
@@ -72,7 +72,7 @@ export interface StoryStrings {
 }
 
 /** The panel's English words. */
-export const STORY_STRINGS: StoryStrings = {
+export const STORY_STRINGS: StoryStrings = Object.freeze({
   story: "Story",
   previous: "Previous",
   next: "Next",
@@ -82,7 +82,7 @@ export const STORY_STRINGS: StoryStrings = {
   loadPlayer: "Load the {provider} player",
   playerFrom: "It is loaded from {host} when you ask for it.",
   openMedia: "Open on {host}",
-};
+});
 
 /** How a story panel is set up. */
 export interface StoryOptions<T = unknown> {
@@ -116,8 +116,6 @@ export interface StoryOptions<T = unknown> {
   readonly timeZone?: string;
   readonly strings?: Partial<StoryStrings>;
   readonly theme?: ThemeSetting;
-  /** Called after every change of slide, whoever made it. */
-  readonly onChange?: (change: StoryChange<T>) => void;
   /**
    * The Trusted Types policy the slides' HTML is parsed through, inertly, for
    * a page whose `trusted-types` directive does not list the element's own,
@@ -137,8 +135,14 @@ export interface StoryChange<T = unknown> {
   readonly source: "panel" | "timeline" | "hash";
 }
 
+/** The events of a story panel. */
+export interface StoryEventMap<T = unknown> {
+  /** After every change of slide, whoever made it — the opening slide too. */
+  readonly slideChanged: StoryChange<T>;
+}
+
 /** A mounted story panel. */
-export interface Story {
+export interface Story<T = unknown> {
   /** The slide shown: 0 is the first, the title slide when there is one. */
   readonly index: number;
   /** The item shown; `null` on the title slide. */
@@ -146,8 +150,12 @@ export interface Story {
   readonly count: number;
   /** Go to a slide by its index or its item's id. `false` when there is no such slide. */
   go(target: number | string): boolean;
+  /** The next slide. `false` on the last. */
   next(): boolean;
+  /** The slide before. `false` on the first. */
   previous(): boolean;
+  /** Listen to an event; the function returned stops listening. */
+  on<K extends keyof StoryEventMap<T>>(event: K, handler: (payload: StoryEventMap<T>[K]) => void): () => void;
   destroy(): void;
 }
 
@@ -192,8 +200,14 @@ export interface StoryHtmlOptions {
 export function storyHtml(doc: Document, html: string, options: StoryHtmlOptions = {}): DocumentFragment {
   const inline = options.inline === true;
   const template = doc.createElement("template");
-  // An inert parse: a template's content runs nothing.
-  template.innerHTML = trustedHtml(doc.defaultView, html, options.trustedTypesPolicy);
+  // An inert parse: a template's content runs nothing. Its `on…` attributes
+  // are renamed first: nothing would run either way, but every parse the
+  // browser offers reports each handler to the page's script-src-attr, and
+  // whoever writes the slides could fill its report endpoint (R79). No
+  // attribute of the source but href, title and datetime is copied, so the
+  // name does not matter after.
+  const renamed = html.replace(/<[a-z](?:[^>"']|"[^"]*"|'[^']*')*/gi, (tag) => tag.replace(/("[^"]*"|'[^']*')|([\s/])on/gi, (_all, quoted: string | undefined, before: string) => quoted ?? `${before}x-on`));
+  template.innerHTML = trustedHtml(doc.defaultView, renamed, options.trustedTypesPolicy);
   const out = doc.createDocumentFragment();
   const copy = (from: Node, to: Node): void => {
     for (const node of from.childNodes) {
@@ -296,7 +310,7 @@ function defaultSlide<T>(item: Item<T>): StorySlide | undefined {
  * Mount a story panel in `container`, telling the slides of `timeline`'s
  * items one at a time and moving the timeline with it.
  */
-export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, options: StoryOptions<T> = {}): Story {
+export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, options: StoryOptions<T> = {}): Story<T> {
   const doc = container.ownerDocument;
   const win = doc.defaultView;
   const words: StoryStrings = { ...STORY_STRINGS, ...options.strings };
@@ -351,6 +365,7 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
   let entries: Entry[] = [];
   let index = 0;
   let destroyed = false;
+  const listeners = new Set<(change: StoryChange<T>) => void>();
   let ignoreSelection = false;
 
   function order(): void {
@@ -524,15 +539,25 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
     slideBox.scrollTop = 0;
   }
 
+  /**
+   * What an item covers as it is drawn: an item known to the year covers its
+   * year, not the instant its stored dates name (R41). The laid-out span when
+   * the timeline drew it, in the timeline's own zone; an open end is its start.
+   */
+  function drawnSpan(item: Item<T>): readonly [number, number] {
+    const span = timeline.result?.layout.items.find((each) => each.item.id === item.id)?.span ?? resolveSpan(item, options.timeZone);
+    return [span.start, span.open ? span.start : span.end];
+  }
+
   /** The story's whole span, for the title slide. */
   function extent(): readonly [number, number] | undefined {
     let low = Infinity;
     let high = -Infinity;
     for (const entry of entries) {
       if (entry.item === undefined) continue;
-      const start = toTimeMs(entry.item.start);
+      const [start, end] = drawnSpan(entry.item);
       low = Math.min(low, start);
-      high = Math.max(high, entry.item.end === undefined ? start : toTimeMs(entry.item.end));
+      high = Math.max(high, end);
     }
     return low <= high ? [low, high] : undefined;
   }
@@ -548,8 +573,7 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
       return;
     }
     const item = entry.item;
-    const start = toTimeMs(item.start);
-    const end = item.end === undefined ? start : toTimeMs(item.end);
+    const [start, end] = drawnSpan(item);
     const [low, high] = timeline.getSnapshot().domain;
     const width = high - low;
     if (end - start > width * 0.8) {
@@ -593,7 +617,8 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
       said.textContent = fill(words.changed, { index: at + (titled ? 0 : 1), count: entries.length - (titled ? 1 : 0), slide: what });
       if (titled && at === 0) said.textContent = what === "" ? words.titlePosition : `${words.titlePosition}: ${what}`;
     }
-    options.onChange?.({ index: at, id: entry.item?.id ?? null, item: entry.item, slide: entry.slide, source });
+    const change: StoryChange<T> = { index: at, id: entry.item?.id ?? null, item: entry.item, slide: entry.slide, source };
+    for (const handler of listeners) handler(change);
     return true;
   }
 
@@ -704,7 +729,10 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
           stopWaiting = undefined;
           opened();
         });
-      } else opened();
+      } else {
+        // Already drawn: still after the caller's `on`, so the opening slide is heard.
+        queueMicrotask(opened);
+      }
     }
   }
 
@@ -724,6 +752,10 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
     },
     next: () => step(1),
     previous: () => step(-1),
+    on(_event, handler) {
+      listeners.add(handler);
+      return () => listeners.delete(handler);
+    },
     destroy() {
       if (destroyed) return;
       destroyed = true;

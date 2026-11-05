@@ -18,6 +18,8 @@ const PORT = Number(process.env.TL_E2E_PORT ?? 41737);
  * the phone and the tablet by touch, the desktop with a mouse.
  */
 export default defineConfig({
+  // A stray test.only would quietly run one test and call the suite green.
+  forbidOnly: true,
   testDir: "./e2e",
   testMatch: "responsive.spec.ts",
   workers: 1,

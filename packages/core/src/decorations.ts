@@ -21,7 +21,7 @@
 
 import { toCalendarParts, zoneOffsetMs } from "./calendar.js";
 import type { DensityMetrics } from "./density.js";
-import { lineAttrs, polygonPoints, rectAttrs, textNode } from "./draw.js";
+import { lineAttrs, polygonPoints, rectAttrs, textNode, withClass } from "./draw.js";
 import type { Projector } from "./geometry.js";
 import type { SceneElement } from "./scene.js";
 import type { TimeScale } from "./scale.js";
@@ -154,10 +154,6 @@ function clampMain(main: number, scale: TimeScale): number {
 function laneArea(ctx: DecorationContext): { cross: number; crossSize: number } {
   const cross = ctx.metrics.axisSize;
   return { cross, crossSize: Math.max(ctx.crossSize - cross, 0) };
-}
-
-function withClass(base: string, extra: string | undefined): string {
-  return extra === undefined ? base : `${base} ${extra}`;
 }
 
 /**

@@ -64,3 +64,17 @@ test("a link to a page that does not exist fails the build", async () => {
   writeFileSync(index, `${readFileSync(index, "utf8")}\nSee [nothing](nowhere.md).\n`);
   await assert.rejects(buildSite({ docsDir: dir, outDir: join(dir, "dist") }), /links to nowhere\.md, which is not a page/);
 });
+
+test("the home page's title says the name once, every page has the icon, and the UMD globals are all named (R86)", async () => {
+  const out = join(scratch, "out-r86");
+  await buildSite({ outDir: out });
+  const home = readFileSync(join(out, "index.html"), "utf8");
+  assert.match(home, /<title>Temporeum Timeline<\/title>/);
+  assert.match(readFileSync(join(out, "stability.html"), "utf8"), /<title>Stability — Temporeum Timeline<\/title>/);
+  assert.match(home, /<link rel="icon" href="assets\/favicon\.svg" type="image\/svg\+xml">/);
+  assert.ok(existsSync(join(out, "assets", "favicon.svg")));
+  // entry-points.md named 6 of the 15 globals.
+  const entries = JSON.parse(readFileSync(join(docs, "..", "core", "entries.json"), "utf8")).entries;
+  const page = readFileSync(join(docs, "site", "pages", "reference", "entry-points.md"), "utf8");
+  for (const entry of entries) assert.ok(page.includes(`\`${entry.umd}\``), entry.umd);
+});

@@ -10,6 +10,7 @@
  * not dropped silently: it is a warning, with the option's name.
  */
 
+import { decodeEntities } from "../shared/entities.js";
 import type { Group } from "../groups/index.js";
 import type { DomainLimits, EditingOptions, InteractionOptions, Item, ItemKind, Lane, PackMode, TimeMs } from "../types.js";
 import { parseVisTime, runtimeTimeZone } from "./time.js";
@@ -125,16 +126,12 @@ export function visText(content: VisItem["content"] | VisGroup["content"]): stri
   if (content === null || content === undefined) return "";
   if (typeof content !== "string") return String(content.textContent ?? "").trim();
   if (!MARKUP.test(content)) return content;
-  return withoutBlocks(withoutBlocks(content, "script"), "style")
-    .replace(/<br\s*\/?>/gi, " ")
-    // A tag does not hold a `<`: an unclosed one is text, read once.
-    .replace(/<[^<>]*>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, "&")
+  return decodeEntities(
+    withoutBlocks(withoutBlocks(content, "script"), "style")
+      .replace(/<br\s*\/?>/gi, " ")
+      // A tag does not hold a `<`: an unclosed one is text, read once.
+      .replace(/<[^<>]*>/g, ""),
+  )
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -281,6 +278,8 @@ export function fromVis<T extends VisItem = VisItem>(
   const converted: Item<T>[] = [];
   const selectable = options.selectable !== false;
   const editable = options.editable;
+  const held: Record<string, unknown>[] = [];
+  const optIn: Record<string, unknown>[] = [];
   const editDefaults = typeof editable === "object" && editable !== null ? (editable as Record<string, unknown>) : { add: editable === true, updateTime: editable === true, updateGroup: editable === true, remove: editable === true };
   for (const [index, raw] of rows(items).entries()) {
     const where = `items[${String(index)}]`;
@@ -336,7 +335,9 @@ export function fromVis<T extends VisItem = VisItem>(
         item.resizable = false;
       }
       if (rights.remove !== true) item.removable = false;
-    }
+    } else held.push(item);
+    // vis-timeline lets an item opt in on a timeline that is not editable.
+    if (raw.editable !== undefined && (rights.updateTime === true || rights.updateGroup === true || rights.remove === true)) optIn.push(rights);
     for (const key of ["subgroup", "style", "align", "limitSize"]) {
       if (raw[key] !== undefined) warn(`${where}.${key}`, key === "subgroup" ? "Rows inside a group's rows are not supported; nest a group instead." : key === "style" ? "Use `className` and a stylesheet." : "Not supported.");
     }
@@ -388,7 +389,16 @@ export function fromVis<T extends VisItem = VisItem>(
   if (options.moveable === false) interactions.pan = false;
   if (options.zoomable === false) interactions.zoom = false;
   if (Object.keys(interactions).length > 0) config.interactions = interactions;
-  if (editable !== undefined && editable !== false) {
+  if ((editable === undefined || editable === false) && optIn.length > 0) {
+    // Here no item moves while the timeline's editing is off: it is turned on
+    // for the items that opted in, and the rest are held still, as they were.
+    for (const item of held) Object.assign(item, { movable: false, resizable: false, removable: false });
+    const editing: Record<string, unknown> = { enabled: true };
+    if (optIn.some((rights) => rights.updateGroup === true)) editing.crossLane = true;
+    if (optIn.some((rights) => rights.remove === true)) editing.remove = true;
+    if (options.multiselect === true) editing.multiSelect = true;
+    config.editing = editing;
+  } else if (editable !== undefined && editable !== false) {
     const rights = editDefaults;
     const editing: Record<string, unknown> = { enabled: rights.updateTime === true || rights.updateGroup === true || rights.add === true || rights.remove === true };
     if (rights.updateGroup === true) editing.crossLane = true;

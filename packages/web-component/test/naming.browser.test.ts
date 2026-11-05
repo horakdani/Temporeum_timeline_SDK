@@ -1,9 +1,14 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { createCommand } from "@temporeum/timeline-core";
 
 import { createTimeline, defineTimelineElement, TIMELINE_EVENTS } from "../src/index.js";
 import type { TemporeumTimelineElement, Timeline } from "../src/index.js";
+import type { CalendarView, CalendarViewEventMap, CalendarViewOptions } from "../src/calendar.js";
+import type { TaskGrid, TaskGridOptions } from "../src/gantt.js";
+import type { Backlog, BacklogOptions } from "../src/resources.js";
+import { mountStory } from "../src/story.js";
+import type { Story, StoryChange, StoryEventMap, StoryOptions } from "../src/story.js";
 
 /**
  * The naming rule of the 1.0 API, as the code has
@@ -105,5 +110,76 @@ describe("update({ items }) and setItems: one meaning each", () => {
     timeline.setItems(items);
     expect(timeline.items.find((item) => item.id === "a")?.start, "setItems with the same array replaces it").toBe(T0);
     timeline.destroy();
+  });
+});
+
+describe("the handles' verbs (R22)", () => {
+  it("update takes options, next and previous say whether they moved, and events come through on", () => {
+    expectTypeOf<Parameters<CalendarView["update"]>[0]>().toEqualTypeOf<Partial<CalendarViewOptions>>();
+    expectTypeOf<Parameters<TaskGrid["update"]>[0]>().toEqualTypeOf<Partial<TaskGridOptions> | undefined>();
+    expectTypeOf<Parameters<Backlog["update"]>[0]>().toEqualTypeOf<Partial<BacklogOptions>>();
+    expectTypeOf<CalendarView["next"]>().toEqualTypeOf<Story["next"]>();
+    expectTypeOf<CalendarView["previous"]>().toEqualTypeOf<Story["previous"]>();
+    // A change in the past tense, a signal in the present — as on the instance.
+    expectTypeOf<keyof CalendarViewEventMap>().toEqualTypeOf<"itemSelect" | "rangeChanged">();
+    expectTypeOf<keyof StoryEventMap>().toEqualTypeOf<"slideChanged">();
+    expectTypeOf<StoryOptions>().not.toHaveProperty("onChange");
+  });
+
+  it("a story mounted on a drawn timeline still tells its first listener the opening slide", async () => {
+    const { element, timeline } = mount();
+    await vi.waitFor(() => expect(timeline.getSnapshot().viewport).toBeDefined());
+    const panel = document.createElement("div");
+    element.after(panel);
+    const story = mountStory(panel, timeline, { slide: (item) => ({ headline: item.label ?? item.id }), start: "b" });
+    const heard: StoryChange[] = [];
+    story.on("slideChanged", (change) => heard.push(change));
+    await vi.waitFor(() => expect(heard.map(({ id, source }) => `${String(id)}:${source}`)).toEqual(["b:panel"]));
+    const stop = story.on("slideChanged", () => {
+      throw new Error("stopped listening");
+    });
+    stop();
+    expect(story.previous()).toBe(true);
+    expect(story.previous()).toBe(false);
+    expect(heard.map(({ id }) => id)).toEqual(["b", "a"]);
+    story.destroy();
+    timeline.destroy();
+  });
+});
+
+describe("a destroyed instance (R53) and a flag that says what it means (R44)", () => {
+  it("does nothing and says nothing after destroy, and its getters read the last frame", async () => {
+    const { timeline } = mount();
+    await vi.waitFor(() => expect(timeline.layout).toBeDefined());
+    const heard: string[] = [];
+    for (const name of TIMELINE_EVENTS) timeline.on(name, () => heard.push(name));
+    const before = timeline.getSnapshot();
+    const items = timeline.items;
+    timeline.destroy();
+    timeline.select(["a"]);
+    timeline.zoomTo([T0, T0 + DAY]);
+    timeline.zoomBy(2);
+    timeline.scrollTo(T0 + 3 * DAY);
+    timeline.scrollLanes(40);
+    timeline.revealLane("x");
+    timeline.follow();
+    timeline.addItems([{ id: "c", start: T0 }]);
+    timeline.updateItems([{ id: "a", label: "Renamed" }]);
+    timeline.removeItems(["b"]);
+    timeline.changeItems({ add: [{ id: "d", start: T0 }] });
+    timeline.applyCommand(createCommand("move", [{ id: "a", start: T0 }], [{ id: "a", start: T0 + DAY }]));
+    timeline.toggleGroup("a", { collapsed: true });
+    timeline.update({ items: [] });
+    timeline.setItems([]);
+    timeline.flush();
+    expect(timeline.focusItem("a")).toBe(false);
+    expect(timeline.dropItem({ label: "New", start: T0, durationMs: DAY })).toBe(false);
+    expect(timeline.dropItemAt({ label: "New", durationMs: DAY }, { clientX: 10, clientY: 10 })).toBe(false);
+    expect(timeline.zoomToPreset("day")).toBe(false);
+    await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+    expect(heard).toEqual([]);
+    expect(timeline.getSnapshot()).toBe(before);
+    expect(timeline.items).toBe(items);
+    expect(timeline.exportSvg()).toContain("<svg");
   });
 });

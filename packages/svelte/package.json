@@ -49,6 +49,7 @@
     "node": ">=22.12.0"
   },
   "dependencies": {
+    "@temporeum/timeline-core": "^1.0.0",
     "@temporeum/timeline-element": "^1.0.0"
   },
   "peerDependencies": {

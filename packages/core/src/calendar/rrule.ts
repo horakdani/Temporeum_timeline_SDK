@@ -96,6 +96,13 @@ export interface OccurrenceRange {
   readonly from?: TimeInput;
   readonly to?: TimeInput;
   readonly limit?: number;
+  /**
+   * Called, once, when the expansion was cut: more than `limit` occurrences,
+   * or a rule that would take too long to search — one that matches rarely
+   * or never, or a `COUNT` counted from long before the range. Such a search
+   * stops after a million days (or sub-daily steps) looked at.
+   */
+  readonly onLimit?: () => void;
 }
 
 const SECOND = 1000;
@@ -107,6 +114,13 @@ export const WEEKDAYS: readonly Weekday[] = ["MO", "TU", "WE", "TH", "FR", "SA",
 const FREQUENCIES: readonly Frequency[] = ["SECONDLY", "MINUTELY", "HOURLY", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"];
 /** Wall clocks past this year are not searched: a rule that never matches ends here. */
 const LAST_YEAR = 9999;
+/** How many days (or sub-daily steps) one expansion may look at. */
+const WORK = 1_000_000;
+let work = 0;
+/** How much the last expansion looked at: a caller's budget across many. */
+export const workSpent = (): number => work;
+/** Thrown out of the search when it has looked at enough. */
+const SPENT = {};
 
 // --- wall-clock arithmetic ------------------------------------------------------
 
@@ -258,7 +272,7 @@ export function formatWall(wall: number, date = false): string {
 
 const isWallTime = (value: unknown): value is WallTime => typeof value === "object" && value !== null && !(value instanceof Date);
 
-/** A rule as RFC text, without the `RRULE:` name, in a fixed order. */
+/** A rule as RFC text, without the `RRULE:` name, in a fixed order. A `SyntaxError` for a rule its text could not say: a control character in a field, a value out of range. */
 export function formatRRule(rule: RecurrenceRule): string {
   const parts = [`FREQ=${rule.freq}`];
   const list = (key: string, values: readonly (number | string)[] | undefined): void => {
@@ -286,7 +300,14 @@ export function formatRRule(rule: RecurrenceRule): string {
   list("BYSECOND", rule.bySecond);
   list("BYSETPOS", rule.bySetPos);
   if (rule.wkst !== undefined && rule.wkst !== "MO") parts.push(`WKST=${rule.wkst}`);
-  return parts.join(";");
+  const text = parts.join(";");
+  // A rule given as an object is held to what its text could say: no line
+  // break or other control character (it would start a line of its own in a
+  // calendar file), and nothing `parseRRule` would refuse (R75).
+  // eslint-disable-next-line no-control-regex -- the control characters are what it is about
+  if (/[\0-\x1f\x7f]/.test(text)) throw new SyntaxError(`RRULE: ${JSON.stringify(text)} holds a control character`);
+  parseRRule(text);
+  return text;
 }
 
 // --- expansion ------------------------------------------------------------------
@@ -390,6 +411,7 @@ function inWeeks(day: number, year: number, weeks: readonly number[], wkst: numb
 
 /** Whether a day passes every day-level part of the plan. */
 function dayPasses(plan: Plan, day: number): boolean {
+  if (++work > WORK) throw SPENT;
   const date = new Date(day * DAY);
   const year = date.getUTCFullYear();
   const month = date.getUTCMonth() + 1;
@@ -440,7 +462,7 @@ function periodCandidates(plan: Plan, firstDay: number, days: number, fixed: rea
  * The periods of a plan, from the one containing the start: each is a run of
  * days and the hour, minute and second it fixes (sub-daily frequencies).
  */
-function* periods(plan: Plan, start: number, fromWall: number | undefined): Generator<readonly [number, number, readonly number[], number]> {
+function* periods(plan: Plan, start: number, fromWall: number | undefined, toWall: number): Generator<readonly [number, number, readonly number[], number]> {
   const startDay = Math.floor(start / DAY);
   const s = new Date(start);
   const year0 = s.getUTCFullYear();
@@ -489,14 +511,28 @@ function* periods(plan: Plan, start: number, fromWall: number | undefined): Gene
       const end = wallMs(LAST_YEAR + 1, 1, 1);
       for (;;) {
         const at = (base + p * step) * unit;
-        if (at >= end) return;
+        // Skipping yields nothing, so the range's end is looked at here too.
+        if (at >= end || at > toWall) return;
         const day = Math.floor(at / DAY);
-        if (plan.freq < F_DAILY && !dayPasses(plan, day)) {
-          // Nothing in this day can pass: jump to the first period of the next.
-          p = Math.max(p + 1, Math.ceil(((day + 1) * DAY / unit - base) / step));
+        const d = new Date(at);
+        // The next wall clock that can pass: past this day when the day cannot,
+        // else past an hour, minute or second the rule does not allow — to the
+        // next one it does, so BYHOUR=9 is one step a day, not 86 400.
+        let next = plan.freq < F_DAILY && !dayPasses(plan, day) ? (day + 1) * DAY : undefined;
+        const levels = [
+          [plan.hours, d.getUTCHours(), HOUR, day * DAY, DAY],
+          [plan.minutes, d.getUTCMinutes(), MINUTE, at - (at % HOUR), HOUR],
+          [plan.seconds, d.getUTCSeconds(), SECOND, at - (at % MINUTE), MINUTE],
+        ] as const;
+        for (const [allowed, value, size, outer, outerSize] of levels.slice(0, F_DAILY - plan.freq)) {
+          if (next !== undefined || allowed === undefined || allowed.includes(value)) continue;
+          const later = allowed.find((each) => each > value) ?? Infinity;
+          next = outer + Math.min(later * size, outerSize);
+        }
+        if (next !== undefined) {
+          p = Math.max(p + 1, Math.ceil((next / unit - base) / step));
           continue;
         }
-        const d = new Date(at);
         const fixed = plan.freq === F_DAILY ? [] : plan.freq === F_HOURLY ? [d.getUTCHours()] : plan.freq === F_MINUTELY ? [d.getUTCHours(), d.getUTCMinutes()] : [d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds()];
         yield [day, 1, fixed, at];
         p += 1;
@@ -527,8 +563,10 @@ export function occurrences(recurrence: Recurrence, range: OccurrenceRange = {})
   };
   take(startInstant);
   for (const extra of recurrence.rdates ?? []) take(toTimeMs(extra));
+  let cut = false;
 
-  if (rule !== undefined) {
+  // BYSECOND=60 alone names a leap second, which no wall clock here has.
+  if (rule !== undefined && rule.bySecond?.every((second) => second > 59) !== true) {
     if (rule.count === undefined && rule.until === undefined && to === Infinity && limit === Infinity) {
       throw new RangeError("An unbounded recurrence needs a range end (`to`) or a `limit`");
     }
@@ -542,26 +580,34 @@ export function occurrences(recurrence: Recurrence, range: OccurrenceRange = {})
     // Whether the rule's own occurrences are past the range: with a limit,
     // once enough of them are in it.
     let inRange = 0;
-    outer: for (const [firstDay, days, fixed, periodStart] of periods(plan, start, from === -Infinity ? undefined : wallOf(from, zone))) {
-      if (periodStart > toWall) break;
-      for (const wall of periodCandidates(plan, firstDay, days, fixed)) {
-        if (wall <= start) continue;
-        if (plan.untilWall !== undefined && wall > plan.untilWall) break outer;
-        const t = instantOf(wall, zone);
-        if (t <= startInstant || seen.has(t)) continue;
-        seen.add(t);
-        if (plan.untilInstant !== undefined && t > plan.untilInstant) break outer;
-        if (plan.count !== undefined && counted >= plan.count) break outer;
-        counted += 1;
-        if (t >= to) break outer;
-        if (t >= from) {
-          take(t);
-          inRange += 1;
-          if (inRange > limit) break outer;
+    work = 0;
+    try {
+      outer: for (const [firstDay, days, fixed, periodStart] of periods(plan, start, from === -Infinity ? undefined : wallOf(from, zone), toWall)) {
+        if (periodStart > toWall) break;
+        for (const wall of periodCandidates(plan, firstDay, days, fixed)) {
+          if (wall <= start) continue;
+          if (plan.untilWall !== undefined && wall > plan.untilWall) break outer;
+          const t = instantOf(wall, zone);
+          if (t <= startInstant || seen.has(t)) continue;
+          seen.add(t);
+          if (plan.untilInstant !== undefined && t > plan.untilInstant) break outer;
+          if (plan.count !== undefined && counted >= plan.count) break outer;
+          counted += 1;
+          if (t >= to) break outer;
+          if (t >= from) {
+            take(t);
+            // An excluded start is not given, so it does not count toward the limit.
+            if (!excluded.has(t)) inRange += 1;
+            if (inRange > limit) break outer;
+          }
         }
       }
+    } catch (error) {
+      if (error !== SPENT) throw error;
+      cut = true;
     }
   }
   const sorted = [...found].sort((a, b) => a - b);
+  if (cut || sorted.length > limit) range.onLimit?.();
   return sorted.length > limit ? sorted.slice(0, limit) : sorted;
 }

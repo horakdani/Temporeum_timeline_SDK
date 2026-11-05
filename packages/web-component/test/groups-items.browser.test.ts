@@ -71,6 +71,16 @@ describe("the group tree", () => {
     expect(headers(element).filter((node) => node.tabIndex === 0)).toHaveLength(1);
   });
 
+  it("draws a chain of groups as deep as the host likes (R28)", async () => {
+    // 12 000 levels left the element empty: the walk ran out of call stack.
+    const depth = 12_000;
+    const chain: Group[] = Array.from({ length: depth }, (_, at) => ({ id: `g${String(at)}`, label: `G${String(at)}`, ...(at > 0 ? { parentId: `g${String(at - 1)}` } : {}) }));
+    const { element, timeline } = await mount({ items: [{ id: "deep", start: T0 + DAY, end: T0 + 3 * DAY, laneId: `g${String(depth - 1)}`, label: "Deep" }], groups: chain });
+    expect(timeline.layout?.lanes.length).toBeGreaterThan(depth);
+    expect(headers(element)[0]?.getAttribute("aria-level")).toBe("1");
+    expect(element.querySelector("[role=tree]")).not.toBeNull();
+  });
+
   it("a click collapses a group: its descendants leave the drawing; a second click brings the same layout back", async () => {
     const { element, timeline } = await mount({ items, groups });
     const before = JSON.stringify(timeline.layout);
@@ -107,6 +117,22 @@ describe("the group tree", () => {
     expect(options(element)).not.toContain("a");
     // The tree's keys never reach the timeline's own: no view change.
     expect(timeline.getSnapshot().domain).toEqual(domain);
+  });
+
+  it("groups written anew with the same content keep the reader's order; new content replaces it (R85)", async () => {
+    // A framework hands its props again on every render: an inline `groups`
+    // array was a new list, and the reorder was gone.
+    const { element, timeline } = await mount({ items, groups });
+    (headers(element)[1] as HTMLElement).focus();
+    await userEvent.keyboard("{Alt>}{ArrowDown}{/Alt}");
+    timeline.flush();
+    expect(headers(element).map((node) => node.dataset.tlGroup)).toEqual(["team", "bob", "ann", "ops"]);
+    timeline.update({ groups: groups.map((group) => ({ ...group })) });
+    timeline.flush();
+    expect(headers(element).map((node) => node.dataset.tlGroup)).toEqual(["team", "bob", "ann", "ops"]);
+    timeline.update({ groups: groups.filter((group) => group.id !== "ops") });
+    timeline.flush();
+    expect(headers(element).map((node) => node.dataset.tlGroup)).toEqual(["team", "ann", "bob"]);
   });
 
   it("a header dragged past its sibling reorders the groups", async () => {
@@ -263,6 +289,14 @@ describe("the group tree at its edges", () => {
     expect(solo.textContent).toContain("solo");
   });
 
+  it("keeps a group's own classes and leaves out the timeline's (R82)", async () => {
+    // A `tl-groups` on a header had a press on it taken for the tree's own.
+    const { element } = await mount({ items, groups: [{ id: "solo", className: "hot tl-groups TL-group--dragging tl" }, ...groups.slice(1)] });
+    const solo = element.querySelector('[data-tl-group="solo"]') as HTMLElement;
+    expect(solo.className).toBe("tl-group hot");
+    expect(solo.getAttribute("part")).toBe("group hot");
+  });
+
   it("a vertical header drags across, and the drag reorders", async () => {
     const { element, timeline } = await mount({ items, groups, orientation: "vertical" });
     const commands: GroupCommand[] = [];
@@ -315,7 +349,7 @@ describe("the group tree at its edges", () => {
 
   it("a groups update keeps the state of a kept group and starts a new one as it says", async () => {
     const { element, timeline } = await mount({ items, groups });
-    timeline.toggleGroup("team", true);
+    timeline.toggleGroup("team", { collapsed: true });
     timeline.flush();
     timeline.update({ groups: [...groups, { id: "new", label: "New", collapsed: true }] });
     timeline.flush();
@@ -331,7 +365,7 @@ describe("the group tree at its edges", () => {
     const events: unknown[] = [];
     timeline.on("groupToggled", (event) => events.push(event));
     timeline.toggleGroup("nobody");
-    timeline.toggleGroup("team", false);
+    timeline.toggleGroup("team", { collapsed: false });
     timeline.toggleGroup("team");
     expect(events).toHaveLength(1);
   });

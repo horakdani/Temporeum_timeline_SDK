@@ -202,6 +202,11 @@ describe("metrics", () => {
     for (const font of ["", "  ", "x}svg{display:none", "x;}.tl{fill:red", "Inter</style><script>", "a\\62 c", "Inter /* */"]) {
       expect(make({ fontFamily: font })).toThrow(/metrics\.fontFamily must be a CSS font stack/);
     }
+    // R77: an unclosed quote or parenthesis would swallow the rules after it.
+    for (const font of ['"Inter, sans-serif', "'Inter", "Inter(", 'a"b"c"']) {
+      expect(make({ fontFamily: font })).toThrow(/metrics\.fontFamily must be a CSS font stack/);
+    }
+    expect(make({ fontFamily: '"Source Sans 3", \'Inter\', sans-serif' })).not.toThrow();
     expect(make({ fontSize: "12px" as unknown as number })).toThrow(/metrics\.fontSize must be a positive number of pixels, got "12px"/);
     // A function's sizes are checked too, and an update is checked where it is made.
     expect(make(() => ({ lineHeight: -2 }))).toThrow(/metrics\.lineHeight/);

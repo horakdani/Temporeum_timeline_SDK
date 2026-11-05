@@ -79,7 +79,11 @@ describe("fromTimelineJS", () => {
     ]);
     // The finer of the two units is the item's: the span is exact in it.
     expect(mixed.items.map((item) => item.granularity)).toEqual(["day", "day", "year"]);
-    expect(spaced(storyDateText(mixed.items[1] as Item, { locale: "en-GB" }))).toBe("16 July 1969 – 31 December 1972");
+    // Each end is said to the precision the story gave it (R84): the source
+    // knew 1914 and 1972 to the year, so "1 January 1914" and "31 December
+    // 1972" were a precision it never had.
+    expect(spaced(storyDateText(mixed.items[0] as Item, { locale: "en-GB" }))).toBe("1914 – 11 November 1918");
+    expect(spaced(storyDateText(mixed.items[1] as Item, { locale: "en-GB" }))).toBe("16 July 1969 – 1972");
     expect(spaced(storyDateText(mixed.items[2] as Item, { locale: "en-GB" }))).toBe("1914 – 1918");
   });
 
@@ -112,6 +116,47 @@ describe("fromTimelineJS", () => {
   it("keeps two groups apart whose names make the same id", () => {
     const two = fromTimelineJS({ events: [{ start_date: { year: 1 }, group: "Á" }, { start_date: { year: 2 }, group: "a" }, { start_date: { year: 3 }, group: "!!" }] });
     expect(two.lanes?.map((lane) => lane.id)).toEqual(["group-a", "group-a-2", "group-group"]);
+  });
+
+  it("names 80 000 events that share an id, and 20 000 groups that share a name, in linear time (R76)", () => {
+    // The next free suffix was looked for from -2 each time, and the lane
+    // ids were gathered again for every new group: 20 000 events took 12 s.
+    const started = performance.now();
+    const shared = fromTimelineJS({ events: Array.from({ length: 80_000 }, () => ({ start_date: { year: 2000 }, unique_id: "same" })) });
+    const groups = fromTimelineJS({ events: Array.from({ length: 20_000 }, (_, n) => ({ start_date: { year: 2000 }, group: `${"!".repeat(n % 7)}G${"?".repeat(Math.floor(n / 7))}` })) });
+    expect(performance.now() - started).toBeLessThan(3_000);
+    expect(shared.items.map((item) => item.id).slice(0, 4)).toEqual(["same", "same-2", "same-3", "same-4"]);
+    expect(new Set(shared.items.map((item) => item.id)).size).toBe(80_000);
+    expect(new Set(groups.lanes?.map((lane) => lane.id)).size).toBe(groups.lanes?.length);
+    expect(groups.lanes?.slice(0, 3).map((lane) => lane.id)).toEqual(["group-g", "group-g-2", "group-g-3"]);
+  });
+
+  it("says when the media will not be shown as media: an address it cannot open, and a kind it only links (R40)", () => {
+    const story = fromTimelineJS({
+      events: [
+        { start_date: { year: 2000 }, media: { url: "javascript:alert(1)" } },
+        { start_date: { year: 2001 }, media: { url: "https://example.com/report.pdf" } },
+        { start_date: { year: 2002 }, media: { url: "https://example.com/photo.jpg" } },
+      ],
+    });
+    expect(story.warnings.map((warning) => [warning.code, warning.index])).toEqual([["media", 0], ["media", 1]]);
+    expect(story.items.map((item) => item.data?.story.media?.url)).toEqual([undefined, "https://example.com/report.pdf", "https://example.com/photo.jpg"]);
+  });
+
+  it("reads the dates as the wall clock of the zone it is given, so a year is drawn as that year there (R38)", () => {
+    const data: TimelineJSData = { events: [{ start_date: { year: 1969 }, end_date: { year: 1969, month: 7, day: 20, hour: 22 } }] };
+    const zone = "America/New_York";
+    const utc = fromTimelineJS(data).items[0] as Item;
+    const local = fromTimelineJS(data, { timeZone: zone }).items[0] as Item;
+    expect(utc.start).toBe(Date.UTC(1969, 0, 1));
+    // Midnight of 1 January 1969 in New York is 05:00 UTC; 22:00 EDT on 20 July is 02:00 UTC the next day.
+    expect(local.start).toBe(Date.UTC(1969, 0, 1, 5));
+    expect(local.end).toBe(Date.UTC(1969, 6, 21, 2));
+    // A year alone, laid out in that zone: 1969 from New York's 1 January, not 1968 as the UTC reading was.
+    const year: TimelineJSData = { events: [{ start_date: { year: 1969 } }] };
+    const span = (options: { timeZone?: string }) => layoutItems(fromTimelineJS(year, options).items, { timeZone: zone }).items[0]?.span.start;
+    expect(span({ timeZone: zone })).toBe(Date.UTC(1969, 0, 1, 5));
+    expect(span({})).toBe(Date.UTC(1968, 0, 1, 5));
   });
 
   it("makes one lane when no event has a group", () => {
@@ -214,6 +259,9 @@ describe("storyPlainText", () => {
 describe("a character reference to no character", () => {
   it("is the replacement character, as in HTML, and the import goes on", () => {
     expect(storyPlainText("a&#x110000;b&#0;c&#xD800;d&#99999999999;e&#x1F600;")).toBe("a�b�c�d�e\u{1F600}");
+    // R39: the Latin-1 names, the typographic ones and Hungarian's double acutes; an unknown name stays.
+    expect(storyPlainText("caf&eacute; &Uuml;ber &copy; &ndash; &rsquo;s &hellip; T&ouml;r&odblac;k &euro;5 &bogus;")).toBe("café Über © – ’s … Törők €5 &bogus;");
+    expect(storyPlainText("&amp;eacute;")).toBe("&eacute;");
     const story = fromTimelineJS({ events: [{ start_date: { year: 2000 }, text: { headline: "Bad &#x110000; ref" } }, { start_date: { year: 2001 }, text: { headline: "Fine" } }] });
     expect(story.items.map((item) => item.label)).toEqual(["Bad � ref", "Fine"]);
   });

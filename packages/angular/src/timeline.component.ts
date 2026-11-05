@@ -116,9 +116,10 @@ export class TimelineItemDirective<T = unknown> {
 type Payload<T, K extends TimelineInstanceEventName> = TimelineInstanceEventMap<T>[K];
 
 /**
- * `<tl-timeline>`: every `TimelineConfig` field is an input, every instance
- * event an output, and the live instance is `timeline` (and the `ready`
- * output). Server-rendered markup is hydrated, not drawn twice.
+ * `<tl-timeline>`: the configuration is one input, `config` (every
+ * `TimelineConfig` field in one object), every instance event an output, and
+ * the live instance is `timeline` (and the `ready` output). Server-rendered
+ * markup is hydrated, not drawn twice.
  */
 @Component({
   selector: "tl-timeline",
@@ -196,9 +197,8 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
 
   constructor() {
     afterNextRender(() => {
-      let applied = this.#applied ?? this.#configOf(untracked(this.#config));
-      // With an item template every item has a box, unless `slots` picks.
-      if (this.itemTemplate !== undefined && applied.slots === undefined) applied = { ...applied, slots: true };
+      // Again, now that the item template is known: the effect may have run before it was.
+      const applied = this.#clientOf(this.#configOf(untracked(this.#config)));
       this.#applied = applied;
       // Outside Angular's zone: a pointer move, a frame, a resize and the
       // clock of `rolling` are the instance's, and none of them is a reason
@@ -231,7 +231,7 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
     });
     // Hand the instance what changed, and only that: an unchanged `items` array must not look like new data.
     effect(() => {
-      const next = this.#configOf(this.#config());
+      const next = this.#clientOf(this.#configOf(this.#config()));
       untracked(() => {
         const before = this.#applied;
         this.#applied = next;
@@ -254,7 +254,7 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
     if (!this.#server) return;
     // The server's drawing, in the node the template leaves empty. (Lifecycle
     // hooks run on the server; the after-render ones do not.)
-    const config = this.#applied ?? this.#configOf(this.#config());
+    const config = this.#configOf(this.#config());
     const width = this.ssrWidth;
     const frame = renderTimelineSvg(this.#initialOf(config), width === undefined ? {} : { width });
     this.#renderer.setProperty(this.containerRef.nativeElement, "innerHTML", frame.svg + frame.groups);
@@ -280,6 +280,15 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
         drawn.view.detectChanges();
       }
     }
+  }
+
+  /**
+   * The client's configuration: with an item template every item has a box,
+   * unless `slots` picks. On every change too — added only at the first render,
+   * the next change handed the instance `slots: undefined`, and the boxes went.
+   */
+  #clientOf(config: Record<string, unknown>): Record<string, unknown> {
+    return this.itemTemplate !== undefined && config.slots === undefined ? { ...config, slots: true } : config;
   }
 
   /** The configuration the instance is handed changes of: where the view and the selection start is not one. */

@@ -228,6 +228,50 @@ describe("planSceneSpace", () => {
     expect(planSceneSpace(space, zoomed, { levels: true, budget: 3 }).budget).toBe(3);
   });
 
+  // R97: the numbers of a real wheel zoom (bench:wheel, 1.2x a notch, 8 in
+  // and 8 out) at its last notch: the space squeezed to half, the view back
+  // at its first scale but 2.5e-14 off it. The step out compared the stretch
+  // with a half exactly and did not happen, and at rest the space was
+  // anchored at the viewport — every node rewritten in one frame, 2 missed
+  // vsyncs of the perf-wheel check — although its first scale is a level.
+  it("with levels, takes a scale a hair off a level for the level — stepping out in the gesture, settling on it at rest", () => {
+    const back = { domain: [1_796_160_960_000.001, 1_825_096_320_000.0002] as const, mainSize: 1440 };
+    const squeezed: SceneSpace = {
+      origin: 1_796_160_960_000,
+      msPerPx: 10_047_000,
+      extent: [1_796_160_960_000.001, 1_825_096_320_000.0002],
+      atRest: false,
+      budget: 2,
+      rest: 20_094_000,
+    };
+    expect(squeezed.msPerPx / ((back.domain[1] - back.domain[0]) / back.mainSize)).not.toBe(0.5);
+    const stepped = planSceneSpace(squeezed, back, { levels: true });
+    expect(stepped.msPerPx).toBe(20_094_000);
+    expect(stepped.origin).toBe(squeezed.origin);
+    expect(stepped.budget).toBe(2);
+    // At rest from the squeezed space: on the level, around the same origin.
+    expect(planSceneSpace(squeezed, back, { levels: true, settle: true })).toEqual({
+      origin: 1_796_160_960_000,
+      msPerPx: 20_094_000,
+      extent: [1_796_160_960_000.001, 1_825_096_320_000.0002],
+      atRest: true,
+    });
+    // And the stepped one, at rest, is kept: there is no stretch left.
+    const settled = planSceneSpace(stepped, back, { levels: true, settle: true });
+    expect(settled.origin).toBe(stepped.origin);
+    expect(settled.msPerPx).toBe(20_094_000);
+    // Without levels there is no level to settle on: exact, at the viewport.
+    expect(planSceneSpace(squeezed, back, { settle: true }).origin).toBe(back.domain[0]);
+    // A whole power of two in, at rest, settles on its level as well.
+    const space = planSceneSpace(undefined, view, { levels: true });
+    expect(planSceneSpace(space, { domain: [T0 + 2.5 * DAY, T0 + 7.5 * DAY], mainSize: 1000 }, { levels: true, settle: true })).toEqual({
+      origin: T0,
+      msPerPx: msPerPx / 2,
+      extent: [T0 + 2.5 * DAY, T0 + 7.5 * DAY],
+      atRest: true,
+    });
+  });
+
   it("re-anchors a long pan without changing the scale", () => {
     const space = planSceneSpace(undefined, view);
     const far = planSceneSpace(space, { domain: [T0 + 2000 * DAY, T0 + 2010 * DAY], mainSize: 1000 });

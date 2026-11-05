@@ -17,7 +17,6 @@ import {
   densityMetrics,
   fitDensity,
   planSceneSpace,
-  resolveDensity,
   resolveOrientation,
   resolveTheme,
   toTimeMs,
@@ -68,7 +67,11 @@ import type {
 export interface TimelineEditingOptions<T = unknown> extends EditingOptions<T> {
   /** Let a move change the item's lane. Off by default. */
   readonly crossLane?: boolean | undefined;
-  /** Where the snap grid is anchored. The epoch by default. */
+  /**
+   * Where the snap grid is anchored. The epoch by default. A grid of whole
+   * days lies on the timeline's `timeZone` midnights all year, and the origin
+   * is read as its wall-clock time there.
+   */
   readonly snapOrigin?: TimeInput | undefined;
   /** Smallest duration a resize may squash an item to, in milliseconds. */
   readonly minDurationMs?: number | undefined;
@@ -190,7 +193,7 @@ export interface TimelineConfig<T = unknown> {
   readonly domain?: readonly [TimeInput, TimeInput] | undefined;
   /** How far the reader can pan and zoom: the earliest and latest time, the shortest and longest span. */
   readonly limits?: DomainLimits | undefined;
-  /** `"horizontal"`, `"vertical"`, or `"auto"` — vertical below `breakpoint`. Horizontal by default. */
+  /** `"horizontal"`, `"vertical"`, or `"auto"` — vertical below `breakpoint` (640 px), horizontal above it. `"auto"` by default. */
   readonly orientation?: OrientationSetting | undefined;
   /** Width below which `orientation: "auto"` turns vertical. */
   readonly breakpoint?: number | undefined;
@@ -485,8 +488,11 @@ export interface InputSkippedPayload {
   readonly message: string;
   /** The item left out, as it was given. */
   readonly item?: unknown;
-  /** The option that fell back to its default. */
-  readonly option?: "locale" | "timeZone" | "theme";
+  /**
+   * The option that fell back to its default. Any field of the configuration
+   * may be one, so a `switch` on it needs a default branch.
+   */
+  readonly option?: keyof TimelineConfig;
 }
 
 /** Where a skipped item or option is said. */
@@ -507,7 +513,8 @@ function itemProblem(item: unknown): string | undefined {
   const time = "epoch milliseconds or a Date, within ±8.64e15";
   if (!isTime(start)) return `${which} is left out: its start (${String(start)}) is not a time — ${time}`;
   if (end !== undefined && !isTime(end)) return `${which} is left out: its end (${String(end)}) is not a time — ${time}`;
-  if (sublaneSpan !== undefined && !(Number.isInteger(sublaneSpan) && sublaneSpan >= 1)) return `${which} is left out: its sublaneSpan (${String(sublaneSpan)}) is not a positive integer`;
+  // The core's cap (1000): past it, the packing would allocate a row for each sublane until the tab runs out of memory.
+  if (sublaneSpan !== undefined && !(Number.isInteger(sublaneSpan) && sublaneSpan >= 1 && sublaneSpan <= 1000)) return `${which} is left out: its sublaneSpan (${String(sublaneSpan)}) is not a whole number from 1 to 1000`;
   return undefined;
 }
 
@@ -525,10 +532,14 @@ export function readableItems<T>(items: readonly Item<T>[], report?: SkipReport)
   if (checked === undefined) {
     let kept: unknown[] | undefined;
     const skipped: InputSkippedPayload[] = [];
+    const ids = new Set<string>();
     items.forEach((item, index) => {
-      const problem = itemProblem(item);
-      if (problem === undefined) kept?.push(item);
-      else {
+      // The first readable item with an id keeps it; a later one is left out, not the frame.
+      const problem = itemProblem(item) ?? (ids.has(item.id) ? `Item ${JSON.stringify(item.id)} is left out: an earlier item has the same id` : undefined);
+      if (problem === undefined) {
+        ids.add(item.id);
+        kept?.push(item);
+      } else {
         kept ??= items.slice(0, index);
         skipped.push({ message: problem, item });
       }
@@ -574,18 +585,42 @@ function themeProblem(theme: TimelineConfig["theme"]): string | undefined {
   }
 }
 
+/** The options that are one of a few words, and the words. */
+const CHOICES = {
+  orientation: ["auto", "horizontal", "vertical"],
+  density: ["auto", "comfortable", "compact", "dense"],
+  theme: ["auto", "light", "dark"],
+  packMode: ["pack", "overlap", "single"],
+  direction: ["auto", "ltr", "rtl"],
+  labelOverflow: ["auto", "ellipsis", "drop"],
+  touchAction: ["own", "cooperative"],
+} as const satisfies Partial<Record<keyof TimelineConfig, readonly string[]>>;
+
 /**
  * The configuration without a `locale` or `timeZone` the platform cannot
- * read, or a `theme` with a token that is not a colour — each falls back to
- * its default, and is said to `report`. The same object when all are fine.
+ * read, a `theme` with a token that is not a colour, or a word an
+ * enumerated option does not have (`"Vertical"`, `"stack"`) — each falls
+ * back to its default, and is said to `report`. The same object when all
+ * are fine.
  */
 export function readableOptionsOf<T>(config: TimelineConfig<T>, report?: SkipReport): TimelineConfig<T> {
   const { locale, timeZone } = config;
   const badLocale = locale !== undefined && !readable(`l${locale}`, () => Intl.getCanonicalLocales(locale));
   const badZone = timeZone !== undefined && !readable(`z${timeZone}`, () => new Intl.DateTimeFormat("en", { timeZone }));
   const badTheme = themeProblem(config.theme);
-  if (!badLocale && !badZone && badTheme === undefined) return config;
+  // A height the core would refuse (R31): NaN, or not a number at all.
+  const badHeight = config.height !== undefined && !(Number.isFinite(config.height) && config.height >= 0);
+  const unknownWords = (Object.keys(CHOICES) as (keyof typeof CHOICES)[]).filter((key) => {
+    const value: unknown = config[key];
+    // A theme object is read by its tokens, above.
+    return value !== undefined && !(key === "theme" && typeof value === "object" && value !== null) && !(CHOICES[key] as readonly unknown[]).includes(value);
+  });
+  if (!badLocale && !badZone && !badHeight && badTheme === undefined && unknownWords.length === 0) return config;
   const kept: Record<string, unknown> = { ...config };
+  for (const key of unknownWords) {
+    delete kept[key];
+    report?.({ message: `${JSON.stringify(config[key])} is not a ${key} (${CHOICES[key].join(", ")}); the default is used`, option: key });
+  }
   if (badLocale) {
     delete kept.locale;
     report?.({ message: `The locale ${JSON.stringify(locale)} is not a language tag the platform reads; the default is used`, option: "locale" });
@@ -593,6 +628,10 @@ export function readableOptionsOf<T>(config: TimelineConfig<T>, report?: SkipRep
   if (badZone) {
     delete kept.timeZone;
     report?.({ message: `The time zone ${JSON.stringify(timeZone)} is not one the platform knows; UTC is used`, option: "timeZone" });
+  }
+  if (badHeight) {
+    delete kept.height;
+    report?.({ message: `The height ${String(config.height)} is not a number of pixels; the container's height is used`, option: "height" });
   }
   if (badTheme !== undefined) {
     delete kept.theme;
@@ -655,8 +694,10 @@ export function resolveView<T>(
   const height = config.height ?? (measuredHeight > 0 ? measuredHeight : DEFAULT_HEIGHT);
   // The strip takes its thickness from the frame, across the lanes.
   const band = minimapSize(config);
-  const density = resolveDensity(
-    config.density,
+  // A fixed level needs no fit: the fit lays out every item, on every resize.
+  const fixed = config.density !== undefined && config.density !== "auto" ? config.density : undefined;
+  const density =
+    fixed ??
     fitDensity({
       items: content.items,
       ...(content.lanes === undefined ? {} : { lanes: content.lanes }),
@@ -668,8 +709,7 @@ export function resolveView<T>(
       orientation,
       ...(previous === undefined || previous.orientation !== orientation ? {} : { previous: previous.density }),
       ...(config.metrics === undefined ? {} : { metrics: metricsProviderOf(config.metrics) as MetricsProvider }),
-    }),
-  );
+    }).density;
   return {
     width,
     height,
@@ -814,7 +854,7 @@ export type MetricsSetting = SizeOverrides | ((base: DensityMetrics) => SizeOver
 const SIZE_KEYS = ["rowSize", "rowGap", "laneGap", "fontSize", "tickFontSize", "lineHeight", "labelPadding", "axisSize", "cornerRadius", "fontFamily"] as const;
 /** Sizes nothing can be drawn at when they are zero. */
 const POSITIVE: ReadonlySet<string> = new Set(["rowSize", "fontSize", "tickFontSize", "lineHeight"]);
-/** What would end the stylesheet's rule the font stack is written into. */
+/** What would end the stylesheet's rule the font stack is written into; an unclosed quote is checked beside it (R77). */
 const UNSAFE_FONT = /[;{}<>\\]|\/\*/;
 
 function overridden(base: DensityMetrics, setting: MetricsSetting): DensityMetrics {
@@ -825,7 +865,7 @@ function overridden(base: DensityMetrics, setting: MetricsSetting): DensityMetri
     if (value === undefined) continue;
     const font = key === "fontFamily";
     const ok = font
-      ? typeof value === "string" && value.trim() !== "" && !UNSAFE_FONT.test(value)
+      ? typeof value === "string" && value.trim() !== "" && !UNSAFE_FONT.test(value) && /^(?:[^"'()]|"[^"]*"|'[^']*')*$/.test(value)
       : typeof value === "number" && Number.isFinite(value) && (POSITIVE.has(key) ? value > 0 : value >= 0);
     if (!ok) {
       const what = font ? "a CSS font stack" : POSITIVE.has(key) ? "a positive number of pixels" : "a non-negative number of pixels";

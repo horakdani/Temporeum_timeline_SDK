@@ -669,6 +669,58 @@ describeBothOrientations("scene space", (orientation) => {
     expect(renderTimeline({ ...options, space: settledBack }).pendingTiles).toBe(0);
   });
 
+  // R96: of two scales as near, the stand-in was the one first in the cache
+  // — on a wheel zoom's step out, the scale it started at, hidden since its
+  // first step: every stand-in tile came back into the page whole (2,900
+  // attributes, a 30-40 ms patch at a 4x slowdown) instead of the tiles on
+  // screen taking a transform.
+  it("stands in with the tiles on screen, of two scales as near, when a zoom steps back out", () => {
+    const { items, lanes } = grid();
+    const options: RenderOptions = { ...base, items, lanes };
+    const resting = grown();
+    renderTimeline({ ...options, space: resting });
+    const middle = (domain[0] + domain[1]) / 2;
+    const around = (factor: number): readonly [number, number] => {
+      const half = (domain[1] - domain[0]) / 2 / factor;
+      return [middle - half, middle + half];
+    };
+    const fill = (frame: RenderOptions): ReturnType<typeof renderTimeline> => {
+      let result = renderTimeline(frame);
+      for (let step = 0; step < 200 && result.pendingTiles > 0; step += 1) result = renderTimeline(frame);
+      expect(result.pendingTiles).toBe(0);
+      return result;
+    };
+    // In two steps, to a quarter, each filled to the end...
+    const half = planSceneSpace(resting, { domain: around(1.7), mainSize }, { levels: true });
+    expect(half.msPerPx).toBe(resting.msPerPx / 2);
+    fill({ ...options, domain: around(1.7), space: half });
+    const quarter = planSceneSpace(half, { domain: around(3.4), mainSize }, { levels: true });
+    expect(quarter.msPerPx).toBe(resting.msPerPx / 4);
+    fill({ ...options, domain: around(3.4), space: quarter });
+    // ...and out again, squeezed nearly to half, the quarter's tiles on screen.
+    const squeezed = planSceneSpace(quarter, { domain: around(2.1), mainSize }, { levels: true });
+    expect(squeezed.msPerPx).toBe(quarter.msPerPx);
+    const last = fill({ ...options, domain: around(2.1), space: squeezed });
+    const onScreen = new Set((layerOf(last.scene, "items").children ?? []).map((tile) => tile.children));
+    // The step out: the half's tiles come back paced, and what stands in
+    // for them meanwhile is what was on screen, under a transform. Only near
+    // the ends does the first scale stand in, one group a side at most: past
+    // what the quarter drew, and at its first tile, which is cut at the
+    // range's start and lends itself to no other range.
+    const out = planSceneSpace(squeezed, { domain: around(1.95), mainSize }, { levels: true });
+    expect(out.msPerPx).toBe(half.msPerPx);
+    const first = renderTimeline({ ...options, domain: around(1.95), space: out });
+    expect(first.pendingTiles).toBeGreaterThan(0);
+    const tiles = layerOf(first.scene, "items").children ?? [];
+    const at = (shown: boolean): number[] =>
+      tiles.flatMap((tile, index) => (tile.attrs?.transform !== undefined && onScreen.has(tile.children) === shown ? [index] : []));
+    const kept = at(true);
+    const hidden = at(false);
+    expect(kept.length).toBeGreaterThan(hidden.length);
+    expect(hidden.length).toBeLessThanOrEqual(2);
+    expect(hidden.filter((index) => index > 4 && index < tiles.length - 5)).toEqual([]);
+  });
+
   // Until 1.0.0-rc.4 a stepped gesture drew its new tiles bare, and their
   // labels were gone until it came to rest.
   it("draws a stepped gesture's new tiles with their labels, and the frame at rest is exact", () => {

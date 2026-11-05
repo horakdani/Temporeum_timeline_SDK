@@ -30,7 +30,8 @@ for (const file of ["live-data.ts"]) {
 }
 const timeline = codeOf(readFileSync(join(root, "packages", "web-component", "src", "timeline.ts"), "utf8"));
 for (const method of ["addItems", "updateItems", "removeItems", "changeItems"]) {
-  if (!new RegExp(`${method}\\([a-z]+\\) \\{\\s*commitLive\\(`).test(timeline)) failures.push(`the instance's ${method} does not run through commitLive`);
+  // A destroyed instance does nothing (R53): the one guard allowed before the commit.
+  if (!new RegExp(`${method}\\([a-z]+\\) \\{\\s*(?:if \\(destroyed\\) return;\\s*)?commitLive\\(`).test(timeline)) failures.push(`the instance's ${method} does not run through commitLive`);
 }
 if (!timeline.includes("relayout(result.layout")) failures.push("the instance does not draw with relayout after a live change");
 

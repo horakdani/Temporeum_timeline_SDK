@@ -25,7 +25,9 @@ five properties held at the same time:
 - **genuinely responsive** — a vertical phone layout is the same code path as
   the horizontal desktop one, not a separate build
 - **zero runtime dependencies** — the scale and tick maths are our own
-- **accessible** — every gesture has a keyboard equivalent, WCAG 2.2 AA
+- **accessible** — every gesture has a keyboard equivalent, and axe finds 0 WCAG 2.2 AA
+  violations on the docs and demo pages; what is and isn't covered is in the
+  [conformance report](https://horakdani.github.io/Temporeum_timeline_SDK/conformance.html)
 - **typed** — no `any` on the public surface, enforced in CI
 
 ## Without a DOM
@@ -150,16 +152,17 @@ Measured in Chromium at a 4x CPU slowdown, 1440 x 900, 10 000 items
 
 | view | with a scene space | without |
 |---|---|---|
-| pan, ~2050 items visible | 0% | ~35–40% |
-| 2x pinch zoom from there | ~2–3% | ~30–35% |
-| 4x pinch zoom from there | ~2–3% | ~30–35% |
-| pan at 2x, ~1050 items and ~1030 labels | 0% | ~45–50% |
-| 4.3x ctrl+wheel zoom from a fresh page, 8 notches in and out | ~0–2% | ~15–20% |
+| pan, ~2050 items visible | 0% | ~32–38% |
+| 2x pinch zoom from there | 0.8% | ~38–40% |
+| 4x pinch zoom from there | 1.6% | ~42–45% |
+| pan at 2x, ~1050 items and ~1030 labels | 0.8% | ~52–57% |
+| 4.3x ctrl+wheel zoom from a fresh page, 8 notches in and out | 4.6% | ~25–32% |
 
 The "with" column is the loop above: `levels: true` re-anchors a zoom a
 power of two at a time, the old scale's tiles standing in until the view is
-drawn again — without it the 4x pinch misses ~12% (`npm run bench:deep -w
-@temporeum/timeline-docs` runs that as a control, and it has to fail). `createTimeline` in
+drawn again — without it the 4x pinch misses ~3.3% against 1.6% (`npm run
+bench:deep -w @temporeum/timeline-docs` runs that as a control, and it has to
+miss measurably more). `createTimeline` in
 `@temporeum/timeline-element` runs the same loop at every size
 (`sceneSpace: "auto"`), and the same views through it, from the shipped
 bundle, are measured on their own (`bench:public` and `bench:deep` in
@@ -170,7 +173,7 @@ A wheel has no lift, so the machine makes a run of wheel steps one gesture
 (`kind: "wheel"`): it starts with the first step that moves the view and ends
 150 ms after the last, through the machine's own wake-up. That is what keeps
 `settle: !gesture` from settling between two notches — without it the same
-loop misses ~37% of the wheel zoom's frames (`npm run bench:wheel -w
+loop misses ~44% of the wheel zoom's frames (`npm run bench:wheel -w
 @temporeum/timeline-docs` runs that as a control too).
 
 ## Formats
@@ -218,7 +221,7 @@ Checked by CI on every push and pull request
 
 | Budget | Limit |
 |---|---|
-| core, minified + gzipped, on its own | 31.2 kB |
+| core, minified + gzipped, on its own | 31.6 kB |
 | `/dom` entry point, minified + gzipped, on top of the core | 4.25 kB |
 | a source module shipped in two files | 0 |
 | runtime dependencies | 0 |

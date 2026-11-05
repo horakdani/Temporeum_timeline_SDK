@@ -130,6 +130,149 @@ describe("ical: zones by other names", () => {
     expect(calendar.warnings).toEqual(['Unknown time zone "Nowhere Standard Time", read as UTC']);
   });
 
+  it("[claim:zones] a Windows zone name whose rules are today's finds its zone for a series that began under older rules", () => {
+    // R11: Outlook writes the zone's current rules, starting in 1601, and the
+    // match only looked around the series' first year — 2005, when the US
+    // changed its clocks in April and October — so the series read as UTC.
+    const text = [
+      "BEGIN:VCALENDAR",
+      "BEGIN:VTIMEZONE",
+      "TZID:Eastern Standard Time",
+      "BEGIN:STANDARD",
+      "DTSTART:16010101T020000",
+      "TZOFFSETFROM:-0400",
+      "TZOFFSETTO:-0500",
+      "RRULE:FREQ=YEARLY;BYDAY=1SU;BYMONTH=11",
+      "END:STANDARD",
+      "BEGIN:DAYLIGHT",
+      "DTSTART:16010101T020000",
+      "TZOFFSETFROM:-0500",
+      "TZOFFSETTO:-0400",
+      "RRULE:FREQ=YEARLY;BYDAY=2SU;BYMONTH=3",
+      "END:DAYLIGHT",
+      "END:VTIMEZONE",
+      "BEGIN:VEVENT",
+      "UID:weekly",
+      "DTSTART;TZID=Eastern Standard Time:20050103T090000",
+      "DTEND;TZID=Eastern Standard Time:20050103T093000",
+      "RRULE:FREQ=WEEKLY;BYDAY=MO",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+    const calendar = parseICal(text);
+    expect(calendar.warnings).toEqual([]);
+    expect(calendar.events[0]?.start).toBe(Date.UTC(2005, 0, 3, 14));
+    const later = expandEvents(calendar.events, Date.UTC(2026, 10, 1), Date.UTC(2026, 10, 8));
+    expect(later.map((item) => item.start)).toEqual([Date.UTC(2026, 10, 2, 14)]);
+    const summer = expandEvents(calendar.events, Date.UTC(2026, 6, 5), Date.UTC(2026, 6, 12));
+    expect(summer.map((item) => item.start)).toEqual([Date.UTC(2026, 6, 6, 13)]);
+  });
+
+  it("[claim:zones] a zone found by its rules is the one its Windows name means, not the first in the alphabet (R35)", () => {
+    // Every zone that keeps the file's offsets gives the same instants; the
+    // name is what formatICal writes back, and America/Detroit or Africa/Ceuta
+    // is not what "Eastern Standard Time" or "W. Europe Standard Time" means.
+    const zone = (tzid: string, std: string, dst: string, stdRule: string, dstRule: string, back: string): string[] => [
+      "BEGIN:VTIMEZONE",
+      `TZID:${tzid}`,
+      "BEGIN:STANDARD",
+      `DTSTART:16010101T${back}`,
+      `TZOFFSETFROM:${dst}`,
+      `TZOFFSETTO:${std}`,
+      `RRULE:${stdRule}`,
+      "END:STANDARD",
+      "BEGIN:DAYLIGHT",
+      "DTSTART:16010101T020000",
+      `TZOFFSETFROM:${std}`,
+      `TZOFFSETTO:${dst}`,
+      `RRULE:${dstRule}`,
+      "END:DAYLIGHT",
+      "END:VTIMEZONE",
+    ];
+    const text = [
+      "BEGIN:VCALENDAR",
+      ...zone("Eastern Standard Time", "-0500", "-0400", "FREQ=YEARLY;BYDAY=1SU;BYMONTH=11", "FREQ=YEARLY;BYDAY=2SU;BYMONTH=3", "020000"),
+      ...zone("W. Europe Standard Time", "+0100", "+0200", "FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10", "FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3", "030000"),
+      "BEGIN:VEVENT",
+      "UID:east",
+      "DTSTART;TZID=Eastern Standard Time:20260305T090000",
+      "END:VEVENT",
+      "BEGIN:VEVENT",
+      "UID:west-europe",
+      "DTSTART;TZID=W. Europe Standard Time:20260305T090000",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+    const calendar = parseICal(text);
+    expect(calendar.warnings).toEqual([]);
+    expect(calendar.events.map((event) => event.timeZone)).toEqual(["America/New_York", "Europe/Berlin"]);
+    expect(calendar.events.map((event) => event.start)).toEqual([Date.UTC(2026, 2, 5, 14), Date.UTC(2026, 2, 5, 8)]);
+    expect(formatICal(calendar.events)).toContain("DTSTART;TZID=America/New_York:20260305T090000");
+  });
+
+  it("[claim:zones] a zone rule's UTC UNTIL ends it at that instant, east of Greenwich too (R36)", () => {
+    // The rule's changes are wall clocks; its UNTIL is an instant. Read as a
+    // wall clock, 01:00Z cut off the 03:00 CEST change of the same night, the
+    // zone's rules matched no zone, and the event read as UTC.
+    const text = [
+      "BEGIN:VCALENDAR",
+      "BEGIN:VTIMEZONE",
+      "TZID:Central Europe (split rules)",
+      "BEGIN:STANDARD",
+      "DTSTART:19961027T030000",
+      "TZOFFSETFROM:+0200",
+      "TZOFFSETTO:+0100",
+      "RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10;UNTIL=20261025T010000Z",
+      "END:STANDARD",
+      "BEGIN:STANDARD",
+      "DTSTART:20271031T030000",
+      "TZOFFSETFROM:+0200",
+      "TZOFFSETTO:+0100",
+      "RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10",
+      "END:STANDARD",
+      "BEGIN:DAYLIGHT",
+      "DTSTART:19810329T020000",
+      "TZOFFSETFROM:+0100",
+      "TZOFFSETTO:+0200",
+      "RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3",
+      "END:DAYLIGHT",
+      "END:VTIMEZONE",
+      "BEGIN:VEVENT",
+      "UID:autumn",
+      "DTSTART;TZID=Central Europe (split rules):20261110T090000",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+    const calendar = parseICal(text);
+    expect(calendar.warnings).toEqual([]);
+    expect(calendar.events[0]?.timeZone).toBe("Europe/Berlin");
+    expect(calendar.events[0]?.start).toBe(Date.UTC(2026, 10, 10, 8));
+  });
+
+  it("[claim:zones] a file of many zones too long to search shares one budget, and says which it did not search (R89)", () => {
+    // Each zone's daily COUNT from 1601 is ~150 000 days to walk, and each
+    // zone had its own million-step budget: 300 bytes of file, ~100 ms.
+    const zones = 40;
+    const lines = ["BEGIN:VCALENDAR"];
+    for (let i = 0; i < zones; i += 1) {
+      lines.push("BEGIN:VTIMEZONE", `TZID:Slow ${String(i)}`, "BEGIN:STANDARD", "DTSTART:16010101T000000", "TZOFFSETFROM:+0000", "TZOFFSETTO:+0001", "RRULE:FREQ=DAILY;COUNT=200000", "END:STANDARD", "END:VTIMEZONE");
+    }
+    for (let i = 0; i < zones; i += 1) lines.push("BEGIN:VEVENT", `UID:e${String(i)}`, `DTSTART;TZID=Slow ${String(i)}:20260101T090000`, "END:VEVENT");
+    lines.push("END:VCALENDAR");
+    const began = performance.now();
+    const calendar = parseICal(lines.join("\r\n"));
+    const took = performance.now() - began;
+    expect(calendar.events).toHaveLength(zones);
+    const unsearched = calendar.warnings.filter((warning) => warning.includes("too long to search"));
+    // The budget is spent within a few zones; the rest are not searched.
+    expect(unsearched.length).toBeGreaterThan(zones / 2);
+    expect(unsearched[0]).toMatch(/^The rules of time zone "Slow \d+" are too long to search, read as UTC$/);
+    // Every zone is still reported once.
+    expect(calendar.warnings).toHaveLength(zones);
+    // Alone ~1.3 s, the old code 8.6 s; a loaded machine in a full run took 3.2 s.
+    expect(took).toBeLessThan(6000);
+  });
+
   it("[claim:zones] floating times are read in the zone the host names, else the file's X-WR-TIMEZONE, else UTC", () => {
     const text = ["BEGIN:VCALENDAR", "X-WR-TIMEZONE:Asia/Tokyo", "BEGIN:VEVENT", "UID:f", "DTSTART:20260101T090000", "END:VEVENT", "END:VCALENDAR"].join("\n");
     expect(parseICal(text).events[0]?.start).toBe(Date.UTC(2026, 0, 1, 0));
@@ -158,6 +301,27 @@ describe("ical: zones by other names", () => {
     const calendar = parseICal(text);
     expect(calendar.events.map((event) => [event.id, event.end])).toEqual([["event-1", Date.UTC(2026, 0, 2, 11)]]);
     expect(calendar.warnings).toEqual(["A VEVENT without DTSTART was passed over", "A VEVENT without UID was named event-1", "A cancelled occurrence of gone has no series"]);
+  });
+});
+
+describe("a long series with many cancelled occurrences (R76)", () => {
+  it("is read in linear time, every cancelled occurrence an EXDATE of its series", () => {
+    // Each cancellation looked its series up and copied its EXDATE list: 30 000 took 5.9 s.
+    const count = 120_000;
+    const lines = ["BEGIN:VCALENDAR", "BEGIN:VEVENT", "UID:daily", "DTSTART:20000101T090000Z", "RRULE:FREQ=DAILY", "SUMMARY:Daily", "END:VEVENT"];
+    for (let n = 0; n < count; n += 1) {
+      const at = new Date(Date.UTC(2000, 0, 1 + n, 9)).toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
+      lines.push("BEGIN:VEVENT", "UID:daily", `RECURRENCE-ID:${at}`, "STATUS:CANCELLED", `DTSTART:${at}`, "END:VEVENT");
+    }
+    lines.push("BEGIN:VEVENT", "UID:other", "RECURRENCE-ID:20000101T090000Z", "STATUS:CANCELLED", "DTSTART:20000101T090000Z", "END:VEVENT", "END:VCALENDAR");
+    const text = lines.join("\r\n");
+    const started = performance.now();
+    const calendar = parseICal(text);
+    expect(performance.now() - started).toBeLessThan(5_000);
+    expect(calendar.events).toHaveLength(1);
+    expect(calendar.events[0]?.exdates).toHaveLength(count);
+    expect(calendar.events[0]?.exdates?.[1]).toBe(Date.UTC(2000, 0, 2, 9));
+    expect(calendar.warnings).toEqual(["A cancelled occurrence of other has no series"]);
   });
 });
 
@@ -321,5 +485,23 @@ describe("ical: lines", () => {
     expect(text).toContain("BEGIN:STANDARD\r\nDTSTART:20261025T030000\r\nTZOFFSETFROM:+0200\r\nTZOFFSETTO:+0100");
     expect(text).toContain("DTSTART;TZID=Europe/Budapest:20260601T090000");
     expect(text).toContain("DTSTAMP:19700101T000000Z");
+  });
+});
+
+describe("ical: a rule given as an object cannot write lines of its own (R75)", () => {
+  it("refuses a field with a line break, as the text form would, and writes a sound rule as before", () => {
+    const T = Date.UTC(2026, 0, 5, 9);
+    const injected = { freq: "WEEKLY", byDay: [{ day: "MO\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:x\r\nURL:https://evil.example\r\nATTACH:https://evil.example/a" }] } as unknown as RecurrenceRule;
+    const event: CalendarEvent<unknown> = { id: "standup", start: T, end: T + 900_000, rrule: injected };
+    expect(() => formatICal([event])).toThrow(SyntaxError);
+    expect(() => formatRRule(injected)).toThrow(SyntaxError);
+    for (const bad of [{ freq: "DAILY\nX" }, { freq: "DAILY", wkst: "SU\r\n" }, { freq: "DAILY", byMonth: ["1\r\nATTACH:x"] }, { freq: "DAILY", byHour: [24] }]) {
+      expect(() => formatRRule(bad as unknown as RecurrenceRule), JSON.stringify(bad)).toThrow(SyntaxError);
+    }
+    const sound: RecurrenceRule = { freq: "WEEKLY", interval: 2, byDay: [{ day: "MO" }, { day: "FR", n: -1 }], until: { year: 2026, month: 6, day: 30 } };
+    expect(formatRRule(sound)).toBe("FREQ=WEEKLY;INTERVAL=2;UNTIL=20260630;BYDAY=MO,-1FR");
+    const file = formatICal([{ id: "standup", start: T, end: T + 900_000, rrule: sound }]);
+    expect(file.match(/BEGIN:VEVENT/g)).toHaveLength(1);
+    expect(parseICal(file).events[0]?.rrule).toEqual(sound);
   });
 });

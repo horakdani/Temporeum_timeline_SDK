@@ -68,7 +68,7 @@ Read-only timeline widgets already exist. This one is built to have five propert
 - **Editable.** You can drag and resize items. Each edit comes out as a command, and the command's `inverse` undoes it.
 - **Genuinely responsive.** On a narrow screen the timeline turns vertical. That layout comes from the same code as the horizontal desktop one: the container's width decides, not a separate build.
 - **Accessible.** Every gesture has a keyboard equivalent, and screen readers see the timeline as a listbox. The docs site and the demo pages are checked against WCAG 2.2 AA with axe, with 0 violations.
-- **Light.** The engine does its own scale and tick maths and depends on nothing. A plain timeline's page loads 55.8 kB of JavaScript minified and gzipped, a Gantt chart's 63.7 kB; vis-timeline's standalone build is 155.8 kB. What a page does not use is a plugin it never downloads.
+- **Light.** The engine does its own scale and tick maths and depends on nothing. A plain timeline's page loads 55.8 kB of JavaScript minified and gzipped, a Gantt chart's 63.7 kB; vis-timeline's standalone build is 155.8 kB. What a page does not use is a plugin it never downloads. The `<script>` tag's UMD file is the exception: it carries every plugin, nearly twice a plain timeline's page, so a page that minds its bytes imports the modules.
 - **Typed.** The public surface has no `any`, and CI enforces it.
 
 ## How it compares

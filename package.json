@@ -32,6 +32,7 @@
     "test": "npm run test --workspaces --if-present",
     "test:all": "node scripts/sdk_test_all.mjs",
     "size": "npm run size -w @temporeum/timeline-core",
+    "size:packages": "node scripts/sdk_size_packages.mjs",
     "lint": "eslint .",
     "deps": "node scripts/sdk_check_deps.mjs"
   },

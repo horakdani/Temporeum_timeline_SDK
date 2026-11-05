@@ -28,7 +28,7 @@ import { toTimeMs } from "../time.js";
 import type { TimeInput, TimeMs } from "../types.js";
 import { utcStamp } from "./events.js";
 import type { CalendarEvent } from "./events.js";
-import { formatRRule, formatWall, instantOf, occurrences, parseDateValue, parseRRule, wallMs, wallOf } from "./rrule.js";
+import { formatRRule, formatWall, instantOf, occurrences, parseDateValue, parseRRule, wallMs, wallOf, workSpent } from "./rrule.js";
 import type { RecurrenceRule } from "./rrule.js";
 
 /** A calendar read from iCal text. */
@@ -151,17 +151,35 @@ function wallOfValue(value: string): number {
 }
 
 /**
+ * The zones a match by rules prefers, one for each set of rules many zones
+ * share: the zone the most common Windows name of those rules means (CLDR),
+ * not the first in the alphabet (`America/Detroit`, `Africa/Ceuta`).
+ */
+const PREFERRED =
+  "America/New_York America/Chicago America/Denver America/Phoenix America/Los_Angeles America/Anchorage America/Halifax America/Mexico_City America/Sao_Paulo America/Bogota Europe/London Europe/Berlin Europe/Athens Europe/Moscow Africa/Lagos Africa/Johannesburg Asia/Dubai Asia/Karachi Asia/Kolkata Asia/Dhaka Asia/Bangkok Asia/Shanghai Asia/Tokyo Australia/Brisbane Australia/Sydney Pacific/Auckland".split(" ");
+
+/** How many days all the zones of one file may look at between them. */
+const ZONE_WORK = 1_000_000;
+
+/**
  * The IANA zone that keeps a `VTIMEZONE`'s offsets over a few years: a
  * Windows name (`Eastern Standard Time`) or a vendor's own is read as the
- * first zone of the platform whose offset agrees with the file's rules on
- * both sides of every change. Any such zone gives the same instants there.
+ * zone of the platform whose offset agrees with the file's rules on both
+ * sides of every change — a {@link PREFERRED} one first. Any such zone gives
+ * the same instants there. `spend` is told how much each expansion looked at.
  */
-function matchZone(onsets: readonly Onset[], year: number): string | undefined {
+function matchZone(onsets: readonly Onset[], year: number, spend: (work: number) => void): string | undefined {
   const lo = wallMs(year - 1, 1, 1);
   const hi = wallMs(year + 2, 1, 1);
   const changes: { readonly at: number; readonly to: number }[] = [];
   for (const each of onsets) {
-    const walls = occurrences({ start: each.start, ...(each.rule === undefined ? {} : { rule: each.rule }), rdates: each.rdates }, { from: lo - DAY * 400, to: hi });
+    const rule = each.rule;
+    // A rule's changes are wall clocks before the change; an UNTIL in UTC is an
+    // instant, so it moves by the offset it is read in.
+    const until = rule?.until;
+    const shifted = rule !== undefined && typeof until === "number" ? { ...rule, until: until + each.from } : rule;
+    const walls = occurrences({ start: each.start, ...(shifted === undefined ? {} : { rule: shifted }), rdates: each.rdates }, { from: lo - DAY * 400, to: hi });
+    spend(workSpent());
     for (const wall of walls) changes.push({ at: wall - each.from, to: each.to });
   }
   changes.sort((a, b) => a.at - b.at);
@@ -182,7 +200,7 @@ function matchZone(onsets: readonly Onset[], year: number): string | undefined {
   for (let y = year - 1; y <= year + 1; y += 1) samples.push(wallMs(y, 1, 15, 12), wallMs(y, 7, 15, 12));
   for (const change of changes) if (change.at >= lo && change.at < hi) samples.push(change.at - 3_600_000, change.at + 3_600_000);
   const names = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
-  return names.find((zone) => samples.every((t) => zoneOffsetMs(t, zone) === offsetAt(t)));
+  return [...PREFERRED.filter(knownZone), ...names].find((zone) => samples.every((t) => zoneOffsetMs(t, zone) === offsetAt(t)));
 }
 
 /**
@@ -235,6 +253,10 @@ export function parseICal(text: string, options: ICalParseOptions = {}): ICalCal
   }
   const floating = options.timeZone ?? (fileZone !== undefined && knownZone(fileZone) ? fileZone : DEFAULT_TIME_ZONE);
   const zones = new Map<string, string>();
+  let spent = 0;
+  const spend = (work: number): void => {
+    spent += work;
+  };
   const zoneOf = (tzid: string, year: number): string => {
     const known = zones.get(tzid);
     if (known !== undefined) return known;
@@ -242,8 +264,14 @@ export function parseICal(text: string, options: ICalParseOptions = {}): ICalCal
     // pattern reads that much, not a hostile file's whole TZID.
     const candidates = [tzid, /[A-Za-z_]+\/[A-Za-z_]+(?:\/[A-Za-z_]+)?$/.exec(tzid.slice(-64))?.[0], locations.get(tzid)];
     const rules = zoneRules.get(tzid);
-    const found = candidates.find((each): each is string => each !== undefined && knownZone(each)) ?? (rules === undefined ? undefined : matchZone(rules, year));
-    if (found === undefined) warnings.push(`Unknown time zone ${JSON.stringify(tzid)}, read as UTC`);
+    const named = candidates.find((each): each is string => each !== undefined && knownZone(each));
+    // One budget for the file: a zone's rules can take ~150 000 days to walk,
+    // and a file can hold many zones.
+    const searched = named === undefined && rules !== undefined && spent <= ZONE_WORK;
+    // Around the event's year first; then this year's: Outlook writes a zone's
+    // current rules from 1601 on, which no zone kept in a year they changed.
+    const found = named ?? (searched ? (matchZone(rules, year, spend) ?? matchZone(rules, new Date().getUTCFullYear(), spend)) : undefined);
+    if (found === undefined) warnings.push(named === undefined && rules !== undefined && !searched ? `The rules of time zone ${JSON.stringify(tzid)} are too long to search, read as UTC` : `Unknown time zone ${JSON.stringify(tzid)}, read as UTC`);
     const zone = found ?? DEFAULT_TIME_ZONE;
     zones.set(tzid, zone);
     return zone;
@@ -334,14 +362,15 @@ export function parseICal(text: string, options: ICalParseOptions = {}): ICalCal
     }
     if (current !== undefined && depth === 0) current.push(line);
   }
+  // Each series found once, and a cancelled occurrence added to its list in
+  // place — the events are this function's own: a lookup and a copy per
+  // occurrence was quadratic in them.
+  const series = new Map<string, CalendarEvent>();
+  for (const each of events) if (each.recurrenceId === undefined && !series.has(each.id)) series.set(each.id, each);
   for (const { id, at } of cancelled) {
-    const index = events.findIndex((each) => each.id === id && each.recurrenceId === undefined);
-    const series = events[index];
-    if (series === undefined) {
-      warnings.push(`A cancelled occurrence of ${id} has no series`);
-      continue;
-    }
-    events[index] = { ...series, exdates: [...(series.exdates ?? []), at] };
+    const each = series.get(id);
+    if (each === undefined) warnings.push(`A cancelled occurrence of ${id} has no series`);
+    else ((each as unknown as { exdates?: TimeInput[] }).exdates ??= []).push(at);
   }
   return { ...(name === undefined ? {} : { name }), events, warnings };
 }

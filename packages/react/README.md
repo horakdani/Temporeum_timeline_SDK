@@ -4,8 +4,15 @@ The timeline as a React component, built on the shared
 instance of [`@temporeum/timeline-element`](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/web-component#readme).
 
 ```bash
-npm install @temporeum/timeline-react
+npm install @temporeum/timeline-react @temporeum/timeline-element
 ```
+
+The element is the adapter's own dependency; list it beside the adapter, as
+above, to import its plugins (`@temporeum/timeline-element/items`, `/gantt`,
+`/resources` …): pnpm and Yarn PnP let an app import only what it lists. The
+types an app writes — `Item`, `Lane`, `Group`, `TimeMs` and every event's
+payload (`ItemMovedPayload`, `SelectionChangedPayload` …) — come from
+`@temporeum/timeline-react` itself.
 
 The peer range is `react ^18.0.0 || ^19.0.0` (everything it uses —
 `useSyncExternalStore`, `useId` — is in 18). The suite runs on the newest
@@ -63,9 +70,11 @@ one `null`.
 The view and the selection are where the timeline starts:
 `defaultDomain` and `defaultSelectedIds`. A re-render does not move them
 back, so a state set from `onViewportChanged` is safe; the instance's
-`zoomTo` and `select` move them. Every other prop is compared by what it
-says — `editing={{ enabled: true }}` written anew on each render is no
-change, and a drag in progress goes on.
+`zoomTo` and `select` move them. `items` is data: a new array is new items,
+so keep it in state rather than writing it in the render. Every other prop
+is compared by what it says — `editing={{ enabled: true }}` or `groups`
+written anew on each render is no change, a drag in progress goes on, and
+groups the reader reordered stay in their order.
 
 ## It does not re-render to draw
 

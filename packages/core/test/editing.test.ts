@@ -12,7 +12,7 @@ import {
   snapTime,
 } from "../src/editing.js";
 import type { EditHit } from "../src/editing.js";
-import { layoutItems } from "../src/layout.js";
+import { layoutItems, resolveSpan } from "../src/layout.js";
 import { createTimeScale } from "../src/scale.js";
 import type { Item, ItemPatch } from "../src/types.js";
 
@@ -102,6 +102,89 @@ describe("createCommand", () => {
   });
 });
 
+describe("a day grid in a zone (R10)", () => {
+  const zone = "Europe/Budapest";
+  const local = (iso: string): number => {
+    // Budapest is UTC+1 in winter and UTC+2 in summer.
+    const t = Date.parse(`${iso}Z`);
+    return t - (new Date(t).getUTCMonth() >= 3 && new Date(t).getUTCMonth() <= 8 ? 2 : 1) * 3_600_000;
+  };
+
+  it("lands on local midnight in winter and in summer", () => {
+    expect(snapTime(local("2024-01-15T10:00:00"), DAY, undefined, zone)).toBe(local("2024-01-15T00:00:00"));
+    expect(snapTime(local("2024-07-15T10:00:00"), DAY, undefined, zone)).toBe(local("2024-07-15T00:00:00"));
+    expect(snapTime(local("2024-07-15T13:00:00"), DAY, undefined, zone)).toBe(local("2024-07-16T00:00:00"));
+  });
+
+  it("keeps a week grid on local midnights, anchored at a local origin", () => {
+    const monday = local("2024-01-01T00:00:00");
+    expect(snapTime(local("2024-07-10T09:00:00"), 7 * DAY, monday, zone)).toBe(local("2024-07-08T00:00:00"));
+  });
+
+  it("leaves a grid finer than a day on the instant line, and UTC as it was", () => {
+    const t = local("2024-07-15T10:20:00");
+    expect(snapTime(t, 3_600_000, undefined, zone)).toBe(snapTime(t, 3_600_000));
+    expect(snapTime(t, DAY, undefined, "UTC")).toBe(snapTime(t, DAY));
+  });
+
+  it("moves an item onto local midnight", () => {
+    const item: Item = { id: "a", start: local("2024-07-15T09:00:00") };
+    const hit: EditHit = { item, span: resolveSpan(item, zone), laneId: "", part: "body" };
+    expect(movePatch(hit, { deltaMs: DAY, snapMs: DAY, timeZone: zone }).start).toBe(local("2024-07-16T00:00:00"));
+  });
+});
+
+describe("the drawn edge of an item known to the day (R6)", () => {
+  const hit = (item: Item, part: EditHit["part"], zone = "UTC"): EditHit => ({ item, span: resolveSpan(item, zone), laneId: "", part });
+  const instant: Item = { id: "a", start: Date.UTC(2024, 0, 1, 10), granularity: "day" };
+
+  it("does nothing when the end is dragged by nothing", () => {
+    expect(resizePatch(hit(instant, "end"), { edge: "end", deltaMs: 0 })).toBeUndefined();
+    expect(resizePatch(hit(instant, "end"), { edge: "end", deltaMs: 0, snapMs: DAY })).toBeUndefined();
+  });
+
+  it("draws one more day for an end dragged one day later — by pointer and by key", () => {
+    // A key press is the same resize with the grid step as its delta.
+    const patch = resizePatch(hit(instant, "end"), { edge: "end", deltaMs: DAY, snapMs: DAY });
+    expect(resolveSpan({ ...instant, end: patch?.end as number })).toEqual({
+      start: Date.UTC(2024, 0, 1),
+      end: Date.UTC(2024, 0, 3),
+      open: false,
+    });
+  });
+
+  it("holds the same for a month and a year", () => {
+    for (const granularity of ["month", "year"] as const) {
+      const item: Item = { id: "m", start: Date.UTC(2024, 4, 20), granularity };
+      expect(resizePatch(hit(item, "end"), { edge: "end", deltaMs: 0 })).toBeUndefined();
+      const patch = resizePatch(hit(item, "end"), { edge: "end", deltaMs: 1 });
+      const drawn = resolveSpan({ ...item, end: patch?.end as number });
+      expect(drawn.end).toBe(granularity === "month" ? Date.UTC(2024, 6, 1) : Date.UTC(2026, 0, 1));
+    }
+  });
+
+  it("shrinks an interval to its first day and no further", () => {
+    const interval: Item = { id: "b", start: Date.UTC(2024, 0, 1, 10), end: Date.UTC(2024, 0, 5, 14), granularity: "day" };
+    const patch = resizePatch(hit(interval, "end"), { edge: "end", deltaMs: -30 * DAY, snapMs: DAY });
+    expect(resolveSpan({ ...interval, end: patch?.end as number }).end).toBe(Date.UTC(2024, 0, 2));
+  });
+
+  it("does not round a drag of nothing to the next day for a stored afternoon", () => {
+    const afternoon: Item = { id: "c", start: Date.UTC(2024, 0, 1, 14), end: Date.UTC(2024, 0, 3, 14), granularity: "day" };
+    expect(resizePatch(hit(afternoon, "start"), { edge: "start", deltaMs: 0, snapMs: DAY })).toBeUndefined();
+    expect(resizePatch(hit(afternoon, "end"), { edge: "end", deltaMs: 0, snapMs: DAY })).toBeUndefined();
+    expect(movePatch(hit(afternoon, "body"), { deltaMs: 0, snapMs: DAY })).toMatchObject({ start: Date.UTC(2024, 0, 1, 14) });
+  });
+
+  it("moves the start by the drawn day, in the item's zone", () => {
+    const zone = "Europe/Budapest";
+    const item: Item = { id: "d", start: Date.UTC(2024, 6, 10, 8), end: Date.UTC(2024, 6, 12, 8), granularity: "day" };
+    const patch = resizePatch(hit(item, "start", zone), { edge: "start", deltaMs: -DAY, snapMs: DAY, timeZone: zone });
+    // Local midnight of 9 July, CEST.
+    expect(patch?.start).toBe(Date.UTC(2024, 6, 8, 22));
+  });
+});
+
 describe("movePatch", () => {
   const interval: Item = { id: "a", start: START + DAY, end: START + 3 * DAY };
 
@@ -173,8 +256,12 @@ describe("resizePatch", () => {
   it("turns an instant into an interval from its drawn end", () => {
     const instant: Item = { id: "a", start: START, granularity: "day" };
     const patch = resizePatch(hitOf(instant, "end"), { edge: "end", deltaMs: DAY });
-    // The drawn end of a day-granular instant is the next midnight.
-    expect(patch?.end).toBe(START + 2 * DAY);
+    // The drawn end of a day-granular instant is the next midnight; one day
+    // later it is the midnight after that. A stored end known to the day is
+    // inclusive, so the item is stored as ending on 2 January, and is drawn
+    // over two days — one more than it had.
+    expect(patch?.end).toBe(START + DAY);
+    expect(resolveSpan({ ...instant, end: patch?.end as number })).toEqual({ start: START, end: START + 2 * DAY, open: false });
   });
 
   it("refuses to drag the end of an open interval", () => {

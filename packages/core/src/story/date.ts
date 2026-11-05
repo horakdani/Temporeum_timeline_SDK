@@ -46,14 +46,20 @@ function format(granularity: Granularity, early: boolean, options: StoryDateOpti
   return formatter;
 }
 
-/** The item's date as a sentence would say it. */
-export function storyDateText(item: Pick<Item, "start" | "end" | "granularity">, options: StoryDateOptions = {}): string {
+/**
+ * The item's date as a sentence would say it. An item a story made carries
+ * the unit each end was given in (`data.story.precision`), and each end is
+ * said to its own: "1914 – 11 November 1918", not "1 January 1914 – …".
+ */
+export function storyDateText(item: Pick<Item, "start" | "end" | "granularity"> & { readonly data?: unknown }, options: StoryDateOptions = {}): string {
   const granularity = item.granularity ?? "minute";
   const start = toTimeMs(item.start);
   const end = item.end === undefined ? undefined : toTimeMs(item.end);
   const exclusive = item.granularity === undefined || item.granularity === "millisecond";
   const last = end === undefined ? undefined : Math.max(start, exclusive ? end - 1 : end);
   const early = new Date(start).getUTCFullYear() < 1 || (last !== undefined && new Date(last).getUTCFullYear() < 1);
+  const precision = (item.data as { readonly story?: { readonly precision?: readonly [Granularity, Granularity] } } | undefined)?.story?.precision;
+  if (precision !== undefined && last !== undefined) return `${format(precision[0], early, options).format(start)} – ${format(precision[1], early, options).format(last)}`;
   const formatter = format(granularity, early, options);
   if (last === undefined || formatter.format(start) === formatter.format(last)) return formatter.format(start);
   return formatter.formatRange(start, last);

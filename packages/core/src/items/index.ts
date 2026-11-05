@@ -2,7 +2,7 @@
  * `@temporeum/timeline-core/items` — item kinds, adding and removing items,
  * and HTML templates.
  *
- * A separate entry point because the base one is full: its 31.2 kB budget is
+ * A separate entry point because the base one is full: its 31.6 kB budget is
  * spent on the engine every timeline needs. What is here is what some
  * timelines need, and it works through the engine's own seams — the render
  * hooks draw the kinds, decorations draw the backgrounds, and an add or a
@@ -16,9 +16,9 @@
 
 import { applyPatches, createCommand, snapTime } from "../editing.js";
 import type { EraDecoration } from "../decorations.js";
-import { lineAttrs, rectAttrs } from "../draw.js";
+import { lineAttrs, rectAttrs, withClass } from "../draw.js";
 import type { KeySample } from "../keyboard.js";
-import { resolveSpan } from "../layout.js";
+import { MAX_SUBLANE_SPAN, resolveSpan } from "../layout.js";
 import { defaultItemNode } from "../render.js";
 import type { ItemRenderContext, RenderHooks } from "../render.js";
 import type { TimeScale } from "../scale.js";
@@ -72,12 +72,7 @@ export function onRemoveHandle(box: MainCrossRect, point: MainCross, slop = 0): 
 
 function classesOf<T>(context: ItemRenderContext<T>, kind: string): string {
   const item = context.placed.item;
-  return [
-    "tl-item",
-    `tl-item--${kind}`,
-    ...(context.selected ? ["tl-item--selected"] : []),
-    ...(item.className === undefined ? [] : [item.className]),
-  ].join(" ");
+  return withClass(`tl-item tl-item--${kind}${context.selected ? " tl-item--selected" : ""}`, item.className);
 }
 
 /**
@@ -313,6 +308,8 @@ export type CreateItem<T = unknown> = (target: AddTarget) => Item<T> | undefined
 export interface AddTargetOptions {
   readonly snapMs?: number;
   readonly snapOrigin?: TimeMs;
+  /** The zone a grid of whole days lies in: local midnights all year. UTC by default. */
+  readonly timeZone?: string;
   /** The new item's duration. A twentieth of the view by default. */
   readonly durationMs?: number;
 }
@@ -320,7 +317,7 @@ export interface AddTargetOptions {
 const DEFAULT_SHARE = 20;
 
 function targetAt(start: TimeMs, laneId: string | null, domain: readonly [TimeMs, TimeMs], options: AddTargetOptions): AddTarget {
-  const snapped = snapTime(start, options.snapMs, options.snapOrigin);
+  const snapped = snapTime(start, options.snapMs, options.snapOrigin, options.timeZone);
   const duration = options.durationMs ?? Math.max(1, Math.round((domain[1] - domain[0]) / DEFAULT_SHARE));
   return { start: snapped, end: snapped + duration, laneId };
 }
@@ -426,7 +423,7 @@ const DROP_FIELDS: Readonly<Record<string, (value: unknown) => boolean>> = {
   movable: isBoolean,
   resizable: isBoolean,
   removable: isBoolean,
-  sublaneSpan: (value) => Number.isInteger(value) && (value as number) >= 1,
+  sublaneSpan: (value) => Number.isInteger(value) && (value as number) >= 1 && (value as number) <= MAX_SUBLANE_SPAN,
   progress: (value) => typeof value === "number" && value >= 0 && value <= 1,
   granularity: oneOf("millisecond", "second", "minute", "hour", "day", "month", "year", "decade", "century", "millennium"),
   kind: oneOf("range", "box", "point", "background", "milestone"),

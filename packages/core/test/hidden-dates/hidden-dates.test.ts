@@ -290,6 +290,25 @@ describeBothOrientations("hidden dates — the frame", (orientation) => {
     expect(held).toBe(CASES);
   });
 
+  it("keeps both instants of a pinch under their fingers, with the nights hidden (R7)", () => {
+    const hidden = createHiddenDates([{ start: MONDAY + 18 * HOUR, end: MONDAY + DAY + 8 * HOUR, repeat: "daily" }]);
+    const domain: Domain = [MONDAY + 8 * HOUR, MONDAY + 14 * DAY + 18 * HOUR];
+    const mainSize = 1000;
+    const machine = createInputMachine({ domain, mainSize, orientation, hiddenDates: hidden });
+    const before = createTimeScale(domain, mainSize, hidden);
+    const a = before.toTime(200);
+    const b = before.toTime(600);
+    const touch = (id: number, phase: "down" | "move", main: number, time: number) =>
+      machine.handle({ pointerId: id, phase, ...(orientation === "horizontal" ? { x: main, y: 40 } : { x: 40, y: main }), time, pointerType: "touch" });
+    touch(1, "down", 200, 0);
+    touch(2, "down", 600, 10);
+    for (const [step, x] of [700, 800, 900].entries()) touch(2, "move", x, 20 + 10 * step);
+    const after = createTimeScale(machine.domain, mainSize, hidden);
+    // A real-time ratio put the second instant 32 px off its finger (R7).
+    expect(Math.abs(after.toMain(a) - 200)).toBeLessThan(0.5);
+    expect(Math.abs(after.toMain(b) - 900)).toBeLessThan(0.5);
+  });
+
   it("pans by shown time: a pan of the whole view moves it by its shown span, past the hidden time", () => {
     const hidden = createHiddenDates([{ start: MONDAY + 18 * HOUR, end: MONDAY + DAY + 8 * HOUR, repeat: "daily" }]);
     const domain: Domain = [MONDAY + 8 * HOUR, MONDAY + 18 * HOUR];

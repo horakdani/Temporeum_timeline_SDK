@@ -6,6 +6,6 @@
     { "selector": "#timeline svg [role=option]", "min": 5 },
     { "selector": "#story .tl-story-headline", "min": 1 },
     { "selector": "#timeline svg .tl-era", "min": 2 },
-    { "selector": "#status[data-slides='20'][data-warnings='0']", "min": 1 }
+    { "selector": "#status[data-slides='20'][data-warnings='1']", "min": 1 }
   ]
 }

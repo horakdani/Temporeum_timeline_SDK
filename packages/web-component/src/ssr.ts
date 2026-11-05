@@ -44,9 +44,9 @@ export const HOST_CSS =
 /** How the server draws. */
 export interface ServerRenderOptions {
   /** The width to draw at. The client redraws at the real one. */
-  readonly width?: number;
+  readonly width?: number | undefined;
   /** Clock for a configuration with neither a domain nor items. */
-  readonly now?: () => TimeMs;
+  readonly now?: (() => TimeMs) | undefined;
 }
 
 /** A server-drawn frame. */
@@ -154,10 +154,13 @@ const escapeAttr = (value: string): string =>
 
 /** How the element's markup is printed. */
 export interface ServerHtmlOptions extends ServerRenderOptions {
-  /** The registered tag, when the page defined the element under another name. */
-  readonly tagName?: string;
-  /** More attributes for the element itself: `id`, `class`, `style`. */
-  readonly attributes?: Readonly<Record<string, string>>;
+  /** The registered tag, when the page defined the element under another name: a valid custom element name. */
+  readonly tagName?: string | undefined;
+  /**
+   * More attributes for the element itself: `id`, `class`, `style`. Values are
+   * escaped; a name that is not an attribute name, or an `on…` handler, throws.
+   */
+  readonly attributes?: Readonly<Record<string, string>> | undefined;
 }
 
 /**
@@ -171,6 +174,11 @@ export interface ServerHtmlOptions extends ServerRenderOptions {
  */
 export function renderTimelineHtml<T>(config: TimelineConfig<T>, options: ServerHtmlOptions = {}): string {
   const tag = options.tagName ?? TAG_NAME;
+  // Printed as they are: a name could otherwise close the tag and open another.
+  if (!/^[a-z][a-z0-9._-]*-[a-z0-9._-]*$/.test(tag)) throw new TypeError(`${JSON.stringify(tag)} is not a custom element name`);
+  for (const name of Object.keys(options.attributes ?? {})) {
+    if (!/^[a-z_][\w.:-]*$/i.test(name) || /^on/i.test(name)) throw new TypeError(`${JSON.stringify(name)} is not an attribute the timeline prints`);
+  }
   const frame = serverFrame(config, options, true);
   // On the element, where the client reads it — not in the JSON, which any
   // script could read, while the browser hides an attribute's nonce.

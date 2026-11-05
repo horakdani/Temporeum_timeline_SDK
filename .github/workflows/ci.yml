@@ -1,6 +1,7 @@
-# Every push and pull request: the core's suites on the lowest supported Node and
-# the current LTS lines, the size budgets, the zero-dependency rule, every package's
-# tests, the browser suites in Chromium, and what npm would receive.
+# Every push and pull request: the core's suites, the server rendering of every
+# package and the exports map on the lowest supported Node and the current LTS
+# lines, the size budgets, the zero-dependency rule, every package's tests, the
+# browser suites in Chromium, and what npm would receive.
 #
 # Performance is NOT measured here: a shared CI runner's timing is not a
 # yardstick. The benchmark (packages/docs/bench) runs on a quiet machine.
@@ -15,8 +16,11 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
-  # A newer push replaces a pull request's run; on main every commit is checked.
+  # A newer push replaces a pull request's run. On main every commit is checked,
+  # so each has a group of its own: within one group GitHub drops a waiting run
+  # when a newer one comes, cancel-in-progress or not, and the release workflow
+  # refuses a commit without a passing run.
+  group: ci-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
@@ -41,7 +45,11 @@ jobs:
       # The framework packages type-check against the element's built types, and the element against the engine's.
       - run: npm run build -w packages/core -w packages/web-component
       - run: npm run typecheck --workspaces --if-present
-      - run: npm run lint
+      # ESLint and size-limit admit Node 22.13 and 22.19 at the lowest, so the
+      # lint and the core's size budget run on the lines they support; what
+      # 22.12 measures is the packages, not the tools.
+      - if: matrix.node != '22.12.0'
+        run: npm run lint
       # The core's whole suite, once, with the per-file coverage threshold.
       - name: core suite and coverage
         run: npm run test:coverage -w packages/core
@@ -58,11 +66,24 @@ jobs:
           npm run test:rtl -w packages/core
           npm run test:dep-routing -w packages/core
       - name: size budgets
+        if: matrix.node != '22.12.0'
         run: npm run size -w packages/core
       - name: tree-shaking and entry-point isolation
         run: npm run test:treeshake -w packages/core
       - name: zero runtime dependencies
         run: npm run deps
+      # The element's and the four components' node suites (server rendering),
+      # and the exports map installed from the packed tarballs in a clean
+      # directory, on every Node the engines field admits — not only on 24.
+      - name: server rendering and the exports map, on this Node
+        run: |
+          npm run build -w packages/react -w packages/vue -w packages/svelte -w packages/angular
+          for pkg in web-component react vue svelte angular; do
+            (cd "packages/$pkg" && npx vitest run --project node) || exit 1
+          done
+          node scripts/sdk_check_exports.mjs
+      - name: the element's and the components' size budgets
+        run: node scripts/sdk_size_packages.mjs
 
   browser:
     name: browser suites
@@ -94,6 +115,8 @@ jobs:
         run: node scripts/sdk_check_exports.mjs
       - name: every public name documented, no positional booleans
         run: node scripts/sdk_check_api_docs.mjs
+      - name: conformance report complete, its citations exist, no bare WCAG claim
+        run: node scripts/sdk_check_acr.mjs --static
       - name: no core option dropped silently, no gesture-only capability
         run: |
           npm run test:passthrough -w @temporeum/timeline-element
@@ -129,7 +152,7 @@ jobs:
 
   # The browser suites above run on the newest framework versions the lockfile
   # holds; this job runs them on the lowest each peer range admits (React 18,
-  # Vue 3.5.0, Svelte 5.20.0, Angular 21.0.0). It rewrites the manifests and
+  # Vue 3.5.0, Svelte 5.46.4, Angular 21.0.0). It rewrites the manifests and
   # the lockfile — on this throwaway checkout only.
   lowest-peers:
     name: lowest framework versions
@@ -145,6 +168,24 @@ jobs:
       - run: npx playwright install --with-deps chromium chromium-headless-shell
       - name: every framework package on the lowest version its peer range admits
         run: node scripts/sdk_test_lowest_peers.mjs --throwaway
+
+  # The other end of each range: the newest version it admits, from the
+  # registry, wherever development is not already on it (Angular 22, while the
+  # lockfile holds 21). A package already on its newest is skipped.
+  newest-peers:
+    name: newest framework versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium chromium-headless-shell
+      - name: every framework package on the newest version its peer range admits
+        run: node scripts/sdk_test_lowest_peers.mjs --throwaway --highest
 
   audit:
     name: audit

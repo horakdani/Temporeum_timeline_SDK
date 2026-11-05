@@ -65,12 +65,12 @@ Each item's accessible name says it too: "Design, Apr 11, 2026 – Apr 18, 2026,
 | `]` | Moves the focus to a successor of the focused item, bringing it into view. Pressed again, to the next successor of the same item, round the list. |
 | `[` | The same, for predecessors. |
 
-Every other key of the timeline works as before — see [accessibility](accessibility.md).
+The brackets are read as the keyboard types them: on most layouts outside the US that is with AltGr, or Option on a Mac, and that works. Ctrl or Cmd with a bracket is left to the browser. Every other key of the timeline works as before — see [accessibility](accessibility.md).
 
 ## The task table
 
 ```js excerpt:example/gantt
-mountTaskGrid(document.querySelector("#grid"), timeline, { label: "Release tasks", focusTarget: element });
+mountTaskGrid(document.querySelector("#grid"), timeline, { ariaLabel: "Release tasks", focusTarget: element });
 ```
 
 `mountTaskGrid(container, timeline, options)` draws the table in an element of its own, which you place beside the timeline — here a CSS grid of two columns. It is not drawn over the timeline: it would cover the items.

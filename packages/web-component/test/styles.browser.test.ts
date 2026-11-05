@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished } from "vitest";
 
 import { adoptCss, writeAttr } from "../src/css.js";
 import { trustedHtml, TRUSTED_TYPES_POLICY } from "../src/trusted.js";
@@ -25,6 +25,12 @@ describe("adoptCss", () => {
   });
 
   it("where nothing adopts, writes a <style> first — or keeps the one already there", () => {
+    // A browser without constructable sheets: the documents have no adoptedStyleSheets.
+    const own = Object.getOwnPropertyDescriptor(Document.prototype, "adoptedStyleSheets") as PropertyDescriptor;
+    Object.defineProperty(Document.prototype, "adoptedStyleSheets", { configurable: true, get: () => undefined, set: () => undefined });
+    onTestFinished(() => {
+      Object.defineProperty(Document.prototype, "adoptedStyleSheets", own);
+    });
     const detached = document.createElement("div");
     detached.append(document.createElement("span"));
     const release = adoptCss(detached, ".x{}", "n");
@@ -34,6 +40,20 @@ describe("adoptCss", () => {
     expect(detached.querySelectorAll("style")).toHaveLength(1);
     release();
     expect(detached.querySelectorAll("style")).toHaveLength(0);
+  });
+
+  it("a box not yet in a document gets no <style>, and its sheet once it is in one (R78)", async () => {
+    // A <style> there is what a strict policy blocks the moment the box is put in.
+    const detached = document.createElement("div");
+    const before = document.adoptedStyleSheets.length;
+    const release = adoptCss(detached, ".r78{}");
+    expect(detached.querySelector("style")).toBeNull();
+    document.body.append(detached);
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(document.adoptedStyleSheets.length).toBe(before + 1);
+    release();
+    expect(document.adoptedStyleSheets.length).toBe(before);
+    detached.remove();
   });
 });
 

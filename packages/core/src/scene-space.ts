@@ -40,7 +40,10 @@
  *    so settling after it keeps the space — and with it every node as is.
  *    With `levels`, a view whose scale is a power of two off the space's —
  *    a zoom back to where it started — settles on that level, around the
- *    same origin, where its tiles are still drawn.
+ *    same origin, where its tiles may still be drawn. That one is checked
+ *    first, before rule 2: a level is at least twice off, past any stretch
+ *    limit, and before 1.0 rule 2 anchored such a view at the viewport.
+ *    "A power of two" is to within the noise a zoom there and back leaves.
  * 5. Otherwise the space is kept, and only its **extent** — what is drawn —
  *    changes: it always covers the viewport, is trimmed to the viewport plus
  *    the overscan, and **at rest** grows toward that by `growth` viewports
@@ -249,15 +252,27 @@ export function planSceneSpace(
   // A host that asked for bare frames gets them until the gesture comes to rest.
   const bare = !atRest && current.bare === true;
   const stretch = current.msPerPx / msPerPx;
+  // The nearest level, and whether the view is on it — to within the noise
+  // a zoom there and back leaves: a wheel zoom 1.2x a notch, 8 in and 8 out,
+  // lands 2.5e-14 off where it started.
+  const near = Math.round(Math.log2(stretch));
+  const level = current.msPerPx / 2 ** near;
+  const onLevel = Math.abs(level / msPerPx - 1) <= SAME_SCALE;
+  if (atRest && options.levels === true && near !== 0 && onLevel && Math.abs(current.origin - start) / level <= maxShift) {
+    // At rest on the scale of a level — a zoom that came back to where it
+    // started — settle on that level, around the same origin: its tiles may
+    // still be drawn, and the frame is as exact as one anchored at the viewport.
+    return { origin: current.origin, msPerPx: level, extent: [start, end], atRest };
+  }
   // Stepping in levels squeezes to a half: the next level out is then the
   // screen's own scale at most, never coarser.
   const squeeze = stepping ? Math.min(1 / maxStretch, LEVEL_SQUEEZE) : 1 / maxStretch;
-  // Squeezed to exactly half, the next level out is the screen's own scale:
-  // a zoom back to where it started lands there, on the tiles drawn there.
-  if (stretch > maxStretch || stretch < squeeze || (stepping && stretch === squeeze)) {
+  // Squeezed to half, the next level out is the screen's own scale: a zoom
+  // back to where it started lands there, on the tiles drawn there.
+  if (stretch > maxStretch || stretch < squeeze || (stepping && Math.abs(stretch / squeeze - 1) <= SAME_SCALE)) {
     // A power of two around the same origin: the coarsest not coarser than
     // the viewport's scale, so what the step draws has the room it shows.
-    const stepped = current.msPerPx / 2 ** Math.ceil(Math.log2(stretch));
+    const stepped = onLevel ? level : current.msPerPx / 2 ** Math.ceil(Math.log2(stretch));
     const left = stepped / msPerPx;
     if (
       !stepping ||
@@ -273,14 +288,6 @@ export function planSceneSpace(
     return { origin: start, msPerPx: current.msPerPx, extent: [start, end], atRest, ...paced, ...from };
   }
   if (atRest && Math.abs(stretch - 1) > SAME_SCALE) {
-    // At rest on the scale of a level the space stepped through — a zoom
-    // that came back to where it started — settle on that level, around the
-    // same origin: its tiles are still drawn, and the frame is as exact as
-    // one anchored at the viewport. Otherwise anchor there.
-    const level = current.msPerPx * 2 ** Math.round(Math.log2(msPerPx / current.msPerPx));
-    if (options.levels === true && Math.abs(level / msPerPx - 1) <= SAME_SCALE && Math.abs(current.origin - start) / level <= maxShift) {
-      return { origin: current.origin, msPerPx: level, extent: [start, end], atRest };
-    }
     return { origin: start, msPerPx, extent: [start, end], atRest };
   }
 

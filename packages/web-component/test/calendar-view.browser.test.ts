@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import { parseICal, weekStartOf } from "@temporeum/timeline-core/calendar";
@@ -77,7 +77,7 @@ describe("the week view", () => {
   it("a click and Enter choose the same event, with the same select", async () => {
     const chosen: CalendarSelectPayload[] = [];
     const first = mount();
-    first.view.on("select", (payload) => chosen.push(payload));
+    first.view.on("itemSelect", (payload) => chosen.push(payload));
     const review = first.svg.querySelector('[data-item-id="review"]');
     expect(review).not.toBeNull();
     if (review === null) return;
@@ -88,7 +88,7 @@ describe("the week view", () => {
     // From the keyboard: the first event, a day right twice — on Wednesday the
     // nearest at nine is the longer Review, in the first column — then Enter.
     const second = mount();
-    second.view.on("select", (payload) => chosen.push(payload));
+    second.view.on("itemSelect", (payload) => chosen.push(payload));
     second.svg.focus();
     await userEvent.keyboard("{ArrowDown}");
     expect(second.view.focusedKey).toBe("standup@20261102T090000Z");
@@ -104,7 +104,7 @@ describe("the week view", () => {
   it("the period keys and the buttons page the same way, and say so", async () => {
     const { element, view, svg } = mount();
     const ranges: number[] = [];
-    view.on("rangeChange", (payload) => ranges.push(payload.start));
+    view.on("rangeChanged", (payload) => ranges.push(payload.start));
     svg.focus();
     await userEvent.keyboard("{PageDown}");
     expect(view.range[0]).toBe(MONDAY + 7 * DAY);
@@ -184,9 +184,16 @@ describe("the week view, every option and path", () => {
   });
 
   it("the view's own next, previous and today, the Next and Today buttons and t page alike; an unsubscribed handler hears nothing", async () => {
+    // Today is a fixed day: read from the clock, the week could turn between
+    // the expectation and the click (a Sunday midnight in the zone).
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(MONDAY + 30 * DAY + 12 * 3_600_000);
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
     const { element, view } = mount();
     const ranges: number[] = [];
-    const off = view.on("rangeChange", (payload) => ranges.push(payload.start));
+    const off = view.on("rangeChanged", (payload) => ranges.push(payload.start));
     view.next();
     expect(view.range[0]).toBe(MONDAY + 7 * DAY);
     view.previous();
@@ -195,6 +202,7 @@ describe("the week view, every option and path", () => {
     buttons.find((button) => button.textContent === "Next")?.click();
     expect(view.range[0]).toBe(MONDAY + 7 * DAY);
     const thisWeek = weekStartOf(Date.now(), ZONE, 1);
+    expect(thisWeek).toBe(MONDAY + 28 * DAY);
     buttons.find((button) => button.textContent === "Today")?.click();
     expect(view.range[0]).toBe(thisWeek);
     view.next();
@@ -214,7 +222,7 @@ describe("the week view, every option and path", () => {
   it("Enter with nothing focused, an unknown key and a key for nothing choose nothing; an arrow past the first stays; a focus whose event is gone is forgotten", async () => {
     const { view, svg } = mount();
     const chosen: string[] = [];
-    view.on("select", (payload) => chosen.push(payload.key));
+    view.on("itemSelect", (payload) => chosen.push(payload.key));
     svg.focus();
     await userEvent.keyboard("{Enter}");
     await userEvent.keyboard("x");
@@ -234,7 +242,7 @@ describe("the week view, every option and path", () => {
   it("a press that travels, a right button, a cancelled press, another pointer's lift and empty time choose nothing; a still press on an event chooses it", () => {
     const { view, svg } = mount();
     const chosen: string[] = [];
-    view.on("select", (payload) => chosen.push(`${payload.key} ${payload.via}`));
+    view.on("itemSelect", (payload) => chosen.push(`${payload.key} ${payload.via}`));
     const review = svg.querySelector('[data-item-id="review"]') as Element;
     const at = centre(review);
     const host = svg.parentElement as HTMLElement;

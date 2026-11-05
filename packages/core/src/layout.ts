@@ -181,13 +181,20 @@ export function withDefaultLane(lanes: readonly Lane[], items: readonly Item[]):
     : [...lanes, { id: DEFAULT_LANE_ID }];
 }
 
+/**
+ * The tallest an item can be, in sublanes. The packing loops over and keeps a
+ * row for every sublane an item spans, so a span from hostile data (a drop, a
+ * fetched window) would run the tab out of memory; no real band is this tall.
+ */
+export const MAX_SUBLANE_SPAN = 1000;
+
 export function sublaneSpanOf(item: Item): number {
   const span = item.sublaneSpan;
   if (span === undefined) {
     return 1;
   }
-  if (!Number.isInteger(span) || span < 1) {
-    throw new RangeError(`Item ${item.id}: sublaneSpan must be a positive integer, got ${String(span)}`);
+  if (!Number.isInteger(span) || span < 1 || span > MAX_SUBLANE_SPAN) {
+    throw new RangeError(`Item ${item.id}: sublaneSpan must be a positive integer, at most ${String(MAX_SUBLANE_SPAN)}, got ${String(span)}`);
   }
   return span;
 }
@@ -197,34 +204,25 @@ export function sublaneSpanOf(item: Item): number {
  *
  * First fit, which is what makes the result stable: adding an item never moves
  * the ones already placed, so the layout does not reshuffle while a user
- * drags.
+ * drags. Items arrive sorted by start, so a sublane is free for a span when
+ * the last end placed in it is not after the span's start: `ends` keeps that
+ * one number per sublane, and a placement costs the sublanes it looks at, not
+ * the items already placed.
  */
-export function firstFit(occupied: ItemSpan[][], span: ItemSpan, height: number): number {
-  for (let base = 0; ; base += 1) {
-    let fits = true;
-    for (let offset = 0; offset < height; offset += 1) {
-      const sublane = occupied[base + offset];
-      if (sublane !== undefined && sublane.some((other) => overlaps(span, other))) {
-        fits = false;
-        break;
-      }
-    }
-    if (fits) {
-      return base;
+export function firstFit(ends: number[], span: ItemSpan, height: number): number {
+  let base = 0;
+  for (let offset = 0; offset < height; offset += 1) {
+    // A busy sublane rules out every base that would include it.
+    if ((ends[base + offset] ?? span.start) > span.start) {
+      base += offset + 1;
+      offset = -1;
     }
   }
+  return base;
 }
 
-export function placeInSublane(occupied: ItemSpan[][], base: number, span: ItemSpan, height: number): void {
-  for (let offset = 0; offset < height; offset += 1) {
-    const index = base + offset;
-    const sublane = occupied[index];
-    if (sublane === undefined) {
-      occupied[index] = [span];
-    } else {
-      sublane.push(span);
-    }
-  }
+export function placeInSublane(ends: number[], base: number, span: ItemSpan, height: number): void {
+  for (let offset = 0; offset < height; offset += 1) ends[base + offset] = span.end;
 }
 
 /**
@@ -251,6 +249,12 @@ export function layoutItems<T = unknown>(
     // Two lanes with one id would each claim the same items and place them
     // twice. Better a loud error than a layout with ghosts in it.
     throw new RangeError("Duplicate lane id in the lane list");
+  }
+  if (new Set(items.map((item) => item.id)).size !== items.length) {
+    // An id is how an item is found again: by the keyboard, the selection,
+    // the hit test and a patch. Two items sharing one would be one stop the
+    // keyboard can never leave, and one edit moving both.
+    throw new RangeError("Duplicate item id in the item list");
   }
 
   // Start-sorted once, globally: every lane then consumes its own items in the
@@ -281,7 +285,7 @@ export function layoutItems<T = unknown>(
   for (const lane of lanes) {
     const mode: PackMode = lane.packMode ?? fallbackMode;
     const entries = byLane.get(lane.id) ?? [];
-    const occupied: ItemSpan[][] = [];
+    const occupied: number[] = [];
     const placements: { entry: (typeof entries)[number]; base: number; height: number }[] = [];
     let nextSingle = 0;
 

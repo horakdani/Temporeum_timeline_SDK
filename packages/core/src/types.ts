@@ -83,6 +83,11 @@ export interface MainCrossRect {
 
 /** One entry on the timeline. `T` is the host's own payload, carried untouched. */
 export interface Item<T = unknown> {
+  /**
+   * Unique among the items: it is how the keyboard, the selection and a patch
+   * find the item again. The core refuses a duplicate with a `RangeError`; the
+   * element keeps the first and leaves a later one out, with `inputSkipped`.
+   */
   readonly id: string;
   readonly start: TimeInput;
   /**
@@ -99,8 +104,8 @@ export interface Item<T = unknown> {
   readonly open?: boolean;
   readonly laneId?: string;
   /**
-   * How many sublanes the item is tall. One by default; a band that needs more
-   * room reserves that many consecutive free sublanes.
+   * How many sublanes the item is tall: a whole number from 1 to 1000. One by
+   * default; a band that needs more room reserves that many consecutive free sublanes.
    */
   readonly sublaneSpan?: number;
   readonly granularity?: Granularity;
@@ -142,7 +147,11 @@ export type ItemKind = "range" | "box" | "point" | "background" | "milestone";
 export interface Lane {
   readonly id: string;
   readonly label?: string;
-  /** Pinned lanes keep their cross position when the rest scrolls. */
+  /**
+   * A pinned lane comes first, ahead of the lanes that are not, in the order
+   * given, and is drawn with the `tl-lane--pinned` class (the `--tl-surface-alt`
+   * fill). It scrolls with the others; it is not held in place.
+   */
   readonly pinned?: boolean;
   readonly packMode?: PackMode;
   readonly minCrossSize?: number;

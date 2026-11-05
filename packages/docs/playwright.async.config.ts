@@ -11,6 +11,8 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = Number(process.env.TL_ASYNC_PORT ?? 41743);
 
 export default defineConfig({
+  // A stray test.only would quietly run one test and call the suite green.
+  forbidOnly: true,
   testDir: "./e2e",
   testMatch: "async.spec.ts",
   workers: 1,

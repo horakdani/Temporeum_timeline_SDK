@@ -21,6 +21,7 @@
  */
 
 import { formatterFor } from "../a11y.js";
+import { withClass } from "../draw.js";
 import { densityMetrics } from "../density.js";
 import { estimateTextWidth, shortenLabel } from "../labels.js";
 import type { MeasureText } from "../labels.js";
@@ -227,7 +228,7 @@ export function calendarScene(layout: DaysLayout<unknown>, options: CalendarScen
     const item = segment.item;
     const isSelected = selected.has(item.id);
     const children: SceneElement[] = [
-      rect(`tl-cal-event${isSelected ? " tl-cal-event--selected" : ""}${item.className === undefined ? "" : ` ${item.className}`}`, r, { rx: Math.min(m.cornerRadius, r.height / 2) }),
+      rect(withClass(`tl-cal-event${isSelected ? " tl-cal-event--selected" : ""}`, item.className), r, { rx: Math.min(m.cornerRadius, r.height / 2) }),
     ];
     const padX = 4;
     const room = r.width - 2 * padX;

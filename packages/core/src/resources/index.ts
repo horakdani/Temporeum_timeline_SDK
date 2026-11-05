@@ -39,6 +39,7 @@ import { describeItem } from "../a11y.js";
 import { DEFAULT_TIME_ZONE } from "../calendar.js";
 import { defaultItemNode } from "../render.js";
 import type { RenderHooks } from "../render.js";
+import { resolveSpan } from "../layout.js";
 import type { Layout, LayoutItem } from "../layout.js";
 import type { SceneElement } from "../scene.js";
 import type { TimeScale } from "../scale.js";
@@ -62,6 +63,12 @@ export interface LoadOptions<T = unknown> {
    * one, 0.5 half of it. 1 by default. Anything not above zero counts nothing.
    */
   readonly unitsOf?: (item: Item<T>) => number;
+  /**
+   * The timeline's zone. An item with a `granularity` takes its resource over
+   * the units it is drawn over there — a day-granular booking, the whole day.
+   * UTC by default.
+   */
+  readonly timeZone?: string;
 }
 
 /** One stretch of a resource's time with the same load. */
@@ -96,7 +103,7 @@ export function capacityOf(resource: Resource): number {
   return capacity !== undefined && Number.isFinite(capacity) && capacity >= 0 ? capacity : 1;
 }
 
-const loadCache = new WeakMap<readonly Item<unknown>[], { resources: readonly Resource[]; unitsOf: unknown; load: ResourceLoad }>();
+const loadCache = new WeakMap<readonly Item<unknown>[], { resources: readonly Resource[]; unitsOf: unknown; timeZone: string | undefined; load: ResourceLoad }>();
 
 /**
  * Every resource's load from its assignments: an item whose `laneId` is a
@@ -107,17 +114,19 @@ const loadCache = new WeakMap<readonly Item<unknown>[], { resources: readonly Re
  * for the same three and gets the same object back.
  */
 export function resourceLoad<T>(items: readonly Item<T>[], resources: readonly Resource[], options: LoadOptions<T> = {}): ResourceLoad {
-  const unitsOf = options.unitsOf;
+  const { unitsOf, timeZone } = options;
   const hit = loadCache.get(items as readonly Item<unknown>[]);
-  if (hit !== undefined && hit.resources === resources && hit.unitsOf === unitsOf) return hit.load;
+  if (hit !== undefined && hit.resources === resources && hit.unitsOf === unitsOf && hit.timeZone === timeZone) return hit.load;
   const capacity = new Map(resources.map((resource) => [resource.id, capacityOf(resource)]));
   // Per resource: [time, units] for every edge, a start adding and an end taking away.
   const edges = new Map<string, [number, number][]>();
   for (const item of items) {
     const id = item.laneId;
     if (id === undefined || item.kind === "background" || !capacity.has(id)) continue;
-    const start = toTimeMs(item.start);
-    const end = item.open === true ? Infinity : item.end === undefined ? start : toTimeMs(item.end);
+    // The span the layout draws when the item has units; an instant takes nothing.
+    const span = item.granularity !== undefined && item.granularity !== "millisecond" ? resolveSpan(item, timeZone) : undefined;
+    const start = span?.start ?? toTimeMs(item.start);
+    const end = span?.end ?? (item.open === true ? Infinity : item.end === undefined ? start : toTimeMs(item.end));
     const units = unitsOf === undefined ? 1 : unitsOf(item);
     if (!(end > start) || !(units > 0) || !Number.isFinite(units)) continue;
     let list = edges.get(id);
@@ -156,7 +165,7 @@ export function resourceLoad<T>(items: readonly Item<T>[], resources: readonly R
     segments.set(resource.id, out);
   }
   const result: ResourceLoad = { capacity, segments };
-  loadCache.set(items as readonly Item<unknown>[], { resources, unitsOf, load: result });
+  loadCache.set(items as readonly Item<unknown>[], { resources, unitsOf, timeZone, load: result });
   return result;
 }
 

@@ -55,7 +55,7 @@ A function sets each level apart, or a row and a column: `metrics: (base) => ({ 
 `<temporeum-timeline>` draws in its shadow root, where a page's selectors do not reach. The page reaches it two ways:
 
 - **The tokens, set on the element.** Inside the shadow root they are declared on `:host`, and a page's rule for the element wins over those whatever its specificity: `temporeum-timeline { --tl-item-fill: … }`, or a class on one element.
-- **`::part()`, for any node.** Every node the timeline draws carries its classes as its parts, read without the `tl-` prefix: an item is `item`, a selected one `item item-selected`, the root `timeline`, a major tick's label `tick-label tick-label-major`, a group header `group`. A class of your own — an item's `className` — is a part as it is: `temporeum-timeline::part(urgent)`.
+- **`::part()`, for any node.** Every node the timeline draws carries its classes as its parts, read without the `tl-` prefix: an item is `item`, a selected one `item item-selected`, the root `timeline`, a major tick's label `tick-label tick-label-major`, a group header `group`. A class of your own — an item's `className` — is a part as it is: `temporeum-timeline::part(urgent)`. A `tl-` class given in data is left out, on items, groups, decorations and arrows alike: those classes are the timeline's, and one of them on your node would draw it as selected or have it taken for a control.
 
 ::: example theming-element
 

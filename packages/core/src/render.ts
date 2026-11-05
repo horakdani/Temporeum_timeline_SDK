@@ -40,12 +40,12 @@ import type { Decoration, DecorationContext } from "./decorations.js";
 import { decorationLayer, renderDecoration } from "./decorations.js";
 import type { DensityMetrics, MetricsProvider } from "./density.js";
 import { densityMetrics } from "./density.js";
-import { htmlTextNode, rectAttrs, textNode } from "./draw.js";
+import { htmlTextNode, rectAttrs, textNode, withClass } from "./draw.js";
 import type { Projector, ScreenRect } from "./geometry.js";
 import { containerExtents, createProjector } from "./geometry.js";
 import type { LabelCandidate, LabelLayout, LabelOverflow, MeasureText, PlacedLabel } from "./labels.js";
 import { createNavigator } from "./keyboard.js";
-import { estimateTextWidth, labelSpace, placeLabels } from "./labels.js";
+import { estimateTextWidth, labelSpace, placeLabels, search } from "./labels.js";
 import type { Layout, LayoutItem } from "./layout.js";
 import { itemRect, layoutItems } from "./layout.js";
 import type { SceneElement } from "./scene.js";
@@ -207,13 +207,10 @@ export function defaultItemNode<T>(context: ItemRenderContext<T>): SceneElement 
   if (context.selected) {
     classes.push("tl-item--selected");
   }
-  if (item.className !== undefined) {
-    classes.push(item.className);
-  }
   return {
     tag: "rect",
     attrs: {
-      class: classes.join(" "),
+      class: withClass(classes.join(" "), item.className),
       "data-tl-id": item.id,
       ...rectAttrs(context.box, context.projector),
       rx: context.metrics.cornerRadius,
@@ -1328,8 +1325,8 @@ interface TileCache {
   /** The last frame's content, and what decides it beyond `key`. */
   frameKey: readonly unknown[] | undefined;
   frame: FrameContent<unknown> | undefined;
-  /** The level the last frame was drawn at, and which of its own tiles it showed. */
-  shown: { readonly level: number; readonly tiles: ReadonlySet<number> } | undefined;
+  /** Every tile the last frame showed: of its own scale, and those that stood in. */
+  shown: ReadonlySet<Tile<unknown>> | undefined;
 }
 
 /**
@@ -1477,7 +1474,7 @@ function selectionOf(ids: ReadonlySet<string>, selected: ReadonlySet<string>): s
  * listed apart and always looked at: one long item would otherwise widen the
  * window for all of them.
  */
-interface StartIndex {
+export interface StartIndex {
   /** Positions in `layout.items` of the other items, by start. */
   readonly byStart: Int32Array;
   readonly starts: Float64Array;
@@ -1490,15 +1487,17 @@ interface StartIndex {
 const LONG_SPAN = 8;
 const startIndexes = new WeakMap<Layout<unknown>, StartIndex>();
 
-function startIndexOf(layout: Layout<unknown>): StartIndex {
+export function startIndexOf(layout: Layout<unknown>): StartIndex {
   const known = startIndexes.get(layout);
   if (known !== undefined) {
     return known;
   }
   const { items } = layout;
   const lengths = items.map((placed) => (placed.span.open ? Number.POSITIVE_INFINITY : placed.span.end - placed.span.start));
-  const sorted = [...lengths].sort((a, b) => a - b);
-  // Mostly instants: then only the open ones are apart.
+  // The median of the items with a length: an instant spans a millisecond,
+  // and with mostly instants every item longer than 8 ms was "long" and
+  // looked at in every tile. With only instants, only the open ones are apart.
+  const sorted = lengths.filter((length) => length > 1 && length < Infinity).sort((a, b) => a - b);
   const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
   const limit = median > 0 ? median * LONG_SPAN : Number.MAX_VALUE;
   const long: number[] = [];
@@ -1526,17 +1525,7 @@ function startIndexOf(layout: Layout<unknown>): StartIndex {
 
 /** The first position in `starts` at or after `time`. */
 function firstAtOrAfter(starts: Float64Array, time: number): number {
-  let low = 0;
-  let high = starts.length;
-  while (low < high) {
-    const middle = (low + high) >>> 1;
-    if ((starts[middle] as number) < time) {
-      low = middle + 1;
-    } else {
-      high = middle;
-    }
-  }
-  return low;
+  return search(starts.length, (middle) => (starts[middle] as number) >= time);
 }
 
 /**
@@ -1788,7 +1777,7 @@ function drawSpaceContent<T>(
   // it does — every item in it moves back in, at another scale — so while
   // the scale shown instead can stand in, it comes back a budget at a time
   // too (the last notch of a wheel zoom out, 25 ms at a 4x slowdown).
-  const settled = cache.shown?.level === level.id ? cache.shown.tiles : new Set<number>();
+  const onScreen = cache.shown ?? new Set();
   const returning: number[] = [];
   for (let index = first; index <= last; index += 1) {
     const tile = tiles.get(index);
@@ -1796,7 +1785,7 @@ function drawSpaceContent<T>(
     // not adding labels, not about taking away the ones already there.
     if (!fresh(tile, index === first ? rangeStart : undefined) || (tile.fit !== 1 && tile.fit !== fit)) {
       needed.push(index);
-    } else if (!settled.has(index)) {
+    } else if (!onScreen.has(tile)) {
       returning.push(index);
     }
   }
@@ -1815,10 +1804,15 @@ function drawSpaceContent<T>(
       .sort((a, b) => Math.abs(a.id - (level as Level).id) - Math.abs(b.id - (level as Level).id));
     const groups: { readonly key: string; readonly tiles: Tile<unknown>[]; readonly ratio: number; readonly covers: number[] }[] = [];
     const taken = new Set<number>();
+    // Of the scales that can stand in, the nearest — unless a farther one's
+    // tiles are on screen already: those stand in with a transform, the
+    // others come back into the page whole (a wheel zoom's step out, 2,900
+    // attributes in one frame, when the scale it started at stood in).
     for (const index of paced) {
       if (index === first || taken.has(index)) {
         continue;
       }
+      let chosen: (typeof groups)[number] | undefined;
       for (const other of others) {
         const steps = other.id - level.id;
         const span = 2 ** Math.abs(steps);
@@ -1840,11 +1834,18 @@ function drawSpaceContent<T>(
         if (!old.every((tile) => fresh(tile, undefined))) {
           continue;
         }
-        groups.push({ key: `${String(other.id)}:${String(from[0])}`, tiles: old as Tile<unknown>[], ratio: other.msPerPx / level.msPerPx, covers });
-        for (const cover of covers) {
+        const group = { key: `${String(other.id)}:${String(from[0])}`, tiles: old as Tile<unknown>[], ratio: other.msPerPx / level.msPerPx, covers };
+        chosen ??= group;
+        if (old.every((tile) => onScreen.has(tile as Tile<unknown>))) {
+          chosen = group;
+          break;
+        }
+      }
+      if (chosen !== undefined) {
+        groups.push(chosen);
+        for (const cover of chosen.covers) {
           taken.add(cover);
         }
-        break;
       }
     }
     // Only what is in view is drawn again, nearest its middle first: a tile
@@ -1890,14 +1891,18 @@ function drawSpaceContent<T>(
 
   const shown: Tile<T>[] = [];
   const emitted = new Set<object>();
+  const now = new Set<Tile<unknown>>();
   for (let index = first; index <= last; index += 1) {
     const group = stood.get(index);
     if (group === undefined) {
-      shown.push(tiles.get(index) as Tile<T>);
+      const tile = tiles.get(index) as Tile<T>;
+      shown.push(tile);
+      now.add(tile as Tile<unknown>);
     } else if (!emitted.has(group)) {
       emitted.add(group);
       for (const tile of group.tiles) {
         shown.push(standIn(tile as Tile<T>, group.ratio, orientation));
+        now.add(tile);
       }
     }
   }
@@ -1920,11 +1925,7 @@ function drawSpaceContent<T>(
   // A frame with stand-ins is not one to hand back: the next draws more.
   cache.frameKey = stood.size === 0 ? frameKey : undefined;
   cache.frame = stood.size === 0 ? (content as FrameContent<unknown>) : undefined;
-  const own = new Set<number>();
-  for (let index = first; index <= last; index += 1) {
-    if (!stood.has(index)) own.add(index);
-  }
-  cache.shown = { level: level.id, tiles: own };
+  cache.shown = now;
   return { ...content, pending: waiting };
 }
 
@@ -2302,6 +2303,8 @@ export function renderTimeline<T = unknown>(options: RenderOptions<T>): RenderRe
   const metrics = (options.metrics ?? densityMetrics)(density, orientation);
   const projector = createProjector(orientation);
   const { mainSize, crossSize } = containerExtents(options.width, options.height, orientation);
+  // NaN is not an empty container but a host's bug: it drew a NaN viewBox, or threw deep inside (R31).
+  if (!Number.isFinite(mainSize + crossSize)) throw new RangeError("width and height must be finite");
   const domain: readonly [number, number] = [
     toTimeMs(options.domain[0]),
     toTimeMs(options.domain[1]),

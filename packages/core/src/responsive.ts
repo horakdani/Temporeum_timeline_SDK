@@ -200,24 +200,26 @@ export function fitDensity<T>(input: DensityFitInput<T>): DensityFit {
   const { mainSize, crossSize } = containerExtents(input.width, input.height, input.orientation);
   const previous = input.previous;
 
-  const needs: Record<Density, number> = { comfortable: 0, compact: 0, dense: 0 };
-  let spans: readonly { readonly start: number; readonly end: number }[] = [];
+  // One layout: the sublanes an item takes do not depend on the level, only
+  // what a sublane measures does, so each level's extent is a sum over the
+  // same lanes — the sum `layoutItems` makes, the axis band first.
+  const layout = layoutItems(input.items, {
+    ...(input.lanes === undefined ? {} : { lanes: input.lanes }),
+    ...(input.packMode === undefined ? {} : { packMode: input.packMode }),
+    ...(input.timeZone === undefined ? {} : { timeZone: input.timeZone }),
+  });
+  const needs = {} as Record<Density, number>;
   for (const density of DENSITIES) {
-    const metrics = (input.metrics ?? densityMetrics)(density, input.orientation);
-    const layout = layoutItems(input.items, {
-      ...(input.lanes === undefined ? {} : { lanes: input.lanes }),
-      ...(input.packMode === undefined ? {} : { packMode: input.packMode }),
-      ...(input.timeZone === undefined ? {} : { timeZone: input.timeZone }),
-      metrics: { rowSize: metrics.rowSize, rowGap: metrics.rowGap, laneGap: metrics.laneGap },
-    });
-    // The same sum the renderer reports as `contentCrossSize`: the axis band
-    // comes first, the lanes after it.
-    needs[density] = metrics.axisSize + layout.crossSize;
-    // Spans do not depend on the level; any of the three layouts has them,
-    // resolved the way the renderer draws them — a day-granular instant
-    // counts with the day it covers, not as a point.
-    spans = layout.items.map((placed) => placed.span);
+    const { rowSize, rowGap, laneGap, axisSize } = (input.metrics ?? densityMetrics)(density, input.orientation);
+    let cross = -laneGap;
+    for (const { sublaneCount, lane } of layout.lanes) {
+      cross += Math.max(sublaneCount * rowSize + (sublaneCount - 1) * rowGap, lane.minCrossSize ?? 0) + laneGap;
+    }
+    needs[density] = axisSize + Math.max(cross, 0);
   }
+  // Spans are resolved the way the renderer draws them: a day-granular
+  // instant counts with the day it covers, not as a point.
+  const spans = layout.items.map((placed) => placed.span);
 
   if (!(mainSize > 0) || !(crossSize > 0)) {
     const kept = previous ?? "comfortable";

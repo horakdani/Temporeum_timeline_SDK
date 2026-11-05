@@ -256,7 +256,7 @@ describe("the task grid", () => {
   });
 
   it("follows a vertical timeline across, takes a theme, and redraws after a command", async () => {
-    const { timeline, box, rows } = await withGrid({ orientation: "vertical" }, { theme: "dark", columns: defaultTaskColumns(), label: "Plan" });
+    const { timeline, box, rows } = await withGrid({ orientation: "vertical" }, { theme: "dark", columns: defaultTaskColumns(), ariaLabel: "Plan" });
     const grid = box.querySelector("[role=grid]") as HTMLElement;
     expect(grid.className).toContain("tl-grid--vertical");
     expect(grid.dataset.tlTheme).toBe("dark");
@@ -295,7 +295,21 @@ describe("the task grid", () => {
     mountTaskGrid(box, timeline, { theme: custom as never });
     const names = [...box.querySelectorAll(".tl-grid-cell--name")].map((cell) => cell.textContent);
     expect(names).toEqual(["Only", "empty"]);
-    expect((box.querySelector("[role=grid]") as HTMLElement).dataset.tlTheme).toBe("custom");
+    const gridBox = box.querySelector("[role=grid]") as HTMLElement;
+    expect(gridBox.dataset.tlTheme).toBe("custom");
+    // R22: update takes options, as every update does; the rest stay.
+    const handle = mountTaskGrid(box, timeline, { theme: custom as never });
+    const second = box.querySelectorAll<HTMLElement>("[role=grid]")[1] as HTMLElement;
+    handle.update({ ariaLabel: "Plan", theme: "dark", columns: [{ id: "lane", header: "Lane", value: ({ lane }) => lane.id }] });
+    expect(second.getAttribute("aria-label")).toBe("Plan");
+    expect(second.getAttribute("aria-colcount")).toBe("1");
+    expect([...second.querySelectorAll(".tl-grid-header")].map((cell) => cell.textContent)).toEqual(["Lane"]);
+    expect([...second.querySelectorAll(".tl-grid-cell")].map((cell) => cell.textContent)).toEqual(["solo", "empty"]);
+    expect(second.dataset.tlTheme).toBe("dark");
+    expect(second.style.cssText).toBe("");
+    handle.update({ overscan: 0 });
+    expect(second.getAttribute("aria-label")).toBe("Plan");
+    handle.destroy();
     // A click outside a row, and Enter on a lane with no item, do nothing.
     (box.querySelector(".tl-grid-head") as HTMLElement).click();
     timeline.destroy();

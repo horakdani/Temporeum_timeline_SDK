@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createItemLoader, DEFAULT_LOAD_OVERSCAN, DEFAULT_MAX_WINDOWS } from "../../src/data.js";
 import type { ItemLoaderChange } from "../../src/data.js";
 import type { Item } from "../../src/types.js";
+import { makeRandom } from "../property/harness.js";
 import { controlledSource, DAY, flush, ORIGIN } from "./fixture.js";
 
 /**
@@ -358,6 +359,29 @@ describe("cache", () => {
     expect(loader.items.length).toBeGreaterThan(0);
     expect(loader.items.every((each) => each.id.startsWith("coarse"))).toBe(true);
     expect(loader.stats.windows).toBe(calls.filter((call) => call.domain[1] - call.domain[0] > SPAN && !call.signal.aborted).length);
+  });
+});
+
+describe("eviction, as a property (R70)", () => {
+  it("[claim:evict] holds no window inside a coarser one it holds, wherever the view was", async () => {
+    // A finer window that ends exactly where the coarser one does — the
+    // right child — must go too; a fixed view never put one there.
+    const random = makeRandom(0x70_e1c7);
+    for (let round = 0; round < 40; round += 1) {
+      const { calls, source } = controlledSource();
+      const loader = createItemLoader({ source, overscan: random() * 0.5 });
+      const offset = Math.floor(random() * 64) * (SPAN / 16);
+      loader.request(view(offset, SPAN / (2 + Math.floor(random() * 6))));
+      for (const call of calls) call.resolve([item(`fine${String(call.n)}`, call.domain[0] + 1)]);
+      await flush();
+      loader.request(view(offset - 2 * SPAN, 8 * SPAN));
+      const coarse = calls.filter((call) => !call.settled && !call.signal.aborted);
+      for (const call of coarse) call.resolve([item(`coarse${String(call.n)}`, call.domain[0] + 1)]);
+      await flush();
+      const fine = calls.filter((call) => !coarse.includes(call));
+      const kept = fine.filter((call) => !coarse.some((each) => each.domain[0] <= call.domain[0] && call.domain[1] <= each.domain[1]));
+      expect(loader.stats.windows, `round ${String(round)}`).toBe(coarse.length + kept.length);
+    }
   });
 });
 

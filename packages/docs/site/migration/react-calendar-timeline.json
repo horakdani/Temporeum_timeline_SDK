@@ -306,7 +306,7 @@
       "vis": "dragSnap",
       "status": "renamed",
       "temporeum": "editing.snapMs",
-      "note": "In milliseconds, as in react-calendar-timeline, from the epoch or `snapOrigin`.",
+      "note": "In milliseconds, as in react-calendar-timeline, from the epoch or `snapOrigin`. A grid of whole days lies on the timeline's `timeZone` midnights, all year.",
       "uses": [
         "TimelineEditingOptions.snapMs"
       ],

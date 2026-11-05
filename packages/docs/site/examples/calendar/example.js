@@ -60,7 +60,7 @@ const week = mountCalendarView(document.querySelector("#week"), {
   dayEndHour: 18,
   height: 420,
 });
-week.on("select", ({ item, via }) => {
+week.on("itemSelect", ({ item, via }) => {
   log.textContent = `${item.label} (${via})`;
 });
 
