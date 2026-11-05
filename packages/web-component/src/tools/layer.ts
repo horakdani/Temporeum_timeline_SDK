@@ -16,7 +16,7 @@
  * functions: `moveBar` for a bar (a drag, `dragTimeBarTime`; a key,
  * `timeBarKeyTime`), `setDomain` for the strip (`minimapDragDomain`,
  * `minimapKeyDomain`), `selectRange` for a range (`rangeFromDrag`,
- * `rangeKeyStep`) — the routes G-NO-GESTURE-ONLY reads.
+ * `rangeKeyStep`) — so no gesture is the only way to do something.
  */
 
 import type { RenderResult, SceneElement } from "@temporeum/timeline-core";

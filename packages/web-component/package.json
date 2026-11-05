@@ -188,6 +188,7 @@
   "customElements": "dist/custom-elements.json",
   "files": [
     "dist",
+    "!dist/build.json",
     "README.md",
     "CHANGELOG.md"
   ],

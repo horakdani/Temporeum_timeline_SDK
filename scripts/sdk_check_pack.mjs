@@ -13,7 +13,9 @@
  *  2. The tarball carries only what `files` lists: every file is under an
  *     entry of `files`, or is one of those npm always includes
  *     (package.json, README, LICENSE, CHANGELOG). No source, test, map with
- *     a path pointing to the source, .env or dotfile.
+ *     a path pointing to the source, .env or dotfile — and no file the build
+ *     leaves in dist only for the repo's own tools (`dist/build.json`, the
+ *     source fingerprint the benchmarks compare: a user has no use for it).
  *  3. The version is IDENTICAL in every package, and not a prerelease (no
  *     `-`; `--allow-prerelease` admits one, for the `next` dist-tag). The packages point to each other with exactly this version (not
  *     a range and not workspace:), and the VERSION constant is this too.
@@ -47,6 +49,15 @@
  *  9. NEGATIVE CONTROL for 6-7: an exports branch pointing to a file that
  *     does not exist, a branch without types, and a workflow that leaves out
  *     a package FAIL.
+ * 10. No name that only means something inside this repo reaches a user: the
+ *     packed text (JS, declarations, maps with their sources, README) names
+ *     no gate (`G-` and capitals) and no development phase (`P` and a number).
+ *     NEGATIVE CONTROL: a planted gate and phase FAIL, and a C0 control, a
+ *     `BYxxx` part, `VTODO` and `P-value` pass.
+ * 11. publint, strict and at the suggestion level, finds nothing in the six
+ *     tarballs of point 8 (the very files the registry would get).
+ *     NEGATIVE CONTROL: a tarball whose `exports` names a missing file and
+ *     puts `types` after `default` FAILS.
  *
  * A dry run that cannot run is a FAILURE, not a skip.
  */
@@ -57,6 +68,8 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { publint } from "publint";
+import { formatMessage } from "publint/utils";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const project = JSON.parse(readFileSync(join(repo, "packages", "docs", "site", "project.json"), "utf8"));
@@ -73,6 +86,11 @@ const PACKAGES = [
 const ALLOW_PRERELEASE = process.argv.includes("--allow-prerelease");
 const ALWAYS = /^(package\.json|README(\.md)?|LICEN[CS]E(\.md)?|CHANGELOG(\.md)?)$/i;
 const FORBIDDEN = /(^|\/)(src|test|tests|e2e|scripts|node_modules)\/|\.test\.|\.spec\.|(^|\/)\.[^/]+$|\.env/;
+/** Files the build leaves in dist for the repo's own tools (the benchmarks' source fingerprint). */
+const BUILD_ONLY = /^dist\/build\.json$/;
+/** A gate's name (`G-` and capitals) or a development phase's (`P` and a number): they mean nothing outside this repo. */
+const INTERNAL_NAME = /(?<![\w-])(?:G-[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*|P\d{1,3})(?![\w-])/g;
+const PACKED_TEXT = /\.(?:m|c)?js$|\.d\.(?:m|c)?ts$|\.map$|\.svelte$|(^|\/)README(\.md)?$/i;
 
 const failures = [];
 const notes = [];
@@ -96,8 +114,20 @@ function judgeFiles(files, allowed) {
   const problems = [];
   for (const path of files) {
     if (ALWAYS.test(path)) continue;
-    if (FORBIDDEN.test(path)) problems.push(`forbidden file in the tarball: ${path}`);
+    if (BUILD_ONLY.test(path)) problems.push(`build-only file in the tarball: ${path}`);
+    else if (FORBIDDEN.test(path)) problems.push(`forbidden file in the tarball: ${path}`);
     else if (!allowed.some((entry) => path === entry || path.startsWith(`${entry.replace(/\/$/, "")}/`))) problems.push(`file outside files: ${path}`);
+  }
+  return problems;
+}
+
+/** The repo-internal names in the packed text files. Returns the problems. */
+function judgeInternalNames(dir, files) {
+  const problems = [];
+  for (const path of files.filter((file) => PACKED_TEXT.test(file))) {
+    const text = readFileSync(join(dir, path), "utf8");
+    const found = [...new Set([...text.matchAll(INTERNAL_NAME)].map((match) => match[0]))];
+    if (found.length > 0) problems.push(`${path} names ${found.join(", ")}, which means nothing outside this repo`);
   }
   return problems;
 }
@@ -238,6 +268,12 @@ export function judgeWorkflowPackages(text) {
   return order.length === 0 ? ["the release workflow names no package"] : problems;
 }
 
+/** publint's messages for one packed tarball (strict: warnings count as errors; suggestions too). */
+async function publintProblems(pack, pkgDir = undefined) {
+  const { messages, pkg } = await publint({ pack, level: "suggestion", strict: true, ...(pkgDir === undefined ? {} : { pkgDir }) });
+  return messages.map((message) => `${message.type} ${message.code}: ${formatMessage(message, pkg, { color: false }) ?? ""}`);
+}
+
 // --- 1-4: the real packages ---------------------------------------------------
 const manifests = PACKAGES.map((pkg) => manifestOf(pkg.dir));
 for (const [index, pkg] of PACKAGES.entries()) {
@@ -262,6 +298,7 @@ for (const [index, pkg] of PACKAGES.entries()) {
   failures.push(...fileProblems.map((problem) => `${pkg.name}: ${problem}`));
   const mapProblems = judgeMaps(join(repo, "packages", pkg.dir), run.files);
   failures.push(...mapProblems.map((problem) => `${pkg.name}: ${problem}`));
+  failures.push(...judgeInternalNames(join(repo, "packages", pkg.dir), run.files).map((problem) => `${pkg.name}: ${problem}`));
   failures.push(...judgeManifest(manifest, pkg.dir));
   failures.push(...judgePeers(manifest, sourcesOf(pkg.dir)));
   if (fileProblems.length === 0) notes.push(`${pkg.name}@${run.version}: ${String(run.files.length)} files, all from files`);
@@ -304,6 +341,27 @@ try {
   for (const pkg of PACKAGES) {
     const out = execFileSync("npm", ["pack", "--json", "--ignore-scripts", "--pack-destination", packs], { cwd: join(repo, "packages", pkg.dir), encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
     tarballs.push(join(packs, JSON.parse(out.slice(out.indexOf("[")))[0].filename));
+  }
+  // --- 11: publint on the same tarballs
+  try {
+    const linted = [];
+    for (const tarball of tarballs) {
+      const problems = await publintProblems({ tarball: new Uint8Array(readFileSync(tarball)).buffer });
+      failures.push(...problems.map((problem) => `publint ${posix.basename(tarball)}: ${problem}`));
+      if (problems.length === 0) linted.push(posix.basename(tarball, ".tgz"));
+    }
+    if (linted.length === tarballs.length) notes.push(`publint (strict, suggestions too): nothing in the ${String(linted.length)} tarballs`);
+    const broken = await publintProblems({
+      files: [
+        { name: "package/package.json", data: JSON.stringify({ name: "tl-broken", version: "1.0.0", type: "module", exports: { ".": { default: "./dist/index.js", types: "./dist/index.d.ts" }, "./ghost": "./dist/ghost.js" } }) },
+        { name: "package/dist/index.js", data: "export {};\n" },
+        { name: "package/dist/index.d.ts", data: "export {};\n" },
+      ],
+    }, "package");
+    if (broken.length < 2) failures.push(`NEGATIVE CONTROL: publint passes a broken tarball (${broken.join("; ") || "no problems"})`);
+    else notes.push(`the negative control fails, as it should — publint: ${broken.join(" | ")}`);
+  } catch (error) {
+    failures.push(`publint did not run, so this is a FAILURE — ${String(error.message).split("\n")[0]}`);
   }
   // The loaded adapters' peers, as the user installs them: the React adapter also needs react-dom (portals).
   const peer = (dir, dep) => createRequire(join(repo, "packages", dir, "package.json"))(`${dep}/package.json`).version;
@@ -406,6 +464,17 @@ try {
   const maps = judgeMaps(scratch, ["dist/a.d.ts.map", "dist/b.js.map"]);
   if (maps.length !== 1 || !maps[0].startsWith("dist/a.d.ts.map")) failures.push(`NEGATIVE CONTROL: the source-map measure is blind (${maps.join("; ") || "no problems"})`);
   else notes.push(`the negative control fails, as it should — ${maps[0]}`);
+  // the benchmarks' fingerprint in the tarball
+  const fingerprint = judgeFiles(["dist/index.mjs", "dist/build.json"], ["dist"]);
+  if (fingerprint.length !== 1) failures.push(`NEGATIVE CONTROL: dist/build.json in the tarball does NOT fail (${fingerprint.join("; ") || "no problems"})`);
+  else notes.push(`the negative control fails, as it should — ${fingerprint[0]}`);
+  // a planted gate and phase (put together from pieces, so a rewrite of the names cannot reach them), and the look-alikes that are not names
+  writeFileSync(join(scratch, "dist", "c.d.ts"), `/** the routes ${"G-"}NO-GESTURE-ONLY reads */\nexport {};\n`);
+  writeFileSync(join(scratch, "dist", "d.mjs"), `// since ${"P"}17\nexport {};\n`);
+  writeFileSync(join(scratch, "dist", "e.d.ts"), "/** a C0 control, every BYxxx part, a VTODO, a P-value, P2P, GG-A */\nexport {};\n");
+  const named = judgeInternalNames(scratch, ["dist/c.d.ts", "dist/d.mjs", "dist/e.d.ts"]);
+  if (named.length !== 2 || !named[0].startsWith("dist/c.d.ts") || !named[1].startsWith("dist/d.mjs")) failures.push(`NEGATIVE CONTROL: the internal-name measure is wrong (${named.join("; ") || "no problems"})`);
+  else notes.push(`the negative control fails, as it should — ${named[0]} | ${named[1]}`);
 } catch (error) {
   failures.push(`NEGATIVE CONTROL did not run — ${String(error.message).split("\n")[0]}`);
 } finally {

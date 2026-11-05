@@ -235,6 +235,7 @@
   },
   "files": [
     "dist",
+    "!dist/build.json",
     "README.md",
     "CHANGELOG.md"
   ],

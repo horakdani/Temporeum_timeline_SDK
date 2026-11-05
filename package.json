@@ -39,6 +39,7 @@
     "@arethetypeswrong/cli": "^0.18.5",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.13.0",
+    "publint": "0.3.25",
     "rolldown": "1.2.15",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.0"
