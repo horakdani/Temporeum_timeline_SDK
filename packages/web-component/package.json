@@ -207,8 +207,8 @@
   },
   "devDependencies": {
     "@vitest/browser-playwright": "^5.0.5",
-    "@vitest/coverage-v8": "^5.0.5",
-    "typescript": "^6.0.3",
+    "@vitest/coverage-v8": "^5.1.0",
+    "typescript": "^7.0.2",
     "vitest": "^5.0.5"
   }
 }
