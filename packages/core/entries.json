@@ -26,7 +26,7 @@
       "name": "items",
       "input": "src/items/index.ts",
       "umd": "TemporeumTimelineItems",
-      "limit": "4 kB",
+      "limit": "4.25 kB",
       "label": "items — item kinds, adding and removing, HTML template (ESM, minify + gzip)"
     },
     {
@@ -89,7 +89,7 @@
       "name": "calendar",
       "input": "src/calendar/index.ts",
       "umd": "TemporeumTimelineCalendar",
-      "limit": "12.5 kB",
+      "limit": "13 kB",
       "label": "calendar — recurring events (RFC 5545 RRULE), week and day views, iCal import and export (ESM, minify + gzip)"
     },
     {

@@ -18,6 +18,7 @@
  * and a new one is a new key.
  */
 
+import { zoneOffsetMs } from "./calendar.js";
 import type { ItemSpan } from "./layout.js";
 import type { Granularity, Item } from "./types.js";
 
@@ -78,7 +79,8 @@ export function dateFormatFor(locale: string, timeZone: string, withTime: boolea
       ...(withTime ? { hour: "numeric", minute: "2-digit" } : {}),
       timeZone,
     });
-    known = { format: (time) => (time < YEAR_ONE ? bc : ad).format(time) };
+    // The era of the date on the zone's calendar, not of the UTC instant (V10).
+    known = { format: (time) => (time + zoneOffsetMs(time, timeZone) < YEAR_ONE ? bc : ad).format(time) };
     eras.set(key, known);
   }
   return known;

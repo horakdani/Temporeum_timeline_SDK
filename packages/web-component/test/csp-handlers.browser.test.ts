@@ -16,7 +16,7 @@ beforeAll(() => {
   document.addEventListener("securitypolicyviolation", (event) => violations.push(`${event.violatedDirective}: ${event.sample}`));
   const meta = document.createElement("meta");
   meta.httpEquiv = "Content-Security-Policy";
-  meta.content = "script-src-attr 'none'";
+  meta.content = "script-src-attr 'none'; style-src-attr 'none'";
   document.head.append(meta);
 });
 
@@ -47,6 +47,17 @@ describe("a slide's HTML under script-src-attr 'none'", () => {
     expect(violations).toEqual([]);
     expect(box.querySelectorAll("b")).toHaveLength(6);
     expect([...box.querySelectorAll("*")].flatMap((node) => node.getAttributeNames()).filter((name) => name.startsWith("on"))).toEqual([]);
+  });
+
+  it("reports nothing for a style, or for a handler written right after a quoted value (V24)", async () => {
+    const html = '<p style="color:red">Red <span style=\'font-weight:bold\'>bold</span><img src="x"onerror="z()"><b title="t"onclick=y()>b</b></p>'.repeat(3);
+    const box = document.createElement("div");
+    box.append(storyHtml(document, html));
+    document.body.append(box);
+    await settle();
+    expect(violations).toEqual([]);
+    expect(box.textContent).toBe("Red boldb".repeat(3));
+    expect([...box.querySelectorAll("*")].flatMap((node) => node.getAttributeNames())).toEqual([]);
   });
 
   it("leaves the text and the kept attributes as they were", () => {

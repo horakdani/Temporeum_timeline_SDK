@@ -357,11 +357,12 @@ export function scheduleTasks<T>(items: readonly Item<T>[], dependencies: readon
     const unit = item.granularity !== undefined && item.granularity !== "millisecond" && item.open !== true ? item.granularity : undefined;
     // Back in the item's own terms: where nothing moved, what it says; a moved
     // end by units is the start of its last unit, as the item writes it.
-    const drawnStart = edge(task, task.at, false);
+    // A task by the day starts on the day work starts, not at the hour (V5).
+    const zone = options.timeZone ?? DEFAULT_TIME_ZONE;
+    const drawnStart = unit === undefined ? edge(task, task.at, false) : startOf(edge(task, task.at, false), unit, zone);
     const drawnEnd = task.hasEnd ? edge(task, task.at, true) : undefined;
     const start = drawnStart === task.startMs ? toTimeMs(item.start) : drawnStart;
-    const end =
-      drawnEnd === undefined ? undefined : drawnEnd === task.endMs ? toTimeMs(item.end as TimeInput) : unit === undefined ? drawnEnd : startOf(drawnEnd - 1, unit, options.timeZone ?? DEFAULT_TIME_ZONE);
+    const end = drawnEnd === undefined ? undefined : drawnEnd === task.endMs ? toTimeMs(item.end as TimeInput) : unit === undefined ? drawnEnd : startOf(drawnEnd - 1, unit, zone);
     const slack = task.late - task.at;
     const entry: { -readonly [K in keyof ScheduledTask]: ScheduledTask[K] } = {
       id: item.id,

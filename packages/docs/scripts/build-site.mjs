@@ -530,7 +530,7 @@ function llmsFiles({ docsDir, navSpec, pages, examples }) {
   const index = [
     `# ${SITE_NAME}`,
     "",
-    "> An editable, accessible, responsive timeline for the web: a custom element and a live instance (`@temporeum/timeline-element`), a React component (`@temporeum/timeline-react`), and a DOM-free engine with zero runtime dependencies (`@temporeum/timeline-core`). MIT licensed.",
+    "> An editable, accessible, responsive timeline for the web: a custom element and a live instance (`@temporeum/timeline-element`), components for React, Vue, Svelte and Angular (`@temporeum/timeline-react`, `-vue`, `-svelte`, `-angular`), and a DOM-free engine with zero runtime dependencies (`@temporeum/timeline-core`). MIT licensed.",
     "",
     `Install: \`npm install @temporeum/timeline-element\`. Times are \`Date\` objects or epoch milliseconds. Every edit is emitted as a reversible command; the library never saves. Repository: ${PROJECT.repository}`,
     "",
@@ -585,6 +585,16 @@ function changelogHtml(hooks) {
 }
 
 // --- the page shell -----------------------------------------------------------------
+
+/**
+ * A paragraph as one line of plain text, at most 160 characters, cut at a
+ * word: a link keeps its text, inline code its code (V36 — the parentheses
+ * went with their content, and the cut fell inside a word).
+ */
+function summaryOf(markdown) {
+  const plain = markdown.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[`*]/g, "").replace(/\s+/g, " ").trim();
+  return plain.length <= 160 ? plain : `${plain.slice(0, plain.lastIndexOf(" ", 159))}…`;
+}
 
 function pageShell({ title, base, nav, current, body, outline, hasExamples, version, prevNext, description }) {
   const navHtml = nav
@@ -661,7 +671,7 @@ export async function buildSite({ docsDir = DOCS_DIR, outDir = join(DOCS_DIR, "d
     const first = blocks[0];
     if (first?.type !== "heading" || first.level !== 1) fail(`site/pages/${id}.md must start with a level-1 heading`);
     const intro = blocks.find((block) => block.type === "paragraph");
-    return { id, title: first.text.replace(/`/g, ""), blocks, description: intro ? intro.text.replace(/[`*_[\]]|\(([^)]*)\)/g, "").slice(0, 160) : first.text };
+    return { id, title: first.text.replace(/`/g, ""), blocks, description: intro ? summaryOf(intro.text) : first.text };
   });
   const byId = new Map(pages.map((page) => [page.id, page]));
 

@@ -31,6 +31,26 @@ import type { CalendarEvent } from "./events.js";
 import { formatRRule, formatWall, instantOf, occurrences, parseDateValue, parseRRule, wallMs, wallOf, workSpent } from "./rrule.js";
 import type { RecurrenceRule } from "./rrule.js";
 
+/**
+ * A rule whose `UNTIL` has the form RFC 5545 (3.3.10) wants beside the
+ * event's start: a date beside a date, a UTC time beside a time — the same
+ * last moment, read in the event's zone. Readers that keep to the RFC refuse
+ * any other.
+ */
+function untilIn(rule: RecurrenceRule, zone: string, allDay: boolean): RecurrenceRule {
+  const until = rule.until;
+  if (until === undefined) return rule;
+  const wall = typeof until === "object" && !(until instanceof Date) ? until : undefined;
+  if (allDay) {
+    const day = new Date(wall === undefined ? wallOf(toTimeMs(until as TimeInput), zone) : wallMs(wall.year, wall.month, wall.day));
+    return { ...rule, until: { year: day.getUTCFullYear(), month: day.getUTCMonth() + 1, day: day.getUTCDate() } };
+  }
+  if (wall === undefined) return rule;
+  // A date's last second, or the time itself, on the zone's clock.
+  const last = wall.hour === undefined ? wallMs(wall.year, wall.month, wall.day + 1) - 1000 : wallMs(wall.year, wall.month, wall.day, wall.hour, wall.minute, wall.second);
+  return { ...rule, until: instantOf(last, zone) };
+}
+
 /** A calendar read from iCal text. */
 export interface ICalCalendar {
   /** `X-WR-CALNAME`, if the file names itself. */
@@ -57,7 +77,10 @@ export interface ICalFormatOptions {
   readonly prodId?: string;
   /** `DTSTAMP` of every event. Now by default. */
   readonly stamp?: TimeInput;
-  /** How many years a `VTIMEZONE` covers past the start of a rule with no end. 10 by default. */
+  /**
+   * How many years a `VTIMEZONE` covers past an event's start at most: a rule
+   * with no end, or an end further than that, is covered that far. 10 by default.
+   */
   readonly zoneYears?: number;
   /**
    * The zone dates are read in (`X-WR-TIMEZONE`): an all-day event is a date,
@@ -93,7 +116,8 @@ function lineOf(text: string): Line | undefined {
   const parts = head.match(/(?:[^;"]|"[^"]*")+/g) ?? [];
   for (const part of parts.slice(1)) {
     const eq = part.indexOf("=");
-    if (eq > 0) params[part.slice(0, eq).toUpperCase()] = part.slice(eq + 1).replace(/^"|"$/g, "");
+    // RFC 6868: ^n is a line break, ^' a double quote, ^^ a caret.
+    if (eq > 0) params[part.slice(0, eq).toUpperCase()] = part.slice(eq + 1).replace(/^"|"$/g, "").replace(/\^([n'^])/g, (_, char: string) => (char === "n" ? "\n" : char === "'" ? '"' : "^"));
   }
   return { name: (parts[0] ?? "").toUpperCase(), params, value: text.slice(colon + 1) };
 }
@@ -346,7 +370,10 @@ export function parseICal(text: string, options: ICalParseOptions = {}): ICalCal
         props.filter((each) => each.name === key && each.params.VALUE !== "PERIOD").flatMap((each) => each.value.split(",").map((value) => timeOf(value, each.params).t));
       const exdates = listOf("EXDATE");
       if (exdates.length > 0) event.exdates = exdates;
-      const rdates = [...listOf("RDATE"), ...props.filter((each) => each.name === "RDATE" && each.params.VALUE === "PERIOD").flatMap((each) => each.value.split(",").map((value) => timeOf(value, each.params).t))];
+      const periods = props.filter((each) => each.name === "RDATE" && each.params.VALUE === "PERIOD");
+      // An event has one length: a period's own end or duration cannot be kept, and is said (V13).
+      if (periods.length > 0) warnings.push(`The RDATE periods of ${id} are read as starts, each as long as the event`);
+      const rdates = [...listOf("RDATE"), ...periods.flatMap((each) => each.value.split(",").map((value) => timeOf(value, each.params).t))];
       if (rdates.length > 0) event.rdates = rdates;
       const recurrence = one("RECURRENCE-ID");
       if (recurrence !== undefined) {
@@ -448,18 +475,24 @@ function transitions(zone: string, from: TimeMs, to: TimeMs): { readonly at: Tim
   return found;
 }
 
-/** The `VTIMEZONE` of a zone over a span of years, from its real transitions. */
-function zoneBlock(zone: string, fromYear: number, toYear: number): string[] {
-  const from = instantOf(wallMs(fromYear, 1, 1), zone);
-  const to = instantOf(wallMs(toYear + 1, 1, 1), zone);
-  const changes = transitions(zone, from, to);
+/**
+ * The `VTIMEZONE` of a zone over the spans of years its events reach, from
+ * its real transitions. Each span opens with the offset it starts at.
+ */
+function zoneBlock(zone: string, spans: readonly (readonly [number, number])[]): string[] {
+  const changes: { at: TimeMs; before: number; after: number; opens?: true }[] = [];
+  let offset: number | undefined;
+  for (const [fromYear, toYear] of spans) {
+    const from = instantOf(wallMs(fromYear, 1, 1), zone);
+    const first = zoneOffsetMs(from, zone);
+    if (first !== offset) changes.push({ at: from, before: offset ?? first, after: first, opens: true });
+    changes.push(...transitions(zone, from, instantOf(wallMs(toYear + 1, 1, 1), zone)));
+    offset = (changes[changes.length - 1] as { after: number }).after;
+  }
   const lines = ["BEGIN:VTIMEZONE", `TZID:${zone}`, `X-LIC-LOCATION:${zone}`];
-  const standard = Math.min(zoneOffsetMs(from, zone), ...changes.map((each) => each.after));
-  const first = zoneOffsetMs(from, zone);
-  // The offset before the first change, from the start of the span.
-  lines.push("BEGIN:STANDARD", `DTSTART:${formatWall(wallOf(from, zone))}`, `TZOFFSETFROM:${offsetText(first)}`, `TZOFFSETTO:${offsetText(first)}`, "END:STANDARD");
+  const standard = Math.min(...changes.map((each) => each.after));
   for (const change of changes) {
-    const kind = change.after > standard ? "DAYLIGHT" : "STANDARD";
+    const kind = change.after > standard && change.opens === undefined ? "DAYLIGHT" : "STANDARD";
     lines.push(`BEGIN:${kind}`, `DTSTART:${formatWall(change.at + change.before)}`, `TZOFFSETFROM:${offsetText(change.before)}`, `TZOFFSETTO:${offsetText(change.after)}`, `END:${kind}`);
   }
   lines.push("END:VTIMEZONE");
@@ -468,7 +501,10 @@ function zoneBlock(zone: string, fromYear: number, toYear: number): string[] {
 
 const yearOf = (t: TimeMs): number => new Date(t).getUTCFullYear();
 
-/** The last year an event's rule reaches, or `undefined` when it repeats forever. */
+/**
+ * The last year an event reaches, `years` past its start at most: a rule with
+ * no end, or one that ends in the year 9999, is written that far (V9).
+ */
 function lastYear(event: CalendarEvent<unknown>, years: number): number {
   const start = toTimeMs(event.start);
   let last = yearOf(event.end === undefined ? start : toTimeMs(event.end));
@@ -476,10 +512,9 @@ function lastYear(event: CalendarEvent<unknown>, years: number): number {
   if (event.rrule !== undefined) {
     const rule: RecurrenceRule = typeof event.rrule === "string" ? parseRRule(event.rrule) : event.rrule;
     const until = rule.until;
-    if (until === undefined) last = Math.max(last, yearOf(start) + years);
-    else last = Math.max(last, typeof until === "object" && !(until instanceof Date) ? until.year : yearOf(toTimeMs(until)));
+    last = Math.max(last, until === undefined ? Infinity : typeof until === "object" && !(until instanceof Date) ? until.year : yearOf(toTimeMs(until)));
   }
-  return last;
+  return Math.min(last, yearOf(start) + years);
 }
 
 /** iCal text of the events: one `VCALENDAR`, CRLF line ends, folded. */
@@ -490,16 +525,24 @@ export function formatICal(events: readonly CalendarEvent<unknown>[], options: I
   if (options.name !== undefined) lines.push(`X-WR-CALNAME:${escapeText(options.name)}`);
   const dateZone = options.timeZone ?? events.find((event) => event.allDay === true && event.timeZone !== undefined)?.timeZone;
   if (dateZone !== undefined && dateZone !== DEFAULT_TIME_ZONE) lines.push(`X-WR-TIMEZONE:${dateZone}`);
-  const spans = new Map<string, [number, number]>();
+  // Each zone over the years its events reach, and only those: a file's cost follows its events, not the gaps between them.
+  const spans = new Map<string, [number, number][]>();
   for (const event of events) {
     const zone = event.timeZone ?? DEFAULT_TIME_ZONE;
     if (zone === DEFAULT_TIME_ZONE) continue;
-    const first = yearOf(toTimeMs(event.start));
-    const span = spans.get(zone);
-    const last = lastYear(event, years);
-    spans.set(zone, span === undefined ? [first, last] : [Math.min(span[0], first), Math.max(span[1], last)]);
+    const each = spans.get(zone) ?? [];
+    spans.set(zone, each);
+    each.push([yearOf(toTimeMs(event.start)), lastYear(event, years)]);
   }
-  for (const [zone, [first, last]] of [...spans].sort(([a], [b]) => (a < b ? -1 : 1))) lines.push(...zoneBlock(zone, first, last));
+  for (const [zone, each] of [...spans].sort(([a], [b]) => (a < b ? -1 : 1))) {
+    const merged: [number, number][] = [];
+    for (const [first, last] of each.sort((a, b) => a[0] - b[0])) {
+      const open = merged[merged.length - 1];
+      if (open !== undefined && first <= open[1] + 1) open[1] = Math.max(open[1], last);
+      else merged.push([first, last]);
+    }
+    lines.push(...zoneBlock(zone, merged));
+  }
   for (const event of events) {
     const zone = event.timeZone ?? DEFAULT_TIME_ZONE;
     const allDay = event.allDay === true;
@@ -523,7 +566,7 @@ export function formatICal(events: readonly CalendarEvent<unknown>[], options: I
     if (event.title !== undefined) lines.push(`SUMMARY:${escapeText(event.title)}`);
     if (event.description !== undefined) lines.push(`DESCRIPTION:${escapeText(event.description)}`);
     if (event.location !== undefined) lines.push(`LOCATION:${escapeText(event.location)}`);
-    if (event.rrule !== undefined) lines.push(`RRULE:${formatRRule(typeof event.rrule === "string" ? parseRRule(event.rrule) : event.rrule)}`);
+    if (event.rrule !== undefined) lines.push(`RRULE:${formatRRule(untilIn(typeof event.rrule === "string" ? parseRRule(event.rrule) : event.rrule, zone, allDay))}`);
     for (const each of event.rdates ?? []) lines.push(time("RDATE", toTimeMs(each)));
     for (const each of event.exdates ?? []) lines.push(time("EXDATE", toTimeMs(each)));
     lines.push("END:VEVENT");

@@ -2,7 +2,7 @@
 
 ## 1.0.0 — Unreleased
 
-The first release. From here on the package follows [semantic versioning](https://github.com/horakdani/Temporeum_timeline_SDK/blob/main/packages/docs/site/pages/stability.md): nothing public is removed before 2.0.
+The first release. From here on the package follows [semantic versioning](https://horakdani.github.io/Temporeum_timeline_SDK/stability.html): nothing public is removed before 2.0.
 
 ### The engine (`@temporeum/timeline-core`)
 
@@ -37,7 +37,7 @@ The engine keeps a budget of 31.6 kB minified and gzipped. Everything else is on
 - **`/live`** — live data: `applyItemChanges` and `relayout`, which packs only the lanes a change touched.
 - **`/words`** — the library's words in English: `DEFAULT_STRINGS`, `resolveStrings`, `sayIn`, `fill`, `formatAmount`.
 - **`/intl`** — right to left (`mirrorScene`, `mirrorCss`), dictionaries (`describeHooks`, `pseudoStrings` to find a word a translation missed), and the axis in any calendar `Intl` knows (`calendarTicks`).
-- **`/calendar`** — RFC 5545 recurrence (`parseRRule`, `formatRRule`, `occurrences`), events and their expansion, iCalendar read and written (`parseICal`, `formatICal`), and the layout of the week and the day. A zone matched by its `VTIMEZONE` rules is the one its Windows name means (`Eastern Standard Time` is `America/New_York`), and a `limit` counts only the starts it gives, not the excluded ones.
+- **`/calendar`** — RFC 5545 recurrence (`parseRRule`, `formatRRule`, `occurrences`), events and their expansion, iCalendar read and written (`parseICal`, `formatICal`), and the layout of the week and the day. A zone matched by its `VTIMEZONE` rules is the one its Windows name means (`Eastern Standard Time` is `America/New_York`), and a `limit` counts only the starts it gives, not the excluded ones. One expansion of many events shares one search budget, so rules that never match cost what one does; `formatICal` writes `UNTIL` in the start's form (a date beside a date, a UTC time beside a time). A `VTIMEZONE` covers the years its zone's events reach, `zoneYears` (10) past each start at most, so a rule to the year 9999 cannot make it thousands of years long.
 - **`/export`** — print pages across the whole range, a PDF writer of the library's own (`scenesToPdf`, with selectable text), standalone SVG and PNG, and the print view.
 - **`/vis-compat`** — `fromVis(items, groups, options)`: a vis-timeline 8 setup as a configuration, with a warning for everything that did not carry over; `parseVisTime` reads times by vis-timeline's rules.
 - **`/story`** — TimelineJS's JSON and Google Sheets template as items, lanes and eras (below).

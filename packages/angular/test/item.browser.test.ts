@@ -43,6 +43,21 @@ class Host {
   }
 }
 
+@Component({
+  selector: "tl-late-host",
+  imports: [TimelineComponent, TimelineItemDirective],
+  template: `<tl-timeline [config]="config()" (ready)="timeline = $event">
+    @if (cards()) {
+      <ng-template tlItem let-item><b class="card">{{ item.label }}</b></ng-template>
+    }
+  </tl-timeline>`,
+})
+class LateHost {
+  readonly config = signal<TimelineComponentConfig>({ items, defaultDomain: [T0, T0 + 24 * DAY], height: 200 });
+  readonly cards = signal(false);
+  timeline: TimelineInstance | null = null;
+}
+
 let app: ApplicationRef | undefined;
 afterEach(() => {
   app?.destroy();
@@ -98,6 +113,29 @@ describe("<tl-timeline> item template and outputs", () => {
     timeline.flush();
     expect(document.querySelectorAll(".card")).toHaveLength(2);
     expect(timeline.slots.size).toBe(2);
+  });
+
+  it("follows a template that comes later, behind an @if, and one that goes (V20)", async () => {
+    app = await createApplication({ providers: [provideZonelessChangeDetection()] });
+    const hostElement = document.createElement("tl-late-host");
+    hostElement.style.display = "block";
+    hostElement.style.width = "800px";
+    document.body.append(hostElement);
+    const ref = createComponent(LateHost, { environmentInjector: app.injector, hostElement });
+    app.attachView(ref.hostView);
+    app.tick();
+    await vi.waitFor(() => expect(ref.instance.timeline).not.toBeNull());
+    const timeline = ref.instance.timeline as TimelineInstance;
+    expect(document.querySelectorAll(".card")).toHaveLength(0);
+    ref.instance.cards.set(true);
+    app.tick();
+    await vi.waitFor(() => expect(document.querySelectorAll(".card")).toHaveLength(2));
+    expect(timeline.slots.size).toBe(2);
+    ref.instance.cards.set(false);
+    app.tick();
+    await vi.waitFor(() => expect(document.querySelectorAll(".card")).toHaveLength(0));
+    timeline.flush();
+    expect(timeline.slots.size).toBe(0);
   });
 
   it("types let-item through its context guard", () => {

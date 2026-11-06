@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { budgetMs } from "./time-budget.js";
+
 import { densityMetrics } from "../src/density.js";
 import { createInputMachine } from "../src/input.js";
 import { estimateTextWidth, labelSpace } from "../src/labels.js";
@@ -598,16 +600,15 @@ describe("the axis's context label", () => {
   });
 
   it("covers every tick label that starts under it, whole", () => {
-    const { scene, ticks } = render({ domain: [Date.UTC(2025, 2, 1, 12), Date.UTC(2025, 2, 21)] });
+    // The first daily tick is four hours in, 8 px: under the context label (V27 — the domain before had none, and nothing was asserted).
+    const domain: [number, number] = [Date.UTC(2025, 2, 1, 20), Date.UTC(2025, 2, 21)];
+    const { scene, ticks } = render({ domain });
     const width = number(contextOf(scene)[0]?.attrs?.width);
     const measure = labelSpace(densityMetrics("comfortable", "horizontal"), estimateTextWidth, densityMetrics("comfortable", "horizontal").tickFontSize);
-    const scale = (time: number): number => ((time - Date.UTC(2025, 2, 1, 12)) / (Date.UTC(2025, 2, 21) - Date.UTC(2025, 2, 1, 12))) * 900;
-    for (const tick of ticks) {
-      const main = scale(tick.time);
-      if (main >= 0 && main < width) {
-        expect(main + measure(defaultTickLabel(tick)).main).toBeLessThanOrEqual(width + 1e-6);
-      }
-    }
+    const scale = (time: number): number => ((time - domain[0]) / (domain[1] - domain[0])) * 900;
+    const under = ticks.filter((tick) => scale(tick.time) >= 0 && scale(tick.time) < width);
+    expect(under.length).toBeGreaterThan(0);
+    for (const tick of under) expect(scale(tick.time) + measure(defaultTickLabel(tick)).main).toBeLessThanOrEqual(width + 1e-6);
   });
 
   it("is the host's formatTick, told it is the context, and can be switched off", () => {
@@ -681,7 +682,7 @@ describe("a dense lane", () => {
     renderTimeline({ items, domain: [0, 80_000 * day], width: 1200, height: 400 });
     // ~1.8 s alone; 7.5 s under the gate's coverage on a loaded machine. The
     // old code took 45 s, so 15 s still tells the two apart.
-    expect(performance.now() - started).toBeLessThan(15_000);
+    expect(performance.now() - started).toBeLessThan(budgetMs(15_000));
   });
 });
 

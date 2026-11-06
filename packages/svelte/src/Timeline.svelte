@@ -37,7 +37,7 @@
     Handlers & {
       class?: string;
       style?: string;
-      /** The box's, as `data-*` and `aria-*`. */
+      /** The box's, as `data-*` and `aria-*` (`aria-label` is `ariaLabel`). */
       id?: string;
       role?: string;
       title?: string;
@@ -60,7 +60,8 @@
   const uid = $props.id();
   const scope = `tl${uid.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-  const BOX = /^(id|role|title|(data|aria)-.*)$/;
+  // `aria-label` is `ariaLabel`; `onclick` is the box's.
+  const BOX = /^(id|role|title|data-.*|aria-(?!label$).*|on[a-z].*)$/;
   // `class` only when given: beside a spread, an absent one is `class=""`.
   const box = $derived({ ...Object.fromEntries(Object.entries(rest).filter(([key]) => BOX.test(key))), ...(className === undefined ? {} : { class: className }) });
 
@@ -71,6 +72,8 @@
       // An own `__proto__` is not a prop: assigned, it would set the configuration's prototype.
       if (key !== "__proto__" && !HANDLERS.has(key) && !STARTS.has(key) && !BOX.test(key)) config[key] = source[key];
     }
+    config.ariaLabel ??= config["aria-label"];
+    delete config["aria-label"];
     // Light DOM: two timelines on one page must not share one stylesheet.
     if (config.instanceId === undefined) config.instanceId = scope;
     // With an `item` snippet every item has a box, unless `slots` picks.

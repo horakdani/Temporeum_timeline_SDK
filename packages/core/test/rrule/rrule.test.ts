@@ -26,7 +26,10 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import { formatRRule, instantOf, occurrences, parseDateValue, parseRRule, utcStamp, wallOf } from "../../src/calendar/index.js";
+import { budgetMs } from "../time-budget.js";
+
+import { expandEvents, formatRRule, instantOf, occurrences, parseDateValue, parseRRule, utcStamp, wallOf } from "../../src/calendar/index.js";
+import type { CalendarEvent } from "../../src/calendar/index.js";
 import { formatWall, wallMs } from "../../src/calendar/rrule.js";
 
 interface Example {
@@ -181,7 +184,7 @@ describe("rrule: the work an expansion may take (R13, R14)", () => {
     // R13: every second of the year was a period — 30.8 s.
     const began = performance.now();
     const starts = occurrences({ start: Date.UTC(2025, 0, 1, 9), rule: "FREQ=SECONDLY;BYHOUR=9;BYMINUTE=0;BYSECOND=0" }, year);
-    expect(performance.now() - began).toBeLessThan(2000);
+    expect(performance.now() - began).toBeLessThan(budgetMs(2000));
     expect(starts).toHaveLength(365);
     expect(starts[0]).toBe(Date.UTC(2026, 0, 1, 9));
     // Grid-aligned: every seventh minute from 09:00, within the hour BYHOUR allows.
@@ -197,7 +200,7 @@ describe("rrule: the work an expansion may take (R13, R14)", () => {
       expect(occurrences({ start: Date.UTC(2025, 0, 1), rule }, year), rule).toEqual([]);
       let cut = 0;
       expect(occurrences({ start: Date.UTC(2025, 0, 1), rule }, { limit: 5, onLimit: () => (cut += 1) }), rule).toEqual([Date.UTC(2025, 0, 1)]);
-      expect(performance.now() - began, rule).toBeLessThan(3000);
+      expect(performance.now() - began, rule).toBeLessThan(budgetMs(3000));
       expect(cut, rule).toBeLessThanOrEqual(1);
     }
   });
@@ -208,12 +211,34 @@ describe("rrule: the work an expansion may take (R13, R14)", () => {
     const began = performance.now();
     let cut = 0;
     occurrences({ start: Date.UTC(2020, 0, 1), rule: "FREQ=SECONDLY;COUNT=9007199254740991" }, { ...year, onLimit: () => (cut += 1) });
-    expect(performance.now() - began).toBeLessThan(3000);
+    expect(performance.now() - began).toBeLessThan(budgetMs(3000));
     expect(cut).toBe(1);
     // A limit that cuts says so too, once.
     let limited = 0;
     expect(occurrences({ start: 0, rule: "FREQ=DAILY" }, { limit: 3, onLimit: () => (limited += 1) })).toHaveLength(3);
     expect(limited).toBe(1);
+  });
+
+  it("shares one search budget among all the events of an expansion, so twenty hostile rules cost what one does (V8)", () => {
+    // Each event had a million steps of its own: 20 events of 110 bytes each took 14 s on every window asked for.
+    const first = Date.parse("0001-01-01T00:00:00Z");
+    const hostile = (n: number): CalendarEvent[] => Array.from({ length: n }, (_, i) => ({ id: `h${String(i)}`, start: first, rrule: "FREQ=DAILY;BYMONTH=2;BYMONTHDAY=30;COUNT=5" }));
+    const month: [number, number] = [Date.UTC(2026, 10, 1), Date.UTC(2026, 11, 1)];
+    const timed = (events: readonly CalendarEvent[]): { ms: number; cut: string[] } => {
+      const cut: string[] = [];
+      const began = performance.now();
+      expandEvents(events, ...month, { onLimit: (id) => cut.push(id) });
+      return { ms: performance.now() - began, cut };
+    };
+    const one = timed(hostile(1));
+    const twenty = timed(hostile(20));
+    // Measured against the same machine's one: the old code was twenty times one.
+    expect(twenty.ms).toBeLessThan(4 * one.ms + 100);
+    expect(twenty.cut).toEqual(expect.arrayContaining(["h19"]));
+    expect(twenty.cut.length).toBeGreaterThanOrEqual(19);
+    // The budget is the call's: the next window has all of it again, and so does a plain expansion.
+    expect(expandEvents([{ id: "ok", start: month[0], rrule: "FREQ=DAILY;COUNT=3" }], ...month)).toHaveLength(3);
+    expect(occurrences({ start: Date.UTC(2025, 0, 1), rule: "FREQ=DAILY;COUNT=3" })).toHaveLength(3);
   });
 
   it("counts toward the limit only what it gives, and says when it cut (R37)", () => {

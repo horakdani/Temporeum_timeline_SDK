@@ -157,6 +157,7 @@ jobs:
           if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
             echo "v$VERSION is already tagged"
           else
-            git tag "v$VERSION"
+            # Annotated: it says who tagged and when, as a release tag should.
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" tag -a "v$VERSION" -m "v$VERSION"
             git push origin "v$VERSION"
           fi

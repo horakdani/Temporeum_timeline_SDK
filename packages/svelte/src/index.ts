@@ -15,6 +15,7 @@ export type { Timeline as TimelineInstance, TimelineComponentConfig, TimelineCon
 // The data and the event payloads, handed on: one install types an app.
 export type {
   ClusterOpenedPayload,
+  Command,
   CommandPayload,
   DensityChangedPayload,
   Domain,
@@ -26,6 +27,7 @@ export type {
   Item,
   ItemEventPayload,
   ItemMovedPayload,
+  ItemPatch,
   ItemResizedPayload,
   ItemsAddedPayload,
   ItemsChangedPayload,

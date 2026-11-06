@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { budgetMs } from "./time-budget.js";
+
 import { densityMetrics } from "../src/density.js";
 import {
   LABEL_ELLIPSIS,
@@ -358,7 +360,7 @@ describe("placement cost", () => {
     const candidates = Array.from({ length: 80_000 }, (_, n) => candidate(`i${String(n)}`, n * 10, 6, n % 3 === 0 ? "" : "a"));
     const started = performance.now();
     const layout = placeLabels(candidates, { mainSize: 800_000, measure: (text) => ({ main: text.length * 4, cross: 10 }) });
-    expect(performance.now() - started).toBeLessThan(3000);
+    expect(performance.now() - started).toBeLessThan(budgetMs(3000));
     expect(layout.kept.length + layout.dropped.length).toBe(candidates.filter((c) => c.text !== "").length);
   });
 });

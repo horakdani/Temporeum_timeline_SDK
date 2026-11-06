@@ -115,9 +115,11 @@ describe("update({ items }) and setItems: one meaning each", () => {
 
 describe("the handles' verbs (R22)", () => {
   it("update takes options, next and previous say whether they moved, and events come through on", () => {
-    expectTypeOf<Parameters<CalendarView["update"]>[0]>().toEqualTypeOf<Partial<CalendarViewOptions>>();
+    // One signature for every companion: the options are optional, and none draws again (V15).
+    expectTypeOf<Parameters<CalendarView["update"]>[0]>().toEqualTypeOf<Partial<CalendarViewOptions> | undefined>();
     expectTypeOf<Parameters<TaskGrid["update"]>[0]>().toEqualTypeOf<Partial<TaskGridOptions> | undefined>();
-    expectTypeOf<Parameters<Backlog["update"]>[0]>().toEqualTypeOf<Partial<BacklogOptions>>();
+    expectTypeOf<Parameters<Backlog["update"]>[0]>().toEqualTypeOf<Partial<BacklogOptions> | undefined>();
+    expectTypeOf<Parameters<Story["update"]>[0]>().toEqualTypeOf<Partial<StoryOptions> | undefined>();
     expectTypeOf<CalendarView["next"]>().toEqualTypeOf<Story["next"]>();
     expectTypeOf<CalendarView["previous"]>().toEqualTypeOf<Story["previous"]>();
     // A change in the past tense, a signal in the present — as on the instance.

@@ -79,7 +79,7 @@ export interface CalendarViewOptions<T = unknown> {
   readonly toolbar?: boolean | undefined;
 }
 
-/** What `select` says. */
+/** What `itemSelect` says. */
 export interface CalendarSelectPayload<T = unknown> {
   readonly item: Item<T>;
   /** The piece of the item chosen: its key in the layout. */
@@ -104,7 +104,7 @@ export interface CalendarViewEventMap<T = unknown> {
 /** A mounted calendar view. */
 export interface CalendarView<T = unknown> {
   /** Change any option; the rest stay. */
-  update(options: Partial<CalendarViewOptions<T>>): void;
+  update(options?: Partial<CalendarViewOptions<T>>): void;
   /** The period shown, `[start, end)`. */
   readonly range: readonly [TimeMs, TimeMs];
   readonly layout: DaysLayout<T>;
@@ -325,7 +325,7 @@ export function mountCalendarView<T = unknown>(container: HTMLElement, initial: 
   return {
     update(next) {
       options = { ...options, ...next };
-      if (next.date !== undefined) anchor = toTimeMs(next.date);
+      if (next?.date !== undefined) anchor = toTimeMs(next.date);
       draw();
     },
     get range() {

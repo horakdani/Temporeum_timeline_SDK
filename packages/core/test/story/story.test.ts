@@ -224,9 +224,11 @@ describe("fromTimelineJS", () => {
         { start_date: { year: 1914, display_date: "Summer 1914" }, end_date: { year: 1918, display_date: "November 1918" } },
         { start_date: { year: 1914, display_date: "1914" }, end_date: { year: 1918 }, display_date: "The war" },
         { start_date: { year: 1914, display_date: "1914" } },
+        // Only the end says how it is written: the start is written out to its precision, and the end kept (V14).
+        { start_date: { year: 1914, month: 7, day: 28 }, end_date: { year: 1918, display_date: "the Armistice" } },
       ],
     });
-    expect(shown.items.map((item) => item.data?.story.date)).toEqual(["Summer 1914 – November 1918", "The war", "1914"]);
+    expect(shown.items.map((item) => item.data?.story.date)).toEqual(["Summer 1914 – November 1918", "The war", "1914", `${new Intl.DateTimeFormat(undefined, { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }).format(Date.UTC(1914, 6, 28))} – the Armistice`]);
   });
 
   it("ends an event at the instant its end date names, to any precision", () => {

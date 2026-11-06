@@ -114,11 +114,17 @@ export const WEEKDAYS: readonly Weekday[] = ["MO", "TU", "WE", "TH", "FR", "SA",
 const FREQUENCIES: readonly Frequency[] = ["SECONDLY", "MINUTELY", "HOURLY", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"];
 /** Wall clocks past this year are not searched: a rule that never matches ends here. */
 const LAST_YEAR = 9999;
-/** How many days (or sub-daily steps) one expansion may look at. */
-const WORK = 1_000_000;
+/** How many days (or sub-daily steps) one expansion — or one caller's several — may look at. */
+export const WORK = 1_000_000;
 let work = 0;
+/** What the next expansion may look at: all of `WORK`, or what a caller's earlier ones left. */
+let allowance = WORK;
 /** How much the last expansion looked at: a caller's budget across many. */
 export const workSpent = (): number => work;
+/** Let the expansions to come look at `left` at most (V8): `WORK` again when the caller is done. */
+export const allowWork = (left: number): void => {
+  allowance = left;
+};
 /** Thrown out of the search when it has looked at enough. */
 const SPENT = {};
 
@@ -411,7 +417,7 @@ function inWeeks(day: number, year: number, weeks: readonly number[], wkst: numb
 
 /** Whether a day passes every day-level part of the plan. */
 function dayPasses(plan: Plan, day: number): boolean {
-  if (++work > WORK) throw SPENT;
+  if (++work > allowance) throw SPENT;
   const date = new Date(day * DAY);
   const year = date.getUTCFullYear();
   const month = date.getUTCMonth() + 1;

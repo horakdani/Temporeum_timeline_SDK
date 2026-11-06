@@ -271,6 +271,47 @@ describe("the story panel", () => {
     none.destroy();
   });
 
+  it("changes the options it is given with update, and keeps the slide and the rest (V1)", async () => {
+    const { timeline, panel } = await mount();
+    const handle = mountStory(panel, timeline, { title: story.title });
+    const changes: string[] = [];
+    handle.on("slideChanged", ({ id }) => changes.push(String(id)));
+    await vi.waitFor(() => expect(changes).toEqual(["null"]));
+    handle.go("eagle");
+    const box = panel.querySelector<HTMLElement>(".tl-story");
+    handle.update({ strings: { next: "Weiter", story: "Geschichte" }, theme: "dark", headingLevel: 3 });
+    expect(handle.id).toBe("eagle");
+    expect(panel.querySelector(".tl-story-next")?.textContent).toBe("Weiter →");
+    expect(panel.querySelector(".tl-story-previous")?.textContent).toBe(`← ${STORY_STRINGS.previous}`);
+    expect(box?.getAttribute("aria-label")).toBe("Geschichte");
+    expect(box?.dataset.tlTheme).toBe("dark");
+    expect(panel.querySelector("h3")?.textContent).toBe("Eagle lands");
+    // The title slide goes, the slide shown stays; the address follows once asked to.
+    handle.update({ title: undefined, hash: "tale-" });
+    expect(handle.count).toBe(3);
+    expect(handle.id).toBe("eagle");
+    expect(panel.querySelector(".tl-story-position")?.textContent).toBe("2 of 3");
+    expect(location.hash).toBe("#tale-eagle");
+    location.hash = "#tale-splash";
+    await vi.waitFor(() => expect(handle.id).toBe("splash"));
+    handle.update({ hash: false, theme: undefined, slide: (item) => (item.id === "splash" ? undefined : { headline: item.id }) });
+    expect(box?.dataset.tlTheme).toBeUndefined();
+    expect(handle.count).toBe(2);
+    expect(handle.id).toBe("eagle");
+    location.hash = "#tale-launch";
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(handle.id).toBe("eagle");
+    expect(changes).toEqual(["null", "eagle", "splash"]);
+    // Another name hears nothing (V35).
+    const typo: string[] = [];
+    (handle.on as (event: string, handler: (change: StoryChange) => void) => () => void)("slidechanged", ({ id }) => typo.push(String(id)));
+    handle.go("launch");
+    expect(typo).toEqual([]);
+    handle.destroy();
+    handle.update({ theme: "dark" });
+    expect(panel.querySelector(".tl-story")).toBeNull();
+  });
+
   it("takes an item's label for a missing headline, and leaves background items out", async () => {
     const items: Item<StoryData>[] = [
       { id: "a", label: "Labelled", laneId: "group-flight", start: T0, data: { story: { text: "x" } } },

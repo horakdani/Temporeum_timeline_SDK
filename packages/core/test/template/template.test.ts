@@ -130,6 +130,20 @@ describe("the template parser", () => {
     expect(parseTemplate("<b a='1' b=2 c>x</b>", { allowAttributes: ["a", "b", "c"] })).toEqual([{ tag: "b", attrs: { a: "1", b: "2", c: "" }, text: "x" }]);
   });
 
+  it("ends a tag at the first > outside a quoted value, and loses nothing after a void or self-closed dropped tag (V25)", () => {
+    expect(parseTemplate('<b title="a > b">x</b>y')).toEqual([{ tag: "b", attrs: { title: "a > b" }, text: "x" }, { tag: "span", text: "y" }]);
+    expect(parseTemplate("<i title='1>0' class=\"c\">x</i>")).toEqual([{ tag: "i", attrs: { title: "1>0", class: "c" }, text: "x" }]);
+    expect(parseTemplate('a<svg/>b<math />c<embed src="x">d')).toEqual([{ tag: "span", text: "a" }, { tag: "span", text: "b" }, { tag: "span", text: "c" }, { tag: "span", text: "d" }]);
+    // A <style/> opens its raw text in HTML, as in a browser: what follows is style, up to its end tag.
+    expect(parseTemplate("<style/>p{}</style>after")).toEqual([{ tag: "span", text: "after" }]);
+    // An unclosed quoted value is the rest of the template, as text.
+    expect(parseTemplate('<b title="open>x')).toEqual([{ tag: "span", text: '<b title="open>x' }]);
+    // Many quoted values and many '=' keep the parse linear.
+    const began = performance.now();
+    parseTemplate(`<b ${'a="x" '.repeat(50_000)}>y</b>${"= ".repeat(100_000)}`);
+    expect(performance.now() - began).toBeLessThan(2000);
+  });
+
   it("leaves an item as it was when the template is empty", () => {
     const result = renderTimeline({
       items,

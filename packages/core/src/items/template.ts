@@ -155,6 +155,10 @@ interface Draft {
   readonly kept: boolean;
 }
 
+/** Foreign content: its `/>` closes the tag, as an HTML tag's does not. */
+const FOREIGN = new Set(["svg", "math"]);
+/** From after a tag's `<` to its `>`, past quoted values. */
+const TAG_END = /(?:[^>"']|"[^"]*"|'[^']*')*>/y;
 const ATTRIBUTE = /([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
 
 function attributesOf(source: string): Record<string, string> {
@@ -241,7 +245,9 @@ export function parseTemplate(html: string, options: TemplateOptions = {}): Scen
       at = close < 0 ? html.length : close + 3;
       continue;
     }
-    const close = html.indexOf(">", open);
+    // The tag ends at the first `>` outside a quoted value: `title="a > b"` is one tag (V25).
+    TAG_END.lastIndex = open + 1;
+    const close = TAG_END.test(html) ? TAG_END.lastIndex - 1 : -1;
     if (close < 0) {
       // A lone `<` is text.
       top().content.push(decode(html.slice(open)));
@@ -262,6 +268,7 @@ export function parseTemplate(html: string, options: TemplateOptions = {}): Scen
       continue;
     }
     const tag = (nameMatch[1] as string).toLowerCase();
+    const closed = /\/\s*$/.test(body);
     const raw = attributesOf(body.slice(tag.length).replace(/\/\s*$/, ""));
     const attrs: Record<string, string> = {};
     for (const [name, value] of Object.entries(raw)) {
@@ -269,6 +276,8 @@ export function parseTemplate(html: string, options: TemplateOptions = {}): Scen
       if (keep !== undefined) attrs[name] = keep;
     }
     const dropped = sanitize && DROPPED.has(tag);
+    // A void `<embed>`, or a self-closed `<svg/>` or `<math/>` (foreign: the `/` closes it), has no end tag to skip to.
+    if (dropped && (VOID.has(tag) || (closed && FOREIGN.has(tag)))) continue;
     if (dropped) {
       // Its content is code, not markup: skip to its own end tag.
       const end = new RegExp(`</${tag}`, "gi");
@@ -281,7 +290,7 @@ export function parseTemplate(html: string, options: TemplateOptions = {}): Scen
     if (stack.length > MAX_DEPTH) continue;
     const draft: Draft = { tag, attrs, content: [], dropped, kept: !sanitize || (tags.has(tag) && !NEVER.has(tag)) };
     top().content.push(draft);
-    if (!VOID.has(tag) && !body.trimEnd().endsWith("/")) stack.push(draft);
+    if (!VOID.has(tag) && !closed) stack.push(draft);
   }
   return toScene(root);
 }

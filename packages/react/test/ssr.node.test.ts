@@ -1,12 +1,14 @@
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import type { Item } from "@temporeum/timeline-core";
 import { renderTimelineSvg } from "@temporeum/timeline-element";
+import type { Command as ElementCommand, ItemPatch as ElementItemPatch } from "@temporeum/timeline-element";
 
 import { Timeline, useTimelineState } from "../src/index.js";
 import type { TimelineProps } from "../src/index.js";
+import type { Command as AdapterCommand, ItemPatch as AdapterItemPatch } from "../src/index.js";
 
 /**
  * The adapter on a server: Node, no DOM. Importing it, and rendering it with
@@ -27,6 +29,15 @@ describe("the React adapter in Node", () => {
     }
     // A forwardRef component (React 18 keeps `ref` out of a function's props): an object React renders.
     expect((Timeline as unknown as { $$typeof?: symbol }).$$typeof).toBe(Symbol.for("react.forward_ref"));
+  });
+
+  it("names the timeline, not its box, with aria-label, as the element and Vue do (V3)", () => {
+    const html = renderToString(createElement(Timeline, { items, "aria-label": "Project plan", "aria-describedby": "help" }));
+    expect(html.match(/^<div[^>]*>/)?.[0]).not.toContain("aria-label");
+    expect(html.match(/^<div[^>]*>/)?.[0]).toContain('aria-describedby="help"');
+    expect(html.match(/<svg[^>]*role="listbox"[^>]*>/)?.[0]).toContain('aria-label="Project plan"');
+    const both = renderToString(createElement(Timeline, { items, ariaLabel: "Mine", "aria-label": "Theirs" }));
+    expect(both.match(/<svg[^>]*role="listbox"[^>]*>/)?.[0]).toContain('aria-label="Mine"');
   });
 
   it("server-renders the drawing the instance would draw", () => {
@@ -89,3 +100,11 @@ describe("an explicit undefined in the box's props (R47)", () => {
     expect(html).not.toContain('class="box"');
   });
 });
+
+describe("the react adapter's types", () => {
+  it("name the undo stack's Command and ItemPatch, as the element does (V16)", () => {
+    expectTypeOf<AdapterCommand<{ readonly owner: string }>>().toEqualTypeOf<ElementCommand<{ readonly owner: string }>>();
+    expectTypeOf<AdapterItemPatch>().toEqualTypeOf<ElementItemPatch>();
+  });
+});
+

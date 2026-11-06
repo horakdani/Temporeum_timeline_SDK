@@ -332,6 +332,11 @@ test.describe("axe: the docs site", () => {
         );
         await clean(frame as Frame, info, `site-example:${example.id}`);
       }
+      // Reflow (1.4.10): at 320 CSS pixels the page scrolls one way only — an
+      // inline address or a table's hidden name pushed five pages sideways (V22).
+      await page.setViewportSize({ width: 320, height: 640 });
+      const sideways = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(sideways, `${entry.id} scrolls sideways at 320 px`).toBeLessThanOrEqual(0);
     });
   }
 });

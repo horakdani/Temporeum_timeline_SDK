@@ -35,6 +35,27 @@ describe("a server render with a bad item or option", () => {
     }
   });
 
+  it("leaves out a decoration, a time bar or a hidden stretch it cannot draw, and says so (V2)", async () => {
+    // A decoration with a time as text, or of no kind, threw from every frame and from the server render.
+    const { renderTimelineHtml } = await import("../src/index.js");
+    const { readableOptionsOf } = await import("../src/config.js");
+    const good = { id: "ok", start: 0, end: 86_400_000, label: "Fine" };
+    const now = { kind: "now", time: 3_600_000 };
+    const decorations = [now, { kind: "now", time: "2026-01-05" }, { time: 0 }, { kind: "era", id: "e", start: 0, end: new Date(Number.NaN) }, null];
+    const html = renderTimelineHtml({ height: 200, items: [good], decorations } as never, { width: 800 });
+    expect(html).toContain('data-tl-id="ok"');
+    expect(html).toContain("tl-now");
+    const said: { option?: string }[] = [];
+    const read = readableOptionsOf({ decorations, timeBars: [{ id: "b", time: "x" }, { id: "c", time: 5 }], hiddenDates: [{ start: 0, end: 1 }, { start: "a", end: 2 }] } as never, (skipped) => said.push(skipped));
+    expect(read.decorations).toEqual([now]);
+    expect(read.timeBars).toEqual([{ id: "c", time: 5 }]);
+    expect(read.hiddenDates).toEqual([{ start: 0, end: 1 }]);
+    expect(said.map((each) => each.option)).toEqual(["decorations", "decorations", "decorations", "decorations", "timeBars", "hiddenDates"]);
+    // Lists that are fine leave the configuration as it was, the same object.
+    const fine = { decorations: [now, { kind: "banding" }], timeBars: [{ id: "c", time: new Date(0) }] } as never;
+    expect(readableOptionsOf(fine)).toBe(fine);
+  });
+
   it("reads an enumerated option it does not know as its default, and says which (R20, R52)", async () => {
     // A capital letter or a typo in a choice threw from the render, and the
     // element was left with an empty shadow root.

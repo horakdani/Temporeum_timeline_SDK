@@ -74,6 +74,15 @@
  *     and every event's payload — so one install types an app: under pnpm
  *     and Yarn PnP the engine, a dependency of a dependency, cannot be
  *     imported. NEGATIVE CONTROL: an entry without `Lane` FAILS.
+ * 16. The framework an adapter is developed and tested with is inside the
+ *     peer range it promises: a dependency update that takes it past the
+ *     range (React 20 under `^18 || ^19`) would test what no user can
+ *     install. NEGATIVE CONTROL: a development React 20 FAILS.
+ * 17. Every starter template's `@temporeum/*` range takes the version being
+ *     released: the examples check installs the tarballs over the ranges
+ *     (`file:`), so a template still on `^1.0.0` at 2.0.0 would pass there
+ *     and install the old major for a user (V31). NEGATIVE CONTROL: a 2.0.0
+ *     release FAILS against today's templates.
  * 11. publint, strict and at the suggestion level, finds nothing in the six
  *     tarballs of point 8 (the very files the registry would get).
  *     NEGATIVE CONTROL: a tarball whose `exports` names a missing file and
@@ -297,6 +306,54 @@ export function judgePeers(manifest, sources) {
   return problems;
 }
 
+/** Whether a version is in an npm range of the shapes the peers use: `||`, `^`, `~`, `>=`, `<`, `=`. */
+export function inRange(version, range) {
+  const parts = (text) => text.split(".").map(Number);
+  const compare = (a, b) => {
+    const [x, y] = [parts(a), parts(b)];
+    for (let i = 0; i < 3; i += 1) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) - (y[i] ?? 0);
+    return 0;
+  };
+  return range.split("||").some((alternative) =>
+    alternative.trim().split(/\s+/).every((term) => {
+      const [, op, base] = /^(\^|~|>=|<=|>|<|=)?(\d+(?:\.\d+){0,2})$/.exec(term) ?? [];
+      if (base === undefined) return false;
+      const [major, minor] = parts(base);
+      if (op === "^") return compare(version, base) >= 0 && parts(version)[0] === major;
+      if (op === "~") return compare(version, base) >= 0 && parts(version)[0] === major && parts(version)[1] === minor;
+      const order = compare(version, base);
+      return op === ">=" ? order >= 0 : op === "<=" ? order <= 0 : op === ">" ? order > 0 : op === "<" ? order < 0 : order === 0;
+    }),
+  );
+}
+
+/** The framework an adapter is developed with is one its peer range lets a user install (V32). */
+export function judgeDevPeers(manifest) {
+  const problems = [];
+  for (const [peer, range] of Object.entries(manifest.peerDependencies ?? {})) {
+    const dev = manifest.devDependencies?.[peer];
+    if (dev === undefined) continue;
+    const version = /\d+(?:\.\d+){0,2}/.exec(dev)?.[0];
+    if (version === undefined || !inRange(version, range)) problems.push(`${manifest.name}: developed with ${peer}@${dev}, outside its peer range ${range}`);
+  }
+  return problems;
+}
+
+/** The starter templates' ranges on the packages take `version` (V31). */
+export function judgeTemplateRanges(version) {
+  const root = join(repo, "packages", "docs", "templates");
+  const problems = [];
+  for (const name of readdirSync(root)) {
+    const file = join(root, name, "package.json");
+    if (!existsSync(file)) continue;
+    const manifest = JSON.parse(readFileSync(file, "utf8"));
+    for (const [dep, range] of Object.entries({ ...manifest.dependencies, ...manifest.devDependencies })) {
+      if (dep.startsWith("@temporeum/") && !inRange(String(version).replace(/-.*$/, ""), range)) problems.push(`the ${name} template asks for ${dep}@${range}, which ${String(version)} is not in`);
+    }
+  }
+  return problems;
+}
+
 function judgeManifest(manifest, dir) {
   const problems = [];
   if (manifest.license !== "MIT") problems.push(`${manifest.name}: the licence is ${String(manifest.license)}, MIT is required`);
@@ -434,9 +491,17 @@ for (const [index, pkg] of PACKAGES.entries()) {
   }
   failures.push(...judgeManifest(manifest, pkg.dir));
   failures.push(...judgePeers(manifest, sourcesOf(pkg.dir)));
+  failures.push(...judgeDevPeers(JSON.parse(readFileSync(join(repo, "packages", pkg.dir, "package.json"), "utf8"))));
   if (fileProblems.length === 0) notes.push(`${pkg.name}@${run.version}: ${String(run.files.length)} files, all from files`);
 }
 failures.push(...judgeVersions(manifests, { allowPrerelease: ALLOW_PRERELEASE }));
+{
+  const templateProblems = judgeTemplateRanges(manifests[0]?.version);
+  failures.push(...templateProblems);
+  if (templateProblems.length === 0) notes.push(`every starter template's @temporeum range takes ${String(manifests[0]?.version)}`);
+  if (judgeTemplateRanges("2.0.0").length === 0) failures.push("NEGATIVE CONTROL: a 2.0.0 release does NOT fail against the templates' ranges");
+  else notes.push("the negative control fails, as it should — a 2.0.0 release against the templates' ranges");
+}
 const versionTs = readFileSync(join(repo, "packages", "core", "src", "version.ts"), "utf8").match(/VERSION = "([^"]+)"/)?.[1];
 if (versionTs !== manifests[0].version) failures.push(`the VERSION constant is "${String(versionTs)}", the manifest says "${manifests[0].version}"`);
 // The element's plugin registry is per release (R45): its key names the version.
@@ -605,6 +670,12 @@ else notes.push("--allow-prerelease passes 1.0.0-rc.9 and still fails \"1.0\"");
   const extra = angular === undefined ? [] : judgePeers({ ...angular, peerDependencies: { ...angular.peerDependencies, rxjs: "^7.4.0" } }, sourcesOf("angular"));
   if (extra.length === 0) failures.push("NEGATIVE CONTROL: a peer the sources do not import does NOT fail");
   else notes.push(`the negative control fails, as it should — ${extra[0]}`);
+  const react = JSON.parse(readFileSync(join(repo, "packages", "react", "package.json"), "utf8"));
+  const ahead = judgeDevPeers({ ...react, devDependencies: { ...react.devDependencies, react: "^20.0.0" } });
+  const angularDev = JSON.parse(readFileSync(join(repo, "packages", "angular", "package.json"), "utf8"));
+  const angularAhead = judgeDevPeers({ ...angularDev, devDependencies: { ...angularDev.devDependencies, "@angular/core": "~23.0.0" } });
+  if (ahead.length === 0 || angularAhead.length === 0) failures.push("NEGATIVE CONTROL: a development framework past its peer range does NOT fail");
+  else notes.push(`the negative control fails, as it should — ${ahead[0]}`);
 }
 const pinned = judgeVersions(manifests.map((m) => (m.dependencies?.["@temporeum/timeline-core"] === undefined ? m : { ...m, dependencies: { ...m.dependencies, "@temporeum/timeline-core": m.version } })));
 if (pinned.length === 0) failures.push("NEGATIVE CONTROL: an exact pin on the core does NOT fail");

@@ -17,12 +17,13 @@ import type { TimeInput, TimeMs } from "./types.js";
  * are rejected where they enter.
  */
 export function toTimeMs(value: TimeInput): TimeMs {
-  const ms = typeof value === "number" ? value : value.getTime();
+  // A value of the wrong type (a string from JSON) is this error too, not a TypeError from inside (V34).
+  const ms = typeof value === "number" ? value : (value as Partial<Date> | null)?.getTime?.();
   // Written so that NaN fails it too.
-  if (!(Math.abs(ms) <= 8.64e15)) {
+  if (!(Math.abs(ms as number) <= 8.64e15)) {
     throw new RangeError(
       `Invalid time value: ${String(value)}. Expected a valid Date or epoch milliseconds within ±8.64e15.`,
     );
   }
-  return ms;
+  return ms as number;
 }

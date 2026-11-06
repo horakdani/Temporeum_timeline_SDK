@@ -2,7 +2,7 @@
 
 ## 1.0.0 — Unreleased
 
-The first release, on 1.0.0 of `@temporeum/timeline-element`. From here on the package follows [semantic versioning](https://github.com/horakdani/Temporeum_timeline_SDK/blob/main/packages/docs/site/pages/stability.md).
+The first release, on 1.0.0 of `@temporeum/timeline-element`. From here on the package follows [semantic versioning](https://horakdani.github.io/Temporeum_timeline_SDK/stability.html).
 
 - `<Timeline>` and `useTimelineState` for Vue 3: every `TimelineConfig` field as a declared, typed prop (`TimelineProps<T>`, generic over the items' data; a bare boolean attribute is `true`, a reactive value reaches the instance as the plain object), every instance event as an emit (`TIMELINE_EVENTS` of the element), `ready` with the instance.
 - `registerPlugin` and `hasPlugin` (and the `TimelinePlugin` type) are handed on from `@temporeum/timeline-element`, so an app that installs only the adapter registers the plugins it needs; the element is a `^1.0.0` dependency.

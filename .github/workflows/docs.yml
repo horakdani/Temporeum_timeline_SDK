@@ -12,7 +12,8 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # A newer run waits for the deployment in progress: cancelled half-way, a Pages deployment can be left behind.
+  cancel-in-progress: false
 
 jobs:
   build:

@@ -372,6 +372,16 @@ describe("date jump", () => {
     expect(to - from).toBe(DOMAIN[1] - DOMAIN[0]);
   });
 
+  it("centres a 1 ms view on an instant past 2^52 ms without losing its span (V26)", () => {
+    const far = 2 ** 52 + 2;
+    for (const at of [far, -far, 8.64e15]) {
+      const machine = createInputMachine({ domain: [at - 10, at - 9], mainSize: MAIN_SIZE, keyboard: { reducedMotion: true } });
+      expect(() => machine.goTo(at)).not.toThrow();
+      expect(machine.domain[1] - machine.domain[0]).toBe(1);
+      expect(machine.domain[0] <= at && at <= machine.domain[1]).toBe(true);
+    }
+  });
+
   it("drops a focus the jump left behind", () => {
     const machine = machineWith({ keyboard: { reducedMotion: true } });
     machine.key(key("Home"));

@@ -119,6 +119,10 @@ describe("the week view", () => {
     expect(element.querySelector(".tl-cal-range")?.getAttribute("aria-live")).toBe("polite");
     view.update({ view: "day" });
     expect(view.range[1] - view.range[0]).toBe(DAY);
+    // No options: it draws again, where it is (V15).
+    const before = view.range;
+    view.update();
+    expect(view.range).toEqual(before);
   });
 
   it("right to left: Monday on the right, and the left arrow goes to the next day", async () => {

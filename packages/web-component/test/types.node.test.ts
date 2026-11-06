@@ -4,7 +4,7 @@ import type { Command, Item, ItemPatch, TimeInput } from "@temporeum/timeline-co
 
 import type { CalendarViewOptions } from "../src/calendar.js";
 import type { TaskGridOptions } from "../src/gantt.js";
-import type { ServerHtmlOptions, Timeline, TimelineConfig } from "../src/index.js";
+import type { Command as ElementCommand, ItemPatch as ElementItemPatch, ServerHtmlOptions, Timeline, TimelineConfig, TimelineInstance } from "../src/index.js";
 import type { BacklogOptions } from "../src/resources.js";
 
 /**
@@ -17,6 +17,14 @@ import type { BacklogOptions } from "../src/resources.js";
 interface Task {
   readonly assignee: string;
 }
+
+describe("the names an app types its undo stack and its instance with (V16, V19)", () => {
+  it("are the element's own: Command, ItemPatch, and TimelineInstance, the adapters' name for Timeline", () => {
+    expectTypeOf<ElementCommand<Task>>().toEqualTypeOf<Command<Task>>();
+    expectTypeOf<ElementItemPatch<Task>>().toEqualTypeOf<ItemPatch<Task>>();
+    expectTypeOf<TimelineInstance<Task>>().toEqualTypeOf<Timeline<Task>>();
+  });
+});
 
 describe("the host's item type through the instance", () => {
   it("every command an event carries is a Command<T>", () => {

@@ -64,7 +64,8 @@ article { max-width: 52rem; }
 @media (max-width: 48rem) {
   .layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .side { border-right: none; border-bottom: 1px solid var(--line); }
-  .side ul { display: flex; flex-wrap: wrap; gap: 0 1rem; }
+  /* A section a row, scrolled sideways: forty links wrapped took two screens before the page began (V36). */
+  .side ul { display: flex; flex-wrap: nowrap; gap: 0 1rem; overflow-x: auto; white-space: nowrap; }
 }
 
 h1 { font-size: 2rem; line-height: 1.25; margin: 0.5rem 0 1rem; }
@@ -73,12 +74,15 @@ h3 { font-size: 1.15rem; margin: 1.75rem 0 0.5rem; }
 h4 { font-size: 1rem; margin: 1.25rem 0 0.5rem; }
 blockquote { margin: 1rem 0; padding: 0.25rem 1rem; border-left: 4px solid var(--accent); background: var(--bg-alt); }
 code { font: 0.9em/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--code-bg); padding: 0.1em 0.3em; border-radius: 3px; }
+/* An address or a call in a sentence breaks anywhere rather than push a phone's page sideways (WCAG 1.4.10). */
+:not(pre) > code { overflow-wrap: anywhere; }
 pre { margin: 0; padding: 0.9rem 1rem; overflow: auto; background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; }
 pre code { background: none; padding: 0; font-size: 0.85rem; }
 figure.code { margin: 1rem 0; }
 .code-source { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--muted); }
 
-.table-wrap { overflow-x: auto; margin: 1rem 0; }
+/* Positioned, so what is placed inside it (a visually hidden name) scrolls with the table, not the page. */
+.table-wrap { position: relative; overflow-x: auto; margin: 1rem 0; }
 table { border-collapse: collapse; font-size: 0.92rem; min-width: 60%; }
 caption { text-align: left; color: var(--muted); font-size: 0.85rem; padding-bottom: 0.4rem; }
 th, td { border: 1px solid var(--line); padding: 0.4rem 0.6rem; vertical-align: top; text-align: left; }

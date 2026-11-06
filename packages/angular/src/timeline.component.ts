@@ -174,8 +174,19 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
   @Output() readonly slotsChanged = new EventEmitter<SlotsChangedPayload<T>>();
   @Output() readonly inputSkipped = new EventEmitter<InputSkippedPayload>();
 
-  /** The item template, `<ng-template tlItem let-item>`, if there is one. */
-  @ContentChild(TimelineItemDirective) itemTemplate: TimelineItemDirective<T> | undefined;
+  /**
+   * The item template, `<ng-template tlItem let-item>`, if there is one. One
+   * that comes later (behind an `@if`) is followed, and so is one that goes (V20).
+   */
+  @ContentChild(TimelineItemDirective) set itemTemplate(directive: TimelineItemDirective<T> | undefined) {
+    this.#template = directive;
+    this.#follow();
+  }
+  get itemTemplate(): TimelineItemDirective<T> | undefined {
+    return this.#template;
+  }
+  #template: TimelineItemDirective<T> | undefined;
+  #stopSlots: (() => void) | undefined;
 
   /** The live instance; `null` before the first render in the browser and after destroy. */
   timeline: TimelineInstance<T> | null = null;
@@ -213,15 +224,12 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
           if (output?.observed === true) this.#zone.run(() => output.emit(payload));
         }),
       );
-      if (this.itemTemplate !== undefined) {
-        const template = this.itemTemplate.template;
-        stops.push(instance.on("slotsChanged", ({ slots }) => this.#zone.run(() => this.#render(template, slots))));
-        this.#render(template, instance.slots);
-      }
       this.timeline = instance;
+      this.#follow();
       this.#zone.run(() => this.ready.emit(instance));
       this.#destroyRef.onDestroy(() => {
         for (const stop of stops) stop();
+        this.#stopSlots?.();
         for (const { view } of this.#drawn.values()) view.destroy();
         this.#drawn.clear();
         instance.destroy();
@@ -258,6 +266,22 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
     const width = this.ssrWidth;
     const frame = renderTimelineSvg(this.#initialOf(config), width === undefined ? {} : { width });
     this.#renderer.setProperty(this.containerRef.nativeElement, "innerHTML", frame.svg + frame.groups);
+  }
+
+  /** The item template as it is now: its views in the drawn boxes, and `slots` on the instance — or neither. */
+  #follow(): void {
+    const instance = this.timeline;
+    if (instance === null) return;
+    this.#stopSlots?.();
+    this.#stopSlots = undefined;
+    for (const { view } of this.#drawn.values()) view.destroy();
+    this.#drawn.clear();
+    const template = this.#template?.template;
+    if (template !== undefined) this.#stopSlots = instance.on("slotsChanged", ({ slots }) => this.#zone.run(() => this.#render(template, slots)));
+    const next = this.#clientOf(this.#configOf(untracked(this.#config)));
+    if (next.slots !== this.#applied?.slots) this.#zone.runOutsideAngular(() => instance.update({ slots: next.slots } as TimelineUpdate<T>));
+    this.#applied = next;
+    if (template !== undefined) this.#render(template, instance.slots);
   }
 
   /** The item template in each drawn box: a view per item, kept while its item is drawn. */

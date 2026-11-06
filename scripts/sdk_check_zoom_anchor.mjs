@@ -29,11 +29,17 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const corePackage = join(repoRoot, "packages", "core");
 const testFile = join(corePackage, "test", "zoom-anchor", "anchor.test.ts");
 const reportFile = join(corePackage, ".zoom-anchor-report.json");
+const readme = join(corePackage, "README.md");
 
 const MIN_SCENARIOS = 5;
 const MIN_CASES = 200;
-/** A larger tolerance no longer proves the feel. Half a pixel is the maximum. */
-const MAX_TOLERANCE_PX = 0.5;
+/**
+ * The tolerance the README promises — its "zoom anchor error after a gesture"
+ * row — is the most the test and the report may use: a looser one would pass
+ * green under a claim it does not prove (V28). One place says the number.
+ */
+const promised = /\|\s*zoom anchor error after a gesture\s*\|\s*([0-9.]+)\s*px\s*\|/.exec(existsSync(readme) ? readFileSync(readme, "utf8") : "");
+const MAX_TOLERANCE_PX = promised === null ? Number.NaN : Number(promised[1]);
 const MAX_SKIPPED_RATIO = 0.02;
 /** The suite must zoom both in AND out. */
 const NEEDED_ZOOM_IN = 0.5;
@@ -42,6 +48,7 @@ const MIN_TRAVEL_PX = 10;
 
 const failures = [];
 const notes = [];
+if (!(MAX_TOLERANCE_PX > 0)) failures.push(`the core README has no "zoom anchor error after a gesture" row in px — nothing says what the tolerance may be`);
 
 // --- 1-2. RUNTIME ------------------------------------------------------------
 

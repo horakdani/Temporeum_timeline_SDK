@@ -22,6 +22,7 @@
 
 import { fromCalendarParts, toCalendarParts } from "../calendar.js";
 import { decodeEntities } from "../shared/entities.js";
+import { storyDateText } from "./date.js";
 import { storyMedia } from "./media.js";
 import type { EraDecoration } from "../decorations.js";
 import type { Granularity, Item, Lane, TimeMs } from "../types.js";
@@ -225,10 +226,11 @@ function hasYear(date: TimelineJSDate | undefined): boolean {
   return date !== undefined && field(date.year) !== undefined;
 }
 
-function slideOf(slide: TimelineJSSlide, index: number, list: NonNullable<StoryWarning["list"]>, warnings: StoryWarning[]): StorySlide {
+/** A slide; `startText` writes its start when only the end has a `display_date`, so that one is not lost (V14). */
+function slideOf(slide: TimelineJSSlide, index: number, list: NonNullable<StoryWarning["list"]>, warnings: StoryWarning[], startText?: () => string): StorySlide {
   const media = slide.media;
-  const display = slide.display_date ?? slide.start_date?.display_date;
   const end = slide.end_date?.display_date;
+  const display = slide.display_date ?? slide.start_date?.display_date ?? (end ? startText?.() : undefined);
   const colour = slide.background?.color?.trim();
   if (slide.background?.url !== undefined && slide.background.url.trim() !== "") {
     warnings.push({ code: "background-image", index, list, message: "A background image is not drawn: the panel keeps its own colours, so the text stays readable. The colour is kept." });
@@ -348,7 +350,10 @@ export function fromTimelineJS(data: TimelineJSData, options: FromTimelineJSOpti
         laneIds.set(group, laneId);
       }
     }
-    const story: StorySlide = { ...slideOf(event, index, "events", warnings), ...(precision === undefined ? {} : { precision }) };
+    const story: StorySlide = {
+      ...slideOf(event, index, "events", warnings, () => storyDateText({ start: start.time, granularity: start.granularity }, options.timeZone === undefined ? {} : { timeZone: options.timeZone })),
+      ...(precision === undefined ? {} : { precision }),
+    };
     const label = story.headline === undefined ? undefined : storyPlainText(story.headline);
     items.push({
       id,

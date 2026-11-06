@@ -309,6 +309,18 @@ describe("the compatibility layer at its edges", () => {
     expect(parseVisTime(true as never)).toBeNaN();
   });
 
+  it("reads a long unclosed run of comments in linear time (V7)", () => {
+    // moment's comment pattern tried every "(" to the end: 80 000 took 2.4 s, these 400 000 a minute.
+    const started = performance.now();
+    expect(parseVisTime("(".repeat(400_000))).toBeNaN();
+    parseVisTime(`Mon, 02 Mar 26 10:15:30 +0100 ${"(".repeat(400_000)}`);
+    const { config } = fromVis(Array.from({ length: 20 }, (_, n) => ({ id: String(n), start: "(".repeat(20_000) })));
+    expect(config.items).toHaveLength(0);
+    expect(performance.now() - started).toBeLessThan(1000);
+    // Comments are still read as moment reads them.
+    expect(parseVisTime("Mon, 02 Mar (a (nested) 26 10:15:30 (Budapest) +0100")).toBe(Date.UTC(2026, 2, 2, 9, 15, 30));
+  });
+
   it("names the rest of what does not carry over, and maps the rest of what does", () => {
     const { config, warnings } = fromVis(
       [

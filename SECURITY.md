@@ -6,7 +6,6 @@
 |---|---|
 | 1.x (latest minor) | Yes |
 | Older minors of 1.x | Upgrade to the latest minor; it is backwards compatible |
-| Release candidates (`1.0.0-rc.*`) | No |
 
 ## Reporting a vulnerability
 

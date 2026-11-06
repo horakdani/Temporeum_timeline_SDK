@@ -255,7 +255,7 @@
     "size": "npm run --silent build && size-limit && node ../../scripts/sdk_size.mjs",
     "test:visual": "node ../../scripts/sdk_visual_snapshots.mjs --check && vitest run test/visual/ --reporter=default --reporter=json --outputFile.json=.visual-report.json && node ../../scripts/sdk_check_visual.mjs",
     "test:gesture": "vitest run test/gesture/ --reporter=default --reporter=json --outputFile.json=.gesture-report.json && node ../../scripts/sdk_check_gesture.mjs",
-    "test:zoom-anchor": "vitest run test/zoom-anchor/ && node ../../scripts/sdk_check_zoom_anchor.mjs",
+    "test:zoom-anchor": "node -e \"require('node:fs').rmSync('.zoom-anchor-report.json', { force: true })\" && vitest run test/zoom-anchor/ && node ../../scripts/sdk_check_zoom_anchor.mjs",
     "test:wheel-run": "node ../../scripts/sdk_property_reset.mjs wheel-run && node -e \"require('node:fs').rmSync('.wheel-run-control.json',{force:true})\" && vitest run test/property/wheel-run.test.ts && node ../../scripts/sdk_check_wheel_run.mjs",
     "test:rest-labels": "node ../../scripts/sdk_property_reset.mjs rest-labels && node -e \"require('node:fs').rmSync('.rest-labels-control.json',{force:true})\" && vitest run test/property/rest-labels.test.ts && node ../../scripts/sdk_check_rest_labels.mjs",
     "test:narrow-labels": "node ../../scripts/sdk_property_reset.mjs narrow-labels && node -e \"require('node:fs').rmSync('.narrow-labels-control.json',{force:true})\" && vitest run test/property/narrow-labels.test.ts && node ../../scripts/sdk_check_narrow_labels.mjs",

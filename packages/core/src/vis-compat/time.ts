@@ -169,10 +169,27 @@ const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const RFC_ZONES: Readonly<Record<string, number>> = { UT: 0, GMT: 0, EDT: -4, EST: -5, CDT: -5, CST: -6, MDT: -6, MST: -7, PDT: -7, PST: -8 };
 const RFC_2822 = /^(?:(Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s)?(\d{1,2})\s(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s(\d{2,4})\s(\d\d):(\d\d)(?::(\d\d))?\s(?:(UT|GMT|[ECMP][SD]T)|([Zz])|([+-]\d{4}))$/;
 
+/**
+ * The text with each `(comment)` a space, as moment's `/\([^)]*\)/g` does —
+ * in one pass: that pattern tries every `(` of an unclosed run to the end,
+ * and a few kilobytes of them took seconds (V7).
+ */
+function uncommented(text: string): string {
+  let out = "";
+  let at = 0;
+  for (let open = text.indexOf("("); open >= 0; open = text.indexOf("(", at)) {
+    const close = text.indexOf(")", open);
+    if (close < 0) break;
+    out += `${text.slice(at, open)} `;
+    at = close + 1;
+  }
+  return out + text.slice(at);
+}
+
 /** An RFC 2822 date, as moment reads it, or `undefined` when it is not one. */
 function fromRfc2822(text: string): TimeMs | undefined {
-  const cleaned = text
-    .replace(/\([^)]*\)|[\n\t]/g, " ")
+  const cleaned = uncommented(text)
+    .replace(/[\n\t]/g, " ")
     .replace(/(\s\s+)/g, " ")
     .replace(/^\s\s*/, "")
     .replace(/\s\s*$/, "");

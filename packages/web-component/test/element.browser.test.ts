@@ -109,6 +109,62 @@ describe("<temporeum-timeline>", () => {
     expect(nodeOf(el, "y")).not.toBeNull();
   });
 
+  it("reads every date of a JSON child as text, and leaves out a decoration it cannot draw (V2)", async () => {
+    const host = document.createElement("div");
+    host.innerHTML = `<temporeum-timeline style="width:600px" height="200"><script type="application/json">${JSON.stringify({
+      items: [{ id: "x", start: "2026-03-01", end: "2026-03-05", label: "X" }],
+      domain: ["2026-02-25", "2026-03-15"],
+      decorations: [{ kind: "now", time: "2026-03-03" }, { kind: "era", id: "e", start: "2026-03-06", end: "2026-03-08" }, { time: "2026-03-04" }, { kind: "marker", id: "m", time: "soon" }],
+      limits: { min: "2026-01-01" },
+    })}</script></temporeum-timeline>`;
+    document.body.append(host);
+    const el = host.firstElementChild as TemporeumTimelineElement;
+    const skipped: string[] = [];
+    el.addEventListener("input-skipped", (event) => skipped.push(String((event as CustomEvent<{ option?: string }>).detail.option)));
+    await drawn(el);
+    const root = el.shadowRoot as ShadowRoot;
+    expect(root.querySelector(".tl-now")).not.toBeNull();
+    expect(root.querySelector("[data-tl-era=e]")).not.toBeNull();
+    expect(nodeOf(el, "x")).not.toBeNull();
+    await vi.waitFor(() => expect(skipped).toEqual(["decorations", "decorations"]));
+    // The limit was read as a time: the view cannot go before it.
+    el.timeline?.zoomTo([Date.parse("2025-06-01"), Date.parse("2026-03-15")]);
+    expect(el.timeline?.getSnapshot().domain[0]).toBeGreaterThanOrEqual(Date.parse("2026-01-01"));
+  });
+
+  it("reads its JSON child in its getters and its config, under the attributes and the properties (V17)", async () => {
+    const host = document.createElement("div");
+    host.innerHTML = `<temporeum-timeline style="width:600px" height="200" density="dense"><script type="application/json">${JSON.stringify({
+      items: [{ id: "x", start: "2026-03-01", label: "X" }],
+      theme: "dark",
+      density: "compact",
+      locale: "hu",
+    })}</script></temporeum-timeline>`;
+    const el = host.firstElementChild as TemporeumTimelineElement;
+    // Before it is connected: what it will draw.
+    expect(el.theme).toBe("dark");
+    expect((el.items as readonly Item[])[0]?.id).toBe("x");
+    document.body.append(host);
+    await drawn(el);
+    expect(el.theme).toBe("dark");
+    expect(el.config.theme).toBe("dark");
+    expect(el.locale).toBe("hu");
+    // An attribute is over the JSON child, a property over both.
+    expect(el.density).toBe("dense");
+    el.theme = "light";
+    expect(el.theme).toBe("light");
+    await vi.waitFor(() => expect(svgOf(el).getAttribute("data-tl-theme")).toBe("light"));
+    // Handed back, the theme is the JSON child's again — in the getter and in the drawing.
+    el.theme = undefined;
+    expect(el.theme).toBe("dark");
+    await vi.waitFor(() => expect(svgOf(el).getAttribute("data-tl-theme")).toBe("dark"));
+    // A removed attribute too: the density is the JSON child's.
+    el.removeAttribute("density");
+    expect(el.density).toBe("compact");
+    await vi.waitFor(() => expect(svgOf(el).getAttribute("data-tl-density")).toBe("compact"));
+    expect((el.items as readonly Item[]).map((item) => item.id)).toEqual(["x"]);
+  });
+
   it("ignores a broken JSON child and still draws what the attributes say", async () => {
     const host = document.createElement("div");
     host.innerHTML = `<temporeum-timeline style="width:600px" start="2026-01-01" end="2026-02-01"><script type="application/json">{not json</script></temporeum-timeline>`;
@@ -335,6 +391,27 @@ describe("<temporeum-timeline>", () => {
     // The element's stylesheet was not added a second time — adopted, not a `<style>`.
     expect(adoptedCss(el.shadowRoot as ShadowRoot).filter((text) => text === HOST_CSS)).toHaveLength(1);
     expect([...(el.shadowRoot as ShadowRoot).children].filter((child) => child.localName === "style")).toHaveLength(0);
+  });
+
+  it("reads its items as they are drawn, and keeps the reader's edits and selection when put back later (V4)", async () => {
+    const el = await place();
+    el.timeline?.updateItems([{ id: "a", label: "EDITED" }]);
+    el.timeline?.select(["b"]);
+    expect((el.items as readonly Item[])[0]?.label).toBe("EDITED");
+    el.remove();
+    // A later task: the element let go of its instance.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(el.timeline).toBeUndefined();
+    expect((el.items as readonly Item[])[0]?.label).toBe("EDITED");
+    expect(el.selectedIds).toEqual(["b"]);
+    document.body.append(el);
+    await drawn(el);
+    expect(nodeOf(el, "a").getAttribute("aria-label")).toContain("EDITED");
+    expect(el.timeline?.getSnapshot().selectedIds).toEqual(["b"]);
+    // A function that fetches is the host's, and stays it.
+    const fetch = (): Promise<Item[]> => Promise.resolve([]);
+    el.items = fetch;
+    expect(el.items).toBe(fetch);
   });
 
   it("takes properties before and after it is connected", async () => {

@@ -30,7 +30,7 @@ and its entry points export is on one global, `window.TemporeumTimelineElement`
 </temporeum-timeline>
 ```
 
-Dates in the JSON child may be text; everywhere else they are `Date` objects
+Dates in the JSON child may be text — the items', the domain's, the decorations', the time bars', the hidden stretches', the limits'; everywhere else they are `Date` objects
 or epoch milliseconds — not strings.
 
 ## Any framework that renders elements

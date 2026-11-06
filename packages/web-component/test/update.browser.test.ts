@@ -334,6 +334,16 @@ describe("the host's accessible name and focus", () => {
     await vi.waitFor(() => expect(element.timeline?.result).toBeDefined());
     const named = (): Element | null => (element.shadowRoot as ShadowRoot).querySelector("[aria-label='Release plan Q1']");
     await vi.waitFor(() => expect(named()).not.toBeNull());
+    // Live, as the platform's is (V18): the label's text changes, a label put in later joins.
+    caption.textContent = "Launch plan";
+    const shadow = element.shadowRoot as ShadowRoot;
+    await vi.waitFor(() => expect(shadow.querySelector("[aria-label='Launch plan Q1']")).not.toBeNull());
+    element.setAttribute("aria-labelledby", "plan-caption plan-note plan-late");
+    const late = document.createElement("span");
+    late.id = "plan-late";
+    late.textContent = "draft";
+    document.body.append(late);
+    await vi.waitFor(() => expect(shadow.querySelector("[aria-label='Launch plan Q1 draft']")).not.toBeNull());
     // aria-label wins, as it does in the platform's name computation.
     element.setAttribute("aria-label", "Roadmap");
     await vi.waitFor(() => expect((element.shadowRoot as ShadowRoot).querySelector("[aria-label='Roadmap']")).not.toBeNull());

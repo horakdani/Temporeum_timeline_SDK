@@ -17,6 +17,12 @@ describe("toTimeMs", () => {
     expect(() => toTimeMs(new Date("not a date"))).toThrow(RangeError);
   });
 
+  it("rejects a value of the wrong type with its own RangeError, not a TypeError from inside (V34)", () => {
+    for (const value of ["2026-01-01", null, undefined, {}, true]) expect(() => toTimeMs(value as never), String(value)).toThrow(RangeError);
+    // A Date of another realm (a frame's) is still a date.
+    expect(toTimeMs({ getTime: () => 5 } as never)).toBe(5);
+  });
+
   it("rejects NaN and the infinities", () => {
     expect(() => toTimeMs(Number.NaN)).toThrow(RangeError);
     expect(() => toTimeMs(Number.POSITIVE_INFINITY)).toThrow(RangeError);

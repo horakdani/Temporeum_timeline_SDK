@@ -39,7 +39,7 @@ The slides are the items', in time order: each item's `data.story`, which is wha
 | `formatDate`, `locale`, `timeZone` | The date line of a slide that does not say its own. By default the item's date to its precision: "1969", "July 1969", "20 July 1969 at 20:17"; a span by its ends, "16 – 24 July 1969", each to its own precision when the story gave them to different ones ("1914 – 11 November 1918"); a year before 1 AD with its era. |
 | `strings`, `theme` | The panel's words (`STORY_STRINGS`) and colours. |
 
-The handle it returns has `go(idOrIndex)`, `next()` and `previous()` (`false` when there is no such slide), `index`, `id`, `count`, `on("slideChanged", handler)` and `destroy()`. `slideChanged` comes after every change of slide, the opening one too: its index, the item's id (`null` on the title), the slide, and who moved — `panel`, `timeline` or `hash`. The timeline keeps doing everything it does: zoom, pan, clustering, live data. When items change, the panel reorders and stays on its slide.
+The handle it returns has `go(idOrIndex)`, `next()` and `previous()` (`false` when there is no such slide), `index`, `id`, `count`, `update(options)`, `on("slideChanged", handler)` and `destroy()`. `update` changes the options it is given — the words, the theme, the title slide, `slide`, `hash` — keeps the rest, and stays on the slide shown while it is still one. `slideChanged` comes after every change of slide, the opening one too: its index, the item's id (`null` on the title), the slide, and who moved — `panel`, `timeline` or `hash`. The timeline keeps doing everything it does: zoom, pan, clustering, live data. When items change, the panel reorders and stays on its slide.
 
 ## A slide
 

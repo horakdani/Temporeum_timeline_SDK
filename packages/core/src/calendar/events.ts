@@ -16,7 +16,7 @@
 import { DEFAULT_TIME_ZONE } from "../calendar.js";
 import { toTimeMs } from "../time.js";
 import type { Domain, Item, ItemsSource, TimeInput, TimeMs } from "../types.js";
-import { formatWall, instantOf, occurrences, wallOf } from "./rrule.js";
+import { allowWork, formatWall, instantOf, occurrences, wallOf, WORK, workSpent } from "./rrule.js";
 import type { RecurrenceRule } from "./rrule.js";
 
 /** One calendar event, recurring or not. */
@@ -127,20 +127,32 @@ export function expandEvents<T>(events: readonly CalendarEvent<T>[], from: TimeI
     if (event.allDay === true) item.granularity = "day";
     items.push(item);
   };
-  for (const event of events) {
+  // One search budget for all of them (V8): a file of rules that never match
+  // would otherwise cost a full search each, on every window asked for.
+  let left = WORK;
+  try {
+    for (const event of events) left = expandOne(event, left);
+  } finally {
+    allowWork(WORK);
+  }
+  return items.sort((a, b) => toTimeMs(a.start) - toTimeMs(b.start) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+  /** One event's occurrences in the range; what is left of the budget after it. */
+  function expandOne(event: CalendarEvent<T>, left: number): number {
     const zone = event.timeZone ?? options.timeZone ?? DEFAULT_TIME_ZONE;
     const start = toTimeMs(event.start);
     if (event.recurrenceId !== undefined) {
       push(event, start, toTimeMs(event.recurrenceId), zone);
-      continue;
+      return left;
     }
     if (!isRecurring(event)) {
       push(event, start, start, zone);
-      continue;
+      return left;
     }
     // An occurrence that starts before the range can still reach into it.
     const reach = endOf(event, start, zone) - start + DAY;
     const limit = options.limit ?? OCCURRENCE_LIMIT;
+    allowWork(left);
     const starts = occurrences(
       { start, timeZone: zone, ...(event.rrule === undefined ? {} : { rule: event.rrule }), ...(event.rdates === undefined ? {} : { rdates: event.rdates }), ...(event.exdates === undefined ? {} : { exdates: event.exdates }) },
       { from: lo - reach, to: hi, limit, onLimit: () => options.onLimit?.(event.id, limit) },
@@ -148,8 +160,8 @@ export function expandEvents<T>(events: readonly CalendarEvent<T>[], from: TimeI
     for (const at of starts) {
       if (!changed.has(`${event.id}\u0000${String(at)}`)) push(event, at, at, zone);
     }
+    return left - workSpent();
   }
-  return items.sort((a, b) => toTimeMs(a.start) - toTimeMs(b.start) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
 /**

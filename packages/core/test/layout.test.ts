@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { budgetMs } from "./time-budget.js";
+
 import {
   DEFAULT_LANE_ID,
   findSublaneOverlap,
@@ -109,7 +111,7 @@ describe("packing cost", () => {
     const layout = layoutItems(items);
     fitDensity({ items, domain: [T0, T0 + 200_000 * DAY], width: 1000, height: 400, orientation: "horizontal" });
     expect(layout.rowCount).toBe(1);
-    expect(performance.now() - started).toBeLessThan(3000);
+    expect(performance.now() - started).toBeLessThan(budgetMs(3000));
   });
 });
 

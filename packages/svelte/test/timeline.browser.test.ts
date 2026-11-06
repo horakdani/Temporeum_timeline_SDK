@@ -282,3 +282,16 @@ describe("<Timeline> — hydration", () => {
     await vi.waitFor(() => expect((props.timeline as TimelineInstance).getSnapshot().selectedIds).toEqual(["a"]));
   });
 });
+
+describe("the box's own handlers (V21)", () => {
+  it("puts a DOM event handler (onclick) on the box, as React and Vue do, and an instance event's on the timeline", async () => {
+    const clicks: string[] = [];
+    const moved: unknown[] = [];
+    await place({ onclick: (event: MouseEvent) => clicks.push(event.type), onItemMoved: (payload: unknown) => moved.push(payload) });
+    const box = document.querySelector("[data-tl-svelte]") as HTMLElement;
+    box.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(clicks).toEqual(["click"]);
+    expect(moved).toEqual([]);
+  });
+});
+

@@ -43,7 +43,7 @@ createTimeline(document.querySelector("#timeline"), {
 });
 ```
 
-A file is untrusted input, and a rule can repeat every second: both take `limit`, at most that many occurrences of one event in the window (10 000 by default; the rest are left out), and `onLimit(eventId, limit)`, called when an event had more. A `VTIMEZONE` rule that repeats more often than daily is ignored, with a warning in `warnings`.
+A file is untrusted input, and a rule can repeat every second: both take `limit`, at most that many occurrences of one event in the window (10 000 by default; the rest are left out), and `onLimit(eventId, limit)`, called when an event had more. A rule that matches rarely or never — or a `COUNT` counted from long before the window — is searched for a million days (or sub-daily steps) at most, and that budget is shared by all the events of one expansion, every window `recurringSource` is asked for included: a file of such rules costs what one does, and each event it cut is named to `onLimit`. A `VTIMEZONE` rule that repeats more often than daily is ignored, with a warning in `warnings`.
 
 ## The week and the day
 

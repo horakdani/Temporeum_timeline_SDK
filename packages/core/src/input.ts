@@ -1911,8 +1911,10 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
       }
       const at = toTimeMs(time);
       const target = viewTarget();
-      const half = spanOf(target.domain) / 2;
-      travel([at - half, at + half], target.cross, "pan", eventTime, effects);
+      // Whole milliseconds: half of a 1 ms span is lost to rounding past 2^52 ms (V26).
+      const span = spanOf(target.domain);
+      const low = at - Math.floor(span / 2);
+      travel([low, low + span], target.cross, "pan", eventTime, effects);
       keepFocusShown(1, effects);
       return effects;
     },

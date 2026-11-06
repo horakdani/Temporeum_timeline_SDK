@@ -63,7 +63,7 @@ Every [`TimelineConfig`](https://horakdani.github.io/Temporeum_timeline_SDK/refe
 every event an `on…` prop (`onItemMoved`, `onSelectionChanged`,
 `onViewportChanged`, …). A new callback on every render does not
 resubscribe; the latest committed one is what runs. `id`, `data-*`,
-`aria-*`, `role`, `title` and `ref` go on the box.
+`aria-*`, `role`, `title` and `ref` go on the box; `aria-label` names the timeline, as `ariaLabel` does.
 `timelineRef` may change after mount: the new ref gets the instance, the old
 one `null`.
 

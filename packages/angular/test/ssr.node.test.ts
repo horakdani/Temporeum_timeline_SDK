@@ -1,7 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import type { Item } from "@temporeum/timeline-core";
 import { renderTimelineSvg } from "@temporeum/timeline-element";
+import type { Command as ElementCommand, ItemPatch as ElementItemPatch } from "@temporeum/timeline-element";
+
+// Types only: the module itself is imported in each test, after the platform's set-up.
+import type { Command as AdapterCommand, ItemPatch as AdapterItemPatch } from "../src/index.js";
 
 /**
  * The adapter on a server: Node, no DOM. Importing it must not reach for
@@ -84,3 +88,11 @@ describe("the plugin registry", () => {
     expect(adapter.hasPlugin).toBe(element.hasPlugin);
   });
 });
+
+describe("the angular adapter's types", () => {
+  it("name the undo stack's Command and ItemPatch, as the element does (V16)", () => {
+    expectTypeOf<AdapterCommand<{ readonly owner: string }>>().toEqualTypeOf<ElementCommand<{ readonly owner: string }>>();
+    expectTypeOf<AdapterItemPatch>().toEqualTypeOf<ElementItemPatch>();
+  });
+});
+

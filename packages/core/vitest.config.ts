@@ -14,6 +14,8 @@ export default defineConfig({
     // 120–240 s themselves; this is the common upper bound for the rest. A
     // real hang still fails — at 30 s, not from the load of neighbouring tests.
     testTimeout: 30_000,
+    // The time-budget tests read it: a coverage run is slower by its instrumentation (test/time-budget.ts).
+    env: { TL_COVERAGE: process.argv.includes("--coverage") ? "1" : "0" },
     typecheck: {
       // A type test is as much a test as a runtime one: the shape of the
       // public API is part of the product.

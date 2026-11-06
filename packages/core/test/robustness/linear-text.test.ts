@@ -7,13 +7,15 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { budgetMs } from "../time-budget.js";
+
 import { parseICal } from "../../src/calendar/index.js";
 import { computeStyle, parseStyleSheet } from "../../src/export/style.js";
 import { storyPlainText } from "../../src/story/index.js";
 import { visText } from "../../src/vis-compat/index.js";
 
 const N = 300_000;
-const BOUND_MS = 2000;
+const BOUND_MS = budgetMs(2000);
 
 function within(run: () => unknown): unknown {
   const began = performance.now();

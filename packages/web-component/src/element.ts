@@ -139,15 +139,29 @@ function scriptConfig(host: HTMLElement): TimelineConfig {
   try {
     const config = JSON.parse(script.textContent) as Record<string, unknown>;
     // A hand-written page writes dates as text; the core reads milliseconds.
+    // Every time the configuration holds, wherever it is: what is not read stays as it was, and is left out with `inputSkipped`.
     const time = (value: unknown): unknown => (typeof value === "string" ? (timeAttr(value) ?? value) : value);
-    if (Array.isArray(config.items)) {
-      config.items = (config.items as Record<string, unknown>[]).map((item) => ({
-        ...item,
-        start: time(item.start),
-        ...(item.end === undefined ? {} : { end: time(item.end) }),
-      }));
+    const times = (value: unknown, fields: readonly string[]): unknown => {
+      if (typeof value !== "object" || value === null || Array.isArray(value)) return value;
+      const copy: Record<string, unknown> = { ...value };
+      for (const field of fields) if (field in copy) copy[field] = time(copy[field]);
+      if ("baseline" in copy) copy.baseline = times(copy.baseline, ["start", "end"]);
+      return copy;
+    };
+    const each = (key: string, fields: readonly string[]): void => {
+      const list = config[key];
+      if (Array.isArray(list)) config[key] = list.map((entry) => times(entry, fields));
+    };
+    each("items", ["start", "end"]);
+    each("decorations", ["time", "start", "end"]);
+    each("timeBars", ["time"]);
+    each("hiddenDates", ["start", "end"]);
+    for (const key of ["domain", "defaultDomain"]) {
+      const range = config[key];
+      if (Array.isArray(range)) config[key] = range.map(time);
     }
-    if (Array.isArray(config.domain)) config.domain = config.domain.map(time);
+    if ("limits" in config) config.limits = times(config.limits, ["min", "max"]);
+    if ("editing" in config) config.editing = times(config.editing, ["snapOrigin"]);
     return config as TimelineConfig;
   } catch {
     // A broken script is the page's bug; the element still draws what the
@@ -207,9 +221,14 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     return this.#timeline;
   }
 
-  /** The items: an array, or a function that fetches the ones in a range. */
+  /**
+   * The items: an array, or a function that fetches the ones in a range.
+   * Reading it gives the items as they are drawn — a drag or `updateItems`
+   * included — as `domain` and `selectedIds` give the view and the selection.
+   */
   get items(): TimelineConfig<T>["items"] {
-    return this.#props.items;
+    const given = this.#effective().items;
+    return typeof given === "function" || this.#timeline === undefined ? given : this.#timeline.items;
   }
   set items(items: TimelineConfig<T>["items"]) {
     this.#set({ items });
@@ -273,7 +292,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** `"horizontal"`, `"vertical"` or `"auto"` — the `orientation` attribute as a property, which wins over it. */
   get orientation(): OrientationSetting | undefined {
-    return this.#props.orientation ?? this.#config().orientation;
+    return this.#effective().orientation;
   }
   set orientation(orientation: OrientationSetting | undefined) {
     this.#own("orientation", orientation);
@@ -281,7 +300,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** The `density` attribute as a property, which wins over it. */
   get density(): DensitySetting | undefined {
-    return this.#props.density ?? this.#config().density;
+    return this.#effective().density;
   }
   set density(density: DensitySetting | undefined) {
     this.#own("density", density);
@@ -289,7 +308,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** The `theme` attribute as a property, which wins over it. */
   get theme(): ThemeSetting | undefined {
-    return this.#props.theme ?? this.#config().theme;
+    return this.#effective().theme;
   }
   set theme(theme: ThemeSetting | undefined) {
     this.#own("theme", theme);
@@ -297,7 +316,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** The height in pixels — the `height` attribute as a property, which wins over it. */
   get height(): number | undefined {
-    return this.#props.height ?? this.#config().height;
+    return this.#effective().height;
   }
   set height(height: number | undefined) {
     this.#own("height", height);
@@ -306,7 +325,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** The `locale` attribute as a property, which wins over it. */
   get locale(): string | undefined {
-    return this.#props.locale ?? this.#config().locale;
+    return this.#effective().locale;
   }
   set locale(locale: string | undefined) {
     this.#own("locale", locale);
@@ -314,7 +333,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** The `time-zone` attribute as a property, which wins over it. */
   get timeZone(): string | undefined {
-    return this.#props.timeZone ?? this.#config().timeZone;
+    return this.#effective().timeZone;
   }
   set timeZone(timeZone: string | undefined) {
     this.#own("timeZone", timeZone);
@@ -322,7 +341,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** The `breakpoint` attribute as a property, which wins over it. */
   get breakpoint(): number | undefined {
-    return this.#props.breakpoint ?? this.#config().breakpoint;
+    return this.#effective().breakpoint;
   }
   set breakpoint(breakpoint: number | undefined) {
     this.#own("breakpoint", breakpoint);
@@ -330,7 +349,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** The `pack-mode` attribute as a property, which wins over it. */
   get packMode(): TimelineConfig<T>["packMode"] {
-    return this.#props.packMode ?? this.#config().packMode;
+    return this.#effective().packMode;
   }
   set packMode(packMode: TimelineConfig<T>["packMode"]) {
     this.#own("packMode", packMode);
@@ -338,7 +357,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** The `cluster` attribute as a property, which wins over it — and takes the clustering's options too. */
   get cluster(): TimelineConfig<T>["cluster"] {
-    return this.#props.cluster ?? this.#config().cluster;
+    return this.#effective().cluster;
   }
   set cluster(cluster: TimelineConfig<T>["cluster"]) {
     this.#own("cluster", cluster);
@@ -346,7 +365,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** The `direction` attribute as a property, which wins over it. */
   get direction(): TimelineConfig<T>["direction"] {
-    return this.#props.direction ?? this.#config().direction;
+    return this.#effective().direction;
   }
   set direction(direction: TimelineConfig<T>["direction"]) {
     this.#own("direction", direction);
@@ -354,7 +373,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** The `calendar` attribute as a property, which wins over it. */
   get calendar(): string | undefined {
-    return this.#props.calendar ?? this.#config().calendar;
+    return this.#effective().calendar;
   }
   set calendar(calendar: string | undefined) {
     this.#own("calendar", calendar);
@@ -362,7 +381,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** The `touch-action` attribute as a property, which wins over it. */
   get touchAction(): TimelineConfig<T>["touchAction"] {
-    return this.#props.touchAction ?? this.#config().touchAction;
+    return this.#effective().touchAction;
   }
   set touchAction(touchAction: TimelineConfig<T>["touchAction"]) {
     this.#own("touchAction", touchAction);
@@ -424,7 +443,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     return this.#effective();
   }
   set config(config: TimelineConfig<T>) {
-    const attributes = this.#config() as Record<string, unknown>;
+    const attributes = { ...this.#fromScript(), ...this.#config() } as Record<string, unknown>;
     const props = { ...this.#props, ...config } as Record<string, unknown>;
     const next: Record<string, unknown> = { ...config };
     for (const key of this.#fromConfig) {
@@ -451,7 +470,8 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
    * `editable` must not silence `multi-select` or `snap-ms`.
    */
   #effective(): TimelineConfig<T> {
-    const attributes = this.#config();
+    // The JSON child first, the attributes over it, the properties over both — as the instance is made (V17).
+    const attributes = { ...this.#fromScript(), ...this.#config() } as TimelineConfig<T>;
     const editing = this.#props.editing;
     return { ...attributes, ...this.#props, ...(editing === undefined || attributes.editing === undefined ? {} : { editing: { ...attributes.editing, ...editing } }) };
   }
@@ -475,7 +495,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     delete props[key];
     this.#props = props as TimelineConfig<T>;
     this.#fromConfig.delete(key);
-    this.#timeline?.update({ [key]: this.#config()[key] } as TimelineUpdate<T>);
+    this.#timeline?.update({ [key]: this.#effective()[key] } as TimelineUpdate<T>);
   }
 
   /** The host's height, for the stylesheet: `--tl-height`. */
@@ -486,6 +506,40 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   #config(): TimelineConfig<T> {
     return this.#fromAttributes((name) => this.getAttribute(name));
+  }
+
+  #scriptText: string | null | undefined;
+  #scriptValue: TimelineConfig = {};
+
+  #labelWatch: MutationObserver | undefined;
+
+  /**
+   * `aria-labelledby` is live, as the platform's is (V18): while it names the
+   * timeline, a change to the text it points at — or a label put in later —
+   * names it anew. The page's light DOM is watched, not the drawing.
+   */
+  #watchLabel(): void {
+    this.#labelWatch?.disconnect();
+    this.#labelWatch = undefined;
+    if (this.#timeline === undefined || this.getAttribute("aria-labelledby") === null || typeof MutationObserver === "undefined") return;
+    let named = this.#config().ariaLabel;
+    this.#labelWatch = new MutationObserver(() => {
+      const name = this.#config().ariaLabel;
+      if (name === named) return;
+      named = name;
+      if (!("ariaLabel" in this.#props)) this.#timeline?.update({ ariaLabel: this.#effective().ariaLabel } as TimelineUpdate<T>);
+    });
+    this.#labelWatch.observe(this.getRootNode(), { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["id"] });
+  }
+
+  /** What the JSON child says, read again only when its text changed. */
+  #fromScript(): TimelineConfig {
+    const text = this.querySelector(":scope > script[type='application/json']")?.textContent ?? null;
+    if (text !== this.#scriptText) {
+      this.#scriptText = text;
+      this.#scriptValue = scriptConfig(this);
+    }
+    return this.#scriptValue;
   }
 
   /**
@@ -509,7 +563,11 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
   }
 
   connectedCallback(): void {
-    if (this.#timeline !== undefined) return;
+    if (this.#timeline !== undefined) {
+      // Moved, perhaps into another root: the labels are looked up there now.
+      this.#watchLabel();
+      return;
+    }
     // A declarative shadow root (server-rendered) is already attached, and
     // open: attaching a second would throw.
     const existing = this.shadowRoot;
@@ -517,7 +575,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     // the timeline inside.
     const root = existing ?? this.attachShadow({ mode: "open", delegatesFocus: true });
     this.#heightStyle(this.height);
-    let config = { ...scriptConfig(this), ...this.#effective() } as TimelineConfig<T>;
+    let config = this.#effective();
     // The `nonce` attribute: the browser hides its value from the attribute
     // once the element is in the document, and keeps it in the property.
     if (config.nonce === undefined && this.nonce) config = { ...config, nonce: this.nonce };
@@ -532,6 +590,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
       }),
     );
     this.#unsubscribe.push(unstyle);
+    this.#watchLabel();
   }
 
   disconnectedCallback(): void {
@@ -540,10 +599,17 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     // view, selection, collapsed groups, edits and listeners — stays. Only an
     // element still out of the document after the task's microtasks lets go.
     queueMicrotask(() => {
-      if (this.isConnected) return;
+      const timeline = this.#timeline;
+      if (this.isConnected || timeline === undefined) return;
       for (const stop of this.#unsubscribe) stop();
       this.#unsubscribe = [];
-      this.#timeline?.destroy();
+      this.#labelWatch?.disconnect();
+      this.#labelWatch = undefined;
+      // What the reader did stays the element's: put back in, it draws the
+      // items and the selection it was let go with (the view is the one it is configured with).
+      const { selectedIds } = timeline.getSnapshot();
+      this.#props = { ...this.#props, ...(typeof this.#props.items === "function" ? {} : { items: timeline.items }), selectedIds };
+      timeline.destroy();
       this.#timeline = undefined;
     });
   }
@@ -553,8 +619,10 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   attributeChangedCallback(name: string, previous: string | null, value: string | null): void {
     if (previous === value || this.#timeline === undefined) return;
+    if (name === "aria-labelledby") this.#watchLabel();
     if (name === "height") this.#heightStyle(this.height);
-    const config = this.#config() as Record<string, unknown>;
+    // A removed attribute goes back to what the JSON child says, else to the default.
+    const config = { ...this.#fromScript(), ...this.#config() } as Record<string, unknown>;
     if ((name === "start" || name === "end") && config.domain !== undefined) {
       this.#timeline.zoomTo(config.domain as readonly [TimeInput, TimeInput]);
       return;
@@ -563,7 +631,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     // said before, against what they say now. A removed attribute goes back
     // to the default, which `update` spells as the key with no value. A
     // property set on the element wins over an attribute, as at connect.
-    const was = this.#fromAttributes((each) => (each === name ? previous : this.getAttribute(each))) as Record<string, unknown>;
+    const was = { ...this.#fromScript(), ...this.#fromAttributes((each) => (each === name ? previous : this.getAttribute(each))) } as Record<string, unknown>;
     const changed: Record<string, unknown> = {};
     let any = false;
     for (const key of new Set([...Object.keys(was), ...Object.keys(config)])) {

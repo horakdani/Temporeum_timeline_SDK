@@ -1,10 +1,12 @@
 import { render } from "svelte/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import type { Item } from "@temporeum/timeline-core";
 import { renderTimelineSvg } from "@temporeum/timeline-element";
+import type { Command as ElementCommand, ItemPatch as ElementItemPatch } from "@temporeum/timeline-element";
 
 import { Timeline, timelineState } from "../src/index.js";
+import type { Command as AdapterCommand, ItemPatch as AdapterItemPatch } from "../src/index.js";
 
 /**
  * The adapter on a server: Node, no DOM. Importing it, and rendering it with
@@ -61,6 +63,16 @@ describe("the Svelte adapter in Node", () => {
     expect(body).not.toContain("onItemMoved");
   });
 
+  it("names the timeline, not its box, with aria-label, as the element and Vue do (V3)", () => {
+    const { body } = render(Timeline, { props: { items, "aria-label": "Project plan", "aria-describedby": "help" } });
+    const box = body.match(/<div[^>]*data-tl-svelte=""[^>]*>/)?.[0];
+    expect(box).not.toContain("aria-label");
+    expect(box).toContain('aria-describedby="help"');
+    expect(body.match(/<svg[^>]*role="listbox"[^>]*>/)?.[0]).toContain('aria-label="Project plan"');
+    const both = render(Timeline, { props: { items, ariaLabel: "Mine", "aria-label": "Theirs" } }).body;
+    expect(both.match(/<svg[^>]*role="listbox"[^>]*>/)?.[0]).toContain('aria-label="Mine"');
+  });
+
   it("puts id, role, title, data-* and aria-* on the box, as React's and Vue's components do (R85)", () => {
     // They went into the configuration, where nothing reads them.
     const { body } = render(Timeline, { props: { items, id: "plan", role: "region", title: "Plan", "data-test": "t1", "aria-describedby": "help" } });
@@ -77,3 +89,11 @@ describe("the plugin registry", () => {
     expect(adapter.hasPlugin).toBe(element.hasPlugin);
   });
 });
+
+describe("the svelte adapter's types", () => {
+  it("name the undo stack's Command and ItemPatch, as the element does (V16)", () => {
+    expectTypeOf<AdapterCommand<{ readonly owner: string }>>().toEqualTypeOf<ElementCommand<{ readonly owner: string }>>();
+    expectTypeOf<AdapterItemPatch>().toEqualTypeOf<ElementItemPatch>();
+  });
+});
+

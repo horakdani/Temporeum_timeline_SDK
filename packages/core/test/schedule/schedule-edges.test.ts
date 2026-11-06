@@ -179,4 +179,21 @@ describe("tasks with a granularity (R12)", () => {
     const there = scheduleTasks(items, [{ id: "ab", from: "a", to: "b", type: "FS" }], { timeZone: "Europe/Budapest" });
     expect(there.tasks.get("b")?.start).toBe(day + 3 * DAY - HOUR);
   });
+
+  it("start on the day work starts, not at its hour, with a working calendar (V5)", () => {
+    // Thursday 5 – Friday 6 November, and a one-day task on Monday the 2nd after it.
+    const nov = (date: number): number => Date.UTC(2026, 10, date);
+    const items = [
+      { id: "a", start: nov(5), end: nov(6), granularity: "day" as const },
+      { id: "b", start: nov(2), end: nov(2), granularity: "day" as const },
+      { id: "c", start: nov(3), end: nov(4), granularity: "day" as const },
+    ];
+    const schedule = scheduleTasks(items, [{ id: "ab", from: "a", to: "b", type: "FS" }], { calendar: { week: OFFICE_WEEK } });
+    // Nothing places A or C: they stay as written, unmoved.
+    expect(schedule.tasks.get("a")).toMatchObject({ start: nov(5), end: nov(6), moved: false });
+    expect(schedule.tasks.get("c")).toMatchObject({ start: nov(3), end: nov(4), moved: false });
+    // B goes to the next working day after A, Monday the 9th, and ends on it — not before its start.
+    expect(schedule.tasks.get("b")).toMatchObject({ start: nov(9), end: nov(9), moved: true });
+    expect(scheduleCommand(items, schedule)?.after).toEqual([{ id: "b", start: nov(9), end: nov(9) }]);
+  });
 });

@@ -80,15 +80,38 @@ npm install @temporeum/timeline-react @temporeum/timeline-element
 import { Timeline, useTimelineState } from "@temporeum/timeline-react";
 import { useState } from "react";
 
+const DAY = 86_400_000;
+const t = Date.UTC(2026, 2, 2);
+const items = [
+  { id: "design", label: "Design", laneId: "work", start: t, end: t + 7 * DAY, data: { owner: "Ana" } },
+  { id: "launch", label: "Launch", laneId: "ship", start: t + 25 * DAY, end: t + 32 * DAY, data: { owner: "Dev" } },
+];
+const lanes = [
+  { id: "work", label: "Work" },
+  { id: "ship", label: "Shipping" },
+];
+
+export default function App() {
   const [timeline, setTimeline] = useState(null);
   const selected = useTimelineState(timeline, (state) => state.selectedIds);
+  const [log, setLog] = useState("Drag an item.");
+  return (
+    <main style={{ padding: 16 }}>
       <Timeline
         items={items}
         lanes={lanes}
+        height={320}
+        ariaLabel="Release plan"
         editing={{ enabled: true, snapMs: DAY }}
         onItemMoved={({ item, to }) => setLog(`${item.label} moved to ${new Date(to.start ?? item.start).toDateString()}`)}
         timelineRef={setTimeline}
       />
+      <p aria-live="polite">
+        {log} {selected?.length ?? 0} selected.
+      </p>
+    </main>
+  );
+}
 ```
 
 Every configuration field is a prop and every event an `on…` prop. The component does not re-render to draw — React's `<Profiler>` counts 0 commits during a pan — and `useTimelineState` re-renders a component only when the part of the state it selects changes. React examples are not live on this site, because React ships no browser module; the [React template](frameworks.md) is the runnable one.

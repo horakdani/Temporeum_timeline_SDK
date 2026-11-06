@@ -41,6 +41,7 @@ export type { TimelineComponentConfig, TimelineConfig, TimelineSnapshot } from "
 // The data and the event payloads, handed on: one install types an app.
 export type {
   ClusterOpenedPayload,
+  Command,
   CommandPayload,
   DensityChangedPayload,
   Domain,
@@ -52,6 +53,7 @@ export type {
   Item,
   ItemEventPayload,
   ItemMovedPayload,
+  ItemPatch,
   ItemResizedPayload,
   ItemsAddedPayload,
   ItemsChangedPayload,
@@ -92,7 +94,7 @@ export type TimelineHandlers<T = unknown> = {
 export interface TimelineProps<T = unknown> extends TimelineComponentConfig<T>, TimelineHandlers<T> {
   readonly className?: string | undefined;
   readonly style?: CSSProperties | undefined;
-  /** The box's `id`; `data-*`, `aria-*`, `role` and `title` go on the box too. */
+  /** The box's `id`; `data-*`, `aria-*`, `role` and `title` go on the box too, but `aria-label` names the timeline (`ariaLabel`). */
   readonly id?: string | undefined;
   readonly role?: string | undefined;
   readonly title?: string | undefined;
@@ -126,11 +128,12 @@ const EVENTS = TIMELINE_EVENTS;
 
 const handlerOf = (type: TimelineInstanceEventName): string => `on${type[0]?.toUpperCase() ?? ""}${type.slice(1)}`;
 const HANDLERS = new Set(EVENTS.map(handlerOf));
-const OWN = new Set(["className", "style", "ssrWidth", "timelineRef", "renderItem", "defaultDomain", "defaultSelectedIds", "domain", "selectedIds", "ref", "key", "children"]);
+const OWN = new Set(["className", "style", "ssrWidth", "timelineRef", "renderItem", "defaultDomain", "defaultSelectedIds", "domain", "selectedIds", "ref", "key", "children", "aria-label"]);
 
 /**
  * The configuration's fields: these props go to the instance; any other —
- * `id`, `data-*`, `aria-*`, `role` — goes on the box, as a `div`'s would.
+ * `id`, `data-*`, `aria-*`, `role` — goes on the box, as a `div`'s would;
+ * `aria-label` is the timeline's name, `ariaLabel`, unless that is given.
  * Typed against the configuration, so a field added there and not here
  * fails to compile.
  */
@@ -203,6 +206,8 @@ function configOf<T>(props: TimelineProps<T>): Record<string, unknown> {
   for (const key of Object.keys(props)) {
     if (Object.hasOwn(CONFIG, key) && !OWN.has(key)) config[key] = (props as Record<string, unknown>)[key];
   }
+  // `aria-label` names the timeline, as on the element: on the box, a `div` with no role, nothing would read it.
+  config.ariaLabel ??= props["aria-label"];
   return config;
 }
 

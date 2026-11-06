@@ -551,6 +551,27 @@ export function readableItems<T>(items: readonly Item<T>[], report?: SkipReport)
   return checked.kept as readonly Item<T>[];
 }
 
+/** The time fields of each kind of decoration. */
+const DECORATION_TIMES: Readonly<Record<string, readonly string[]>> = { banding: [], now: ["time"], era: ["start", "end"], marker: ["time"] };
+
+/** The time fields of the other lists of the configuration that hold times. */
+const LISTS = {
+  decorations: (entry: Record<string, unknown>) => DECORATION_TIMES[entry.kind as string],
+  timeBars: () => ["time"],
+  hiddenDates: () => ["start", "end"],
+} as const satisfies Partial<Record<keyof TimelineConfig, (entry: Record<string, unknown>) => readonly string[] | undefined>>;
+
+/** Each such list checked once: what is kept, and what was left out. */
+const checkedLists = new WeakMap<readonly unknown[], { readonly kept: readonly unknown[]; readonly skipped: readonly string[] }>();
+
+/** A decoration, a time bar or a hidden stretch the timeline can draw: an object of a known kind whose times are times. */
+function listProblem(key: keyof typeof LISTS, entry: unknown): string | undefined {
+  const fields = typeof entry === "object" && entry !== null ? LISTS[key](entry as Record<string, unknown>) : undefined;
+  if (fields === undefined) return `${JSON.stringify(entry) ?? String(entry)} is not one of the ${key} the timeline draws; it is left out`;
+  const bad = fields.find((field) => !isTime((entry as Record<string, unknown>)[field]));
+  return bad === undefined ? undefined : `One of the ${key} is left out: its ${bad} (${String((entry as Record<string, unknown>)[bad])}) is not a time — epoch milliseconds or a Date`;
+}
+
 /** The items a configuration shows right away: none for a fetched source, and only those it can draw. */
 export function itemsOf<T>(config: TimelineConfig<T>, report?: SkipReport): readonly Item<T>[] {
   return typeof config.items === "function" ? [] : readableItems(config.items ?? [], report);
@@ -600,8 +621,9 @@ const CHOICES = {
  * The configuration without a `locale` or `timeZone` the platform cannot
  * read, a `theme` with a token that is not a colour, or a word an
  * enumerated option does not have (`"Vertical"`, `"stack"`) — each falls
- * back to its default, and is said to `report`. The same object when all
- * are fine.
+ * back to its default, and is said to `report`. A decoration, a time bar or
+ * a hidden stretch of no known kind or with a time that is not one is left
+ * out of its list, and said. The same object when all are fine.
  */
 export function readableOptionsOf<T>(config: TimelineConfig<T>, report?: SkipReport): TimelineConfig<T> {
   const { locale, timeZone } = config;
@@ -615,8 +637,24 @@ export function readableOptionsOf<T>(config: TimelineConfig<T>, report?: SkipRep
     // A theme object is read by its tokens, above.
     return value !== undefined && !(key === "theme" && typeof value === "object" && value !== null) && !(CHOICES[key] as readonly unknown[]).includes(value);
   });
-  if (!badLocale && !badZone && !badHeight && badTheme === undefined && unknownWords.length === 0) return config;
+  const lists = (Object.keys(LISTS) as (keyof typeof LISTS)[]).flatMap((key) => {
+    const list: unknown = config[key];
+    if (!Array.isArray(list)) return [];
+    let checked = checkedLists.get(list);
+    if (checked === undefined) {
+      const problems = list.map((entry) => listProblem(key, entry));
+      const skipped = problems.filter((problem) => problem !== undefined);
+      checked = { kept: skipped.length === 0 ? list : list.filter((_entry, at) => problems[at] === undefined), skipped };
+      checkedLists.set(list, checked);
+    }
+    return checked.skipped.length === 0 ? [] : [{ key, checked }];
+  });
+  if (!badLocale && !badZone && !badHeight && badTheme === undefined && unknownWords.length === 0 && lists.length === 0) return config;
   const kept: Record<string, unknown> = { ...config };
+  for (const { key, checked } of lists) {
+    kept[key] = checked.kept;
+    for (const message of checked.skipped) report?.({ message, option: key });
+  }
   for (const key of unknownWords) {
     delete kept[key];
     report?.({ message: `${JSON.stringify(config[key])} is not a ${key} (${CHOICES[key].join(", ")}); the default is used`, option: key });

@@ -1,11 +1,13 @@
 import { createSSRApp, defineComponent, h } from "vue";
 import { renderToString } from "vue/server-renderer";
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import type { Item } from "@temporeum/timeline-core";
 import { renderTimelineSvg } from "@temporeum/timeline-element";
+import type { Command as ElementCommand, ItemPatch as ElementItemPatch } from "@temporeum/timeline-element";
 
 import { Timeline, useTimelineState } from "../src/index.js";
+import type { Command as AdapterCommand, ItemPatch as AdapterItemPatch } from "../src/index.js";
 
 /**
  * The adapter on a server: Node, no DOM. Importing it, and rendering it with
@@ -20,6 +22,15 @@ const items: Item[] = [
 ];
 
 const render = (attrs: Record<string, unknown>): Promise<string> => renderToString(createSSRApp({ render: () => h(Timeline, attrs) }));
+
+describe("the Vue adapter's accessible name", () => {
+  it("names the timeline, not its box, with aria-label, as React and Svelte do (V3)", async () => {
+    const html = await render({ items, "aria-label": "Project plan", "aria-describedby": "help" });
+    expect(html.match(/^<div[^>]*>/)?.[0]).not.toContain("aria-label");
+    expect(html.match(/^<div[^>]*>/)?.[0]).toContain('aria-describedby="help"');
+    expect(html.match(/<svg[^>]*role="listbox"[^>]*>/)?.[0]).toContain('aria-label="Project plan"');
+  });
+});
 
 describe("the Vue adapter in Node", () => {
   it("imports without a browser", () => {
@@ -75,3 +86,11 @@ describe("the plugin registry", () => {
     expect(adapter.hasPlugin).toBe(element.hasPlugin);
   });
 });
+
+describe("the vue adapter's types", () => {
+  it("name the undo stack's Command and ItemPatch, as the element does (V16)", () => {
+    expectTypeOf<AdapterCommand<{ readonly owner: string }>>().toEqualTypeOf<ElementCommand<{ readonly owner: string }>>();
+    expectTypeOf<AdapterItemPatch>().toEqualTypeOf<ElementItemPatch>();
+  });
+});
+

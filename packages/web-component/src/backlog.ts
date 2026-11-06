@@ -58,7 +58,7 @@ export interface BacklogOptions<T = unknown> {
 /** A mounted backlog. */
 export interface Backlog<T = unknown> {
   /** Change any option — another list of tasks, say; the rest stay. */
-  update(options: Partial<BacklogOptions<T>>): void;
+  update(options?: Partial<BacklogOptions<T>>): void;
   /** The tasks listed now: those not on the timeline. */
   readonly tasks: readonly BacklogTask<T>[];
   destroy(): void;

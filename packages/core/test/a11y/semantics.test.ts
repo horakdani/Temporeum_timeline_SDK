@@ -283,4 +283,16 @@ describe("accessible names before year 1", () => {
     const modern = describeSpan({ id: "m", start: T0, label: "Now", laneId: "a" }, { start: T0, end: T0, open: false }, "en", "UTC");
     expect(modern).not.toMatch(/BC|AD/);
   });
+
+  it("decide the era on the zone's calendar, not the UTC instant's (V10)", () => {
+    const yearOne = Date.UTC(2000, 0, 1);
+    // 22:00 on 31 December 1 BC in New York is 03:00 on 1 January AD 1 in UTC.
+    const ny = new Date(yearOne).setUTCFullYear(1, 0, 1) + 3 * 3_600_000;
+    const evening = describeSpan({ id: "e", start: ny, label: "Eve", laneId: "a" }, { start: ny, end: ny, open: false }, "en", "America/New_York");
+    expect(evening).toMatch(/BC/);
+    // Just after midnight of 1 January AD 1 in Rome (local mean time, +0:49:56) is 31 December 1 BC in UTC: an AD date, without its era.
+    const rome = new Date(yearOne).setUTCFullYear(0, 11, 31) + 23.5 * 3_600_000;
+    const first = describeSpan({ id: "f", start: rome, label: "First", granularity: "day", laneId: "a" }, { start: rome, end: rome, open: false }, "en", "Europe/Rome");
+    expect(first).not.toMatch(/BC|AD/);
+  });
 });

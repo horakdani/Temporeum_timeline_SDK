@@ -93,35 +93,35 @@ export interface StoryOptions<T = unknown> {
    * story. `item.data.story` by default, and the label as the headline for
    * an item without one; background items are never slides.
    */
-  readonly slide?: (item: Item<T>) => StorySlide | undefined;
+  readonly slide?: ((item: Item<T>) => StorySlide | undefined) | undefined;
   /** The level of the slide's headline, so it fits the page's outline. 2 by default. */
-  readonly headingLevel?: 2 | 3 | 4 | 5 | 6;
+  readonly headingLevel?: 2 | 3 | 4 | 5 | 6 | undefined;
   /**
    * Name the slide in the address (`#story-launch`), so a link opens on
    * it, and follow the address when it changes. `true` for the `story-`
    * prefix, or the prefix to use. Off by default.
    */
-  readonly hash?: boolean | string;
+  readonly hash?: boolean | string | undefined;
   /** When a provider's player loads: when it is asked for (default), or with the slide. */
-  readonly media?: "click" | "eager";
+  readonly media?: "click" | "eager" | undefined;
   /** Move the timeline to the slide's item. On by default. */
-  readonly reveal?: boolean;
+  readonly reveal?: boolean | undefined;
   /** The slide to open on: an item's id or an index. The address's, with `hash`, else the first. */
-  readonly start?: string | number;
+  readonly start?: string | number | undefined;
   /** The date line of a slide that does not say its own. The item's date to its precision by default. */
-  readonly formatDate?: (item: Item<T>) => string;
+  readonly formatDate?: ((item: Item<T>) => string) | undefined;
   /** A BCP 47 locale for the date line. */
-  readonly locale?: string;
+  readonly locale?: string | undefined;
   /** The zone the date line is read in. UTC by default, as TimelineJS's dates are. */
-  readonly timeZone?: string;
-  readonly strings?: Partial<StoryStrings>;
-  readonly theme?: ThemeSetting;
+  readonly timeZone?: string | undefined;
+  readonly strings?: Partial<StoryStrings> | undefined;
+  readonly theme?: ThemeSetting | undefined;
   /**
    * The Trusted Types policy the slides' HTML is parsed through, inertly, for
    * a page whose `trusted-types` directive does not list the element's own,
    * `temporeum-timeline`.
    */
-  readonly trustedTypesPolicy?: TrustedHtmlPolicy;
+  readonly trustedTypesPolicy?: TrustedHtmlPolicy | undefined;
 }
 
 /** A change of slide. */
@@ -154,6 +154,12 @@ export interface Story<T = unknown> {
   next(): boolean;
   /** The slide before. `false` on the first. */
   previous(): boolean;
+  /**
+   * Change the options given and keep the rest: the words, the theme, the
+   * title slide, how slides are read, `hash`. The slide shown stays when it
+   * is still one; `start` only says where the panel opens.
+   */
+  update(options?: Partial<StoryOptions<T>>): void;
   /** Listen to an event; the function returned stops listening. */
   on<K extends keyof StoryEventMap<T>>(event: K, handler: (payload: StoryEventMap<T>[K]) => void): () => void;
   destroy(): void;
@@ -200,13 +206,14 @@ export interface StoryHtmlOptions {
 export function storyHtml(doc: Document, html: string, options: StoryHtmlOptions = {}): DocumentFragment {
   const inline = options.inline === true;
   const template = doc.createElement("template");
-  // An inert parse: a template's content runs nothing. Its `on…` attributes
-  // are renamed first: nothing would run either way, but every parse the
-  // browser offers reports each handler to the page's script-src-attr, and
-  // whoever writes the slides could fill its report endpoint (R79). No
-  // attribute of the source but href, title and datetime is copied, so the
-  // name does not matter after.
-  const renamed = html.replace(/<[a-z](?:[^>"']|"[^"]*"|'[^']*')*/gi, (tag) => tag.replace(/("[^"]*"|'[^']*')|([\s/])on/gi, (_all, quoted: string | undefined, before: string) => quoted ?? `${before}x-on`));
+  // An inert parse: a template's content runs nothing. Every attribute is
+  // renamed first (`x-…`): nothing would run either way, but every parse the
+  // browser offers reports each handler and each `style` to the page's
+  // script-src-attr and style-src-attr, and whoever writes the slides could
+  // fill its report endpoint (R79, V24). A name right after a quoted value
+  // (`src="x"onerror=…`) is a name too. Only href, title and datetime are
+  // read back, by their new names.
+  const renamed = html.replace(/<[a-z](?:[^>"']|"[^"]*"|'[^']*')*/gi, (tag) => tag.replace(/("[^"]*"|'[^']*'|[\s/])([^\s/>="']*)/g, (_all, lead: string, name: string) => (name === "" ? lead : `${lead}x-${name}`)));
   template.innerHTML = trustedHtml(doc.defaultView, renamed, options.trustedTypesPolicy);
   const out = doc.createDocumentFragment();
   const copy = (from: Node, to: Node): void => {
@@ -225,7 +232,7 @@ export function storyHtml(doc: Document, html: string, options: StoryHtmlOptions
       }
       const element = doc.createElement(tag.toLowerCase());
       if (tag === "A") {
-        const given = node.getAttribute("href")?.trim() ?? "";
+        const given = node.getAttribute("x-href")?.trim() ?? "";
         const href = given === "" ? undefined : safeHref(given, doc.baseURI);
         if (href === undefined) {
           copy(node, to);
@@ -236,7 +243,7 @@ export function storyHtml(doc: Document, html: string, options: StoryHtmlOptions
         element.setAttribute("target", "_blank");
       }
       const kept = tag === "ABBR" ? "title" : tag === "TIME" ? "datetime" : undefined;
-      const value = kept === undefined ? null : node.getAttribute(kept);
+      const value = kept === undefined ? null : node.getAttribute(`x-${kept}`);
       if (kept !== undefined && value !== null) element.setAttribute(kept, value);
       copy(node, element);
       to.appendChild(element);
@@ -310,26 +317,20 @@ function defaultSlide<T>(item: Item<T>): StorySlide | undefined {
  * Mount a story panel in `container`, telling the slides of `timeline`'s
  * items one at a time and moving the timeline with it.
  */
-export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, options: StoryOptions<T> = {}): Story<T> {
+export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, given: StoryOptions<T> = {}): Story<T> {
   const doc = container.ownerDocument;
   const win = doc.defaultView;
-  const words: StoryStrings = { ...STORY_STRINGS, ...options.strings };
-  const slideOf = options.slide ?? defaultSlide;
-  const prefix = options.hash === undefined || options.hash === false ? undefined : options.hash === true ? "story-" : options.hash;
-  const reveal = options.reveal !== false;
-  const level = options.headingLevel ?? 2;
+  let options = given;
+  let words: StoryStrings;
+  let slideOf: (item: Item<T>) => StorySlide | undefined;
+  let prefix: string | undefined;
+  let reveal: boolean;
+  let level: number;
   const id = `tl-story-${String((storyCount += 1))}`;
 
   const box = doc.createElement("section");
   box.className = "tl-story";
   box.setAttribute("aria-roledescription", "story");
-  box.setAttribute("aria-label", words.story);
-  const resolved = options.theme === undefined ? undefined : resolveTheme(options.theme);
-  if (resolved !== undefined) {
-    const custom = resolved !== LIGHT_THEME && resolved !== DARK_THEME;
-    box.dataset.tlTheme = custom ? "custom" : resolved.name;
-    if (custom) box.style.cssText = tokens(resolved);
-  }
   const slideBox = doc.createElement("div");
   slideBox.className = "tl-story-slide";
   slideBox.setAttribute("role", "group");
@@ -340,7 +341,6 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
   const previous = doc.createElement("button");
   previous.type = "button";
   previous.className = "tl-story-previous";
-  previous.textContent = `← ${words.previous}`;
   previous.setAttribute("aria-controls", slideBox.id);
   const position = doc.createElement("span");
   position.className = "tl-story-position";
@@ -348,13 +348,38 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
   const next = doc.createElement("button");
   next.type = "button";
   next.className = "tl-story-next";
-  next.textContent = `${words.next} →`;
   next.setAttribute("aria-controls", slideBox.id);
   nav.append(previous, position, next);
   const said = doc.createElement("div");
   said.className = "tl-story-said";
   said.setAttribute("aria-live", "polite");
   box.append(slideBox, nav, said);
+
+  function onHash(): void {
+    const at = fromHash();
+    if (at >= 0 && at !== index) show(at, "hash", true);
+  }
+
+  /** Read the options into what the panel uses: its words, its theme, its address. */
+  function configure(): void {
+    words = { ...STORY_STRINGS, ...options.strings };
+    slideOf = options.slide ?? defaultSlide;
+    const was = prefix;
+    prefix = options.hash === undefined || options.hash === false ? undefined : options.hash === true ? "story-" : options.hash;
+    if (was === undefined && prefix !== undefined) win?.addEventListener("hashchange", onHash);
+    if (was !== undefined && prefix === undefined) win?.removeEventListener("hashchange", onHash);
+    reveal = options.reveal !== false;
+    level = options.headingLevel ?? 2;
+    box.setAttribute("aria-label", words.story);
+    previous.textContent = `← ${words.previous}`;
+    next.textContent = `${words.next} →`;
+    const resolved = options.theme === undefined ? undefined : resolveTheme(options.theme);
+    const custom = resolved !== undefined && resolved !== LIGHT_THEME && resolved !== DARK_THEME;
+    if (resolved === undefined) delete box.dataset.tlTheme;
+    else box.dataset.tlTheme = custom ? "custom" : resolved.name;
+    box.style.cssText = custom ? tokens(resolved) : "";
+  }
+  configure();
   container.append(box);
   const unstyle = adoptCss(box, storyCss(), timeline.nonce);
 
@@ -687,26 +712,23 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
     const at = entries.findIndex((entry) => entry.item !== undefined && entry.item.id === ids[0]);
     if (at >= 0 && at !== index) show(at, "timeline", true);
   });
-  const stopItems = timeline.on("itemsChanged", () => {
+  /** Read the slides again and keep the one shown; `redraw` draws it anew even when it is the same. */
+  function refresh(redraw: boolean): void {
     const was = entries[index];
     order();
     const at = was?.item === undefined ? (was === undefined ? -1 : 0) : indexOf(was.item.id);
     index = at >= 0 ? at : Math.min(index, Math.max(entries.length - 1, 0));
     const now = entries[index];
     // The same slide of the same item stays as it is drawn: a player that is playing keeps playing.
-    const same = now !== undefined && was !== undefined && now.slide === was.slide && dateOf(now) === dateOf(was);
+    const same = !redraw && now !== undefined && was !== undefined && now.slide === was.slide && dateOf(now) === dateOf(was);
     if (same) {
       previous.disabled = index <= 0;
       next.disabled = index >= entries.length - 1;
       position.textContent = positionText(index);
       slideBox.setAttribute("aria-label", positionText(index));
     } else draw();
-  });
-  const onHash = (): void => {
-    const at = fromHash();
-    if (at >= 0 && at !== index) show(at, "hash", true);
-  };
-  if (prefix !== undefined) win?.addEventListener("hashchange", onHash);
+  }
+  const stopItems = timeline.on("itemsChanged", () => refresh(false));
 
   order();
   const opening = fromHash();
@@ -752,7 +774,17 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, opt
     },
     next: () => step(1),
     previous: () => step(-1),
-    on(_event, handler) {
+    update(changes) {
+      if (destroyed) return;
+      options = { ...options, ...changes };
+      configure();
+      refresh(true);
+      const entry = entries[index];
+      if (entry !== undefined) writeHash(entry);
+    },
+    on(event, handler) {
+      // One event, by its name: another name (a typo, `slidechanged`) hears nothing.
+      if (event !== "slideChanged") return () => false;
       listeners.add(handler);
       return () => listeners.delete(handler);
     },
