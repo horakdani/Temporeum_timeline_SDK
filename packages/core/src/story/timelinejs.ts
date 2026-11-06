@@ -11,9 +11,11 @@
  * The dates. A TimelineJS date is a year and, optionally, a month, a day and
  * a time, in UTC unless the host says otherwise. The precision it is given
  * in is the item's `granularity`: a year alone covers its year, as a day
- * covers its day. A year is the year TimelineJS gives the browser's `Date` —
- * the astronomical one, so its `-500` is the axis's 501 BC; a `display_date`
- * keeps the story's own wording. An end date's unit is part of the span,
+ * covers its day. A negative year is the year before Christ TimelineJS
+ * writes on its slide (`-44` is "44 BCE" there) and the author meant: the
+ * axis's 44 BC, which is the astronomical year -43 (Y10). `0` is the
+ * astronomical year 0, 1 BC. A `display_date` keeps the story's own
+ * wording. An end date's unit is part of the span,
  * as it is for every item with a granularity: 1914 to 1918 runs to the end
  * of 1918. Two dates known to different precisions give the item the finer
  * unit, and each end keeps its own: 1914 to 11 November 1918 ends with that
@@ -211,7 +213,8 @@ function readDate(date: TimelineJSDate | undefined, zone?: string): ReadDate | n
   while (given < parts.length && parts[given] !== undefined) given += 1;
   const [month = 1, day = 1, hour = 0, minute = 0, second = 0, ms = 0] = parts.slice(0, given) as number[];
   const at = new Date(0);
-  at.setUTCFullYear(year, month - 1, day);
+  // A year before Christ, as TimelineJS writes it, has no year 0 to count (Y10).
+  at.setUTCFullYear(year < 0 ? year + 1 : year, month - 1, day);
   at.setUTCHours(hour, minute, second, ms);
   const time = at.getTime();
   if (!Number.isFinite(time)) return null;
@@ -220,6 +223,22 @@ function readDate(date: TimelineJSDate | undefined, zone?: string): ReadDate | n
   // The fields were set as UTC: read them again as the zone's wall clock.
   const wall = (t: TimeMs): TimeMs => (zone === undefined ? t : fromCalendarParts(toCalendarParts(t), zone));
   return { time: wall(time), granularity, after: wall(at.getTime()) };
+}
+
+/**
+ * The JSON as TimelineJS reads it: a `null` is a field not given (`null` in
+ * a list, an empty slide, which is warned about), and a number where text
+ * goes is its digits — a sheet's `1999` headline, a numeric `unique_id`.
+ * One `null` date or number headline threw for the whole story (Y21).
+ */
+function plain(value: unknown): unknown {
+  return typeof value === "number"
+    ? String(value)
+    : Array.isArray(value)
+      ? value.map((each: unknown) => plain(each ?? {}))
+      : typeof value === "object" && value !== null
+        ? Object.fromEntries(Object.entries(value).flatMap(([key, each]) => (each === null ? [] : [[key, plain(each)]])))
+        : value;
 }
 
 function hasYear(date: TimelineJSDate | undefined): boolean {
@@ -277,7 +296,8 @@ function slug(text: string): string {
  * slide apart. Give the items, lanes and decorations to `createTimeline`
  * and the timeline to `mountStory` (`@temporeum/timeline-element/story`).
  */
-export function fromTimelineJS(data: TimelineJSData, options: FromTimelineJSOptions = {}): StoryConversion {
+export function fromTimelineJS(given: TimelineJSData, options: FromTimelineJSOptions = {}): StoryConversion {
+  const data = plain(given) as TimelineJSData;
   const warnings: StoryWarning[] = [];
   if (data.scale !== undefined && data.scale.toLowerCase() === "cosmological") {
     warnings.push({

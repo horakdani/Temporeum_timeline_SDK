@@ -137,6 +137,47 @@ describe("<temporeum-timeline>", () => {
     }
   });
 
+  it("sets up for a script after it while the page still loads, and keeps a zoomTo from before (Y5)", async () => {
+    // The plain-HTML page: the element, the UMD script, then a script of the
+    // page's own. That script runs while the document is still loading, but
+    // the parser is past the element's end tag: `timeline` was undefined and
+    // a `zoomTo` was lost.
+    const state = Object.getOwnPropertyDescriptor(Document.prototype, "readyState");
+    Object.defineProperty(document, "readyState", { configurable: true, get: () => "loading" });
+    const el = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
+    el.style.width = "600px";
+    const after = document.createTextNode("\n");
+    try {
+      document.body.append(el);
+      // Still parsing its children: nothing yet, and a zoomTo is kept as the range.
+      expect(el.timeline).toBeUndefined();
+      el.zoomTo([Date.UTC(2026, 0, 1), Date.UTC(2026, 11, 31)]);
+      const json = document.createElement("script");
+      json.type = "application/json";
+      json.textContent = JSON.stringify({ items: [{ id: "x", start: "2026-03-01", end: "2026-03-05", label: "X" }] });
+      el.append(json);
+      // The parser moves past the end tag: what follows the element is in the document.
+      document.body.append(after);
+      const timeline = el.timeline;
+      expect(timeline).toBeDefined();
+      expect(timeline?.getSnapshot().domain).toEqual([Date.UTC(2026, 0, 1), Date.UTC(2026, 11, 31)]);
+    } finally {
+      delete (document as { readyState?: unknown }).readyState;
+      expect(Object.getOwnPropertyDescriptor(Document.prototype, "readyState")).toEqual(state);
+    }
+    const first = el.timeline;
+    document.dispatchEvent(new Event("DOMContentLoaded"));
+    try {
+      await drawn(el);
+      // One instance: DOMContentLoaded does not set it up again.
+      expect(el.timeline).toBe(first);
+      expect(nodeOf(el, "x")).not.toBeNull();
+    } finally {
+      el.remove();
+      after.remove();
+    }
+  });
+
   it("reads the JSON child's lanes, groups and selection back through its properties, as it does its items (X23)", async () => {
     const host = document.createElement("div");
     host.innerHTML = `<temporeum-timeline style="width:600px" height="200"><script type="application/json">${JSON.stringify({
@@ -468,6 +509,33 @@ describe("<temporeum-timeline>", () => {
     // The element's stylesheet was not added a second time — adopted, not a `<style>`.
     expect(adoptedCss(el.shadowRoot as ShadowRoot).filter((text) => text === HOST_CSS)).toHaveLength(1);
     expect([...(el.shadowRoot as ShadowRoot).children].filter((child) => child.localName === "style")).toHaveLength(0);
+  });
+
+  it("gives the live items and selection through config, so a spread of it keeps an edit (Y29)", async () => {
+    // `el.config = { ...el.config, theme }` after a drag handed the instance
+    // the configured array back, and the drag was undone.
+    const el = await place();
+    el.timeline?.updateItems([{ id: "a", label: "EDITED" }]);
+    el.timeline?.select(["b"]);
+    expect((el.config.items as readonly Item[])[0]?.label).toBe("EDITED");
+    expect(el.config.selectedIds).toEqual(["b"]);
+    el.config = { ...el.config, theme: "dark" };
+    el.timeline?.flush();
+    expect(nodeOf(el, "a").getAttribute("aria-label")).toContain("EDITED");
+    expect(el.timeline?.getSnapshot().selectedIds).toEqual(["b"]);
+  });
+
+  it("converts only its own range in the JSON child, not the wrappers' defaultDomain (Y17)", async () => {
+    // The key was turned into times and then read by nothing.
+    const host = document.createElement("div");
+    host.innerHTML = `<temporeum-timeline style="width:600px" height="200"><script type="application/json">${JSON.stringify({
+      items: [{ id: "x", start: "2026-03-01", end: "2026-03-05", label: "X" }],
+      domain: ["2026-02-25", "2026-03-15"],
+      defaultDomain: ["2026-01-01", "2026-12-31"],
+    })}</script></temporeum-timeline>`;
+    const el = host.firstElementChild as TemporeumTimelineElement;
+    expect(el.config.domain).toEqual([Date.parse("2026-02-25"), Date.parse("2026-03-15")]);
+    expect((el.config as Record<string, unknown>).defaultDomain).toEqual(["2026-01-01", "2026-12-31"]);
   });
 
   it("reads its items as they are drawn, and keeps the reader's edits and selection when put back later (V4)", async () => {

@@ -243,3 +243,50 @@ describe("the options' documentation (X21)", () => {
     expect(() => scheduleTasks([{ id: "a", start: Date.UTC(2026, 2, 2), end: new Date("2026-03-03"), granularity: "day" }], [])).not.toThrow();
   });
 });
+
+describe("tasks by the month, the year and the day without a working calendar (Y3)", () => {
+  // Their length was measured in elapsed milliseconds and laid down again:
+  // a month moved into February was February and March, a year moved onto a
+  // shorter year two years, a day task moved onto a spring-forward week a day
+  // longer — and scheduleCommand wrote that end into the items.
+  const utc = (y: number, m: number, d = 1): number => Date.UTC(y, m - 1, d);
+
+  it("keeps a month a month and a year a year where they land", () => {
+    const items = [
+      { id: "A", start: utc(2027, 1), end: utc(2027, 1), granularity: "month" as const },
+      { id: "B", start: utc(2026, 7), end: utc(2026, 7), granularity: "month" as const },
+      { id: "C", start: utc(2026, 1, 10), end: utc(2026, 1, 12), granularity: "day" as const },
+      { id: "Y1", start: utc(2024, 1), end: utc(2024, 1), granularity: "year" as const },
+      { id: "Y2", start: utc(2020, 1), end: utc(2020, 1), granularity: "year" as const },
+    ];
+    const deps = [
+      { from: "A", to: "B" },
+      { from: "B", to: "C" },
+      { from: "Y1", to: "Y2" },
+    ];
+    const schedule = scheduleTasks(items, deps);
+    expect(schedule.tasks.get("B")).toMatchObject({ start: utc(2027, 2), end: utc(2027, 2) });
+    // The successor starts when February ends, not 31 days after it began.
+    expect(schedule.tasks.get("C")).toMatchObject({ start: utc(2027, 3, 1), end: utc(2027, 3, 3) });
+    expect(schedule.tasks.get("Y2")).toMatchObject({ start: utc(2025, 1), end: utc(2025, 1) });
+    expect(scheduleCommand(items, schedule)?.after).toContainEqual({ id: "B", start: utc(2027, 2), end: utc(2027, 2) });
+  });
+
+  it("keeps a three-day task three days in the zone across the spring change", () => {
+    // Budapest: 29 March 2026 has 23 hours. B (3–5 April) is pulled after A (25–26 March).
+    const zone = "Europe/Budapest";
+    const local = (d: number): number => Date.UTC(2026, 2, d) - HOUR;
+    const items = [
+      { id: "A", start: local(25), end: local(26), granularity: "day" as const },
+      { id: "B", start: local(34), end: local(36), granularity: "day" as const },
+    ];
+    const schedule = scheduleTasks(items, [{ from: "A", to: "B" }], { timeZone: zone });
+    // 27–29 March: its last day is the 29th, not the 30th.
+    expect(schedule.tasks.get("B")).toMatchObject({ start: local(27), end: Date.UTC(2026, 2, 29) - HOUR });
+  });
+
+  it("measures by the working calendar when there is one, as before", () => {
+    const items = [{ id: "M", start: utc(2026, 1), end: utc(2026, 1), granularity: "month" as const }];
+    expect(scheduleTasks(items, [], { calendar: { week: OFFICE_WEEK } }).tasks.get("M")?.moved).toBe(false);
+  });
+});

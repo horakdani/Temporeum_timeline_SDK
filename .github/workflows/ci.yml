@@ -47,7 +47,9 @@ jobs:
       - run: npm run typecheck --workspaces --if-present
       # ESLint and size-limit admit Node 22.13 and 22.19 at the lowest, so the
       # lint and the core's size budget run on the lines they support; what
-      # 22.12 measures is the packages, not the tools.
+      # 22.12 measures is the packages, not the tools. pdfjs-dist (the PDF
+      # tests' reader, a dev dependency) says 22.13 as well, and runs on 22.12
+      # in the core suite through its legacy build's polyfills (Y32).
       - if: matrix.node != '22.12.0'
         run: npm run lint
       # The core's whole suite, once, with the per-file coverage threshold.

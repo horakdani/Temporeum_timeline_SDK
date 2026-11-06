@@ -30,7 +30,7 @@
  */
 
 import { addCalendar } from "./calendar.js";
-import { editCommand, invertPatch, modeForPart, movePatch, resizePatch } from "./editing.js";
+import { editCommand, invertPatch, modeForPart, movePatch, resizePatch, unitOf } from "./editing.js";
 import type { EditHit, EditMode, HitTester } from "./editing.js";
 import { unprojectPoint } from "./geometry.js";
 import { DEFAULT_KEY_BINDINGS, resolveKey, rowNeighbour } from "./keyboard.js";
@@ -1348,14 +1348,17 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
       return false;
     }
     const sign = action === "moveLater" || action === "endLater" || action === "startLater" ? 1 : -1;
-    // Never smaller than the grid, which would round it back (X18); an item
-    // known to the day steps at least a day from the edge it moves, where
-    // 10 px of a week's view rounded back to its midnight (X16).
-    const unit = hit.item.granularity;
+    // Ten pixels' worth (or `stepMs`), and never smaller than the grid, which
+    // would round it back (X18), nor than one unit of an item known to one,
+    // from the edge it moves: 10 px of a week's view rounded a day item back
+    // to its midnight (X16), and one unit alone is a millisecond or a day in
+    // a two-year view, which nobody sees (Y2).
+    const unit = unitOf(hit.item);
     const edge = action[0] === "e" ? hit.span.end : hit.span.start;
+    const snap = editing.snapMs ?? 0;
     const step =
       sign *
-      (Math.max(keyboard.stepMs ?? 0, editing.snapMs ?? 0, unit ? sign * (addCalendar(edge, unit, sign, editing.timeZone) - edge) : 0) || (spanOf(domain) / mainSize) * KEY_STEP_PX);
+      Math.max(keyboard.stepMs ?? (snap || (spanOf(domain) / mainSize) * KEY_STEP_PX), snap, unit ? sign * (addCalendar(edge, unit, sign, editing.timeZone) - edge) : 0);
     const ids =
       editing.multiSelect === true && selectedIds.includes(hit.item.id)
         ? [hit.item.id, ...selectedIds.filter((id) => id !== hit.item.id)]

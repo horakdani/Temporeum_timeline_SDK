@@ -346,6 +346,8 @@ describe("placeLabels across the lane axis", () => {
 
   it("never lets a drawn label leave its lane", () => {
     const { kept } = placeVertical("Research", 2);
+    // Beside a 2 px item, not dropped: the loop below has a label to check (Y33).
+    expect(kept).toHaveLength(1);
     for (const label of kept) {
       expect(label.box.cross).toBeGreaterThanOrEqual(0);
       expect(label.box.cross + label.box.crossSize).toBeLessThanOrEqual(vertical.rowSize);

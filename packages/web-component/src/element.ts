@@ -156,10 +156,9 @@ function scriptConfig(host: HTMLElement): TimelineConfig {
     each("decorations", ["time", "start", "end"]);
     each("timeBars", ["time"]);
     each("hiddenDates", ["start", "end"]);
-    for (const key of ["domain", "defaultDomain"]) {
-      const range = config[key];
-      if (Array.isArray(range)) config[key] = range.map(time);
-    }
+    // `domain` only: the wrappers' `defaultDomain` is not a key of the
+    // element's configuration, and converting it read as if it were (Y17).
+    if (Array.isArray(config.domain)) config.domain = config.domain.map(time);
     if ("limits" in config) config.limits = times(config.limits, ["min", "max"]);
     if ("editing" in config) config.editing = times(config.editing, ["snapOrigin"]);
     return config as TimelineConfig;
@@ -218,7 +217,23 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** The live instance, while the element is connected. */
   get timeline(): Timeline<T> | undefined {
+    // Asked for from a script after the element, while the document still
+    // loads: its children are parsed, so it sets up now (Y5).
+    if (this.#timeline === undefined && this.isConnected && !this.#parsing()) this.connectedCallback();
     return this.#timeline;
+  }
+
+  /**
+   * Whether the parser may still add the element's children: the document
+   * is loading, and nothing follows the element or any of its ancestors yet,
+   * so the parser has not passed its end tag (X15, Y5).
+   */
+  #parsing(): boolean {
+    const doc = this.ownerDocument;
+    if (doc.readyState !== "loading" || this.getRootNode() !== doc) return false;
+    let next = this.nextSibling;
+    for (let node = this.parentNode; next === null && node !== null; node = node.parentNode) next = node.nextSibling;
+    return next === null;
   }
 
   /**
@@ -443,7 +458,12 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
    * (`items`, `theme`, …) set on its own stays.
    */
   get config(): TimelineConfig<T> {
-    return this.#effective();
+    // The items and the selection as they are, as the `items` and
+    // `selectedIds` properties give them: `el.config = { ...el.config, theme }`
+    // after a drag handed back the configured array, and undid the drag (Y29).
+    const config = this.#effective();
+    const timeline = this.#timeline;
+    return timeline === undefined ? config : { ...config, items: this.items, selectedIds: timeline.getSnapshot().selectedIds };
   }
   set config(config: TimelineConfig<T>) {
     const attributes = { ...this.#fromScript(), ...this.#config() } as Record<string, unknown>;
@@ -573,10 +593,11 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     }
     // Defined before the parser reached its children (a `<script>` in the
     // head): its JSON child and its declarative shadow root are not there
-    // yet. It sets up once they are (X15).
-    const doc = this.ownerDocument;
-    if (doc.readyState === "loading") {
-      doc.addEventListener("DOMContentLoaded", () => this.isConnected && this.connectedCallback(), { once: true });
+    // yet. It sets up once they are (X15) — at `DOMContentLoaded`, or when a
+    // script after it asks for `timeline` (Y5). A `<script>` after the
+    // element finds it parsed, and set up at once.
+    if (this.#parsing()) {
+      this.ownerDocument.addEventListener("DOMContentLoaded", () => this.#timeline === undefined && this.isConnected && this.connectedCallback(), { once: true });
       return;
     }
     // A declarative shadow root (server-rendered) is already attached, and
@@ -672,7 +693,10 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** Zoom to a domain — the instance's `zoomTo`, with the same argument. */
   zoomTo(domain: readonly [TimeInput, TimeInput]): void {
-    this.#timeline?.zoomTo(domain);
+    // Before there is an instance, as the `domain` property: kept, not lost (Y5).
+    const timeline = this.timeline;
+    if (timeline === undefined) this.domain = domain;
+    else timeline.zoomTo(domain);
   }
 }
 

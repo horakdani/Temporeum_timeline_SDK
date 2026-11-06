@@ -432,6 +432,17 @@ export function sameValue(a: unknown, b: unknown, depth = 4): boolean {
   return keys.length === Object.keys(b).length && keys.every((key) => Object.hasOwn(b, key) && sameValue(a[key], b[key], depth - 1));
 }
 
+/**
+ * The named options `source` sets, in the order named, to spread into
+ * another object: one that is `undefined` is left out, not written as
+ * `undefined` (`exactOptionalPropertyTypes`).
+ */
+export function definedOf<S extends object, K extends keyof S>(source: S, keys: readonly K[]): { [P in K]?: Exclude<S[P], undefined> } {
+  const out: { [P in K]?: Exclude<S[P], undefined> } = {};
+  for (const key of keys) if (source[key] !== undefined) out[key] = source[key] as Exclude<S[K], undefined>;
+  return out;
+}
+
 /** Height when neither the configuration nor the container says. */
 export const DEFAULT_HEIGHT = 300;
 /** Width the server draws at: it cannot measure the container. */
@@ -516,7 +527,17 @@ function itemProblem(item: unknown): string | undefined {
   if (end !== undefined && !isTime(end)) return `${which} is left out: its end (${String(end)}) is not a time — ${time}`;
   // The core's cap (1000): past it, the packing would allocate a row for each sublane until the tab runs out of memory.
   if (sublaneSpan !== undefined && !(Number.isInteger(sublaneSpan) && sublaneSpan >= 1 && sublaneSpan <= 1000)) return `${which} is left out: its sublaneSpan (${String(sublaneSpan)}) is not a whole number from 1 to 1000`;
-  return undefined;
+  // A number or an object where the core splits or escapes a string threw inside the frame, taking every item with it (Y6, Y19).
+  return textProblem(item, which, ["label", "laneId", "className"]);
+}
+
+/** Which of `fields` holds something other than a string (or nothing), said as why the entry is left out. */
+function textProblem(entry: object, which: string, fields: readonly string[]): string | undefined {
+  const bad = fields.find((field) => {
+    const value = (entry as Record<string, unknown>)[field];
+    return value !== undefined && value !== null && typeof value !== "string";
+  });
+  return bad === undefined ? undefined : `${which} is left out: its ${bad} (${String((entry as Record<string, unknown>)[bad])}) is not a string`;
 }
 
 /** Each items array checked once: what is kept, and what was left out. */
@@ -570,7 +591,9 @@ function listProblem(key: keyof typeof LISTS, entry: unknown): string | undefine
   const fields = typeof entry === "object" && entry !== null ? LISTS[key](entry as Record<string, unknown>) : undefined;
   if (fields === undefined) return `${JSON.stringify(entry) ?? String(entry)} is not one of the ${key} the timeline draws; it is left out`;
   const bad = fields.find((field) => !isTime((entry as Record<string, unknown>)[field]));
-  return bad === undefined ? undefined : `One of the ${key} is left out: its ${bad} (${String((entry as Record<string, unknown>)[bad])}) is not a time — epoch milliseconds or a Date`;
+  return bad === undefined
+    ? textProblem(entry as object, `One of the ${key}`, ["label", "className"])
+    : `One of the ${key} is left out: its ${bad} (${String((entry as Record<string, unknown>)[bad])}) is not a time — epoch milliseconds or a Date`;
 }
 
 /** The items a configuration shows right away: none for a fetched source, and only those it can draw. */
@@ -727,7 +750,7 @@ export function resolveView<T>(
   // content lanes, the items a collapsed group leaves shown.
   const content = contentOf(config, { items, ...state });
   const orientation = resolveOrientation(config.orientation, width, {
-    ...(config.breakpoint === undefined ? {} : { breakpoint: config.breakpoint }),
+    ...definedOf(config, ["breakpoint"]),
     ...(previous === undefined ? {} : { previous: previous.orientation }),
   });
   const height = config.height ?? (measuredHeight > 0 ? measuredHeight : DEFAULT_HEIGHT);
@@ -739,9 +762,8 @@ export function resolveView<T>(
     fixed ??
     fitDensity({
       items: content.items,
-      ...(content.lanes === undefined ? {} : { lanes: content.lanes }),
-      ...(config.packMode === undefined ? {} : { packMode: config.packMode }),
-      ...(config.timeZone === undefined ? {} : { timeZone: config.timeZone }),
+      ...definedOf(content, ["lanes"]),
+      ...definedOf(config, ["packMode", "timeZone"]),
       domain,
       width: orientation === "vertical" ? Math.max(width - band, 0) : width,
       height: orientation === "horizontal" ? Math.max(height - band, 0) : height,
@@ -976,8 +998,7 @@ function wordHooksOf<T>(config: TimelineConfig<T>, hooks: RenderHooks<T>, lanes:
   if (hit !== undefined && hit.words === words && hit.timeZone === config.timeZone && hit.lanes === lanes) return hit.hooks as RenderHooks<T>;
   const named = plugin("intl", "The strings option").describeHooks<T>({
     strings: words.strings,
-    ...(config.locale === undefined ? {} : { locale: config.locale }),
-    ...(config.timeZone === undefined ? {} : { timeZone: config.timeZone }),
+    ...definedOf(config, ["locale", "timeZone"]),
     ...(lanes === undefined ? {} : { lanes: new Map(lanes.map((lane) => [lane.id, lane.label])) }),
   });
   const wrapped: RenderHooks<T> = {
@@ -1050,37 +1071,32 @@ export function frameOptions<T>(config: TimelineConfig<T>, state: FrameState<T>)
   const content = contentOf(config, state);
   return {
     items: content.items,
-    ...(content.lanes === undefined ? {} : { lanes: content.lanes }),
+    ...definedOf(content, ["lanes"]),
     domain: state.domain,
     // The frame, without the overview strip across its far edge.
     width: state.view.orientation === "vertical" ? Math.max(state.view.width - state.view.band, 0) : state.view.width,
     height: state.view.orientation === "horizontal" ? Math.max(state.view.height - state.view.band, 0) : state.view.height,
     orientation: state.view.orientation,
     density: state.view.density,
-    ...(state.view.metrics === undefined ? {} : { metrics: state.view.metrics }),
-    ...(config.theme === undefined ? {} : { theme: config.theme }),
-    ...(config.packMode === undefined ? {} : { packMode: config.packMode }),
-    ...(config.timeZone === undefined ? {} : { timeZone: config.timeZone }),
-    ...(config.locale === undefined ? {} : { locale: config.locale }),
+    ...definedOf(state.view, ["metrics"]),
+    ...definedOf(config, ["theme", "packMode", "timeZone", "locale"]),
     ...tickOptionsOf(config, hidden),
     ...(config.axisContext === false ? { axisContext: false } : {}),
-    ...(config.touchAction === undefined ? {} : { touchAction: config.touchAction }),
-    ...(config.maxLabels === undefined ? {} : { maxLabels: config.maxLabels }),
-    ...(config.labelOverflow === undefined ? {} : { labelOverflow: config.labelOverflow }),
+    ...definedOf(config, ["touchAction", "maxLabels", "labelOverflow"]),
     ...(config.ariaLabel === undefined ? (config.strings === undefined ? {} : { ariaLabel: wordsOf(config).say("timeline") }) : { ariaLabel: config.ariaLabel }),
-    ...(content.decorations === undefined ? {} : { decorations: content.decorations }),
-    ...(config.cluster === undefined ? {} : { cluster: config.cluster }),
+    ...definedOf(content, ["decorations"]),
+    ...definedOf(config, ["cluster"]),
     hooks: frameHooksOf(config, state, content),
-    ...(config.instanceId === undefined ? {} : { instanceId: config.instanceId }),
+    ...definedOf(config, ["instanceId"]),
     ...(measureText === undefined ? {} : { measureText }),
     ...(config.editing?.multiSelect === undefined ? {} : { multiSelect: config.editing.multiSelect }),
     selectedIds: state.selectedIds,
     focusedId: state.focusedId,
     crossOffset: state.crossOffset,
     loading: state.loading,
-    ...(state.space === undefined ? {} : { space: state.space }),
+    ...definedOf(state, ["space"]),
     ...(hidden === undefined ? {} : { hiddenDates: hidden }),
-    ...(state.layout === undefined ? {} : { layout: state.layout }),
+    ...definedOf(state, ["layout"]),
   };
 }
 

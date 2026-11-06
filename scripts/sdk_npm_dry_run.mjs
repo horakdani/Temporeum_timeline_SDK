@@ -15,6 +15,14 @@
  * network. Both the registry and the scoped one are set, so an `.npmrc` with
  * `@temporeum:registry` cannot send it back to npmjs.com.
  */
+/*
+ * npm 11 also refuses to dry-run a pre-release without a dist-tag ("You must
+ * specify a tag using --tag when publishing a prerelease version"), before it
+ * asks any registry, so the documented `next` path died in the release
+ * build's pack check while npm 10 passed it locally (Y7). The dry run names
+ * `next`, the pre-release's tag; for a stable version the tag of a dry run
+ * changes nothing.
+ */
 export const NOWHERE_REGISTRY = "http://127.0.0.1:9/";
 
 export const NPM_DRY_RUN_FLAGS = Object.freeze([
@@ -24,4 +32,5 @@ export const NPM_DRY_RUN_FLAGS = Object.freeze([
   `--registry=${NOWHERE_REGISTRY}`,
   `--@temporeum:registry=${NOWHERE_REGISTRY}`,
   "--fetch-retries=0",
+  "--tag=next",
 ]);

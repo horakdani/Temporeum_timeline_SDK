@@ -236,3 +236,25 @@ describe("ticks across the hour the clocks go back, in zones whose offsets are n
     }
   });
 });
+
+describe("ticks on a day whose midnight is skipped (Y9)", () => {
+  // Havana (8 March 2026) and Santiago (6 September 2026) spring forward at
+  // midnight: the day starts at 01:00. A step that realigned to the missing
+  // 00:00 went past it, and the day had no tick and no major.
+  const local = (zone: string, time: number): string =>
+    new Intl.DateTimeFormat("en-GB", { timeZone: zone, day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(time);
+
+  it("ticks the day's first instant, as a major", () => {
+    for (const [zone, from, mainSize] of [
+      ["America/Havana", Date.UTC(2026, 2, 7, 12), 1600],
+      ["America/Santiago", Date.UTC(2026, 8, 5, 12), 400],
+    ] as const) {
+      const ticks = generateTicks([from, from + 2 * 864e5], mainSize, { timeZone: zone });
+      const first = ticks.find((tick) => local(zone, tick.time).startsWith(zone === "America/Havana" ? "08" : "06"));
+      expect(first && local(zone, first.time), zone).toMatch(/, 01:00$/);
+      expect(first?.major, zone).toBe(true);
+      // Still ascending, on round values after it.
+      expect(ticks.every((tick, index) => index === 0 || tick.time > ticks[index - 1]!.time)).toBe(true);
+    }
+  });
+});

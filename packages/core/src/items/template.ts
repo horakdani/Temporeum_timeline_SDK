@@ -118,6 +118,16 @@ function safeUrl(value: string): string | undefined {
 const LOADING_STYLE = /\\|@import|(?:url|image|image-set|cross-fade|element|expression|src)\s*\(/i;
 
 /** Tags with no closing tag. */
+/**
+ * What the HTML parser closes on its own (Y18): a `<li>` closes the list
+ * item before it, a block's start closes an open `<p>`, unless a scope
+ * boundary (a button, a table cell, foreign content) is between them. A
+ * template that leaves those end tags out — valid HTML — drew `<li>a<li>b`
+ * nested, and printed server markup the browser parsed back as another tree.
+ */
+const BLOCK = /^(?:div|p|[uo]l|li|d[dlt]|h[1-6r]|pre|table|blockquote|section|article|aside|header|footer|nav|main|figure|form)$/;
+const SCOPE = /^(?:button|table|t[dh]|caption|object|template|svg|math)$/;
+
 const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
 
 /** How a template is sanitised. */
@@ -253,14 +263,16 @@ export function parseTemplate(html: string, options: TemplateOptions = {}): Scen
       top().content.push(decode(html.slice(open)));
       break;
     }
-    const body = html.slice(open + 1, close);
+    let body = html.slice(open + 1, close);
     at = close + 1;
     if (body.startsWith("!") || body.startsWith("?")) continue;
     if (body.startsWith("/")) {
       const name = body.slice(1).trim().toLowerCase();
       const index = stack.map((draft) => draft.tag).lastIndexOf(name);
       if (index > 0) stack.length = index;
-      continue;
+      // A `</p>` with no `<p>` open is an empty paragraph, as the browser reads it (Y18).
+      if (index > 0 || name !== "p") continue;
+      body = "p/";
     }
     const nameMatch = /^([a-zA-Z][a-zA-Z0-9-]*)/.exec(body);
     if (nameMatch === null) {
@@ -286,6 +298,18 @@ export function parseTemplate(html: string, options: TemplateOptions = {}): Scen
       at = found === null ? html.length : html.indexOf(">", found.index) + 1 || html.length;
       continue;
     }
+    // The end tags the parser implies (Y18), before the new element opens:
+    // the open `name` nearest the top, unless a scope boundary (for a list
+    // item, a list too) comes first.
+    const imply = (name: string, list?: boolean): void => {
+      for (let i = stack.length - 1; i > 0; i -= 1) {
+        const open = (stack[i] as Draft).tag;
+        if (open === name) stack.length = i;
+        if (open === name || SCOPE.test(open) || (list === true && /^(?:[uo]l|menu)$/.test(open))) return;
+      }
+    };
+    if (tag === "li") imply("li", true);
+    if (BLOCK.test(tag)) imply("p");
     // Past the depth, a tag is unwrapped: its content goes on in the deepest element.
     if (stack.length > MAX_DEPTH) continue;
     const draft: Draft = { tag, attrs, content: [], dropped, kept: !sanitize || (tags.has(tag) && !NEVER.has(tag)) };

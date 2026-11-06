@@ -182,6 +182,13 @@ function wallOfValue(value: string): number {
 const PREFERRED =
   "America/New_York America/Chicago America/Denver America/Phoenix America/Los_Angeles America/Anchorage America/Halifax America/Mexico_City America/Sao_Paulo America/Bogota Europe/London Europe/Berlin Europe/Athens Europe/Moscow Africa/Lagos Africa/Johannesburg Asia/Dubai Asia/Karachi Asia/Kolkata Asia/Dhaka Asia/Bangkok Asia/Shanghai Asia/Tokyo Australia/Brisbane Australia/Sydney Pacific/Auckland".split(" ");
 
+/**
+ * The Windows names of the {@link PREFERRED} zones, in the same order, each
+ * without its " Standard Time" (CLDR's windowsZones). A file that names one
+ * without a `VTIMEZONE` was read as UTC, hours off (Y12).
+ */
+const WINDOWS = "Eastern|Central|Mountain|US Mountain|Pacific|Alaskan|Atlantic|Central (Mexico)|E. South America|SA Pacific|GMT|W. Europe|GTB|Russian|W. Central Africa|South Africa|Arabian|Pakistan|India|Bangladesh|SE Asia|China|Tokyo|E. Australia|AUS Eastern|New Zealand".split("|");
+
 /** How many days all the zones of one file may look at between them. */
 const ZONE_WORK = 1_000_000;
 
@@ -286,8 +293,9 @@ export function parseICal(text: string, options: ICalParseOptions = {}): ICalCal
     if (known !== undefined) return known;
     // An Area/City is at the end, and no zone's name is longer than 64: the
     // pattern reads that much, not a hostile file's whole TZID.
-    const candidates = [tzid, /[A-Za-z_]+\/[A-Za-z_]+(?:\/[A-Za-z_]+)?$/.exec(tzid.slice(-64))?.[0], locations.get(tzid)];
     const rules = zoneRules.get(tzid);
+    // A Windows name is read by its rules when the file has them, else by name (Y12).
+    const candidates = [tzid, /[A-Za-z_]+\/[A-Za-z_]+(?:\/[A-Za-z_]+)?$/.exec(tzid.slice(-64))?.[0], locations.get(tzid), rules === undefined ? PREFERRED[WINDOWS.indexOf(tzid.replace(" Standard Time", ""))] : undefined];
     const named = candidates.find((each): each is string => each !== undefined && knownZone(each));
     // One budget for the file: a zone's rules can take ~150 000 days to walk,
     // and a file can hold many zones.
@@ -332,6 +340,10 @@ export function parseICal(text: string, options: ICalParseOptions = {}): ICalCal
       const props = current;
       current = undefined;
       const one = (key: string): Line | undefined => props.find((each) => each.name === key);
+      // One value that cannot be read (a COUNT=0, a cut-off DTSTART) passes
+      // over its own VEVENT, said, as one without DTSTART is: it threw for
+      // the whole file (Y11).
+      try {
       const startLine = one("DTSTART");
       if (startLine === undefined) {
         warnings.push("A VEVENT without DTSTART was passed over");
@@ -342,7 +354,6 @@ export function parseICal(text: string, options: ICalParseOptions = {}): ICalCal
       const uidLine = one("UID");
       const uid = uidLine === undefined ? undefined : unescapeText(uidLine.value);
       const id = uid ?? `event-${String(events.length + 1)}`;
-      if (uid === undefined) warnings.push(`A VEVENT without UID was named ${id}`);
       const event: { -readonly [K in keyof CalendarEvent]: CalendarEvent[K] } = { id, start: start.t };
       if (start.date) event.allDay = true;
       if (zone !== undefined && zone !== DEFAULT_TIME_ZONE) event.timeZone = zone;
@@ -375,6 +386,8 @@ export function parseICal(text: string, options: ICalParseOptions = {}): ICalCal
       if (periods.length > 0) warnings.push(`The RDATE periods of ${id} are read as starts, each as long as the event`);
       const rdates = [...listOf("RDATE"), ...periods.flatMap((each) => each.value.split(",").map((value) => timeOf(value, each.params).t))];
       if (rdates.length > 0) event.rdates = rdates;
+      // Named once it is read: a VEVENT passed over is not named (Y11).
+      if (uid === undefined) warnings.push(`A VEVENT without UID was named ${id}`);
       const recurrence = one("RECURRENCE-ID");
       if (recurrence !== undefined) {
         const at = timeOf(recurrence.value, recurrence.params).t;
@@ -385,6 +398,11 @@ export function parseICal(text: string, options: ICalParseOptions = {}): ICalCal
         event.recurrenceId = at;
       }
       events.push(event);
+      } catch (error) {
+        if (!(error instanceof SyntaxError)) throw error;
+        const uid = one("UID");
+        warnings.push(`A VEVENT${uid === undefined ? "" : ` ${unescapeText(uid.value)}`} that cannot be read was passed over: ${error.message}`);
+      }
       continue;
     }
     if (current !== undefined && depth === 0) current.push(line);

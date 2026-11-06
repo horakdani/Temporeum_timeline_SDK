@@ -249,8 +249,10 @@ export function parseVisTime(value: VisTime, options: VisTimeOptions = {}): Time
     );
   }
   if (typeof value === "object") {
-    const time = Number(value.valueOf());
-    return Number.isFinite(time) ? time : Number.NaN;
+    // A moment or a Luxon DateTime is its milliseconds; an array is not a
+    // time, though `Number([2024])` is 2024 (Y31).
+    const time: unknown = value.valueOf();
+    return typeof time === "number" && Number.isFinite(time) ? time : Number.NaN;
   }
   return Number.NaN;
 }

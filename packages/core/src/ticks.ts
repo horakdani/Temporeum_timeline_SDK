@@ -66,7 +66,7 @@ const MS_PER_DAY = 86_400_000;
  * Months and years are averages — 30.436875 days and 365.2425 days. They are
  * never used for arithmetic, where the calendar does the work.
  */
-const APPROX_MS: Record<Granularity, number> = {
+export const APPROX_MS: Record<Granularity, number> = {
   millisecond: 1,
   second: 1000,
   minute: 60_000,
@@ -276,8 +276,11 @@ export function generateTicks(
     if (next === stepped && size < MS_PER_DAY && (stepped + zoneOffsetMs(stepped, timeZone)) % size !== 0) {
       // Fixed steps across a fall-back: two hours after 00:00 EDT is 01:00
       // EST, off a two-hour grid, and aligning it goes back to 00:00. The
-      // next round value after it is 02:00.
-      next = alignToStep(stepped + size, step, timeZone);
+      // next round value after it is 02:00. A day whose midnight is skipped
+      // (Havana, Santiago: 00:00 → 01:00) starts at its first instant, which
+      // is a tick, or the day had none (Y9).
+      const day = startOf(stepped, "day", timeZone);
+      next = day > t ? day : alignToStep(stepped + size, step, timeZone);
     }
     if (next <= t) {
       // Cannot happen with the ladder above; a step that fails to advance

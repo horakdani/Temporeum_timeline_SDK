@@ -10,7 +10,7 @@ import { renderTimelineHtml } from "@temporeum/timeline-element";
 const html = renderTimelineHtml(config, { width: 960 });
 ```
 
-The string is a `<temporeum-timeline>` with the drawing in a declarative shadow root and the configuration it was drawn from beside it, as JSON. The server cannot measure the container, so it draws at `width` (960 by default); the client redraws at the real width on its first frame.
+The string is a `<temporeum-timeline>` with the drawing in a declarative shadow root and the configuration it was drawn from beside it, as JSON. The server cannot measure the container, so it draws at `width` (960 by default); the client redraws at the real width on its first frame. The JSON carries item `data` too: a `Date` becomes epoch milliseconds, a `BigInt` (a database's BIGINT id) its digits as a string, and data with a cycle throws a `TypeError`, since it cannot travel.
 
 ## Plugins on the server
 

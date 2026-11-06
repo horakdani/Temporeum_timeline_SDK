@@ -199,6 +199,23 @@ describe("compat: vis-timeline's documentation examples through the compatibilit
     expect(warnings.map((warning) => warning.option)).toEqual(["items[0].start", "items[1].start", "items[2].start", "items[3].start", "items[4].end"]);
   });
 
+  it("names an infinite or invalid time by its own name, and reads an array as no time (Y26, Y31)", () => {
+    // The warning said "null" for both (JSON's), and `start: [2024]` was read as 2024 ms after the epoch.
+    const { config, warnings } = fromVis(
+      [
+        { id: 1, content: "a", start: Number.POSITIVE_INFINITY },
+        { id: 2, content: "b", start: new Date(Number.NaN) },
+        { id: 3, content: "c", start: [2024] as never },
+        { id: 4, content: "d", start: { valueOf: () => 86_400_000 } as never },
+      ],
+      null,
+      {},
+      { timeZone: "UTC" },
+    );
+    expect(config.items.map((item) => [item.id, item.start])).toEqual([["4", 86_400_000]]);
+    expect(warnings.map((warning) => warning.message.split(" is not")[0])).toEqual(["Infinity", "Invalid Date", expect.stringContaining("2024")]);
+  });
+
   it("[claim:warnings] what does not carry over is named: subgroups, a hidden group, an item without its group, unknown options", () => {
     const { warnings } = fromVis(
       [

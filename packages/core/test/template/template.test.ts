@@ -263,3 +263,27 @@ describe("an entity name is a character, not an object's property", () => {
     expect(storyPlainText("&constructor; &amp;")).toBe("&constructor; &");
   });
 });
+
+describe("the end tags HTML implies (Y18)", () => {
+  // The parser kept `<li>a<li>b` nested and `<p>x<div>` inside the paragraph;
+  // the browser closes them, so the server's markup parsed back as another tree.
+  // The tree, as HTML with every end tag written: what the browser's parse of the server markup must equal.
+  const tree = (nodes: readonly SceneElement[]): string =>
+    nodes.map((node) => `<${node.tag}>${node.text ?? ""}${tree(node.children ?? [])}</${node.tag}>`).join("");
+  const printed = (html: string): string => tree(parseTemplate(html));
+
+  it("closes a list item at the next, and a paragraph at a block", () => {
+    expect(printed("<ul><li>a<li>b</ul>")).toBe("<ul><li>a</li><li>b</li></ul>");
+    expect(printed("<p>x<div>y</div>")).toBe("<p>x</p><div>y</div>");
+    expect(printed("<p>one<p>two")).toBe("<p>one</p><p>two</p>");
+    // A `</p>` with no paragraph open is an empty one, as the browser reads it.
+    expect(printed("<p><div>x</div></p>")).toBe("<p></p><div>x</div><p></p>");
+  });
+
+  it("leaves what the parser does not close as it is", () => {
+    // An inline element does not close a paragraph; a nested list keeps its outer item open.
+    expect(printed("<p>a<b>b</b><span>c</span></p>")).toBe("<p>a<b>b</b><span>c</span></p>");
+    expect(printed("<ul><li>a<ul><li>b</li></ul></li><li>c</li></ul>")).toBe("<ul><li>a<ul><li>b</li></ul></li><li>c</li></ul>");
+    expect(printed("<ul><li>a<ul><li>b<li>c</ul></ul>")).toBe("<ul><li>a<ul><li>b</li><li>c</li></ul></li></ul>");
+  });
+});

@@ -121,10 +121,16 @@ export function expandEvents<T>(events: readonly CalendarEvent<T>[], from: TimeI
       start,
       data: { event, occurrence, allDay: event.allDay === true },
     };
-    if (end > start || event.allDay === true) item.end = end;
+    if (end > start) item.end = end;
     if (event.title !== undefined) item.label = event.title;
     if (event.laneId !== undefined) item.laneId = event.laneId;
-    if (event.allDay === true) item.granularity = "day";
+    if (event.allDay === true) {
+      // An item known to the day ends on its last day, which it is drawn
+      // through: the exclusive midnight after it drew every all-day event a
+      // day too long on a timeline (Y4).
+      item.granularity = "day";
+      item.end = instantOf(wallOf(end, zone) - DAY, zone);
+    }
     items.push(item);
   };
   // One search budget for all of them (V8): a file of rules that never match

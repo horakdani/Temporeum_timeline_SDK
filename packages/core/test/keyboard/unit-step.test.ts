@@ -70,6 +70,13 @@ describe("keyboard edits of an item known to the day (X16)", () => {
     expect(moved?.end).toBeLessThan(local(31) - HOUR);
   });
 
+  it("makes no edit when shortening a one-day instant would change nothing drawn (Y25)", () => {
+    // Clamped to its one day, the end was stored equal to the start: an undo entry for nothing.
+    const instant: Item = { id: "i", start: day(5), laneId: "l1", granularity: "day" };
+    expect(rig([instant])("ArrowLeft", { shiftKey: true })).toBeUndefined();
+    expect(rig([instant])("ArrowRight", { shiftKey: true })).toEqual({ id: "i", end: day(6) });
+  });
+
   it("leaves an item by the millisecond to the pixel step", () => {
     const plain: Item = { id: "p", start: day(5), end: day(7), laneId: "l1" };
     const moved = rig([plain])("ArrowRight", { altKey: true });

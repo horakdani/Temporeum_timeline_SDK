@@ -206,7 +206,8 @@ export function calendarScene(layout: DaysLayout<unknown>, options: CalendarScen
     const s = toTimeMs(item.start);
     const e = item.end === undefined ? s : toTimeMs(item.end);
     if (allDay) {
-      const last = e > s ? e - 1 : s;
+      // An end known to the day is the last day itself (Y4).
+      const last = item.granularity === "day" || e === s ? e : e - 1;
       return say("allDayEvent", { name, range: last - s < 86_400_000 ? dateFormat.format(s) : dateFormat.formatRange(s, last) });
     }
     const withTime = formatterFor(locale, zone, true);

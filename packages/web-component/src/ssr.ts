@@ -138,13 +138,16 @@ function serverFrame<T>(given: TimelineConfig<T>, options: ServerRenderOptions, 
  *
  * Dates become epoch milliseconds (the core reads those, not ISO strings),
  * functions — hooks, `canMove`, a fetching source — are dropped, because
- * they cannot travel and the client sets them as properties. `<` is escaped,
- * so an item labelled `</script>` cannot end the script early.
+ * they cannot travel and the client sets them as properties. A `BigInt`
+ * becomes its digits, a string; item `data` with a cycle cannot travel, and
+ * `JSON.stringify`'s `TypeError` says so. `<` is escaped, so an item labelled
+ * `</script>` cannot end the script early.
  */
 export function serializeConfig<T>(config: TimelineConfig<T>): string {
   const json = JSON.stringify(config, function (this: Record<string, unknown>, key: string, value: unknown) {
     const raw = this[key];
-    return raw instanceof Date ? raw.getTime() : value;
+    // A database's BIGINT id travels as its digits (Y22).
+    return raw instanceof Date ? raw.getTime() : typeof value === "bigint" ? String(value) : value;
   });
   return json.replace(/[<\u2028\u2029]/g, (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`);
 }
@@ -183,7 +186,8 @@ export function renderTimelineHtml<T>(config: TimelineConfig<T>, options: Server
   // On the element, where the client reads it — not in the JSON, which any
   // script could read, while the browser hides an attribute's nonce.
   const attributes: Record<string, string> = { ...options.attributes, ...(config.nonce === undefined ? {} : { nonce: config.nonce }) };
-  if (config.height !== undefined) {
+  // Only a height the client would draw: a string here was printed into the style as it was (Y20).
+  if (Number.isFinite(config.height) && (config.height as number) >= 0) {
     const style = attributes.style === undefined ? "" : `${attributes.style.trimEnd().replace(/;$/, "")};`;
     attributes.style = `${style}--tl-height:${String(config.height)}px`;
   }

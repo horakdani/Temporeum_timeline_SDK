@@ -34,7 +34,7 @@ const BUDGETS = [
   { name: "react", file: "packages/react/dist/index.mjs", external: ["react", "react-dom", "react/jsx-runtime"], limit: "2 kB" },
   { name: "vue", file: "packages/vue/dist/index.mjs", external: ["vue"], limit: "1.8 kB" },
   { name: "svelte (shipped source)", files: ["packages/svelte/dist/index.js", "packages/svelte/dist/state.js", "packages/svelte/dist/Timeline.svelte"], limit: "4 kB" },
-  { name: "angular", file: "packages/angular/dist/index.mjs", external: ["@angular/", "rxjs"], limit: "2.9 kB" },
+  { name: "angular", file: "packages/angular/dist/index.mjs", external: ["@angular/", "rxjs"], limit: "3 kB" },
 ];
 
 /** Leave out the element and the engine too, for a component: it is measured on its own. */

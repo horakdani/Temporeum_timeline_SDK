@@ -50,7 +50,7 @@ The engine keeps a budget of 31.6 kB minified and gzipped. Everything else is on
 
 ### Stories (`@temporeum/timeline-core/story`)
 
-- `fromTimelineJS`: TimelineJS's JSON as items, lanes and eras — each event's slide in `data.story`, a lane per group, the eras as `era` decorations, the title slide apart — with a warning for everything that does not carry over (`background-image`, `cosmological`, `no-date`, `out-of-range`, `end-before-start`, `duplicate-id`).
+- `fromTimelineJS`: TimelineJS's JSON as items, lanes and eras — each event's slide in `data.story`, a lane per group, the eras as `era` decorations, the title slide apart — with a warning for everything that does not carry over (`background-image`, `cosmological`, `no-date`, `out-of-range`, `end-before-start`, `duplicate-id`). A negative year is the year before Christ TimelineJS writes (`-44` is 44 BC); a `null` field is one not given, and a number where text goes is its digits.
 - `fromTimelineSheet`, `readTimelineSheet`, `parseCsv`, `sheetCsvUrl`: TimelineJS's Google Sheets template, read from the CSV the sheet publishes.
 - `storyMedia`: a media link sorted by its address — an image, a video, a sound file, a YouTube (without cookies), Vimeo (without tracking), SoundCloud, Spotify or Google Maps player, or a link.
 - `storyDateText`: a slide's date written to its precision, a span by its ends, a year before 1 AD with its era.

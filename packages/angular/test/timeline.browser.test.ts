@@ -7,6 +7,7 @@ import { commands, userEvent } from "vitest/browser";
 import type { Item } from "@temporeum/timeline-core";
 
 import { TimelineComponent, timelineState } from "../src/index.js";
+import { renderTimelineSvg } from "@temporeum/timeline-element";
 import type { TimelineComponentConfig, TimelineInstance } from "../src/index.js";
 
 /**
@@ -282,5 +283,33 @@ describe("<tl-timeline> — inputs and outputs", () => {
   it("numbers the timelines of one application for their stylesheet scopes", async () => {
     const { ref } = await place();
     expect(ref.location.nativeElement.querySelector("svg")?.getAttribute("data-tl-instance")).toMatch(/^tl-ng\d+$/);
+  });
+
+  it("keeps the scope its server markup carries, whatever order the client creates it in (Y16)", async () => {
+    // Incremental hydration creates the timelines in another order than the
+    // server drew them: the counter gave a hydrating timeline another one's scope.
+    app = await createApplication({ providers: [provideZonelessChangeDetection()] });
+    const hostElement = document.createElement("tl-timeline");
+    host().append(hostElement);
+    const ref = createComponent(TimelineComponent, { environmentInjector: app.injector, hostElement });
+    ref.setInput("config", base);
+    const container = hostElement.querySelector("div") as HTMLDivElement;
+    container.innerHTML = renderTimelineSvg({ ...base, domain, instanceId: "tl-ng7" }, { width: 800 }).svg;
+    app.attachView(ref.hostView);
+    app.tick();
+    await vi.waitFor(() => {
+      if (ref.instance.timeline?.result === undefined) throw new Error("not drawn yet");
+    });
+    expect(hostElement.querySelectorAll("svg")).toHaveLength(1);
+    expect(hostElement.querySelector("svg")?.getAttribute("data-tl-instance")).toBe("tl-ng7");
+  });
+
+  it("passes over a scope a drawing on the page already carries (Y16)", async () => {
+    // A server-drawn timeline still waiting to hydrate (or never: `hydrate never`) holds tl-ng0.
+    const waiting = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    waiting.setAttribute("data-tl-instance", "tl-ng0");
+    host().append(waiting);
+    const { ref } = await place();
+    expect(ref.location.nativeElement.querySelector("svg")?.getAttribute("data-tl-instance")).toBe("tl-ng1");
   });
 });

@@ -46,7 +46,7 @@ const story = fromTimelineJS({
 |---|---|
 | `events[]` | items, in `items`; the slide in `item.data.story` |
 | `start_date`, `end_date` (`year`, `month`, `day`, `hour`, `minute`, `second`, `millisecond`) | `start`, `end`, and `granularity` from the precision given: a year alone covers its year. The end's unit is part of the span: 1914 to 1918 runs to the end of 1918. Two ends known to different units (1914 to 11 November 1918) make the finer one the item's, and the slide keeps each end's own in `story.precision`, so its date line says "1914 – 11 November 1918". Read in UTC, as TimelineJS reads them — or, with `fromTimelineJS(data, { timeZone })`, as the wall clock of the zone the timeline draws in: give the timeline's `timeZone`, and a year is drawn as that year there. |
-| a negative `year` | the same astronomical year TimelineJS gives the browser's `Date`: `-500` is the axis's 501 BC. A `display_date` keeps the story's wording on the slide. |
+| a negative `year` | the year before Christ TimelineJS writes on its slide: `-44` ("44 BCE" there) is the axis's 44 BC, `-500` its 500 BC. `0` is 1 BC. A `display_date` keeps the story's wording on the slide. |
 | `display_date` (the slide's, or the dates') | the slide's date line; without one, the item's date to its precision |
 | `text.headline`, `text.text` | the slide's headline and text, HTML kept as far as it is safe; the headline as plain text is the item's `label` |
 | `media` (`url`, `caption`, `credit`, `thumbnail`, `alt`, `title`, `link`) | the slide's media, shown by its address ([media](storytelling.md#media)) |

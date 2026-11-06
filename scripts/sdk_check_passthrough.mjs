@@ -206,7 +206,12 @@ export function reads(config, source, readers = READERS) {
     for (const field of fields) {
       const found = objects.some((object) => {
         const prefix = object.replace(/[.?]/g, (char) => `\\${char}`);
-        return new RegExp(`\\b${prefix}\\??\\.${field}\\b`).test(source) || (path === "" && new RegExp(`"${field}" in next`).test(source));
+        // `definedOf(config, ["breakpoint", …])` reads by key name: the element's options are spread that way (the element's carve, 9b24c831).
+        return (
+          new RegExp(`\\b${prefix}\\??\\.${field}\\b`).test(source) ||
+          new RegExp(`\\bdefinedOf\\(${prefix}, \\[[^\\]]*"${field}"`).test(source) ||
+          (path === "" && new RegExp(`"${field}" in next`).test(source))
+        );
       });
       if (found) read += 1;
       else problems.push(`${path === "" ? "TimelineConfig" : `TimelineConfig.${path}`}.${field}: the type promises it, but the element's source never reads it — a swallowed option`);
@@ -256,7 +261,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (reads(config, unread).problems.length === 0) problems.push("NEGATIVE CONTROL: the source that does not read formatTick passed too — the read measure is blind");
   const withMomentum = { ...config, interactions: [...config.interactions, "momentum"] };
   if (reads(withMomentum, source).problems.length === 0) problems.push("NEGATIVE CONTROL: a field that exists only in the type (momentum) passed — the read measure is blind");
-  lines.push("negative control: the configuration without formatTick, the source that does not read it, and an unimplemented field (momentum) fail");
+  // A key list read from another object is not a read of the configuration.
+  const elsewhere = source.replace(/definedOf\(config, \["breakpoint"\]\)/g, 'definedOf(other, ["breakpoint"])');
+  if (elsewhere === source || reads(config, elsewhere).problems.length === 0) problems.push("NEGATIVE CONTROL: breakpoint read through definedOf from another object passed — the key-list read is blind");
+  lines.push("negative control: the configuration without formatTick, the source that does not read it, an unimplemented field (momentum) and a key list read from another object fail");
 
   for (const line of lines) console.log(`  ok  ${line}`);
   if (problems.length > 0) {

@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "types": [],
+    "declarationMap": false,
     "verbatimModuleSyntax": true
   },
   "include": ["src/**/*.ts", "src/**/*.svelte", "test/**/*.ts", "vitest.config.ts"]

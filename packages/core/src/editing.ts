@@ -32,7 +32,8 @@ import { itemRect } from "./layout.js";
 import type { ItemSpan, Layout, LayoutItem } from "./layout.js";
 import { hitSlopFor, slopForExtent } from "./responsive.js";
 import type { TimeScale } from "./scale.js";
-import { fromCalendarParts, startOf, toCalendarParts, zoneOffsetMs } from "./calendar.js";
+import { addCalendar, fromCalendarParts, startOf, toCalendarParts, zoneOffsetMs } from "./calendar.js";
+import { APPROX_MS } from "./ticks.js";
 import { toTimeMs } from "./time.js";
 import type {
   Command,
@@ -172,7 +173,7 @@ export function snapTime(time: TimeMs, snapMs: number | undefined, origin?: Time
 }
 
 /** The unit an item is known to, or `undefined` for the millisecond. */
-function unitOf(item: Item<unknown>): Granularity | undefined {
+export function unitOf(item: Item<unknown>): Granularity | undefined {
   return item.granularity === "millisecond" ? undefined : item.granularity;
 }
 
@@ -201,16 +202,23 @@ export interface MoveOptions {
 export function movePatch<T>(hit: EditHit<T>, options: MoveOptions): ItemPatch<T> {
   const start = rawStart(hit.item);
   const end = rawEnd(hit.item);
-  const from = unitOf(hit.item) === undefined ? start : hit.span.start;
+  const unit = unitOf(hit.item);
+  const from = unit === undefined ? start : hit.span.start;
   const shift = snapTime(from + options.deltaMs, options.snapMs, options.snapOrigin, options.timeZone) - from;
+  // An item known to a unit moves by whole units, each stored value on its
+  // own calendar: a quarter written Jan 1 – Mar 31 is Feb 1 – Apr 30 a month
+  // later, not Feb 1 – May 1, and 23:30 on the day the clocks spring forward
+  // is 23:30 the next day (Y1, Y8).
+  const count = unit === undefined ? 0 : Math.round(shift / APPROX_MS[unit]);
+  const moved = (t: TimeMs): TimeMs => (unit === undefined ? t + shift : count ? addCalendar(t, unit, count, options.timeZone) : t);
   const patch: {
     id: string;
     start: TimeMs;
     end?: TimeMs;
     laneId?: string | null;
-  } = { id: hit.item.id, start: start + shift };
+  } = { id: hit.item.id, start: moved(start) };
   if (end !== undefined) {
-    patch.end = end + shift;
+    patch.end = moved(end);
   }
   if (options.laneId !== undefined && options.laneId !== (hit.item.laneId ?? null)) {
     patch.laneId = options.laneId;
@@ -270,8 +278,11 @@ export function resizePatch<T>(hit: EditHit<T>, options: ResizeOptions): ItemPat
   // happened" to "it lasted". The drawn end is exclusive — the midnight after
   // the last day — and a stored end known to the day is inclusive: the last
   // day itself. Stored as drawn, the item would gain a day.
-  const next = Math.max(snap(span.end + options.deltaMs), span.start + minDuration);
-  return next === span.end ? undefined : { id: item.id, end: unit === undefined ? next : startOf(next - 1, unit, zone) };
+  // Compared as stored: an instant by the day, shortened, is clamped to its
+  // one day, an end equal to its start — drawn the same (Y25).
+  const stored = (t: TimeMs): TimeMs => (unit === undefined ? t : startOf(t - 1, unit, zone));
+  const next = stored(Math.max(snap(span.end + options.deltaMs), span.start + minDuration));
+  return next === stored(span.end) ? undefined : { id: item.id, end: next };
 }
 
 /**

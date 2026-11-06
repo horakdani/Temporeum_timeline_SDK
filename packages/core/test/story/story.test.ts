@@ -178,7 +178,34 @@ describe("fromTimelineJS", () => {
 
   it("reads years before 1 AD and below 100 as the years they are", () => {
     const old = fromTimelineJS({ events: [{ start_date: { year: -753 } }, { start_date: { year: 79, month: 8, day: 24 } }] });
-    expect(old.items.map((item) => item.start)).toEqual([utc(-753), utc(79, 8, 24)]);
+    // TimelineJS's -753 is 753 BC, Rome's founding: the astronomical year -752 (Y10).
+    expect(old.items.map((item) => item.start)).toEqual([utc(-752), utc(79, 8, 24)]);
+  });
+
+  it("reads a negative year as the year before Christ TimelineJS writes, and says it so (Y10)", () => {
+    // TimelineJS writes `-44` as "44 BCE"; the import put it in the astronomical
+    // year -44, 45 BC, so every BC date read a year off what the author typed.
+    const caesar = fromTimelineJS({ events: [{ start_date: { year: -44, month: 3, day: 15 } }, { start_date: { year: -500 } }, { start_date: { year: 0 } }] });
+    expect(caesar.items.map((item) => item.start)).toEqual([utc(-43, 3, 15), utc(-499), utc(0)]);
+    expect(caesar.items.map((item) => storyDateText(item, { locale: "en-US" }))).toEqual(["March 15, 44 BC", "500 BC", "1 BC"]);
+  });
+
+  it("reads a null field as not given and a number where text goes as its digits, and throws for none (Y21)", () => {
+    // One `null` date or number headline threw a TypeError for the whole story.
+    const story = fromTimelineJS({
+      title: null,
+      events: [
+        { start_date: { year: 2000 }, end_date: null, text: { headline: 1999, text: null }, unique_id: 7, group: 1, media: { url: 5 }, background: null },
+        { start_date: null, text: { headline: null } },
+        null,
+      ],
+    } as never);
+    expect(story.items.map((item) => [item.id, item.label, item.laneId, item.end])).toEqual([["7", "1999", "group-1", undefined]]);
+    expect(story.warnings.map((warning) => [warning.code, warning.index])).toEqual([
+      ["media", 0],
+      ["no-date", 1],
+      ["no-date", 2],
+    ]);
   });
 
   it("names what does not carry over", () => {

@@ -62,6 +62,17 @@ const onMoved = ({ item, to }) => {
 </template>
 ```
 
+The `#item` slot needs the element's `/items` plugin, as `template` does:
+register it once, before the first timeline — without it the timeline
+throws on mount, naming the import.
+
+```js excerpt:template/vue/src/main.js
+import { registerPlugin } from "@temporeum/timeline-element";
+import { itemsPlugin } from "@temporeum/timeline-element/items";
+// …
+registerPlugin(itemsPlugin);
+```
+
 The whole project, with Vite, is the [Vue template](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/docs/templates/vue); a
 [Nuxt one](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/docs/templates/nuxt) is beside it.
 

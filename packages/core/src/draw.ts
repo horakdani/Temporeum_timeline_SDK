@@ -20,7 +20,8 @@ import type { MainCross, MainCrossRect } from "./types.js";
  * era with it.
  */
 export function withClass(base: string, extra: string | undefined): string {
-  return extra === undefined ? base : [base, ...extra.split(/\s+/).filter((name) => name !== "" && !/^tl(-(?!background$)|$)/i.test(name))].join(" ");
+  // `null` is how JSON leaves an optional field out (Y6).
+  return typeof extra !== "string" ? base : [base, ...extra.split(/\s+/).filter((name) => name !== "" && !/^tl(-(?!background$)|$)/i.test(name))].join(" ");
 }
 
 /** `x`/`y`/`width`/`height` for a box, in the given orientation. */

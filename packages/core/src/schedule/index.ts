@@ -18,13 +18,13 @@
  * push a task past is reported in `conflicts`, not obeyed by breaking one.
  */
 
-import { DEFAULT_TIME_ZONE, startOf } from "../calendar.js";
+import { addCalendar, DEFAULT_TIME_ZONE, startOf } from "../calendar.js";
 import { createCommand } from "../editing.js";
 import { resolveSpan } from "../layout.js";
 import type { Dependency } from "../gantt/index.js";
 import { toTimeMs } from "../time.js";
 import type { Command, Item, ItemPatch, TimeInput, TimeMs } from "../types.js";
-import { workTime } from "./work-time.js";
+import { CONTINUOUS, workTime } from "./work-time.js";
 import type { WorkCalendar, WorkTime } from "./work-time.js";
 
 export { addWorkingMs, CONTINUOUS, OFFICE_WEEK, workingMs, workTime } from "./work-time.js";
@@ -129,6 +129,13 @@ interface Task {
   readonly date: number;
   readonly hasEnd: boolean;
   readonly duration: number;
+  /**
+   * Without a working calendar, the end of a task by the day (or month,
+   * year…) from where its first unit starts: as many whole units as it is
+   * drawn over, not as many milliseconds — a month moved into February is
+   * February, a day moved onto a 23-hour day is that day (Y3).
+   */
+  readonly endOf: ((start: TimeMs) => TimeMs) | undefined;
   readonly ins: Link[];
   readonly outs: Link[];
   /** Its own instants, and where its start is in working time: a moment nothing moves keeps them. */
@@ -139,6 +146,9 @@ interface Task {
   at: number;
   late: number;
 }
+
+/** The units that are a fixed number of milliseconds: their length is their duration. */
+const FIXED_UNITS = new Set(["millisecond", "second", "minute", "hour"]);
 
 const LOWER_START = new Set<ConstraintType>(["startNoEarlierThan", "mustStartOn"]);
 const LOWER_FINISH = new Set<ConstraintType>(["finishNoEarlierThan", "mustFinishOn"]);
@@ -152,7 +162,7 @@ const UPPER_FINISH = new Set<ConstraintType>(["finishNoLaterThan", "mustFinishOn
  */
 function edge(task: Task, at: number, end: boolean): TimeMs {
   if (task.duration === 0) return at !== task.origin ? task.time.finish(at) : end ? (task.endMs ?? task.startMs) : task.startMs;
-  return end ? task.time.finish(at + task.duration) : task.time.start(at);
+  return end ? (task.endOf?.(at) ?? task.time.finish(at + task.duration)) : task.time.start(at);
 }
 
 /** The latest start, in working time, that puts the task's edge at or before `limit`. */
@@ -241,6 +251,14 @@ export function scheduleTasks<T>(items: readonly Item<T>[], dependencies: readon
     const startMs = span?.start ?? toTimeMs(item.start);
     const endMs = hasEnd ? (span?.end ?? toTimeMs(item.end as TimeInput)) : undefined;
     const start = time.work(startMs);
+    let endOf: Task["endOf"];
+    const unit = item.granularity;
+    if (span !== undefined && time === CONTINUOUS && unit !== undefined && !FIXED_UNITS.has(unit)) {
+      const zone = options.timeZone;
+      let units = 0;
+      for (let at = span.start; at < span.end; at = addCalendar(at, unit, 1, zone)) units += 1;
+      endOf = (at) => addCalendar(startOf(at, unit, zone), unit, units, zone);
+    }
     const task: Task = {
       item: item as Item<unknown>,
       index: tasks.length,
@@ -249,6 +267,7 @@ export function scheduleTasks<T>(items: readonly Item<T>[], dependencies: readon
       date: constraint?.date === undefined ? 0 : time.work(toTimeMs(constraint.date)),
       hasEnd,
       duration: endMs === undefined ? 0 : Math.max(0, time.work(endMs) - start),
+      endOf,
       ins: [],
       outs: [],
       startMs,

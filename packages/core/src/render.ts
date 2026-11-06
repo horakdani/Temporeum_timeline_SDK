@@ -40,7 +40,7 @@ import type { Decoration, DecorationContext } from "./decorations.js";
 import { decorationLayer, renderDecoration } from "./decorations.js";
 import type { DensityMetrics, MetricsProvider } from "./density.js";
 import { densityMetrics } from "./density.js";
-import { htmlTextNode, rectAttrs, textNode, withClass } from "./draw.js";
+import { htmlTextNode, lineAttrs, rectAttrs, textNode, withClass } from "./draw.js";
 import type { Projector, ScreenRect } from "./geometry.js";
 import { containerExtents, createProjector } from "./geometry.js";
 import type { LabelCandidate, LabelLayout, LabelOverflow, MeasureText, PlacedLabel } from "./labels.js";
@@ -448,36 +448,50 @@ function layer(
   return { tag: "g", attrs: { class: `tl-layer tl-layer--${name}`, transform, ...semantics }, children };
 }
 
-/**
- * The root's own attributes.
- *
- * An interactive frame with something to choose from is a `listbox`. One
- * with nothing drawn — no data yet, a failed window, a pan into an empty
- * stretch — is a `group` with the same name and the same focus stop: a
- * listbox without an option is not a list anyone can choose from, and axe
- * cannot decide it either (`aria-required-children`). Keeping the focus
- * stop matters more than the role: the keyboard still pans and zooms from
- * there, and a frame that dropped its `tabindex` would drop the focus with it.
- */
-function rootSemantics<T>(
+/** The root `svg`'s attributes: its size, its data attributes and its semantics. */
+function rootAttrs<T>(
   options: RenderOptions<T>,
+  width: number,
+  height: number,
   orientation: Orientation,
+  density: Density,
+  theme: Theme | undefined,
+  domain: readonly [number, number],
   active: string | undefined,
   hasOptions: boolean,
 ): Record<string, string | number | undefined> {
-  if (options.interactive === false) {
-    return { role: "group", "aria-label": options.ariaLabel ?? "Timeline" };
-  }
-  if (!hasOptions) {
-    return { role: "group", tabindex: 0, "aria-label": options.ariaLabel ?? "Timeline" };
-  }
   return {
-    role: "listbox",
-    tabindex: 0,
-    "aria-label": options.ariaLabel ?? "Timeline",
-    "aria-orientation": orientation,
-    "aria-multiselectable": options.multiSelect === true ? "true" : undefined,
-    "aria-activedescendant": active,
+    xmlns: "http://www.w3.org/2000/svg",
+    class: "tl",
+    viewBox: `0 0 ${String(width)} ${String(height)}`,
+    width,
+    height,
+    "data-tl-orientation": orientation,
+    "data-tl-density": density,
+    "data-tl-theme": theme?.name,
+    "data-tl-instance": options.instanceId,
+    // The root's own semantics.
+    //
+    // An interactive frame with something to choose from is a `listbox`. One
+    // with nothing drawn — no data yet, a failed window, a pan into an empty
+    // stretch — is a `group` with the same name and the same focus stop: a
+    // listbox without an option is not a list anyone can choose from, and axe
+    // cannot decide it either (`aria-required-children`). Keeping the focus
+    // stop matters more than the role: the keyboard still pans and zooms from
+    // there, and a frame that dropped its `tabindex` would drop the focus with it.
+    ...(options.interactive === false
+      ? { role: "group", "aria-label": options.ariaLabel ?? "Timeline" }
+      : hasOptions
+        ? {
+            role: "listbox",
+            tabindex: 0,
+            "aria-label": options.ariaLabel ?? "Timeline",
+            "aria-orientation": orientation,
+            "aria-multiselectable": options.multiSelect === true ? "true" : undefined,
+            "aria-activedescendant": active,
+          }
+        : { role: "group", tabindex: 0, "aria-label": options.ariaLabel ?? "Timeline" }),
+    "aria-busy": busyIn(options.loading, domain) ? "true" : undefined,
   };
 }
 
@@ -590,16 +604,11 @@ function loadingMarks(
     if (!(end > start)) {
       continue;
     }
-    const a = projector.projectPoint({ main: start, cross });
-    const b = projector.projectPoint({ main: end, cross });
     marks.push({
       tag: "line",
       attrs: {
         class: range.failed === true ? "tl-loading tl-loading--failed" : "tl-loading",
-        x1: a.x,
-        y1: a.y,
-        x2: b.x,
-        y2: b.y,
+        ...lineAttrs({ main: start, cross }, { main: end, cross }, projector),
       },
     });
   }
@@ -654,19 +663,17 @@ function emptyFrame<T>(
   return {
     scene: {
       tag: "svg",
-      attrs: {
-        xmlns: "http://www.w3.org/2000/svg",
-        class: "tl",
-        viewBox: `0 0 ${String(Math.max(options.width, 0))} ${String(Math.max(options.height, 0))}`,
-        width: Math.max(options.width, 0),
-        height: Math.max(options.height, 0),
-        "data-tl-orientation": context.orientation,
-        "data-tl-density": context.density,
-        "data-tl-theme": context.theme?.name,
-        "data-tl-instance": options.instanceId,
-        ...rootSemantics(options, context.orientation, undefined, false),
-        "aria-busy": busyIn(options.loading, context.domain) ? "true" : undefined,
-      },
+      attrs: rootAttrs(
+        options,
+        Math.max(options.width, 0),
+        Math.max(options.height, 0),
+        context.orientation,
+        context.density,
+        context.theme,
+        context.domain,
+        undefined,
+        false,
+      ),
       children,
     },
     layout: layoutItems<T>([], {
@@ -893,22 +900,7 @@ function itemNodesOf<T>(
     if (node !== null) {
       // Added after the hook, so an item drawn by the host is an option too;
       // whatever the hook set itself wins.
-      items.push(
-        semantics === undefined
-          ? node
-          : {
-              ...node,
-              attrs: {
-                id: itemDomId(semantics.prefix, id),
-                role: "option",
-                "aria-label": itemContext.name,
-                "aria-selected": String(itemContext.selected),
-                "aria-posinset": semantics.position(id),
-                "aria-setsize": semantics.setSize,
-                ...node.attrs,
-              },
-            },
-      );
+      items.push(semantics === undefined ? node : asOption(node, itemDomId(semantics.prefix, id), itemContext, semantics, id));
     }
     if (itemContext.selected && hooks.renderDetail !== undefined) {
       const detail = hooks.renderDetail(itemContext);
@@ -963,14 +955,29 @@ function clusterNodeOf<T>(
   if (node === null || semantics === undefined) {
     return node;
   }
+  return asOption(node, clusterDomId(semantics.prefix, cluster.id), clusterContext, semantics, cluster.id);
+}
+
+/**
+ * A node with its option semantics: its DOM id, name, selection and place in
+ * the set. Added after the hook, so a node drawn by the host is an option too;
+ * whatever the hook set itself wins.
+ */
+function asOption<T>(
+  node: SceneElement,
+  domId: string,
+  context: { readonly name: string; readonly selected: boolean },
+  semantics: ItemSemantics<T>,
+  id: string,
+): SceneElement {
   return {
     ...node,
     attrs: {
-      id: clusterDomId(semantics.prefix, cluster.id),
+      id: domId,
       role: "option",
-      "aria-label": clusterContext.name,
-      "aria-selected": String(clusterContext.selected),
-      "aria-posinset": semantics.position(cluster.id),
+      "aria-label": context.name,
+      "aria-selected": String(context.selected),
+      "aria-posinset": semantics.position(id),
       "aria-setsize": semantics.setSize,
       ...node.attrs,
     },
@@ -1155,10 +1162,7 @@ function drawFrame<T>(
       tag: "line",
       attrs: {
         class: tick.major ? "tl-tick tl-tick--major" : "tl-tick",
-        x1: projector.projectPoint({ main, cross: 0 }).x,
-        y1: projector.projectPoint({ main, cross: 0 }).y,
-        x2: projector.projectPoint({ main, cross: crossSize }).x,
-        y2: projector.projectPoint({ main, cross: crossSize }).y,
+        ...lineAttrs({ main, cross: 0 }, { main, cross: crossSize }, projector),
       },
     });
     const text = formatTick(tick, timeZone);
@@ -2537,28 +2541,21 @@ export function renderTimeline<T = unknown>(options: RenderOptions<T>): RenderRe
 
   const scene: SceneElement = {
     tag: "svg",
-    attrs: {
-      xmlns: "http://www.w3.org/2000/svg",
-      class: "tl",
-      viewBox: `0 0 ${String(options.width)} ${String(options.height)}`,
-      width: options.width,
-      height: options.height,
-      "data-tl-orientation": orientation,
-      "data-tl-density": density,
-      "data-tl-theme": theme?.name,
-      "data-tl-instance": options.instanceId,
-      ...rootSemantics(
-        options,
-        orientation,
-        focused === undefined
-          ? undefined
-          : focused.cluster === undefined
-            ? itemDomId(context.semantics?.prefix ?? "tl", focused.placed.item.id)
-            : clusterDomId(context.semantics?.prefix ?? "tl", focused.cluster.id),
-        holdsOption(content.items),
-      ),
-      "aria-busy": busyIn(options.loading, domain) ? "true" : undefined,
-    },
+    attrs: rootAttrs(
+      options,
+      options.width,
+      options.height,
+      orientation,
+      density,
+      theme,
+      domain,
+      focused === undefined
+        ? undefined
+        : focused.cluster === undefined
+          ? itemDomId(context.semantics?.prefix ?? "tl", focused.placed.item.id)
+          : clusterDomId(context.semantics?.prefix ?? "tl", focused.cluster.id),
+      holdsOption(content.items),
+    ),
     children,
   };
 

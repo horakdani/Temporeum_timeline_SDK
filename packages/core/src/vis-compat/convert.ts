@@ -252,7 +252,8 @@ export function fromVis<T extends VisItem = VisItem>(
     if (t === null || t === undefined) return undefined;
     // Inside the range a Date holds; NaN, Infinity and 1e17 are not (X28).
     if (Math.abs(t) <= 8.64e15) return t;
-    warn(where, `${JSON.stringify(value)} is not a time vis-timeline reads either; ${instead}.`);
+    // `Infinity` and an invalid `Date` by their own names, not JSON's "null" (Y26).
+    warn(where, `${typeof value === "number" || value instanceof Date ? String(value) : JSON.stringify(value)} is not a time vis-timeline reads either; ${instead}.`);
     return null;
   };
 

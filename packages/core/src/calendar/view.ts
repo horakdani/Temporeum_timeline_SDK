@@ -47,9 +47,10 @@ export interface DaysOptions<T = unknown> {
   /** The least height an event is drawn with, as time. 15 minutes by default. */
   readonly minDurationMs?: number;
   /**
-   * Whether an item goes in the all-day row. By default: one whose start and
-   * end are both midnights, or whose data says `allDay` (an expanded
-   * calendar event).
+   * Whether an item goes in the all-day row. By default: one known to the
+   * day (`granularity: "day"`, whose end is its last day, as on a timeline),
+   * one whose start and end are both midnights, or whose data says `allDay`
+   * (an expanded calendar event).
    */
   readonly allDay?: (item: Item<T>) => boolean;
 }
@@ -162,7 +163,7 @@ export function layoutDays<T>(items: readonly Item<T>[], options: DaysOptions<T>
   const isAllDay =
     options.allDay ??
     ((item: Item<T>): boolean => {
-      if (saysAllDay(item.data)) return true;
+      if (saysAllDay(item.data) || item.granularity === "day") return true;
       if (item.end === undefined) return false;
       const s = toTimeMs(item.start);
       const e = toTimeMs(item.end);
@@ -183,7 +184,8 @@ export function layoutDays<T>(items: readonly Item<T>[], options: DaysOptions<T>
     const s = toTimeMs(item.start);
     const e = item.end === undefined || item.open === true ? s : Math.max(s, toTimeMs(item.end));
     if (isAllDay(item)) {
-      const last = e > s ? e - 1 : s;
+      // An end known to the day is the last day itself, as the timeline draws it (Y4).
+      const last = item.granularity === "day" || e === s ? e : e - 1;
       if (last < viewStart || s >= viewEnd) continue;
       const first = s < viewStart ? 0 : dayOf(s);
       const lastDay = last >= viewEnd ? days.length - 1 : dayOf(last);

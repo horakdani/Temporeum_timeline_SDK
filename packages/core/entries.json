@@ -103,7 +103,7 @@
       "name": "story",
       "input": "src/story/index.ts",
       "umd": "TemporeumTimelineStory",
-      "limit": "5.5 kB",
+      "limit": "5.75 kB",
       "label": "story — stories told slide by slide: TimelineJS JSON and Google Sheets import, media detection, date text (ESM, minify + gzip)"
     }
   ]

@@ -249,6 +249,13 @@ function judgeInternalNames(dir, files) {
 function judgeMaps(dir, files) {
   const problems = [];
   const packed = new Set(files);
+  // A file's own `sourceMappingURL` names a map the tarball must have: the
+  // Svelte declarations pointed at `.d.ts.map` files the `files` list left
+  // out, and only the maps that were packed were looked at (Y24).
+  for (const path of files.filter((file) => /\.(?:[mc]?js|[mc]?ts)$/.test(file))) {
+    const url = /\/[/*][#@] sourceMappingURL=(\S+?)(?:\s*\*\/)?\s*$/.exec(readFileSync(join(dir, path), "utf8"))?.[1];
+    if (url !== undefined && !url.startsWith("data:") && !packed.has(posix.normalize(posix.join(posix.dirname(path), url)))) problems.push(`${path}: its sourceMappingURL names ${url}, which is not in the tarball`);
+  }
   for (const path of files.filter((file) => file.endsWith(".map"))) {
     let map;
     try {
@@ -343,8 +350,15 @@ export function judgeDevPeers(manifest) {
   return problems;
 }
 
-/** The starter templates' ranges on the packages take `version` (V31). */
+/**
+ * The starter templates' ranges on the packages take `version` (V31). A
+ * pre-release is in no caret range (npm installs `1.1.0-rc.0` from
+ * `^1.0.0` never), and the templates stay on the stable line it is not
+ * part of, so it is not judged here: `undefined`, said by the caller, not
+ * an empty list that reads as a pass (Y23).
+ */
 export function judgeTemplateRanges(version) {
+  if (String(version).includes("-")) return undefined;
   const root = join(repo, "packages", "docs", "templates");
   const problems = [];
   for (const name of readdirSync(root)) {
@@ -352,7 +366,7 @@ export function judgeTemplateRanges(version) {
     if (!existsSync(file)) continue;
     const manifest = JSON.parse(readFileSync(file, "utf8"));
     for (const [dep, range] of Object.entries({ ...manifest.dependencies, ...manifest.devDependencies })) {
-      if (dep.startsWith("@temporeum/") && !inRange(String(version).replace(/-.*$/, ""), range)) problems.push(`the ${name} template asks for ${dep}@${range}, which ${String(version)} is not in`);
+      if (dep.startsWith("@temporeum/") && !inRange(String(version), range)) problems.push(`the ${name} template asks for ${dep}@${range}, which ${String(version)} is not in`);
     }
   }
   return problems;
@@ -501,8 +515,13 @@ for (const [index, pkg] of PACKAGES.entries()) {
 failures.push(...judgeVersions(manifests, { allowPrerelease: ALLOW_PRERELEASE }));
 {
   const templateProblems = judgeTemplateRanges(manifests[0]?.version);
-  failures.push(...templateProblems);
-  if (templateProblems.length === 0) notes.push(`every starter template's @temporeum range takes ${String(manifests[0]?.version)}`);
+  if (templateProblems === undefined) notes.push(`the starter templates stay on the stable line; ${String(manifests[0]?.version)} is a pre-release, not judged against their ranges`);
+  else {
+    failures.push(...templateProblems);
+    if (templateProblems.length === 0) notes.push(`every starter template's @temporeum range takes ${String(manifests[0]?.version)}`);
+  }
+  // A pre-release is not judged, and says so, instead of passing an empty check (Y23).
+  if (judgeTemplateRanges("1.1.0-rc.0") !== undefined) failures.push("NEGATIVE CONTROL: a pre-release is judged against the templates' caret ranges, which never install it");
   if (judgeTemplateRanges("2.0.0").length === 0) failures.push("NEGATIVE CONTROL: a 2.0.0 release does NOT fail against the templates' ranges");
   else notes.push("the negative control fails, as it should — a 2.0.0 release against the templates' ranges");
 }
@@ -709,6 +728,17 @@ try {
   const maps = judgeMaps(scratch, ["dist/a.d.ts.map", "dist/b.js.map"]);
   if (maps.length !== 1 || !maps[0].startsWith("dist/a.d.ts.map")) failures.push(`NEGATIVE CONTROL: the source-map measure is blind (${maps.join("; ") || "no problems"})`);
   else notes.push(`the negative control fails, as it should — ${maps[0]}`);
+  // a declaration whose sourceMappingURL names a map the tarball leaves out, beside one with its map and one inline (Y24)
+  writeFileSync(join(scratch, "dist", "f.d.ts"), "export {};\n//# sourceMappingURL=f.d.ts.map\n");
+  writeFileSync(join(scratch, "dist", "g.mjs"), "export {};\n//# sourceMappingURL=b.js.map");
+  writeFileSync(join(scratch, "dist", "h.js"), "export {};\n//# sourceMappingURL=data:application/json;base64,e30=\n");
+  const pointed = judgeMaps(scratch, ["dist/b.js.map", "dist/f.d.ts", "dist/g.mjs", "dist/h.js"]);
+  if (pointed.length !== 1 || !pointed[0].startsWith("dist/f.d.ts:")) failures.push(`NEGATIVE CONTROL: a sourceMappingURL to a map not in the tarball does NOT fail (${pointed.join("; ") || "no problems"})`);
+  else notes.push(`the negative control fails, as it should — ${pointed[0]}`);
+  // a pre-release dry run with the shared flags: npm 11 refuses one without --tag (Y7)
+  writeFileSync(join(scratch, "package.json"), JSON.stringify({ ...leaky, version: "1.1.0-rc.0", files: ["dist"] }));
+  if (dryRun(scratch).version !== "1.1.0-rc.0") failures.push("a dry run of a pre-release with the shared flags does not report it");
+  else notes.push(`a pre-release dry-runs with the shared flags (npm ${execFileSync("npm", ["--version"], { encoding: "utf8" }).trim()})`);
   // the benchmarks' fingerprint in the tarball
   const fingerprint = judgeFiles(["dist/index.mjs", "dist/build.json"], ["dist"]);
   if (fingerprint.length !== 1) failures.push(`NEGATIVE CONTROL: dist/build.json in the tarball does NOT fail (${fingerprint.join("; ") || "no problems"})`);

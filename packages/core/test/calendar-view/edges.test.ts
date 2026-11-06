@@ -26,6 +26,7 @@ import {
 } from "../../src/calendar/index.js";
 import type { CalendarEvent } from "../../src/calendar/index.js";
 import type { SceneElement } from "../../src/scene.js";
+import { layoutItems } from "../../src/layout.js";
 import { DARK_THEME } from "../../src/theme.js";
 import type { Item } from "../../src/types.js";
 
@@ -154,7 +155,8 @@ describe("calendar edges: events", () => {
     expect(items.map((item) => [item.id, item.label, item.end])).toEqual([
       ["s@20261102T090000Z", "Series", MONDAY + 10 * HOUR],
       ["s@20261103T090000Z", "Moved", MONDAY + DAY + 16 * HOUR],
-      ["one", undefined, MONDAY + 3 * DAY],
+      // A one-day all-day event ends on its own day, the start of its last (Y4).
+      ["one", undefined, MONDAY + 2 * DAY],
       ["dot", undefined, undefined],
     ]);
     expect(items[0]?.laneId).toBe("team");
@@ -204,8 +206,12 @@ describe("calendar edges: iCal", () => {
     expect(event?.title).toBe("Folded");
     expect(event?.end).toBe(Date.UTC(2026, 0, 1, 8));
     expect(event?.rdates).toEqual([Date.UTC(2026, 0, 5, 9), Date.UTC(2026, 0, 6, 9)]);
-    expect(() => parseICal("BEGIN:VCALENDAR\nBEGIN:VEVENT\nDTSTART:2026\nEND:VEVENT\nEND:VCALENDAR")).toThrow(SyntaxError);
-    expect(() => parseICal("BEGIN:VCALENDAR\nBEGIN:VEVENT\nDTSTART:20260101T000000Z\nDURATION:1H\nEND:VEVENT\nEND:VCALENDAR")).toThrow(SyntaxError);
+    // A value that cannot be read passes over its own VEVENT, said, not the whole file (Y11).
+    const bad = [parseICal("BEGIN:VCALENDAR\nBEGIN:VEVENT\nDTSTART:2026\nEND:VEVENT\nEND:VCALENDAR"), parseICal("BEGIN:VCALENDAR\nBEGIN:VEVENT\nDTSTART:20260101T000000Z\nDURATION:1H\nEND:VEVENT\nEND:VCALENDAR")];
+    expect(bad.map((each) => [each.events.length, each.warnings])).toEqual([
+      [0, ['A VEVENT that cannot be read was passed over: Invalid iCalendar date "2026"']],
+      [0, ['A VEVENT that cannot be read was passed over: Invalid iCalendar duration "1H"']],
+    ]);
   });
 
   it("matches a vendor zone with only a fixed offset, and writes offsets with seconds", () => {
@@ -248,5 +254,34 @@ describe("calendar edges: iCal", () => {
     expect(text).toContain("EXDATE;VALUE=DATE:20270101");
     expect(text).toContain("RRULE:FREQ=YEARLY;UNTIL=20300101");
     expect(text).toContain("TZID:Asia/Tokyo");
+  });
+});
+
+describe("an all-day event on a timeline and in the calendar view (Y4)", () => {
+  // The item had the exclusive midnight after its last day as its end *and*
+  // granularity "day", which the timeline reads as the last day itself: a
+  // one-day holiday was drawn over two days.
+  const ics = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:one\r\nDTSTART;VALUE=DATE:20261103\r\nDTEND;VALUE=DATE:20261104\r\nSUMMARY:Holiday\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:two\r\nDTSTART;VALUE=DATE:20261105\r\nDTEND;VALUE=DATE:20261107\r\nSUMMARY:Fair\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+  const items = expandEvents(parseICal(ics).events, MONDAY, MONDAY + 7 * DAY);
+
+  it("covers its own days on a timeline", () => {
+    const spans = layoutItems(items, {}).items.map((placed) => [placed.item.id, placed.span.start, placed.span.end]);
+    expect(spans).toEqual([
+      ["one", MONDAY + DAY, MONDAY + 2 * DAY],
+      ["two", MONDAY + 3 * DAY, MONDAY + 5 * DAY],
+    ]);
+  });
+
+  it("covers the same days in the calendar view, and says them", () => {
+    const layout = layoutDays(items, { start: MONDAY, days: 7 });
+    expect(layout.allDay.map((segment) => [segment.key, segment.first, segment.last])).toEqual([
+      ["one", 1, 1],
+      ["two", 3, 4],
+    ]);
+    const names = JSON.stringify(calendarScene(layout, { width: 700, height: 500 }));
+    expect(names).toMatch(/"Fair, all day, Nov 5\s–\s6, 2026"/);
+    // A day item the host writes is all-day too, through its last day.
+    const own = layoutDays([{ id: "o", start: MONDAY, end: MONDAY + DAY, granularity: "day" }], { start: MONDAY, days: 7 });
+    expect(own.allDay.map((segment) => [segment.key, segment.first, segment.last])).toEqual([["o", 0, 1]]);
   });
 });

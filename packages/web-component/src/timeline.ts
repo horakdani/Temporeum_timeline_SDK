@@ -78,7 +78,7 @@ import type { AddTarget } from "@temporeum/timeline-core/items";
 import type { Strings } from "@temporeum/timeline-core/words";
 import type { PngOptions } from "@temporeum/timeline-core/export";
 
-import { checkMetrics, contentOf, exportTheme, frameOptions, frameScene, groupViewOf, hiddenDatesOf, initialDomain, itemsOf, metricsOf, readableItems, readableOptionsOf, minimapGeometryOf, resolveView, sameValue, sizesOf, slotsOn, usesSceneSpace, wordsOf } from "./config.js";
+import { checkMetrics, contentOf, definedOf, exportTheme, frameOptions, frameScene, groupViewOf, hiddenDatesOf, initialDomain, itemsOf, metricsOf, readableItems, readableOptionsOf, minimapGeometryOf, resolveView, sameValue, sizesOf, slotsOn, usesSceneSpace, wordsOf } from "./config.js";
 import type { FrameState, InputSkippedPayload, ResolvedView, SkipReport, TimelineConfig, TimelineRollingOptions, TimelineUpdate } from "./config.js";
 import type { TimelinePrintOptions } from "./export.js";
 import { plugin, pluginIf, requireKinds, requirePlugins } from "./plugins.js";
@@ -783,23 +783,19 @@ export function createTimeline<T = unknown>(
       mainSize: Math.max(1, view?.mainSize ?? 1),
       crossSize: Math.max(1, view?.crossSize ?? 1),
       orientation: view?.orientation ?? "horizontal",
-      ...(config.limits === undefined ? {} : { limits: config.limits }),
-      ...(interactions.dragThreshold === undefined ? {} : { dragThreshold: interactions.dragThreshold }),
-      ...(interactions.pan === undefined ? {} : { pan: interactions.pan }),
-      ...(interactions.zoom === undefined ? {} : { zoom: interactions.zoom }),
-      ...(config.touchAction === undefined ? {} : { touchAction: config.touchAction }),
+      ...definedOf(config, ["limits"]),
+      ...definedOf(interactions, ["dragThreshold", "pan", "zoom"]),
+      ...definedOf(config, ["touchAction"]),
       editing: {
         enabled: edit.enabled === true,
-        ...(interactions.moveTrigger === undefined ? {} : { moveTrigger: interactions.moveTrigger }),
-        ...(interactions.longPressMs === undefined ? {} : { longPressMs: interactions.longPressMs }),
-        ...(edit.snapMs === undefined ? {} : { snapMs: edit.snapMs }),
+        ...definedOf(interactions, ["moveTrigger", "longPressMs"]),
+        ...definedOf(edit, ["snapMs"]),
         // Read when it is asked, from the configuration as it is then: a new
         // function with the same rules is not a new machine.
         ...(edit.canMove === undefined ? {} : { canMove: (item: Item<T>, next: ItemPatch<T>) => config.editing?.canMove?.(item, next) ?? true }),
-        ...(edit.multiSelect === undefined ? {} : { multiSelect: edit.multiSelect }),
-        ...(edit.crossLane === undefined ? {} : { crossLane: edit.crossLane }),
+        ...definedOf(edit, ["multiSelect", "crossLane"]),
         ...(edit.snapOrigin === undefined ? {} : { snapOrigin: toTimeMs(edit.snapOrigin) }),
-        ...(edit.minDurationMs === undefined ? {} : { minDurationMs: edit.minDurationMs }),
+        ...definedOf(edit, ["minDurationMs"]),
         ...zoneOf(),
       },
     });
@@ -937,13 +933,13 @@ export function createTimeline<T = unknown>(
 
   /** The zone a day grid lies in: the timeline's own, so a day snaps to its midnight all year. */
   function zoneOf(): { readonly timeZone?: string } {
-    return config.timeZone === undefined ? {} : { timeZone: config.timeZone };
+    return definedOf(config, ["timeZone"]);
   }
 
   function addOptions(): { readonly snapMs?: number; readonly snapOrigin?: TimeMs; readonly timeZone?: string } {
     const edit = config.editing ?? {};
     return {
-      ...(edit.snapMs === undefined ? {} : { snapMs: edit.snapMs }),
+      ...definedOf(edit, ["snapMs"]),
       ...(edit.snapOrigin === undefined ? {} : { snapOrigin: toTimeMs(edit.snapOrigin) }),
       ...zoneOf(),
     };
@@ -1246,9 +1242,8 @@ export function createTimeline<T = unknown>(
     if (pending === undefined || result === undefined || previous.items !== pending.from || content.items !== pending.to) return undefined;
     const metrics = sizesOf(at);
     const layout = relayout(result.layout, content.items, pending.touched, {
-      ...(content.lanes === undefined ? {} : { lanes: content.lanes }),
-      ...(config.packMode === undefined ? {} : { packMode: config.packMode }),
-      ...(config.timeZone === undefined ? {} : { timeZone: config.timeZone }),
+      ...definedOf(content, ["lanes"]),
+      ...definedOf(config, ["packMode", "timeZone"]),
       metrics: { rowSize: metrics.rowSize, rowGap: metrics.rowGap, laneGap: metrics.laneGap },
     });
     liveLayout = { items: content.items, layout };
@@ -1285,7 +1280,7 @@ export function createTimeline<T = unknown>(
     const limits = config.limits;
     const { moveTimeBar } = plugin("tools", "The timeBars option");
     const moved = moveTimeBar(bars, id, time, {
-      ...(settings.snapMs === undefined ? {} : { snapMs: settings.snapMs }),
+      ...definedOf(settings, ["snapMs"]),
       ...zoneOf(),
       ...(limits?.min === undefined && limits?.max === undefined
         ? {}

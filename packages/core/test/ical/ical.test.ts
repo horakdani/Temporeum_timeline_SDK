@@ -104,7 +104,8 @@ describe("ical: the shapes the big calendars write", () => {
     ]);
     const offsite = items.find((item) => item.id === "offsite-2026@google.com");
     expect(offsite?.start).toBe(instantOf(wallMs(2026, 11, 2), "Europe/Budapest"));
-    expect(offsite?.end).toBe(instantOf(wallMs(2026, 11, 5), "Europe/Budapest"));
+    // 2–4 November: the item ends on its last day, as an item known to the day does (Y4).
+    expect(offsite?.end).toBe(instantOf(wallMs(2026, 11, 4), "Europe/Budapest"));
     expect(offsite?.data?.allDay).toBe(true);
   });
 });
@@ -575,3 +576,38 @@ describe("ical: parameter values (V35)", () => {
   });
 });
 
+
+describe("ical: one event that cannot be read, and a Windows name without its rules (Y11, Y12)", () => {
+  const file = (body: string): string => `BEGIN:VCALENDAR\r\n${body}END:VCALENDAR\r\n`;
+  const event = (uid: string, lines: string): string => `BEGIN:VEVENT\r\nUID:${uid}\r\n${lines}SUMMARY:${uid}\r\nEND:VEVENT\r\n`;
+
+  it("passes over the one VEVENT, says which, and reads the rest", () => {
+    // A COUNT=0 or a cut-off DTSTART threw a SyntaxError for the whole file.
+    const calendar = parseICal(
+      file(
+        event("good", "DTSTART:20260310T100000Z\r\n") +
+          event("zero", "DTSTART:20260310T100000Z\r\nRRULE:FREQ=DAILY;COUNT=0\r\n") +
+          event("cut", "DTSTART;TZID=Europe/Budapest:20260310T10000\r\n") +
+          event("day0", "DTSTART:20260310T100000Z\r\nRRULE:FREQ=MONTHLY;BYMONTHDAY=0\r\n") +
+          event("after", "DTSTART:20260311T100000Z\r\n"),
+      ),
+    );
+    expect(calendar.events.map((each) => each.id)).toEqual(["good", "after"]);
+    expect(calendar.warnings).toEqual([
+      'A VEVENT zero that cannot be read was passed over: RRULE: COUNT has an invalid value "0"',
+      'A VEVENT cut that cannot be read was passed over: Invalid iCalendar date "20260310T10000"',
+      'A VEVENT day0 that cannot be read was passed over: RRULE: BYMONTHDAY has an invalid value "0"',
+    ]);
+  });
+
+  it("reads a common Windows zone name without a VTIMEZONE as its zone, not UTC", () => {
+    const calendar = parseICal(file(event("w", "DTSTART;TZID=Eastern Standard Time:20260310T093000\r\n") + event("t", "DTSTART;TZID=Tokyo Standard Time:20260310T093000\r\n")));
+    expect(calendar.events.map((each) => [each.id, each.start, each.timeZone])).toEqual([
+      ["w", Date.UTC(2026, 2, 10, 13, 30), "America/New_York"],
+      ["t", Date.UTC(2026, 2, 10, 0, 30), "Asia/Tokyo"],
+    ]);
+    expect(calendar.warnings).toEqual([]);
+    // A name that is not one of them is still said, and read as UTC.
+    expect(parseICal(file(event("x", "DTSTART;TZID=Nowhere Standard Time:20260310T093000\r\n"))).warnings).toEqual(['Unknown time zone "Nowhere Standard Time", read as UTC']);
+  });
+});

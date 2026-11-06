@@ -19,7 +19,7 @@
  * children in the template, so hydration has nothing in it to compare.
  */
 
-import { isPlatformServer } from "@angular/common";
+import { DOCUMENT, isPlatformServer } from "@angular/common";
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -66,17 +66,24 @@ import type {
 } from "@temporeum/timeline-element";
 
 /**
- * Numbers the timelines of one application, in the order they are created —
- * the same order on the server (one injector per request) and on the
- * hydrating client, so the stylesheet scope of each matches.
+ * Numbers the timelines of one application, in the order they are created.
+ * A timeline that hydrates takes the scope its server markup carries
+ * instead: under incremental hydration (`@defer (hydrate on …)`) or with two
+ * applications on a page, the client creates them in another order than the
+ * server drew them, and a counter alone gave two timelines one stylesheet
+ * scope and one id prefix (Y16). In the browser a scope a drawing on the page
+ * already carries is passed over, so a timeline drawn only here does not
+ * take the scope of one still waiting to hydrate.
  */
 @Injectable({ providedIn: "root" })
 class TimelineIds {
   #next = 0;
+  readonly #document: Document | undefined = isPlatformServer(inject(PLATFORM_ID)) ? undefined : inject(DOCUMENT);
   /** The next scope, `tl-ng0`, `tl-ng1`, … */
   next(): string {
-    const id = `tl-ng${String(this.#next)}`;
-    this.#next += 1;
+    let id: string;
+    do id = `tl-ng${String(this.#next++)}`;
+    while (this.#document?.querySelector(`svg[data-tl-instance="${id}"]`));
     return id;
   }
 }
@@ -199,7 +206,7 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
   readonly #renderer = inject(Renderer2);
   readonly #destroyRef = inject(DestroyRef);
   readonly #server = isPlatformServer(inject(PLATFORM_ID));
-  readonly #scope = inject(TimelineIds).next();
+  #scope = inject(TimelineIds).next();
   readonly #zone = inject(NgZone);
   readonly #views = inject(ViewContainerRef);
   /** The item template's view in each drawn box. */
@@ -208,6 +215,8 @@ export class TimelineComponent<T = unknown> implements AfterViewInit {
 
   constructor() {
     afterNextRender(() => {
+      // The server's scope, where it drew this timeline (Y16).
+      this.#scope = this.containerRef.nativeElement.querySelector("svg[data-tl-instance]")?.getAttribute("data-tl-instance") ?? this.#scope;
       // Again, now that the item template is known: the effect may have run before it was.
       const applied = this.#clientOf(this.#configOf(untracked(this.#config)));
       this.#applied = applied;
