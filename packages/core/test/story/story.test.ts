@@ -300,7 +300,13 @@ describe("the Google Sheets template", () => {
     expect(sheet.data.events?.[2]?.display_date).toBe("16–24 July");
     expect(sheet.data.events?.[5]?.start_date).toEqual({ year: "1969", month: "7", day: "24", hour: 12, minute: 0 });
     expect(sheet.data.eras).toEqual([{ start_date: { year: "1961" }, end_date: { year: "1972" }, text: { headline: "Project Apollo", text: "" } }]);
-    expect(sheet.warnings.map((warning) => warning.index)).toEqual([7, 8]);
+    // "Bad clock" and "Bad half" are the 4th and 5th events: an index in its list, as StoryWarning
+    // documents and fromTimelineJS's warnings give, so the merged list of fromTimelineSheet means one thing (X22).
+    expect(sheet.warnings.map((warning) => [warning.list, warning.index])).toEqual([
+      ["events", 3],
+      ["events", 4],
+    ]);
+    expect(sheet.warnings.map((warning) => warning.message.slice(0, 6))).toEqual(["Row 8:", "Row 9:"]);
   });
 
   it("goes straight to a timeline, with both lists of warnings", () => {

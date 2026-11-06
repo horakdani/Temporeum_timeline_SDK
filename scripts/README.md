@@ -114,6 +114,8 @@ that need a quiet machine run before each release
 | `sdk_gesture_vocabulary.mjs` | The gesture vocabulary — derived from the input machine's OWN types. |
 | `sdk_ios_touch.mjs` | The touch-action measurement in real Mobile Safari (half of the e2e-touch-webkit check). |
 | `sdk_nodom_probe.mjs` | The server-side probe: does the BUILT package run without a DOM. |
+| `sdk_npm_dry_run.mjs` | The flags every `npm publish --dry-run` of the release checks runs with: a registry that is not there, so a version already on npm does not fail it under npm 11. |
+| `sdk_page_bytes.mjs` | What a page of ours loads, in bytes, measured the one way the benchmarks and the numbers check share. |
 | `sdk_property_reset.mjs` | Deletes the property reports BEFORE the run. |
 | `sdk_rtl_snapshots.mjs` | The visual half of the rtl check: the visual matrix right-to-left, on the SHIPPED bundle. |
 | `sdk_size.mjs` | The size budget of the non-base entry points: marginal cost. |

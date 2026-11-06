@@ -32,10 +32,11 @@ export const DATE_ONLY: ReadonlySet<Granularity> = new Set([
   "millennium",
 ]);
 
-const formatters = new Map<string, Intl.DateTimeFormat>();
+/** The formatters and date formats, by their locale, zone and kind. */
+const formatters = new Map<string, unknown>();
 
-function cached(key: string, create: () => Intl.DateTimeFormat): Intl.DateTimeFormat {
-  let formatter = formatters.get(key);
+function cached<V>(key: string, create: () => V): V {
+  let formatter = formatters.get(key) as V | undefined;
   if (formatter === undefined) {
     formatter = create();
     formatters.set(key, formatter);
@@ -67,9 +68,7 @@ export interface DateFormat {
  * "1 Jan 45", which a reader takes for AD. Shared with `/intl`.
  */
 export function dateFormatFor(locale: string, timeZone: string, withTime: boolean): DateFormat {
-  const key = `${locale}\u0000${timeZone}\u0000${String(withTime)}\u0000era`;
-  let known = eras.get(key);
-  if (known === undefined) {
+  return cached(`${locale}\u0000${timeZone}\u0000${String(withTime)}\u0000era`, (): DateFormat => {
     const ad = formatterFor(locale, timeZone, withTime);
     const bc = new Intl.DateTimeFormat(locale, {
       year: "numeric",
@@ -80,12 +79,9 @@ export function dateFormatFor(locale: string, timeZone: string, withTime: boolea
       timeZone,
     });
     // The era of the date on the zone's calendar, not of the UTC instant (V10).
-    known = { format: (time) => (time + zoneOffsetMs(time, timeZone) < YEAR_ONE ? bc : ad).format(time) };
-    eras.set(key, known);
-  }
-  return known;
+    return { format: (time) => (time + zoneOffsetMs(time, timeZone) < YEAR_ONE ? bc : ad).format(time) };
+  });
 }
-const eras = new Map<string, DateFormat>();
 
 /** Whether an instant is a midnight in a zone. Shared with `/intl`. */
 export function atMidnight(time: number, timeZone: string): boolean {

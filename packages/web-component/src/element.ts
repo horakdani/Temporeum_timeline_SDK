@@ -236,7 +236,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** The lanes the items are in, in order. */
   get lanes(): readonly Lane[] | undefined {
-    return this.#props.lanes;
+    return this.#effective().lanes;
   }
   set lanes(lanes: readonly Lane[] | undefined) {
     this.#set({ lanes: lanes ?? [] });
@@ -244,7 +244,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** Nested groups of lanes, which the reader collapses and reorders (the `/groups` plugin). */
   get groups(): TimelineConfig<T>["groups"] {
-    return this.#props.groups;
+    return this.#effective().groups;
   }
   set groups(groups: TimelineConfig<T>["groups"]) {
     this.#set({ groups });
@@ -252,7 +252,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** Each item's content as HTML (the `/items` plugin). */
   get template(): TimelineConfig<T>["template"] {
-    return this.#props.template;
+    return this.#effective().template;
   }
   set template(template: TimelineConfig<T>["template"]) {
     this.#set({ template });
@@ -260,7 +260,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** Dependency arrows and the Gantt drawing; the task grid is `mountTaskGrid(box, element.timeline)`. */
   get gantt(): TimelineConfig<T>["gantt"] {
-    return this.#props.gantt;
+    return this.#effective().gantt;
   }
   set gantt(gantt: TimelineConfig<T>["gantt"]) {
     this.#set({ gantt });
@@ -268,7 +268,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** The resources, for a resource view; the unscheduled tasks beside it are `mountBacklog(box, element.timeline, { tasks })`. */
   get resources(): TimelineConfig<T>["resources"] {
-    return this.#props.resources;
+    return this.#effective().resources;
   }
   set resources(resources: TimelineConfig<T>["resources"]) {
     this.#set({ resources });
@@ -276,7 +276,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** How the resource view counts and draws the load: the units an assignment takes, the load lane. */
   get resourceOptions(): TimelineConfig<T>["resourceOptions"] {
-    return this.#props.resourceOptions;
+    return this.#effective().resourceOptions;
   }
   set resourceOptions(resourceOptions: TimelineConfig<T>["resourceOptions"]) {
     this.#set({ resourceOptions });
@@ -284,7 +284,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /** The render hooks: what is drawn for an item, a cluster, a label or a detail, and how each is described to a screen reader. */
   get hooks(): RenderHooks<T> | undefined {
-    return this.#props.hooks;
+    return this.#effective().hooks;
   }
   set hooks(hooks: RenderHooks<T> | undefined) {
     this.#set({ hooks: hooks ?? {} });
@@ -395,16 +395,19 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
   get domain(): readonly [TimeInput, TimeInput] | undefined {
     return this.#timeline?.getSnapshot().domain ?? this.#effective().domain;
   }
+  /** Setting it zooms there; `undefined` hands the range back to the `start` and `end` attributes (X24). */
   set domain(domain: readonly [TimeInput, TimeInput] | undefined) {
     this.#props = { ...this.#props, domain };
-    if (domain !== undefined) this.#timeline?.zoomTo(domain);
+    if (domain === undefined) delete (this.#props as { domain?: unknown }).domain;
+    const next = this.#effective().domain;
+    if (next !== undefined) this.#timeline?.zoomTo(next);
   }
 
   /** Whether the reader can move and resize items — the `editable` attribute as a property, which wins over it. */
   get editable(): boolean {
     return this.#effective().editing?.enabled === true;
   }
-  set editable(editable: boolean) {
+  set editable(editable: boolean | undefined) {
     this.#editing({ enabled: editable });
   }
 
@@ -425,7 +428,7 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
   }
 
   get selectedIds(): readonly string[] {
-    return this.#timeline?.getSnapshot().selectedIds ?? this.#props.selectedIds ?? [];
+    return this.#timeline?.getSnapshot().selectedIds ?? this.#effective().selectedIds ?? [];
   }
   /** Setting it selects those items, whatever the reader selected since — as `timeline.select` does. */
   set selectedIds(ids: readonly string[]) {
@@ -566,6 +569,14 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
     if (this.#timeline !== undefined) {
       // Moved, perhaps into another root: the labels are looked up there now.
       this.#watchLabel();
+      return;
+    }
+    // Defined before the parser reached its children (a `<script>` in the
+    // head): its JSON child and its declarative shadow root are not there
+    // yet. It sets up once they are (X15).
+    const doc = this.ownerDocument;
+    if (doc.readyState === "loading") {
+      doc.addEventListener("DOMContentLoaded", () => this.isConnected && this.connectedCallback(), { once: true });
       return;
     }
     // A declarative shadow root (server-rendered) is already attached, and

@@ -184,7 +184,7 @@ export function renderTimelineHtml<T>(config: TimelineConfig<T>, options: Server
   // script could read, while the browser hides an attribute's nonce.
   const attributes: Record<string, string> = { ...options.attributes, ...(config.nonce === undefined ? {} : { nonce: config.nonce }) };
   if (config.height !== undefined) {
-    const style = attributes.style === undefined ? "" : `${attributes.style.replace(/;?\s*$/, "")};`;
+    const style = attributes.style === undefined ? "" : `${attributes.style.trimEnd().replace(/;$/, "")};`;
     attributes.style = `${style}--tl-height:${String(config.height)}px`;
   }
   const printed = Object.entries(attributes)

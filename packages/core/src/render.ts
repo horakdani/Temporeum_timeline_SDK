@@ -902,7 +902,7 @@ function itemNodesOf<T>(
                 id: itemDomId(semantics.prefix, id),
                 role: "option",
                 "aria-label": itemContext.name,
-                "aria-selected": itemContext.selected ? "true" : "false",
+                "aria-selected": String(itemContext.selected),
                 "aria-posinset": semantics.position(id),
                 "aria-setsize": semantics.setSize,
                 ...node.attrs,
@@ -969,7 +969,7 @@ function clusterNodeOf<T>(
       id: clusterDomId(semantics.prefix, cluster.id),
       role: "option",
       "aria-label": clusterContext.name,
-      "aria-selected": clusterContext.selected ? "true" : "false",
+      "aria-selected": String(clusterContext.selected),
       "aria-posinset": semantics.position(cluster.id),
       "aria-setsize": semantics.setSize,
       ...node.attrs,
@@ -2437,37 +2437,31 @@ export function renderTimeline<T = unknown>(options: RenderOptions<T>): RenderRe
     // Axis, lanes and decorations are drawn from the range's start, so where
     // that start is in the space is part of their transform.
     frameTransform = matrix(shift + stretch * rangeStart);
+    // Labels added to what is drawn: at rest, or at the edges while moving.
+    let extra: { readonly nodes: readonly SceneElement[]; readonly kept: readonly PlacedLabel[] } | undefined;
     if (space.atRest === true) {
       const rest = cachedRestLabels(content, { context: { ...context, itemScale: scale }, domain }, { stretch, shift }, options);
       if (rest.dropped !== undefined) {
         labelLayer = rest.nodes;
         content = { ...content, labels: { kept: rest.kept, dropped: rest.dropped } };
-      } else if (rest.nodes.length > 0) {
-        labelLayer = [...content.labelNodes, ...rest.nodes];
-        // What is drawn is what is reported: the added labels are kept, and
-        // no longer dropped.
-        const added = new Set(rest.kept.map((label) => label.id));
-        content = {
-          ...content,
-          labels: {
-            kept: [...content.labels.kept, ...rest.kept],
-            dropped: content.labels.dropped.filter((label) => !added.has(label.id)),
-          },
-        };
+      } else {
+        extra = rest;
       }
     } else if (space.bare !== true) {
-      const edge = edgeLabels(content, { context: { ...context, itemScale: scale }, domain, stretch, shift }, options);
-      if (edge.nodes.length > 0) {
-        labelLayer = [...content.labelNodes, ...edge.nodes];
-        const added = new Set(edge.kept.map((label) => label.id));
-        content = {
-          ...content,
-          labels: {
-            kept: [...content.labels.kept, ...edge.kept],
-            dropped: content.labels.dropped.filter((label) => !added.has(label.id)),
-          },
-        };
-      }
+      extra = edgeLabels(content, { context: { ...context, itemScale: scale }, domain, stretch, shift }, options);
+    }
+    if (extra !== undefined && extra.nodes.length > 0) {
+      labelLayer = [...content.labelNodes, ...extra.nodes];
+      // What is drawn is what is reported: the added labels are kept, and
+      // no longer dropped.
+      const added = new Set(extra.kept.map((label) => label.id));
+      content = {
+        ...content,
+        labels: {
+          kept: [...content.labels.kept, ...extra.kept],
+          dropped: content.labels.dropped.filter((label) => !added.has(label.id)),
+        },
+      };
     }
   }
   const theme = resolveTheme(options.theme ?? "auto");

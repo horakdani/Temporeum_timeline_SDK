@@ -11,6 +11,9 @@
  *    gap) is taken with the offset before the gap, and one that happens
  *    twice (a fall-back hour) is the first of the two — RFC 5545, 3.3.5.
  *    Two readings that land on one instant are one occurrence (3.8.5.3).
+ *    Below `DAILY` too: an `HOURLY` rule has no occurrence in the repeated
+ *    hour, so it skips an hour of elapsed time on the fall-back night, as
+ *    python-dateutil's does (the guide says so).
  * 2. **One filter for every BYxxx part.** The RFC's table of which part
  *    "expands" and which "limits" is the same as filtering every day of the
  *    period: `BYMONTH` over the days of a year expands, over the one day of a

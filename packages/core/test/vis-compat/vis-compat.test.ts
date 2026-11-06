@@ -178,6 +178,27 @@ describe("compat: vis-timeline's documentation examples through the compatibilit
     expect(parseVisTime(null)).toBeNull();
   });
 
+  it("[claim:warnings] a time past the representable range is warned about and left out like an unreadable one (X28)", () => {
+    // "1" × 400 is Infinity, "99999999999999999" past ±8.64e15: they came
+    // back without a warning, and the core then threw on the whole timeline.
+    const { config, warnings } = fromVis(
+      [
+        { id: 1, content: "a", start: "1".repeat(400) },
+        { id: 2, content: "b", start: "99999999999999999" },
+        { id: 3, content: "c", start: 8.64e15 + 1 },
+        { id: 4, content: "d", start: Number.POSITIVE_INFINITY },
+        { id: 5, content: "e", start: 0, end: -9e15 },
+        { id: 6, content: "f", start: 8.64e15 },
+      ],
+      null,
+      {},
+      { timeZone: "UTC" },
+    );
+    // A range whose end cannot be read is left out, as with any unreadable end.
+    expect(config.items.map((item) => [item.id, item.start])).toEqual([["6", 8.64e15]]);
+    expect(warnings.map((warning) => warning.option)).toEqual(["items[0].start", "items[1].start", "items[2].start", "items[3].start", "items[4].end"]);
+  });
+
   it("[claim:warnings] what does not carry over is named: subgroups, a hidden group, an item without its group, unknown options", () => {
     const { warnings } = fromVis(
       [
@@ -251,6 +272,10 @@ describe("compat: vis-timeline's documentation examples through the compatibilit
     expect(visText({ textContent: "  from an element " })).toBe("from an element");
     // R39: a named reference past the five basic ones is read too, on the axis and in the accessible name.
     expect(visText("<b>Caf&eacute;</b> &amp;lt; &ndash; na&iuml;ve &#39;x&#39;")).toBe("Café &lt; – naïve 'x'");
+    // X13: vis-timeline sets content without a tag as HTML too, so its references are read.
+    expect(visText("Tom &amp; Jerry")).toBe("Tom & Jerry");
+    expect(fromVis([{ id: 1, content: "R&amp;D &ndash; Q1", start: 0 }], null, {}, { timeZone: "UTC" }).config.items[0]?.label).toBe("R&D – Q1");
+    expect(visText("AT&T, no reference")).toBe("AT&T, no reference");
   });
 
   it("[claim:options] a DataSet is read with its get(), and items without an id get one, with a warning", () => {
@@ -258,6 +283,20 @@ describe("compat: vis-timeline's documentation examples through the compatibilit
     const { config, warnings } = fromVis(set, null, {}, { timeZone: "UTC" });
     expect(config.items.map((item) => item.id)).toEqual(["vis-1", "7"]);
     expect(warnings.map((warning) => warning.option)).toEqual(["items[0].id"]);
+  });
+
+  it("[claim:options] the timeline draws in the zone the times were read in, given or the runtime's (X12)", () => {
+    // Without a zone, "2026-03-02" is read as local midnight, as vis-timeline
+    // reads it; the config said nothing, so the timeline drew it in UTC — at
+    // 23:00 on the 1st in Budapest, off its day on the axis.
+    const items = [{ id: 1, content: "x", start: "2026-03-02", end: "2026-03-03" }];
+    const runtime = new Intl.DateTimeFormat().resolvedOptions().timeZone;
+    expect(fromVis(items, null, {}).config.timeZone).toBe(runtime);
+    const given = fromVis(items, null, {}, { timeZone: "Asia/Kolkata" }).config;
+    expect(given.timeZone).toBe("Asia/Kolkata");
+    // Midnight in the zone the config names.
+    const wall = new Intl.DateTimeFormat("en-GB", { timeZone: given.timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+    expect(wall.format(given.items[0]?.start as number)).toBe("00:00");
   });
 
   it("[claim:negative-control] a reader that takes date-only strings as UTC disagrees with vis-timeline on the examples", () => {

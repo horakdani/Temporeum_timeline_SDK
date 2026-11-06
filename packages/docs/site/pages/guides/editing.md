@@ -35,7 +35,7 @@ undoButton.addEventListener("click", () => {
   },
 ```
 
-- `snapMs` snaps starts and ends to a multiple of the step.
+- `snapMs` snaps starts and ends to a multiple of the step. A key press (Alt+arrow moves, Shift+arrow the end, Shift+Alt+arrow the start) moves one step of it, or ten pixels' worth of time without one; an item known to the day (`granularity`) moves at least a day.
 - `crossLane` lets a drag carry an item into another lane; off by default.
 - `canMove(item, next)` is asked before each step of a move or a resize; returning `false` holds the item where it was. It is asked for keyboard moves too.
 - `multiSelect` lets the user select several items; a move of one of them moves the selection.

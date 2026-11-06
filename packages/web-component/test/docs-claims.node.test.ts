@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 
 import { describe, expect, it } from "vitest";
@@ -160,5 +160,66 @@ describe("the UMD file beside the Light claim (R58)", () => {
     const ratio = gzipSync(readFileSync(umd), { level: 9 }).length / 1000 / page;
     expect(ratio).toBeGreaterThan(1.6);
     expect(ratio).toBeLessThan(2);
+  });
+});
+
+describe("what the docs say an export without its plugin does (X2, D22)", () => {
+  // `exportPng`, `exportPdf` and `print` return a Promise and never throw
+  // synchronously: a README that says they "throw" leads to a try/catch that
+  // leaves the rejection unhandled.
+  const pages = [
+    "../README.md",
+    "../../../README.md",
+    "../../core/README.md",
+    ...readdirSync(new URL("../../docs/site/pages/guides/", import.meta.url)).filter((name) => name.endsWith(".md")).map((name) => `../../docs/site/pages/guides/${name}`),
+    "../../docs/site/pages/reference/api.md",
+  ];
+  it.each(pages)("%s never says the Promise exports throw", (page) => {
+    const sentences = source(page).replace(/\s+/g, " ").split(/(?<=[.;:])\s/);
+    const wrong = sentences.filter((sentence) => /`(?:exportPng|exportPdf|print)`/.test(sentence) && /\bthrows?\b/.test(sentence) && !/\breject/.test(sentence));
+    expect(wrong).toEqual([]);
+  });
+});
+
+describe("the conformance report judges the library, not the demo around it (X3)", () => {
+  // The date prompt for `g` is the host's UI (the library only emits
+  // `jumpRequest`); a row that credits the library with it describes the demo.
+  const report = JSON.parse(source("../../docs/site/conformance/wcag22.json")) as { criteria: { id: string; status: string; remarks: string }[] };
+  it("says the date prompt is the host's wherever a row names it", () => {
+    const rows = report.criteria.filter((row) => /date prompt/i.test(row.remarks));
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.filter((row) => !/the host's/.test(row.remarks)).map((row) => row.id)).toEqual([]);
+  });
+  it("rates the prompt's own label and error message not applicable", () => {
+    const status = new Map(report.criteria.map((row) => [row.id, row.status]));
+    expect([status.get("3.3.2"), status.get("3.3.3")]).toEqual(["not-applicable", "not-applicable"]);
+  });
+  it("counts in the accessibility guide as many 'Partially supports' rows as the report has", () => {
+    const words = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight"];
+    const partial = report.criteria.filter((row) => row.status === "partially-supports").length;
+    const guide = source("../../docs/site/pages/guides/accessibility.md");
+    const said = /The first (\w+) are the report's "Partially supports" rows/.exec(guide)?.[1];
+    expect(said).toBe(words[partial]);
+  });
+});
+
+describe("which attributes have a property as their pair (X10)", () => {
+  // api.md said every attribute had one of the listed properties as its pair;
+  // `aria-label`, `aria-labelledby` and `nonce` have none of them.
+  it("pairs every observed attribute with a listed property, or names it as an exception", () => {
+    const page = source("../../docs/site/pages/reference/api.md");
+    const listed = new Set([...(/On the element, [^\n]*/.exec(page)?.[0] ?? "").matchAll(/`element\.(\w+)`|`(\w+)`/g)].map((m) => m[1] ?? m[2]));
+    const sentence = /^[^\n]*attribute of the element[^\n]*/m.exec(page)?.[0] ?? "";
+    expect(sentence).not.toBe("");
+    const attributes = /OBSERVED_ATTRIBUTES = Object\.freeze\(\[([^\]]*)\]/.exec(source("../src/element.ts"))?.[1] ?? "";
+    const names = [...attributes.matchAll(/"([\w-]+)"/g)].map((m) => m[1] ?? "");
+    expect(names.length).toBeGreaterThan(10);
+    const camel = (name: string): string => name.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
+    const paired = (name: string): boolean => listed.has(camel(name)) || ((name === "start" || name === "end") && listed.has("domain"));
+    const unpaired = names.filter((name) => !paired(name));
+    expect(unpaired.filter((name) => !sentence.includes(`\`${name}\``))).toEqual([]);
+    // The element reads `nonce` too, without observing it.
+    expect(sentence).toMatch(/`nonce`/);
+    expect(sentence).not.toMatch(/^Every attribute of the element has/);
   });
 });

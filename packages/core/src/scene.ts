@@ -91,7 +91,9 @@ export interface SvgStringOptions {
   readonly indent?: string;
 }
 
-function serialize(node: SceneElement, options: SvgStringOptions, depth: number): string {
+// In an HTML subtree (a `foreignObject`'s content), markup set as HTML is
+// parsed as HTML, where `<div/>` opens a div that swallows what follows (X14).
+function serialize(node: SceneElement, options: SvgStringOptions, depth: number, html = node.attrs?.xmlns === "http://www.w3.org/1999/xhtml"): string {
   const pretty = options.pretty === true;
   const pad = pretty ? (options.indent ?? "  ").repeat(depth) : "";
   const nl = pretty ? "\n" : "";
@@ -99,16 +101,14 @@ function serialize(node: SceneElement, options: SvgStringOptions, depth: number)
   const children = node.children ?? [];
   const hasText = node.text !== undefined && node.text !== "";
 
-  if (!hasText && children.length === 0) {
-    return `${open}/>`;
+  if (children.length === 0) {
+    // Text and children on one line would need mixed-content rules nobody
+    // benefits from; text-only elements stay on one line, which keeps `<title>`
+    // and `<text>` readable in a fixture. An empty one closes itself, but not
+    // in HTML, where only a void `<br>` may.
+    return hasText || (html && node.tag !== "br") ? `${open}>${escapeText(node.text ?? "")}</${node.tag}>` : `${open}/>`;
   }
-  // Text and children on one line would need mixed-content rules nobody
-  // benefits from; text-only elements stay on one line, which keeps `<title>`
-  // and `<text>` readable in a fixture.
-  if (hasText && children.length === 0) {
-    return `${open}>${escapeText(node.text ?? "")}</${node.tag}>`;
-  }
-  const body = children.map((child) => serialize(child, options, depth + 1)).join(nl);
+  const body = children.map((child) => serialize(child, options, depth + 1, html || undefined)).join(nl);
   const childPad = pretty ? `${pad}${options.indent ?? "  "}` : "";
   const text = hasText ? `${childPad}${escapeText(node.text ?? "")}${nl}` : "";
   return `${open}>${nl}${text}${body}${nl}${pad}</${node.tag}>`;

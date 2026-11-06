@@ -86,7 +86,7 @@ export interface VisConversion<T = VisItem> {
 
 /** Options of the conversion. */
 export interface FromVisOptions {
-  /** The zone times without an offset are read in. The runtime's own, as in vis-timeline. */
+  /** The zone times without an offset are read in, and the converted timeline draws in (`config.timeZone`). The runtime's own, as in vis-timeline. */
   readonly timeZone?: string;
 }
 
@@ -125,7 +125,8 @@ function withoutBlocks(text: string, tag: string): string {
 export function visText(content: VisItem["content"] | VisGroup["content"]): string {
   if (content === null || content === undefined) return "";
   if (typeof content !== "string") return String(content.textContent ?? "").trim();
-  if (!MARKUP.test(content)) return content;
+  // Content without a tag is HTML in vis-timeline too: its references are read (X13).
+  if (!MARKUP.test(content)) return content.includes("&") ? decodeEntities(content) : content;
   return decodeEntities(
     withoutBlocks(withoutBlocks(content, "script"), "style")
       .replace(/<br\s*\/?>/gi, " ")
@@ -244,11 +245,13 @@ export function fromVis<T extends VisItem = VisItem>(
   const timeZone = conversion.timeZone ?? runtimeTimeZone();
   const absent = (value: unknown): value is null | undefined => value === undefined || value === null;
   // A time vis-timeline cannot read either is `null`, warned about with
-  // what happens instead: never a NaN that would stop the whole timeline.
+  // what happens instead: never a NaN or an out-of-range time that would
+  // stop the whole timeline.
   const time = (value: unknown, where: string, instead: string): TimeMs | null | undefined => {
     const t = parseVisTime(value as VisTime, { timeZone });
     if (t === null || t === undefined) return undefined;
-    if (!Number.isNaN(t)) return t;
+    // Inside the range a Date holds; NaN, Infinity and 1e17 are not (X28).
+    if (Math.abs(t) <= 8.64e15) return t;
     warn(where, `${JSON.stringify(value)} is not a time vis-timeline reads either; ${instead}.`);
     return null;
   };
@@ -410,7 +413,10 @@ export function fromVis<T extends VisItem = VisItem>(
   } else if (options.multiselect === true) config.editing = { multiSelect: true };
   if (options.rtl === true) config.direction = "rtl";
   if (typeof options.locale === "string") config.locale = options.locale;
-  if (conversion.timeZone !== undefined) config.timeZone = conversion.timeZone;
+  // The zone the times were read in, so the axis and the day lines agree with
+  // them: without it a timeline draws in UTC, and a date-only string read as
+  // local midnight sat off its day (X12).
+  config.timeZone = timeZone;
   if (Array.isArray(options.hiddenDates) || (typeof options.hiddenDates === "object" && options.hiddenDates !== null)) {
     const list = (Array.isArray(options.hiddenDates) ? options.hiddenDates : [options.hiddenDates]) as readonly Record<string, unknown>[];
     const hiddenDates: Record<string, unknown>[] = [];

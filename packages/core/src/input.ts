@@ -29,6 +29,7 @@
  *    resolved to an action (`keyboard.ts`) and the action calls the twins.
  */
 
+import { addCalendar } from "./calendar.js";
 import { editCommand, invertPatch, modeForPart, movePatch, resizePatch } from "./editing.js";
 import type { EditHit, EditMode, HitTester } from "./editing.js";
 import { unprojectPoint } from "./geometry.js";
@@ -302,7 +303,7 @@ export interface EditingInputOptions<T = unknown> {
   readonly longPressMs?: number;
   /** Grid the moved edge snaps to, in milliseconds. */
   readonly snapMs?: number;
-  /** Where the snap grid is anchored. The epoch by default. */
+  /** Where the snap grid is anchored. By default on the zone's midnights and whole hours: an hour grid is on hh:00 in Kolkata too. */
   readonly snapOrigin?: TimeMs;
   /** The zone a grid of whole days lies in, and an item known to the day is drawn in. UTC by default. */
   readonly timeZone?: string;
@@ -332,7 +333,9 @@ export interface KeyboardInputOptions {
   readonly bindings?: readonly KeyBinding[];
   /**
    * How far one key press moves an item or an edge. The snap grid when there
-   * is one, otherwise ten pixels' worth of time.
+   * is one, otherwise ten pixels' worth of time; never less than the snap
+   * grid, and an item known to the day (or week, month…) moves at least one
+   * of its units, so every press changes what is drawn.
    */
   readonly stepMs?: number;
   /**
@@ -842,10 +845,7 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
     if (mode === "edit-mode") {
       return { trigger: "pointer", immediate: true };
     }
-    if (mode === "long-press") {
-      return { trigger: "long-press", immediate: false };
-    }
-    return kind === "touch"
+    return mode === "long-press" || kind === "touch"
       ? { trigger: "long-press", immediate: false }
       : { trigger: "pointer", immediate: true };
   }
@@ -1006,10 +1006,8 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
     }
     const mode = modeForPart(pending.hit.part);
     const hits = hitsFor(pending.hit, mode);
-    if (pending.dueAt !== undefined) {
-      into.push({ type: "schedule", at: null, reason: "long-press" });
-    }
-    armed = undefined;
+    // `pending` is the armed edit: its hold, if it has one, is off.
+    disarm(into);
     const next: EditSession<T> = {
       pointerId: pending.pointerId,
       mode,
@@ -1349,11 +1347,15 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
     if (editing.enabled !== true || hit === undefined || focusedEntry(navigator)?.count !== undefined) {
       return false;
     }
-    const later = action === "moveLater" || action === "endLater" || action === "startLater";
-    const snap = editing.snapMs;
+    const sign = action === "moveLater" || action === "endLater" || action === "startLater" ? 1 : -1;
+    // Never smaller than the grid, which would round it back (X18); an item
+    // known to the day steps at least a day from the edge it moves, where
+    // 10 px of a week's view rounded back to its midnight (X16).
+    const unit = hit.item.granularity;
+    const edge = action[0] === "e" ? hit.span.end : hit.span.start;
     const step =
-      (keyboard.stepMs ?? (snap !== undefined && snap > 0 ? snap : (spanOf(domain) / mainSize) * KEY_STEP_PX)) *
-      (later ? 1 : -1);
+      sign *
+      (Math.max(keyboard.stepMs ?? 0, editing.snapMs ?? 0, unit ? sign * (addCalendar(edge, unit, sign, editing.timeZone) - edge) : 0) || (spanOf(domain) / mainSize) * KEY_STEP_PX);
     const ids =
       editing.multiSelect === true && selectedIds.includes(hit.item.id)
         ? [hit.item.id, ...selectedIds.filter((id) => id !== hit.item.id)]

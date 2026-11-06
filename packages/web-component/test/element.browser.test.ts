@@ -109,6 +109,83 @@ describe("<temporeum-timeline>", () => {
     expect(nodeOf(el, "y")).not.toBeNull();
   });
 
+  it("waits for the parser to reach its JSON child when it is defined first, as from a script in the head (X15)", async () => {
+    // A page still loading: the element is connected before the parser
+    // appends its children, as an element defined by a `<script>` in the head is.
+    const state = Object.getOwnPropertyDescriptor(Document.prototype, "readyState");
+    Object.defineProperty(document, "readyState", { configurable: true, get: () => "loading" });
+    const el = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
+    el.style.width = "600px";
+    try {
+      document.body.append(el);
+      expect(el.timeline).toBeUndefined();
+      const json = document.createElement("script");
+      json.type = "application/json";
+      json.textContent = JSON.stringify({ items: [{ id: "x", start: "2026-03-01", end: "2026-03-05", label: "X" }], domain: ["2026-02-25", "2026-03-15"] });
+      el.append(json);
+    } finally {
+      delete (document as { readyState?: unknown }).readyState;
+      expect(Object.getOwnPropertyDescriptor(Document.prototype, "readyState")).toEqual(state);
+    }
+    document.dispatchEvent(new Event("DOMContentLoaded"));
+    try {
+      await drawn(el);
+      expect(nodeOf(el, "x")).not.toBeNull();
+      expect(el.timeline?.getSnapshot().domain).toEqual([Date.parse("2026-02-25"), Date.parse("2026-03-15")]);
+    } finally {
+      el.remove();
+    }
+  });
+
+  it("reads the JSON child's lanes, groups and selection back through its properties, as it does its items (X23)", async () => {
+    const host = document.createElement("div");
+    host.innerHTML = `<temporeum-timeline style="width:600px" height="200"><script type="application/json">${JSON.stringify({
+      items: [{ id: "x", start: "2026-03-01", end: "2026-03-05", label: "X", laneId: "a" }],
+      lanes: [{ id: "a", label: "A" }],
+      selectedIds: ["x"],
+      resourceOptions: { loadLane: false },
+    })}</script></temporeum-timeline>`;
+    const el = host.firstElementChild as TemporeumTimelineElement;
+    // Before it is connected: what the JSON child says, not nothing.
+    expect(el.lanes).toEqual([{ id: "a", label: "A" }]);
+    expect(el.selectedIds).toEqual(["x"]);
+    expect(el.resourceOptions).toEqual({ loadLane: false });
+    el.config = { hooks: { describeItem: () => "y" } };
+    expect(typeof el.hooks?.describeItem).toBe("function");
+    document.body.append(host);
+    await drawn(el);
+    expect(el.lanes).toEqual([{ id: "a", label: "A" }]);
+    host.remove();
+  });
+
+  it("hands the range back to the start and end attributes when domain is set to undefined (X24)", async () => {
+    const el = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
+    el.style.width = "600px";
+    el.setAttribute("start", "2026-01-01");
+    el.setAttribute("end", "2026-02-01");
+    el.items = items;
+    document.body.append(el);
+    await drawn(el);
+    el.domain = [Date.UTC(2026, 5, 1), Date.UTC(2026, 6, 1)];
+    el.timeline?.flush();
+    expect(el.timeline?.getSnapshot().domain).toEqual([Date.UTC(2026, 5, 1), Date.UTC(2026, 6, 1)]);
+    el.domain = undefined;
+    el.timeline?.flush();
+    // It stored `domain: undefined` over the attributes before: config said undefined, and a re-connect started at the default range.
+    expect(el.config.domain).toEqual([Date.parse("2026-01-01"), Date.parse("2026-02-01")]);
+    expect(el.timeline?.getSnapshot().domain).toEqual([Date.parse("2026-01-01"), Date.parse("2026-02-01")]);
+    el.remove();
+  });
+
+  it("takes undefined for editable, as for multiSelect and snapMs, and hands it back to the attribute (X25)", async () => {
+    const el = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
+    el.setAttribute("editable", "");
+    el.editable = false;
+    expect(el.editable).toBe(false);
+    el.editable = undefined; // a type error before: `editable` took only a boolean
+    expect(el.editable).toBe(true);
+  });
+
   it("reads every date of a JSON child as text, and leaves out a decoration it cannot draw (V2)", async () => {
     const host = document.createElement("div");
     host.innerHTML = `<temporeum-timeline style="width:600px" height="200"><script type="application/json">${JSON.stringify({

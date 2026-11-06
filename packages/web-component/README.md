@@ -174,8 +174,8 @@ registered throws a `TypeError` where the timeline is created, updated
 (`update`, `setItems`, `addItems` with such an item) or server-rendered, and
 the instance is left as it was — `The tooltip option needs the tools plugin:
 import { toolsPlugin } from "@temporeum/timeline-element/tools" and call
-registerPlugin(toolsPlugin) before the timeline draws`; `exportPng`,
-`exportPdf` and `print` throw the same way when called. The items of a
+registerPlugin(toolsPlugin) before the timeline draws`; the Promises of
+`exportPng`, `exportPdf` and `print` reject the same way when called. The items of a
 fetched source are checked when they arrive. The `<script>`-tag build
 registers every plugin on load.
 
@@ -193,7 +193,7 @@ in English, left to right, on the Gregorian axis. For that it loads the
 core's main entry point, `/dom`, `/live` and `/words`, and not the core's
 `/tools`, `/groups`, `/items` or `/intl`. Measured the way the field benchmark
 measures (minified, gzipped, per file), a plain timeline's page loads
-55.81 kB of JavaScript, and a Gantt chart's (with `/gantt`) 63.66 kB. An
+58.37 kB of JavaScript, and a Gantt chart's (with `/gantt`) 66.29 kB. An
 import map needs `@temporeum/timeline-core/live` and `/words`, and the
 subpaths of the plugins it uses.
 

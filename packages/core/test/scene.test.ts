@@ -8,6 +8,24 @@ describe("renderToSvgString", () => {
     expect(renderToSvgString({ tag: "rect", attrs: { x: 1, y: 2 } })).toBe('<rect x="1" y="2"/>');
   });
 
+  it("closes an empty HTML element inside a foreignObject with an end tag, but a void one with a slash (X14)", () => {
+    // Markup set as HTML (every adapter's SSR) parses a foreignObject's content
+    // as HTML, where `<div/>` is an open div: what follows went into it.
+    const xhtml = "http://www.w3.org/1999/xhtml";
+    const svg = renderToSvgString({
+      tag: "svg",
+      children: [
+        { tag: "foreignObject", children: [{ tag: "div", attrs: { xmlns: xhtml, "data-tl-slot": "a" } }] },
+        { tag: "foreignObject", children: [{ tag: "div", attrs: { xmlns: xhtml }, children: [{ tag: "span", attrs: { class: "dot" } }, { tag: "br" }, { tag: "b", text: "A" }] }] },
+        { tag: "rect" },
+      ],
+    });
+    expect(svg).toBe(
+      '<svg><foreignObject><div xmlns="http://www.w3.org/1999/xhtml" data-tl-slot="a"></div></foreignObject>' +
+        '<foreignObject><div xmlns="http://www.w3.org/1999/xhtml"><span class="dot"></span><br/><b>A</b></div></foreignObject><rect/></svg>',
+    );
+  });
+
   it("keeps attributes in insertion order, so a fixture is stable", () => {
     const first = renderToSvgString({ tag: "g", attrs: { b: 1, a: 2 } });
     expect(first).toBe('<g b="1" a="2"/>');

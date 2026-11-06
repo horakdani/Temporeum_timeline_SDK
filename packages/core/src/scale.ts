@@ -110,13 +110,9 @@ export function createTimeScale(domain: Domain, mainSize: number, warp?: TimeWar
 
 const same = (time: number): number => time;
 
-function shownDomain(domain: Domain, warp: TimeWarp): Domain {
-  return [warp.toShown(domain[0]), warp.toShown(domain[1])];
-}
-
 /** A domain computed in shown time, back in real time. */
 function viaShown(domain: Domain, warp: TimeWarp, step: (domain: Domain) => Domain): Domain {
-  const next = step(shownDomain(domain, warp));
+  const next = step([warp.toShown(domain[0]), warp.toShown(domain[1])]);
   return [warp.toReal(next[0]), warp.toReal(next[1])];
 }
 
@@ -155,8 +151,8 @@ export function zoomDomainAt(
   if (!Number.isFinite(focusMain)) {
     throw new RangeError(`Zoom focus must be a finite pixel offset, got ${String(focusMain)}`);
   }
-  const scale = createTimeScale(domain, mainSize);
-  const anchorTime = scale.toTime(focusMain);
+  // The instant under the focus, as `createTimeScale(domain, mainSize).toTime` has it.
+  const anchorTime = domain[0] + focusMain * (spanOf(domain) / mainSize);
   const span = spanOf(domain) / factor;
   // The anchor keeps its pixel offset, so it keeps its fraction of the span.
   return withSpan(anchorTime - span * (focusMain / mainSize), span);

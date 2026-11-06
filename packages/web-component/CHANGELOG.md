@@ -61,4 +61,4 @@ A plain timeline downloads only what it uses. The rest is a plugin on an entry p
 
 ### Packaging
 
-- ESM and CommonJS builds, the `/define` subpath, and a self-contained, minified UMD file for a `<script>` tag. MIT, published with npm provenance.
+- ESM and CommonJS builds, the `/define` subpath, and a self-contained, minified UMD file for a `<script>` tag. MIT. Published with npm provenance, unless 1.0.0 has to be created by hand first ([stability](https://horakdani.github.io/Temporeum_timeline_SDK/stability.html)).

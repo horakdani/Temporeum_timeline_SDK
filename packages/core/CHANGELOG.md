@@ -58,4 +58,4 @@ The engine keeps a budget of 31.6 kB minified and gzipped. Everything else is on
 ### Packaging
 
 - ESM, CommonJS and UMD builds — the UMD files, for a `<script>` tag, minified; code shared between entry points ships once (`dist/chunks/`). CommonJS types (`.d.cts`) and `typesVersions` for `moduleResolution: "node10"`.
-- Zero runtime dependencies. MIT, published with npm provenance.
+- Zero runtime dependencies. MIT. Published with npm provenance, unless 1.0.0 has to be created by hand first ([stability](https://horakdani.github.io/Temporeum_timeline_SDK/stability.html)).

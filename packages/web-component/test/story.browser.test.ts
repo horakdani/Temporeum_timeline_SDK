@@ -211,6 +211,9 @@ describe("the story panel", () => {
     expect(frame?.title).toBe("The launch, filmed");
     // Sandboxed: the player plays and opens its own links, but cannot navigate the page or reach it.
     expect(frame?.sandbox.value.split(" ").sort()).toEqual(["allow-popups", "allow-popups-to-escape-sandbox", "allow-presentation", "allow-same-origin", "allow-scripts"]);
+    // Full screen through `allow` alone: with `allowfullscreen` beside it the browser warns on every player (X29).
+    expect(frame?.allow.split("; ")).toContain("fullscreen");
+    expect(frame?.hasAttribute("allowfullscreen")).toBe(false);
     expect(document.activeElement).toBe(frame);
     // Another item moves: the slide stays as drawn, the player with it.
     timeline.updateItems([{ id: "splash", start: Date.UTC(1969, 6, 25) }]);

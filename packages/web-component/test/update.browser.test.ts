@@ -353,3 +353,38 @@ describe("the host's accessible name and focus", () => {
     expect(inner?.getAttribute("tabindex")).toBe("0");
   });
 });
+
+describe("update({ height: undefined }) goes back to the room, or the default (X8)", () => {
+  // A container sized by its content measures its own drawing: after an
+  // explicit height it used to keep that height for good.
+  async function sized(css: string): Promise<{ element: HTMLDivElement; timeline: Timeline; height: () => string | null }> {
+    const element = document.createElement("div");
+    element.style.width = "800px";
+    element.style.height = css;
+    element.style.padding = "4px";
+    document.body.append(element);
+    const timeline = createTimeline(element, { items, domain });
+    await vi.waitFor(() => expect(timeline.result).toBeDefined());
+    return { element, timeline, height: () => element.querySelector("svg")?.getAttribute("height") ?? null };
+  }
+
+  it("without a CSS height: 300, 500, then 300 again", async () => {
+    const { timeline, height, element } = await sized("");
+    await vi.waitFor(() => expect(height()).toBe("300"));
+    timeline.update({ height: 500 });
+    await vi.waitFor(() => expect(height()).toBe("500"));
+    timeline.update({ height: undefined });
+    await vi.waitFor(() => expect(height()).toBe("300"));
+    expect(element.style.contain).toBe("");
+  });
+
+  it("with a CSS height: the container's room, also when it equals the explicit height", async () => {
+    const { timeline, height } = await sized("240px");
+    await vi.waitFor(() => expect(height()).toBe("240"));
+    timeline.update({ height: 240 });
+    timeline.update({ height: 500 });
+    await vi.waitFor(() => expect(height()).toBe("500"));
+    timeline.update({ height: undefined });
+    await vi.waitFor(() => expect(height()).toBe("240"));
+  });
+});

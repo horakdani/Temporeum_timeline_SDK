@@ -46,6 +46,25 @@ describe("snapTime", () => {
     expect(snapTime(noon + 1000, DAY, noon)).toBe(noon);
     expect(snapTime(noon + DAY * 0.7, DAY, noon)).toBe(noon + DAY);
   });
+
+  it("puts a grid finer than a day on the zone's whole hours, where the axis ticks are, in a half-hour zone too (X17)", () => {
+    const HOUR = 3_600_000;
+    const wall = (time: number, timeZone: string): string => new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(time);
+    const at = Date.UTC(2026, 5, 10, 6, 20); // 11:50 in Kolkata, 12:05 in Kathmandu, 08:20 in Budapest
+    expect(wall(snapTime(at, HOUR, undefined, "Asia/Kolkata"), "Asia/Kolkata")).toBe("12:00");
+    expect(wall(snapTime(at, HOUR, undefined, "Asia/Kathmandu"), "Asia/Kathmandu")).toBe("12:00");
+    expect(wall(snapTime(at, HOUR, undefined, "America/St_Johns"), "America/St_Johns")).toBe("04:00");
+    expect(wall(snapTime(at, 15 * 60_000, undefined, "Asia/Kathmandu"), "Asia/Kathmandu")).toBe("12:00");
+    // Two-hour steps on the zone's even hours, winter and summer alike.
+    expect(wall(snapTime(at, 2 * HOUR, undefined, "Europe/Budapest"), "Europe/Budapest")).toBe("08:00");
+    expect(wall(snapTime(Date.UTC(2026, 0, 10, 7, 20), 2 * HOUR, undefined, "Europe/Budapest"), "Europe/Budapest")).toBe("08:00");
+    // An hour is still an hour on the night the clocks go back: the repeated 02:00 is its own slot.
+    const back = Date.UTC(2026, 9, 25, 1, 10); // 02:10 CET, the second 02:00
+    expect(snapTime(back, HOUR, undefined, "Europe/Budapest")).toBe(Date.UTC(2026, 9, 25, 1));
+    expect(snapTime(back - HOUR, HOUR, undefined, "Europe/Budapest")).toBe(Date.UTC(2026, 9, 25, 0));
+    // An origin still sets the phase.
+    expect(wall(snapTime(at, HOUR, Date.UTC(2026, 0, 1), "Asia/Kolkata"), "Asia/Kolkata")).toBe("11:30"); // UTC midnight is 05:30 there
+  });
 });
 
 describe("modeForPart", () => {

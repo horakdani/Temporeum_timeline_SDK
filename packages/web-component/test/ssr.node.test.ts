@@ -183,6 +183,17 @@ describe("serializeConfig and renderTimelineHtml", () => {
     expect(JSON.parse(json)).toEqual({ ariaLabel: `a${String.fromCharCode(0x2028)}b${String.fromCharCode(0x2029)}c` });
   });
 
+  it("joins a host's style to the height in linear time, whatever its spaces (X27)", () => {
+    // `/;?\s*$/` tried every run of spaces in the style: 40 000 of them took
+    // most of a second, 200 000 about twenty.
+    const style = `color: red;${" ".repeat(200_000)}x`;
+    const at = performance.now();
+    const html = renderTimelineHtml({ items, lanes, height: 320 }, { attributes: { style } });
+    expect(performance.now() - at).toBeLessThan(1_000);
+    expect(html).toContain(`${" ".repeat(10)}x;--tl-height:320px"`);
+    expect(renderTimelineHtml({ items, height: 320 }, { attributes: { style: "margin: 0 ;  " } })).toContain('style="margin: 0 ;--tl-height:320px"');
+  });
+
   it("puts the drawing in a declarative shadow root and the state beside it", () => {
     const html = renderTimelineHtml({ items, lanes, height: 320 }, { attributes: { id: "plan", style: "margin: 0;" } });
     expect(html.startsWith('<temporeum-timeline id="plan" style="margin: 0;--tl-height:320px">')).toBe(true);

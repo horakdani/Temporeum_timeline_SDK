@@ -146,6 +146,15 @@ describe("rrule: daylight saving", () => {
     expect(got.map((t) => formatWall(wallOf(t, zone)))).toEqual(["20260308T010000", "20260308T030000", "20260308T040000", "20260308T050000"]);
   });
 
+  it("[claim:dst] an hourly rule has no occurrence in the repeated hour, and the calendar guide says so (X20)", () => {
+    const zone = "America/New_York";
+    // 2 November 2025: 1:00 EDT, then 2:00 EST — two hours of elapsed time, no 1:00 EST.
+    const got = occurrences({ start: local("20251102T000000", zone), timeZone: zone, rule: "FREQ=HOURLY;COUNT=4" });
+    expect(got.map(utcStamp)).toEqual(["20251102T040000Z", "20251102T050000Z", "20251102T070000Z", "20251102T080000Z"]);
+    const guide = readFileSync(join(here, "../../../docs/site/pages/guides/calendar.md"), "utf8");
+    expect(guide).toMatch(/`HOURLY` or `MINUTELY` rule steps through the wall clock too, and has no occurrence in the repeated hour/);
+  });
+
   it("[claim:dst] a half-hour change (Lord Howe) keeps the wall clock", () => {
     const zone = "Australia/Lord_Howe";
     const got = occurrences({ start: local("20261003T120000", zone), timeZone: zone, rule: "FREQ=DAILY;COUNT=3" });

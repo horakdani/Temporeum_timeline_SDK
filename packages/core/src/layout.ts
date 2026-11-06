@@ -23,6 +23,7 @@
  */
 
 import { addCalendar, DEFAULT_TIME_ZONE, startOf } from "./calendar.js";
+import { firstClash } from "./labels.js";
 import type { TimeScale } from "./scale.js";
 import { toTimeMs } from "./time.js";
 import type { Item, Lane, MainCrossRect, PackMode, TimeMs } from "./types.js";
@@ -372,28 +373,9 @@ export function itemRect(placed: LayoutItem, scale: TimeScale): MainCrossRect {
 export function findSublaneOverlap(
   layout: Layout,
 ): { readonly a: LayoutItem; readonly b: LayoutItem } | undefined {
-  const byRow = new Map<number, LayoutItem[]>();
-  for (const placed of layout.items) {
-    for (let offset = 0; offset < placed.sublaneSpan; offset += 1) {
-      const row = placed.row + offset;
-      const bucket = byRow.get(row);
-      if (bucket === undefined) {
-        byRow.set(row, [placed]);
-      } else {
-        bucket.push(placed);
-      }
-    }
-  }
-  for (const bucket of byRow.values()) {
-    for (let i = 0; i < bucket.length; i += 1) {
-      for (let j = i + 1; j < bucket.length; j += 1) {
-        const a = bucket[i];
-        const b = bucket[j];
-        if (a !== undefined && b !== undefined && overlaps(a.span, b.span)) {
-          return { a, b };
-        }
-      }
-    }
-  }
-  return undefined;
+  return firstClash(
+    layout.items,
+    (placed) => Array.from({ length: placed.sublaneSpan }, (_, offset) => placed.row + offset),
+    (a, b) => overlaps(a.span, b.span),
+  );
 }

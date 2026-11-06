@@ -1796,6 +1796,17 @@ export function createTimeline<T = unknown>(
         if (key in next && sameValue(before[key], next[key])) (merged as Record<string, unknown>)[key] = before[key];
       }
       config = merged;
+      if (before.height !== undefined && config.height === undefined) {
+        // A container sized by its content measured the height it was told to
+        // draw. Without one it is the room again (or the default): measured
+        // with `contain: size`, which leaves the drawing out of it (X8).
+        const style = element.style;
+        const was = style.contain;
+        style.contain = "size";
+        const box = view_?.getComputedStyle(element);
+        measuredHeight = element.clientHeight - parseFloat(box?.paddingTop ?? "") - parseFloat(box?.paddingBottom ?? "");
+        style.contain = was;
+      }
       const changed = (key: keyof TimelineConfig<T>): boolean => key in next && config[key] !== before[key];
       if (typeof next.items === "function" && typeof before.items === "function") {
         // Another fetch function: what was loaded stays, the next fetch is the new one's.

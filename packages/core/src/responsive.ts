@@ -108,12 +108,9 @@ export function resolveOrientation(
     return previous ?? "horizontal";
   }
   const breakpoint = options.breakpoint ?? DEFAULT_BREAKPOINT;
-  if (previous === "horizontal") {
-    return width >= breakpoint - (options.hysteresis ?? ORIENTATION_HYSTERESIS)
-      ? "horizontal"
-      : "vertical";
-  }
-  return width >= breakpoint ? "horizontal" : "vertical";
+  return width >= breakpoint - (previous === "horizontal" ? (options.hysteresis ?? ORIENTATION_HYSTERESIS) : 0)
+    ? "horizontal"
+    : "vertical";
 }
 
 // ---------------------------------------------------------------------------
@@ -208,18 +205,16 @@ export function fitDensity<T>(input: DensityFitInput<T>): DensityFit {
     ...(input.packMode === undefined ? {} : { packMode: input.packMode }),
     ...(input.timeZone === undefined ? {} : { timeZone: input.timeZone }),
   });
+  const metricsOf = input.metrics ?? densityMetrics;
   const needs = {} as Record<Density, number>;
   for (const density of DENSITIES) {
-    const { rowSize, rowGap, laneGap, axisSize } = (input.metrics ?? densityMetrics)(density, input.orientation);
+    const { rowSize, rowGap, laneGap, axisSize } = metricsOf(density, input.orientation);
     let cross = -laneGap;
     for (const { sublaneCount, lane } of layout.lanes) {
       cross += Math.max(sublaneCount * rowSize + (sublaneCount - 1) * rowGap, lane.minCrossSize ?? 0) + laneGap;
     }
     needs[density] = axisSize + Math.max(cross, 0);
   }
-  // Spans are resolved the way the renderer draws them: a day-granular
-  // instant counts with the day it covers, not as a point.
-  const spans = layout.items.map((placed) => placed.span);
 
   if (!(mainSize > 0) || !(crossSize > 0)) {
     const kept = previous ?? "comfortable";
@@ -238,7 +233,9 @@ export function fitDensity<T>(input: DensityFitInput<T>): DensityFit {
   const end = toTimeMs(input.domain[1]);
   const pxPerMs = mainSize / (end - start);
   const lengths: number[] = [];
-  for (const span of spans) {
+  // Spans are resolved the way the renderer draws them: a day-granular
+  // instant counts with the day it covers, not as a point.
+  for (const { span } of layout.items) {
     const from = Math.max(span.start, start);
     const to = Math.min(span.end, end);
     if (to <= start || from >= end) {
@@ -254,18 +251,17 @@ export function fitDensity<T>(input: DensityFitInput<T>): DensityFit {
   } else {
     for (const density of DENSITIES) {
       // The host's metrics, as for the cross axis above.
-      const room = (input.metrics ?? densityMetrics)(density, input.orientation).autoMainRoom;
+      const room = metricsOf(density, input.orientation).autoMainRoom;
       // Coarser than what is shown has to clear the band; what is shown may
       // sag into it. A denser level is measured plainly: it is never the one
       // being held.
-      let factor = 1;
-      if (previous !== undefined) {
-        if (density === previous) {
-          factor = 1 - DENSITY_HYSTERESIS;
-        } else if (densityIndex(density) < densityIndex(previous)) {
-          factor = 1 + DENSITY_HYSTERESIS;
-        }
-      }
+      // Without a previous level its index is -1: every factor is 1.
+      const factor =
+        density === previous
+          ? 1 - DENSITY_HYSTERESIS
+          : densityIndex(density) < DENSITIES.indexOf(previous as Density)
+            ? 1 + DENSITY_HYSTERESIS
+            : 1;
       if (typical >= room * factor) {
         byMain = density;
         break;
@@ -380,19 +376,14 @@ export function placePopover(
   const centred = anchor.x + anchor.width / 2 - width / 2;
   const x = Math.min(Math.max(centred, margin), Math.max(margin, bounds.width - margin - width));
 
-  const roomBelow = bounds.height - margin - (anchor.y + anchor.height + gap);
-  const roomAbove = anchor.y - gap - margin;
-  let side: PopoverSide = roomBelow >= roomAbove ? "below" : "above";
-  if (height <= roomBelow) {
-    side = "below";
-  } else if (height <= roomAbove) {
-    side = "above";
-  }
-  const y =
-    side === "below"
-      ? anchor.y + anchor.height + gap
-      : Math.max(margin, anchor.y - gap - height);
-  return { x, y, width, height, side };
+  const below = anchor.y + anchor.height + gap;
+  const above = anchor.y - gap;
+  const roomBelow = bounds.height - margin - below;
+  const roomAbove = above - margin;
+  // Below if it fits, else above if that fits, else the roomier side.
+  return height <= roomBelow || (height > roomAbove && roomBelow >= roomAbove)
+    ? { x, y: below, width, height, side: "below" }
+    : { x, y: Math.max(margin, above - height), width, height, side: "above" };
 }
 
 // ---------------------------------------------------------------------------

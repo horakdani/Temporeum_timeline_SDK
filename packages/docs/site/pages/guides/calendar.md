@@ -28,7 +28,7 @@ Times are read the way the file writes them:
 
 The rules are RFC 5545's, in the library's own code — `FREQ` from `YEARLY` to `SECONDLY`, `INTERVAL`, `COUNT`, `UNTIL` and every `BY` part, `WKST` and `BYSETPOS`. `occurrences({ start, timeZone, rule }, { from, to })` gives the starts in a range; `parseRRule` and `formatRRule` read and write a rule's text.
 
-A rule is read on the wall clock of its zone, as a calendar is: a meeting at 9:30 is at 9:30 after the clocks change. A time the clocks skip is read with the offset before the gap (2:30 on the spring-forward night is 3:30), and a time that happens twice is the first of the two — both as the RFC says. Every example of the RFC, and several hundred vectors generated with an independent implementation (python-dateutil, across clock changes in nine zones), give exactly the same instants.
+A rule is read on the wall clock of its zone, as a calendar is: a meeting at 9:30 is at 9:30 after the clocks change. A time the clocks skip is read with the offset before the gap (2:30 on the spring-forward night is 3:30), and a time that happens twice is the first of the two — both as the RFC says. So an `HOURLY` or `MINUTELY` rule steps through the wall clock too, and has no occurrence in the repeated hour of the fall-back night: in New York on 2 November 2025, `FREQ=HOURLY` goes from 1:00 (the first) to 2:00, two hours of elapsed time apart. Every example of the RFC, and several hundred vectors generated with an independent implementation (python-dateutil, across clock changes in nine zones), give exactly the same instants.
 
 The start is always the first occurrence, and a rule with neither `COUNT` nor `UNTIL` repeats forever — so asking for its occurrences needs a range end or a `limit`.
 

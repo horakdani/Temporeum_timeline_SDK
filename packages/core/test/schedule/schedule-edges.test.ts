@@ -3,6 +3,8 @@
  * inputs it leaves out, and the options that change what slack means.
  */
 
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -195,5 +197,49 @@ describe("tasks with a granularity (R12)", () => {
     // B goes to the next working day after A, Monday the 9th, and ends on it — not before its start.
     expect(schedule.tasks.get("b")).toMatchObject({ start: nov(9), end: nov(9), moved: true });
     expect(scheduleCommand(items, schedule)?.after).toEqual([{ id: "b", start: nov(9), end: nov(9) }]);
+  });
+
+  it("leave a task nothing moves as written, when its instants are not the zone's midnights (X11)", () => {
+    // A form writes the day at the hour it was filled in; `new Date("2026-03-06")`
+    // is UTC midnight, 01:00 in Budapest. The drawn end of a task under a
+    // working calendar is the end of a shift, never the span's midnight, so
+    // the end was rewritten to the start of its day — before the start.
+    const at9 = Date.UTC(2026, 2, 6, 9);
+    const utcMidnight = Date.UTC(2026, 2, 6);
+    const cases = [
+      { items: [{ id: "a", start: at9, end: at9, granularity: "day" as const }], options: { calendar: {} } },
+      { items: [{ id: "a", start: utcMidnight, end: utcMidnight, granularity: "day" as const }], options: { timeZone: "Europe/Budapest", calendar: { timeZone: "Europe/Budapest" } } },
+      // Monday 2 – Wednesday 4 March, at 09:00, in an office week.
+      { items: [{ id: "a", start: Date.UTC(2026, 2, 2, 9), end: Date.UTC(2026, 2, 4, 9), granularity: "day" as const }], options: { calendar: { week: OFFICE_WEEK } } },
+    ];
+    for (const { items, options } of cases) {
+      const schedule = scheduleTasks(items, [], options);
+      const item = items[0] as (typeof items)[number];
+      expect(schedule.tasks.get("a")).toMatchObject({ start: item.start, end: item.end, moved: false });
+      expect(scheduleCommand(items, schedule)).toBeUndefined();
+    }
+  });
+
+  it("never write an end before the start of a moved task by the day (X11)", () => {
+    // B, written at 09:00 on the 2nd, follows A to Monday the 9th.
+    const nov = (date: number, hour = 0): number => Date.UTC(2026, 10, date, hour);
+    const items = [
+      { id: "a", start: nov(5, 9), end: nov(6, 9), granularity: "day" as const },
+      { id: "b", start: nov(2, 9), end: nov(2, 9), granularity: "day" as const },
+    ];
+    const schedule = scheduleTasks(items, [{ id: "ab", from: "a", to: "b", type: "FS" }], { calendar: { week: OFFICE_WEEK } });
+    expect(schedule.tasks.get("a")).toMatchObject({ start: nov(5, 9), end: nov(6, 9), moved: false });
+    const b = schedule.tasks.get("b");
+    expect(b).toMatchObject({ start: nov(9), end: nov(9), moved: true });
+    for (const task of schedule.tasks.values()) expect(task.end ?? task.start).toBeGreaterThanOrEqual(task.start);
+  });
+});
+
+describe("the options' documentation (X21)", () => {
+  it("writes its example times as a TimeInput, not as a string the scheduler throws on", () => {
+    const source = readFileSync(new URL("../../src/schedule/index.ts", import.meta.url), "utf8");
+    const docs = [...source.matchAll(/\/\*\*[\s\S]*?\*\//g)].map((match) => match[0]);
+    expect(docs.filter((doc) => /\b(?:start|end): "/.test(doc))).toEqual([]);
+    expect(() => scheduleTasks([{ id: "a", start: Date.UTC(2026, 2, 2), end: new Date("2026-03-03"), granularity: "day" }], [])).not.toThrow();
   });
 });

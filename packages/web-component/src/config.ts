@@ -68,9 +68,10 @@ export interface TimelineEditingOptions<T = unknown> extends EditingOptions<T> {
   /** Let a move change the item's lane. Off by default. */
   readonly crossLane?: boolean | undefined;
   /**
-   * Where the snap grid is anchored. The epoch by default. A grid of whole
-   * days lies on the timeline's `timeZone` midnights all year, and the origin
-   * is read as its wall-clock time there.
+   * Where the snap grid is anchored. By default a grid of whole days lies on
+   * the timeline's `timeZone` midnights all year, and a finer one on its whole
+   * hours (an hour grid is on hh:00 in Kolkata too); an origin is read as its
+   * wall-clock time there.
    */
   readonly snapOrigin?: TimeInput | undefined;
   /** Smallest duration a resize may squash an item to, in milliseconds. */

@@ -102,10 +102,10 @@ import { cpus, platform, release, totalmem, arch, version as osVersion } from "n
 import { dirname, extname, join, resolve, sep } from "node:path";
 import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
-import { gzipSync } from "node:zlib";
 
 import { chromium } from "@playwright/test";
-import { minifySync } from "rolldown/utils";
+
+import { gzipBytes, oxcMinify } from "./sdk_page_bytes.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const docsDir = join(repoRoot, "packages", "docs");
@@ -476,12 +476,9 @@ const EXPECTED_SCRIPTS = {
   "vis-timeline": ["/vis/vis-timeline/standalone/umd/vis-timeline-graph2d.min.js"],
 };
 const kB = (bytes) => bytes / 1000;
-const gz = (text) => gzipSync(Buffer.from(text), { level: 9 }).length;
-const oxc = (file, code) => {
-  const out = minifySync(file, code, { compress: true, mangle: true });
-  if (out.errors?.length) throw new Error(`minify ${file}: ${String(out.errors[0]?.message)}`);
-  return out.code;
-};
+// The same measurement the numbers check repeats on the current build (X9).
+const gz = gzipBytes;
+const oxc = oxcMinify;
 for (const library of LIBRARIES) {
   const got = loadedScripts[library] ?? [];
   check(

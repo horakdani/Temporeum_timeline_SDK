@@ -568,14 +568,30 @@ export function placeLabels(
 export function findLabelOverlap(
   labels: readonly PlacedLabel[],
 ): { readonly a: PlacedLabel; readonly b: PlacedLabel } | undefined {
-  const byRow = new Map<number, PlacedLabel[]>();
-  for (const label of labels) {
-    for (const row of rowsOf(label)) {
+  return firstClash(
+    labels,
+    rowsOf,
+    (a, b) => !(a.box.main + a.box.mainSize <= b.box.main || b.box.main + b.box.mainSize <= a.box.main),
+  );
+}
+
+/**
+ * The first two entries that share a row and `clash`, if any. Not public:
+ * the layout checks its sublanes with it too.
+ */
+export function firstClash<E>(
+  entries: readonly E[],
+  rows: (entry: E) => readonly number[],
+  clash: (a: E, b: E) => boolean,
+): { readonly a: E; readonly b: E } | undefined {
+  const byRow = new Map<number, E[]>();
+  for (const entry of entries) {
+    for (const row of rows(entry)) {
       const bucket = byRow.get(row);
       if (bucket === undefined) {
-        byRow.set(row, [label]);
+        byRow.set(row, [entry]);
       } else {
-        bucket.push(label);
+        bucket.push(entry);
       }
     }
   }
@@ -584,14 +600,7 @@ export function findLabelOverlap(
       for (let j = i + 1; j < bucket.length; j += 1) {
         const a = bucket[i];
         const b = bucket[j];
-        if (
-          a !== undefined &&
-          b !== undefined &&
-          !(
-            a.box.main + a.box.mainSize <= b.box.main ||
-            b.box.main + b.box.mainSize <= a.box.main
-          )
-        ) {
+        if (a !== undefined && b !== undefined && clash(a, b)) {
           return { a, b };
         }
       }

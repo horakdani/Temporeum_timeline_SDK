@@ -137,7 +137,7 @@
       "name": "Identify Input Purpose",
       "level": "AA",
       "status": "not-applicable",
-      "remarks": "The library collects no information about the user. The one input it draws, the date prompt (`g`), asks for a date to go to.",
+      "remarks": "The library collects no information about the user and draws no form field: the date prompt for `g` is the host's, opened from the `jumpRequest` event.",
       "tests": []
     },
     {
@@ -443,7 +443,7 @@
       "name": "Focus Order",
       "level": "A",
       "status": "supports",
-      "remarks": "One focus stop, entered with Tab; inside it the arrows move in reading order, and the date prompt hands the focus back where it was.",
+      "remarks": "One focus stop, entered with Tab; inside it the arrows move in reading order. The date prompt for `g` is the host's: the demo's hands the focus back where it was, and the timeline keeps its focused item.",
       "tests": [
         {
           "file": "packages/docs/e2e/a11y.spec.ts",
@@ -673,7 +673,7 @@
       "name": "On Input",
       "level": "A",
       "status": "supports",
-      "remarks": "The date prompt changes the view only when the reader confirms it with Enter.",
+      "remarks": "`g` only asks the host for a date (`jumpRequest`); the view changes when the host calls `scrollTo` with the date the reader confirmed, never on input alone.",
       "tests": [
         {
           "file": "packages/core/test/keyboard/navigation.test.ts",
@@ -735,21 +735,16 @@
       "id": "3.3.2",
       "name": "Labels or Instructions",
       "level": "A",
-      "status": "supports",
-      "remarks": "The date prompt's field is labelled, and passes axe with the prompt open.",
-      "tests": [
-        {
-          "file": "packages/docs/e2e/a11y.spec.ts",
-          "test": "the date prompt open"
-        }
-      ]
+      "status": "not-applicable",
+      "remarks": "The library draws no form field: the date prompt for `g` is the host's, and so are its label and instructions (the demo's is labelled, and passes axe with the prompt open).",
+      "tests": []
     },
     {
       "id": "3.3.3",
       "name": "Error Suggestion",
       "level": "AA",
-      "status": "partially-supports",
-      "remarks": "Not verified by a test: a date the prompt cannot read leaves the view where it was, without a suggestion.",
+      "status": "not-applicable",
+      "remarks": "The library takes no typed input: the date prompt for `g` is the host's, and so is what it says about a date it cannot read.",
       "tests": []
     },
     {

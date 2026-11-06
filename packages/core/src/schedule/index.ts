@@ -61,8 +61,8 @@ export interface ScheduleOptions<T = unknown> {
   readonly projectFinish?: TimeInput;
   /**
    * The timeline's zone. A task with a `granularity` is scheduled over the
-   * units it is drawn over there (`end: "2026-03-03"` by the day runs to the
-   * end of the 3rd), and written back the way such an item writes its end:
+   * units it is drawn over there (`end: new Date("2026-03-03")` by the day
+   * runs to the end of the 3rd), and written back the way such an item writes its end:
    * the start of its last unit. UTC by default.
    */
   readonly timeZone?: string;
@@ -362,7 +362,13 @@ export function scheduleTasks<T>(items: readonly Item<T>[], dependencies: readon
     const drawnStart = unit === undefined ? edge(task, task.at, false) : startOf(edge(task, task.at, false), unit, zone);
     const drawnEnd = task.hasEnd ? edge(task, task.at, true) : undefined;
     const start = drawnStart === task.startMs ? toTimeMs(item.start) : drawnStart;
-    const end = drawnEnd === undefined ? undefined : drawnEnd === task.endMs ? toTimeMs(item.end as TimeInput) : unit === undefined ? drawnEnd : startOf(drawnEnd - 1, unit, zone);
+    // By units, the end is compared as the start is: its last unit against
+    // the one the item is drawn to. Under a working calendar the drawn end is
+    // the end of a shift, never the span's end, and an item not written at
+    // the zone's midnights had its end rewritten before its start (X11).
+    const lastUnit = drawnEnd === undefined || unit === undefined ? undefined : startOf(drawnEnd - 1, unit, zone);
+    const kept = drawnEnd !== undefined && (unit === undefined ? drawnEnd === task.endMs : lastUnit === startOf((task.endMs as number) - 1, unit, zone));
+    const end = drawnEnd === undefined ? undefined : kept ? toTimeMs(item.end as TimeInput) : (lastUnit ?? drawnEnd);
     const slack = task.late - task.at;
     const entry: { -readonly [K in keyof ScheduledTask]: ScheduledTask[K] } = {
       id: item.id,

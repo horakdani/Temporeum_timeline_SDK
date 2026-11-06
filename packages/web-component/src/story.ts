@@ -424,7 +424,6 @@ export function mountStory<T>(container: HTMLElement, timeline: Timeline<T>, giv
     frame.title = media.title ?? media.alt ?? name;
     frame.dataset.tlKind = source.kind;
     frame.setAttribute("allow", "fullscreen; picture-in-picture; encrypted-media; clipboard-write");
-    frame.setAttribute("allowfullscreen", "");
     frame.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
     // A player plays, goes full screen and opens its own links in a tab; it cannot navigate the page or open dialogs over it.
     frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation");

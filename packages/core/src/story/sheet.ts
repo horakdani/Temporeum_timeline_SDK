@@ -130,7 +130,8 @@ export function readTimelineSheet(csv: string): TimelineSheet {
     const date = (year: Column, month: Column, day: Column, time: Column, display?: string): TimelineJSDate | undefined => {
       if (cell(year) === "") return undefined;
       const clock = readTime(cell(time));
-      if (clock === null) warnings.push({ code: "out-of-range", index: r, message: `Row ${String(r + 1)}: "${cell(time)}" is not a time; the date is kept without it.` });
+      // Where fromTimelineJS's warnings point too: the list and the index in it (X22); the message names the row.
+      if (clock === null) warnings.push({ code: "out-of-range", ...(index === undefined ? {} : { index }), list, message: `Row ${String(r + 1)}: "${cell(time)}" is not a time; the date is kept without it.` });
       return {
         year: cell(year),
         ...(cell(month) === "" ? {} : { month: cell(month) }),
@@ -140,6 +141,8 @@ export function readTimelineSheet(csv: string): TimelineSheet {
       };
     };
     const type = cell("type").toLowerCase();
+    const list = type === "title" ? "title" : type === "era" ? "eras" : "events";
+    const index = list === "events" ? events.length : list === "eras" ? eras.length : undefined;
     const background = cell("background");
     const media = cell("media");
     const start = date("year", "month", "day", "time");

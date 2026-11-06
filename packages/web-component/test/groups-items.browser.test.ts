@@ -535,3 +535,64 @@ describe("the group tree right to left", () => {
     expect(headers(element).map((node) => node.dataset.tlGroup)).toEqual(["team", "ops"]);
   });
 });
+
+describe("server markup with HTML in it parses back to the same tree (X14)", () => {
+  // Every adapter sets the server's markup as HTML, where the content of a
+  // foreignObject is HTML too: a self-closed `<div/>` slot box (or an empty
+  // `<span/>` of a template) opened an element that swallowed the rest of
+  // the drawing and every node after the timeline in the page.
+  const T = Date.UTC(2026, 0, 5);
+  const pair: Item[] = [
+    { id: "a", start: T, end: T + 4 * 86_400_000, label: "A" },
+    { id: "b", start: T + 7 * 86_400_000, end: T + 10 * 86_400_000, label: "B" },
+  ];
+  const base = { items: pair, timeZone: "UTC", domain: [Date.UTC(2026, 0, 1), Date.UTC(2026, 1, 1)] as const };
+  const cases = [
+    ["slots", renderTimelineSvg({ ...base, slots: true }, { width: 800 }).svg],
+    ["template", renderTimelineSvg({ ...base, template: (item: Item) => `<span class="dot"></span><b>${item.label ?? ""}</b>` }, { width: 800 }).svg],
+  ] as const;
+  for (const [name, svg] of cases) {
+    it(`keeps what follows the timeline outside it (${name})`, () => {
+      const page = document.createElement("main");
+      page.innerHTML = `<div id="box">${svg}</div><p id="after">after</p>`;
+      document.body.append(page);
+      try {
+        expect([...page.children].map((child) => child.id)).toEqual(["box", "after"]);
+        expect(page.querySelectorAll("svg foreignObject foreignObject")).toHaveLength(0);
+        // The template's `<b>` is the span's sibling, not its child.
+        for (const dot of page.querySelectorAll("span.dot")) expect(dot.childNodes).toHaveLength(0);
+      } finally {
+        page.remove();
+      }
+    });
+  }
+
+  it("hydrates a server-drawn element with groups and a template with an empty element", async () => {
+    // The group header's label went into the template's `<i>`, and hydrating it threw.
+    const errors: string[] = [];
+    const onError = (event: ErrorEvent): void => void errors.push(event.message);
+    window.addEventListener("error", onError);
+    const host = document.createElement("div");
+    host.style.width = "900px";
+    host.setHTMLUnsafe(renderTimelineHtml({ items, groups, domain, height: 300, template: (item: Item) => `<i class="icon"></i> ${item.label ?? ""}` }, { tagName: "tl-hydrate-x14" }));
+    document.body.append(host);
+    try {
+      const el = host.firstElementChild as TemporeumTimelineElement;
+      const root = el.shadowRoot as ShadowRoot;
+      const team = root.querySelector('[data-tl-group="team"]');
+      expect(team).not.toBeNull();
+      expect(root.querySelectorAll("foreignObject i.icon")).toHaveLength(root.querySelectorAll("foreignObject.tl-template").length);
+      for (const icon of root.querySelectorAll("i.icon")) expect(icon.childNodes).toHaveLength(0);
+      defineTimelineElement("tl-hydrate-x14");
+      await vi.waitFor(() => {
+        if (el.timeline?.result === undefined) throw new Error("not drawn yet");
+      });
+      await nextFrame();
+      expect(errors).toEqual([]);
+      expect(root.querySelector('[data-tl-group="team"]')).toBe(team);
+    } finally {
+      window.removeEventListener("error", onError);
+      host.remove();
+    }
+  });
+});

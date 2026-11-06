@@ -10,7 +10,7 @@ Creates the live timeline in `container` and returns a `Timeline`. `options.hydr
 
 Every field is optional, and every field can change later through `timeline.update({ … })`: a key present with `undefined` goes back to its default, an absent key keeps its value. On the element, `element.items`, `lanes`, `groups`, `template`, `gantt`, `resources`, `resourceOptions`, `hooks`, `orientation`, `density`, `theme`, `height`, `locale`, `timeZone`, `breakpoint`, `packMode`, `cluster`, `direction`, `calendar`, `touchAction`, `domain`, `editable`, `multiSelect`, `snapMs` and `selectedIds` are properties, and every other field goes through `element.config` (setting it again replaces what the previous `config` set). On the React component, every field is a prop.
 
-Every attribute of the element has one of those properties as its pair — `start` and `end` are `domain` — and a property wins over its attribute until it is set to `undefined`. `editable`, `multiSelect` and `snapMs` are each one field of `editing`, so setting one leaves the attributes' other fields in force.
+Apart from three, every attribute of the element has one of those properties as its pair — `start` and `end` are `domain` — and a property wins over its attribute until it is set to `undefined`. The three: `aria-label` is the `ariaLabel` field (the platform's own `element.ariaLabel` sets the attribute), `aria-labelledby` names the chart by the text of the elements it points to and follows their changes, and `nonce` is read when the element connects. `editable`, `multiSelect` and `snapMs` are each one field of `editing`, so setting one leaves the attributes' other fields in force.
 
 {{api:TimelineConfig}}
 

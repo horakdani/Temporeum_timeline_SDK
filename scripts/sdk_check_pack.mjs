@@ -88,7 +88,9 @@
  *     NEGATIVE CONTROL: a tarball whose `exports` names a missing file and
  *     puts `types` after `default` FAILS.
  *
- * A dry run that cannot run is a FAILURE, not a skip.
+ * A dry run that cannot run is a FAILURE, not a skip. Every dry run asks a
+ * registry that is not there (`sdk_npm_dry_run.mjs`), so a version already on
+ * npm does not fail it under npm 11 (X1).
  */
 
 import { execFileSync } from "node:child_process";
@@ -99,6 +101,8 @@ import { dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { publint } from "publint";
 import { formatMessage } from "publint/utils";
+
+import { NPM_DRY_RUN_FLAGS } from "./sdk_npm_dry_run.mjs";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const project = JSON.parse(readFileSync(join(repo, "packages", "docs", "site", "project.json"), "utf8"));
@@ -127,7 +131,7 @@ const manifestOf = (dir) => JSON.parse(readFileSync(join(repo, "packages", dir, 
 
 /** The dry-run tarball's files, or an error. */
 function dryRun(cwd) {
-  const out = execFileSync("npm", ["publish", "--dry-run", "--json", "--provenance=false", "--ignore-scripts"], {
+  const out = execFileSync("npm", ["publish", ...NPM_DRY_RUN_FLAGS, "--json"], {
     cwd,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
@@ -590,7 +594,7 @@ try {
       mkdirSync(dirname(join(release, path)), { recursive: true });
       cpSync(tarballs[index], join(release, path));
       try {
-        execFileSync("npm", ["publish", path, "--dry-run", "--provenance=false", "--ignore-scripts", "--access", "public"], { cwd: release, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 120_000, env: { ...process.env, GIT_SSH_COMMAND: "ssh -o BatchMode=yes" } });
+        execFileSync("npm", ["publish", path, ...NPM_DRY_RUN_FLAGS, "--access", "public"], { cwd: release, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 120_000, env: { ...process.env, GIT_SSH_COMMAND: "ssh -o BatchMode=yes" } });
         dried.push(short);
       } catch (error) {
         failures.push(`the release workflow's own npm publish ${path} fails as a dry run — ${String(error.stderr ?? error.message).trim().split("\n").slice(-2).join(" | ")}`);

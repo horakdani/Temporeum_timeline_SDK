@@ -153,14 +153,18 @@ function rawEnd(item: Item<unknown>): TimeMs | undefined {
  * all year, across daylight saving, and an `origin` is read as its wall-clock
  * time there. A fixed millisecond grid would put Budapest's days on midnight
  * in January and on 01:00 in July. A finer grid stays on the instant line,
- * where an hour is an hour even on the night the clocks go back.
+ * where an hour is an hour even on the night the clocks go back; without an
+ * `origin` it is anchored at the zone's offset, so an hour grid is on the
+ * zone's whole hours in a half-hour zone too.
  */
 export function snapTime(time: TimeMs, snapMs: number | undefined, origin?: TimeMs, timeZone = "UTC"): TimeMs {
   if (snapMs === undefined || !(snapMs > 0) || !Number.isFinite(snapMs)) {
     return time;
   }
   if (snapMs % 864e5 !== 0 || timeZone === "UTC") {
-    const from = origin ?? 0;
+    // On the zone's whole hours: an hour grid in Kolkata (UTC+5:30) is on
+    // its hh:00, where the axis ticks are, not on hh:30 (X17).
+    const from = origin ?? -zoneOffsetMs(time, timeZone);
     return from + Math.round((time - from) / snapMs) * snapMs;
   }
   const wall = (t: TimeMs): TimeMs => t + zoneOffsetMs(t, timeZone);
