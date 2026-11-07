@@ -339,6 +339,22 @@ test.describe("axe: the docs site", () => {
       expect(sideways, `${entry.id} scrolls sideways at 320 px`).toBeLessThanOrEqual(0);
     });
   }
+
+  // The site reads in the system font, and Linux's (DejaVu Sans) is wider than
+  // macOS's: "Internationalisation" as a heading pushed a 320-pixel page 62
+  // pixels sideways in CI while the gate on a Mac passed. Every page, at 320
+  // pixels, in a wide font that every platform has one of (W1).
+  test("every page at 320 px in a wide system font: no word pushes it sideways", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    const wide: string[] = [];
+    for (const entry of site.pages) {
+      await page.goto(`/site/${entry.path}`);
+      await page.addStyleTag({ content: 'body { font-family: "DejaVu Sans", Verdana, sans-serif !important; }' });
+      const sideways = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      if (sideways > 0) wide.push(`${entry.id}: ${String(sideways)} px`);
+    }
+    expect(wide).toEqual([]);
+  });
 });
 
 test.describe("the keyboard in a real browser", () => {

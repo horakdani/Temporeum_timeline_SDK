@@ -68,6 +68,9 @@ article { max-width: 52rem; }
   .side ul { display: flex; flex-wrap: nowrap; gap: 0 1rem; overflow-x: auto; white-space: nowrap; }
 }
 
+/* A heading of one long word breaks rather than push a phone's page sideways: in Linux's wider system font
+   "Internationalisation" at 2rem is wider than 320 pixels (WCAG 1.4.10, W1). */
+h1, h2, h3, h4 { overflow-wrap: break-word; hyphens: auto; }
 h1 { font-size: 2rem; line-height: 1.25; margin: 0.5rem 0 1rem; }
 h2 { font-size: 1.45rem; margin: 2.25rem 0 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--line); }
 h3 { font-size: 1.15rem; margin: 1.75rem 0 0.5rem; }
