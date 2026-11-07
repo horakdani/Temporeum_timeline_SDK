@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The pan-memory check: proves that the vis comparison's pan at 10,000 items keeps
+ * The pan-memory check: proves that the throttled benchmark's pan at 10,000 items keeps
  * the heap growth to at most half of the earlier measured value (+10.4 MB),
  * by the median of three fresh pages, and that during the pan it stays
  * within the perf check's thresholds (<= 5% missed vsyncs, <= 100 ms longest

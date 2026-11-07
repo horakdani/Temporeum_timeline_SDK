@@ -8,7 +8,7 @@
  * a gesture (drag, wheel) every frame of the page does one and a half
  * vsyncs' worth (24 ms) of extra work — the negative control, which must fail.
  *
- * The pan and the zoom are the same gestures as in the vis comparison
+ * The pan and the zoom are the same gestures as in the throttled benchmark
  * measurement (sdk_bench_field.mjs): 24 drags on the axis, and Control + 8
  * notches in and 8 out every 50 ms. The verdict is sdk_check_perf_resources.mjs's.
  */

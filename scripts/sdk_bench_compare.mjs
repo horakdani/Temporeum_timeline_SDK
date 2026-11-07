@@ -1,45 +1,38 @@
 #!/usr/bin/env node
 /**
- * Comparison benchmark: @temporeum/timeline-element against vis-timeline.
+ * The throttled benchmark: @temporeum/timeline-element in Chromium at a 4x CPU
+ * slowdown, at 1 000 and 10 000 items.
  *
  *   node scripts/sdk_bench_compare.mjs
  *   npm run bench:compare -w @temporeum/timeline-docs
  *
- * Env: BENCH_REPS (default 5) fresh pages per library x n x scenario.
+ * Env: BENCH_REPS (default 5) fresh pages per n x scenario.
  *
  * What it does, in order:
  *
  *  1. Builds core + element (`npm run build -w ...`), so the browser runs the
  *     shipped dist, not a stale one.
- *  2. Installs vis-timeline + vis-data (pinned below) into
- *     packages/docs/.bench-work with `npm install --no-save --prefix`, OUTSIDE
- *     the workspace, if the pinned versions are not already there. No
- *     workspace package.json gains a dependency.
- *  3. Starts its OWN static server on 127.0.0.1:41764 (TL_BENCH_COMPARE_PORT)
+ *  2. Starts its OWN static server on 127.0.0.1:41764 (TL_BENCH_COMPARE_PORT)
  *     and refuses to run if the port is taken or answers with a page that is
  *     not ours (page marker check), so a foreign page is never measured.
- *  4. Chromium (Playwright, chromium-headless-shell), 1440 x 900, DPR 1, a
+ *  3. Chromium (Playwright, chromium-headless-shell), 1440 x 900, DPR 1, a
  *     fresh browser context per repetition, CDP Emulation.setCPUThrottlingRate
- *     4 set BEFORE navigation. Pages: packages/docs/bench/{temporeum,vis}.html.
+ *     4 set BEFORE navigation. Page: packages/docs/bench/temporeum.html.
  *
- * Scenarios, per library x n in {1000, 10000} x BENCH_REPS fresh pages:
+ * Scenarios, per n in {1000, 10000} x BENCH_REPS fresh pages:
  *
  *  - load page: first-render (navigationStart -> page `ready`: item nodes in
- *    the DOM and visible — vis keeps its root visibility:hidden until its
- *    initial range settles — then two consecutive rAFs with no DOM mutation
+ *    the DOM and visible, then two consecutive rAFs with no DOM mutation
  *    in the container), heap after load, DOM nodes after load, then the PAN: 24 real
  *    `page.mouse` drags of 240 px on the time-axis band (12 towards later
  *    time, 12 back), each 400 ms with a move every ~16 ms, 100 ms between
  *    drags; frames recorded with rAF over the whole sequence; heap after pan.
  *  - zoom page: ctrl + real mouse wheel at the centre of the timeline,
- *    8 notches in then 8 out, 50 ms apart. Both libraries zoom on ctrl+wheel
- *    with their defaults (vis zooms on any wheel, ours only with ctrl), and
- *    the per-notch deltaY is chosen per library so that each notch is the
- *    same 1.2x step (they map deltaY to zoom differently); the achieved peak
- *    factor is recorded and checked.
- *  - one unthrottled load per library x n, as a control that the throttle
- *    is applied (throttled first-render at n = 10000 must be > 1.5x the
- *    unthrottled one).
+ *    8 notches in then 8 out, 50 ms apart, the per-notch deltaY chosen so
+ *    that each notch is a 1.2x step; the achieved peak factor is recorded
+ *    and checked.
+ *  - one unthrottled load per n, as a control that the throttle is applied
+ *    (throttled first-render at n = 10000 must be > 1.5x the unthrottled one).
  *
  * Missed frame (MISSED_FRAME_DEFINITION below): with V = 1000/60 ms, an rAF
  * interval d > 1.5 V lost round(d / V) - 1 vsyncs; missed % = lost vsyncs /
@@ -49,12 +42,10 @@
  * JSHeapUsedSize. DOM nodes: Performance.getMetrics `Nodes` (whole document,
  * after GC) and the element count inside the container.
  *
- * Bytes: the JS files the page actually loaded for the library (recorded from
- * the network, checked against the expected list), each minified and gzipped
- * (zlib level 9) separately, summed. Our dist is not minified, so ours is
- * minified with oxc (rolldown/utils minifySync, the only minifier in
- * node_modules); vis's standalone .min.js is measured as shipped, AND both
- * are also reported re-minified with the same oxc minifier.
+ * Bytes: the JS files the page actually loaded (recorded from the network,
+ * checked against the expected list), each minified and gzipped (zlib level
+ * 9) separately, summed. Our dist is not minified, so it is minified with oxc
+ * (rolldown/utils minifySync, the only minifier in node_modules).
  *
  * Verification (exit 1, results.json NOT written, the failing report goes to
  * packages/docs/.bench-work/results.failed.json): item nodes rendered after
@@ -71,24 +62,20 @@
  *     machine: { cpu, cores, memoryGB, os, node, chromium },
  *     settings: { throttle, viewport: {width,height}, repetitions, ns,
  *                 missedFrameDefinition, pan: {...}, zoom: {...}, readyDefinition },
- *     libraries: { temporeum: { version, coreVersion, commit, files[] },
- *                  "vis-timeline": { version, visData, files[] } },
+ *     libraries: { temporeum: { version, coreVersion, commit, files[] } },
  *     results: [ { library, n, metric, unit, median, min, max, samples: number[] } ]
  *   }
  *
  * first-items-in-dom (ms) is the first rAF at which item nodes exist in the
- * container, visible or not. It is reported because vis-timeline, given a
- * start/end, inserts its items early but keeps its root visibility:hidden
- * until its 1 s auto-resize poll triggers the redraw that reveals them, so
- * its first-render is mostly that timer; first-items-in-dom is the CPU part.
+ * container, visible or not.
  *
  * Metrics (unit): first-render (ms), first-items-in-dom (ms), first-render-unthrottled (ms),
  * pan-missed-frames (%), pan-p95-frame (ms), zoom-missed-frames (%),
  * zoom-p95-frame (ms), zoom-peak-factor (x), heap-after-load (MB),
  * heap-after-pan (MB), dom-nodes-after-load (nodes, CDP), container-elements
  * (elements), item-nodes-after-load (nodes), label-nodes-after-load (nodes),
- * visible-items-after-load (items), js-min-gz (kB), js-min (kB),
- * js-oxc-min-gz (kB). Byte metrics have n = null (independent of the data).
+ * visible-items-after-load (items), js-min-gz (kB), js-min (kB). Byte
+ * metrics have n = null (independent of the data).
  * MB = 10^6 bytes, kB = 1000 bytes.
  */
 
@@ -113,20 +100,17 @@ const coreDist = join(repoRoot, "packages", "core", "dist");
 const elementDist = join(repoRoot, "packages", "web-component", "dist");
 const benchDir = join(docsDir, "bench");
 const workDir = join(docsDir, ".bench-work");
-const workModules = join(workDir, "node_modules");
 const outFile = join(docsDir, "site", "benchmark", "results.json");
 const failedFile = join(workDir, "results.failed.json");
 
-const VIS_VERSION = "8.5.6";
-const VIS_DATA_VERSION = "8.0.6";
 const PORT = Number(process.env.TL_BENCH_COMPARE_PORT ?? 41764);
 const BASE = `http://127.0.0.1:${String(PORT)}`;
 const VIEWPORT = { width: 1440, height: 900 };
 const THROTTLE = 4;
 const REPS = Number(process.env.BENCH_REPS ?? 5);
 const NS = [1000, 10000];
-const LIBRARIES = ["temporeum", "vis-timeline"];
-const PAGE_OF = { temporeum: "temporeum.html", "vis-timeline": "vis.html" };
+const LIBRARIES = ["temporeum"];
+const PAGE_OF = { temporeum: "temporeum.html" };
 
 const VSYNC = 1000 / 60;
 const MISSED_FRAME_DEFINITION =
@@ -134,15 +118,12 @@ const MISSED_FRAME_DEFINITION =
   "missed % = lost frames / (lost frames + recorded rAF intervals) x 100, over the whole recording window.";
 
 const PAN = { drags: 24, forward: 12, distancePx: 240, durationMs: 400, moveEveryMs: 16, gapMs: 100, startX: 1100 };
-/** Each ctrl+wheel notch is a 1.2x step in both libraries; deltaY per library makes it so. */
+/** Each ctrl+wheel notch is a 1.2x step: factor = exp(|deltaY| * 0.004) (core DEFAULT_WHEEL_ZOOM_RATE). */
 const ZOOM = {
   notches: 8,
   intervalMs: 50,
   stepFactor: 1.2,
-  // ours: factor = exp(|deltaY| * 0.004) (core DEFAULT_WHEEL_ZOOM_RATE)
-  // vis: the legacy `mousewheel` wheelDelta (Chromium: 120 per 100 px deltaY),
-  // factor = 1 + (wheelDelta / 120) / zoomFriction(5) -> deltaY 100 = 1.2x
-  deltaY: { temporeum: Math.log(1.2) / 0.004, "vis-timeline": 100 },
+  deltaY: { temporeum: Math.log(1.2) / 0.004 },
 };
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
@@ -167,35 +148,12 @@ function run(command, args, cwd) {
 console.log("building @temporeum/timeline-core and @temporeum/timeline-element ...");
 run("npm", ["run", "--silent", "build", "-w", "@temporeum/timeline-core", "-w", "@temporeum/timeline-element"], repoRoot);
 
-// --- 2. vis-timeline, outside the workspace --------------------------------
-
-function installedVersion(name) {
-  const file = join(workModules, name, "package.json");
-  return existsSync(file) ? JSON.parse(readFileSync(file, "utf8")).version : null;
-}
-
-if (installedVersion("vis-timeline") !== VIS_VERSION || installedVersion("vis-data") !== VIS_DATA_VERSION) {
-  console.log(`installing vis-timeline@${VIS_VERSION} vis-data@${VIS_DATA_VERSION} into ${workDir} ...`);
-  mkdirSync(workDir, { recursive: true });
-  // Its own package.json, so npm does not climb to the workspace root.
-  writeFileSync(
-    join(workDir, "package.json"),
-    `${JSON.stringify({ name: "temporeum-bench-work", private: true, description: "vis-timeline for the comparison benchmark, outside the workspace" }, null, 2)}\n`,
-  );
-  run(
-    "npm",
-    ["install", "--no-save", "--no-audit", "--no-fund", "--prefix", workDir, `vis-timeline@${VIS_VERSION}`, `vis-data@${VIS_DATA_VERSION}`],
-    workDir,
-  );
-}
-
-// --- 3. own server ----------------------------------------------------------
+// --- 2. own server ----------------------------------------------------------
 
 const ROOTS = [
   ["/bench/", benchDir],
   ["/core/", coreDist],
   ["/element/", elementDist],
-  ["/vis/", workModules],
 ];
 const TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -320,7 +278,7 @@ async function drag(page, x0, y, dx) {
 
 const range = (page) => page.evaluate(() => window.benchCompare.getRange());
 
-// --- 4. measure --------------------------------------------------------------
+// --- 3. measure --------------------------------------------------------------
 
 const browser = await chromium.launch({ channel: "chromium-headless-shell" });
 const chromiumVersion = browser.version();
@@ -330,7 +288,7 @@ const add = (library, n, metric, unit, value) => {
   if (!samples.has(key)) samples.set(key, { library, n, metric, unit, samples: [] });
   samples.get(key).samples.push(value);
 };
-const loadedScripts = { temporeum: null, "vis-timeline": null };
+const loadedScripts = { temporeum: null };
 const startedAt = performance.now();
 
 try {
@@ -473,7 +431,6 @@ const EXPECTED_SCRIPTS = {
     "/element/element.shared.mjs",
     "/element/index.mjs",
   ],
-  "vis-timeline": ["/vis/vis-timeline/standalone/umd/vis-timeline-graph2d.min.js"],
 };
 const kB = (bytes) => bytes / 1000;
 // The same measurement the numbers check repeats on the current build (X9).
@@ -487,21 +444,16 @@ for (const library of LIBRARIES) {
   );
   let min = 0;
   let minGz = 0;
-  let oxcGz = 0;
   for (const path of EXPECTED_SCRIPTS[library]) {
     const file = fileFor(path);
-    const source = readFileSync(file, "utf8");
-    const reminified = oxc(file, source);
-    // Ours ships unminified: "as loaded, minified" is the oxc output. vis ships .min.js.
-    const shipped = library === "temporeum" ? reminified : source;
+    // The dist ships unminified: "as loaded, minified" is the oxc output.
+    const shipped = oxc(file, readFileSync(file, "utf8"));
     min += Buffer.byteLength(shipped);
     minGz += gz(shipped);
-    oxcGz += gz(reminified);
   }
   add(library, null, "js-min", "kB", kB(min));
   add(library, null, "js-min-gz", "kB", kB(minGz));
-  add(library, null, "js-oxc-min-gz", "kB", kB(oxcGz));
-  console.log(`${library}: JS ${kB(min).toFixed(1)} kB min, ${kB(minGz).toFixed(1)} kB min+gz (oxc re-minified: ${kB(oxcGz).toFixed(1)} kB gz)`);
+  console.log(`${library}: JS ${kB(min).toFixed(1)} kB min, ${kB(minGz).toFixed(1)} kB min+gz`);
 }
 
 // Throttle control: the slowdown must show in the numbers.
@@ -553,11 +505,6 @@ const report = {
       coreVersion: pkg(join(repoRoot, "packages", "core", "package.json")).version,
       commit: git.status === 0 ? git.stdout.trim() : null,
       files: EXPECTED_SCRIPTS.temporeum,
-    },
-    "vis-timeline": {
-      version: installedVersion("vis-timeline"),
-      visData: installedVersion("vis-data"),
-      files: EXPECTED_SCRIPTS["vis-timeline"],
     },
   },
   results: [...samples.values()].map((entry) => ({

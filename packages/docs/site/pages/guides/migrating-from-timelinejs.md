@@ -72,7 +72,7 @@ Each is a warning with a `code`, the list it is in, and the index:
 
 And without a warning, because they are not data: TimelineJS's `autolink` (links in the text are links as written) and its embed generator (your page reads the sheet).
 
-## What you gain
+## What else the timeline does
 
 - **Thousands of events.** The timeline under the story clusters, windows and draws 10 000 items in well under a second ([benchmark](../benchmark.md)); a long story does not slow down.
 - **Time down to the minute and back.** One zoom from millennia to minutes, with the axis in BC and AD ([the showcase's chronology](../showcase.md)).

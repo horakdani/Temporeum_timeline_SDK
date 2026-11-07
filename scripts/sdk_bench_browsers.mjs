@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 /**
- * The field benchmark: Temporeum against vis-timeline,
- * react-calendar-timeline, frappe-gantt and SVAR React Gantt, in Chromium,
- * Firefox and WebKit.
+ * The field benchmark: a Temporeum timeline and a Temporeum Gantt chart in
+ * Chromium, Firefox and WebKit.
  *
- *   node scripts/sdk_bench_rivals.mjs
+ *   node scripts/sdk_bench_browsers.mjs
  *   npm run bench:field -w @temporeum/timeline-docs   (then the check)
  *
- * Env: FIELD_REPS (default 3) fresh pages per library x n x scenario x
+ * Env: FIELD_REPS (default 3) fresh pages per workload x n x scenario x
  * browser; FIELD_BROWSERS (default "chromium,firefox,webkit"); FIELD_SMOKE=1
  * tries the harness on the small sizes only, once, and writes
  * .bench-work/field-smoke.json — never the published results.
@@ -15,48 +14,38 @@
  * What it does, in order:
  *
  *  1. Builds core + element, so the browser runs the shipped dist.
- *  2. Installs the rivals, pinned below, into packages/docs/.bench-work with
- *     `npm install --no-save --prefix`, OUTSIDE the workspace (as the vis
- *     comparison does): no workspace package gains a dependency.
- *  3. Bundles the two React libraries, each with React 18 and its peers, and
- *     an empty React app as the framework's own baseline, with rolldown
- *     (production, minified, IIFE) into .bench-work/field-dist.
- *  4. Starts its OWN server on 127.0.0.1:41768 (TL_BENCH_FIELD_PORT) and
+ *  2. Starts its OWN server on 127.0.0.1:41768 (TL_BENCH_FIELD_PORT) and
  *     refuses to run if the port is taken or a page is not ours.
- *  5. Two workloads, each library on its own page of packages/docs/bench/field
- *     with the same generator (bench/field/kit.js), in the same 1440 x 900
- *     box, DPR 1, a fresh browser context per page, NO CPU throttle (only
- *     Chromium has one; the browsers are compared like for like):
- *       timeline: Temporeum, vis-timeline, react-calendar-timeline;
- *                 1 000 and 10 000 items in 20 groups;
- *       gantt:    Temporeum (gantt), frappe-gantt, SVAR;
- *                 500 and 2 000 tasks, one per row, chained in runs of ten.
- *     Each library with its defaults and editing on, as users ship it.
+ *  3. Two workloads, each on its own page of packages/docs/bench/field with
+ *     the generator of bench/field/kit.js, in a 1440 x 900 box, DPR 1, a
+ *     fresh browser context per page, NO CPU throttle (only Chromium has
+ *     one; the browsers are measured like for like):
+ *       timeline: 1 000 and 10 000 items in 20 groups;
+ *       gantt:    500 and 2 000 tasks, one per row, chained in runs of ten.
+ *     Defaults and editing on, as users ship it.
  *
  * Scenarios, per page and repetition:
  *
  *  - load: first render (navigationStart -> item nodes in the box and
  *    visible, then two rAFs without a mutation), elements in the box, item
  *    nodes, items visible; Chromium also the JS heap after a forced GC.
- *  - pan, by the library's own way to move along time (the page says):
+ *  - pan, by the chart's own way to move along time (the page says):
  *    `drag` — 24 real mouse drags of 240 px, 12 towards later time and 12
  *    back, each 400 ms with a move every ~16 ms and 100 ms between; or
  *    `wheel-x` — the same 24 strokes as horizontal wheel steps (25 steps of
  *    9.6 px, ~16 ms apart, then 100 ms). Frames recorded with rAF over the
  *    whole sequence. Chromium: heap after the pan.
- *  - zoom, where the library zooms on ctrl + wheel: a fresh page, the mouse
- *    at the chart's centre, Control held, 8 notches in and 8 out, 50 ms
- *    apart, the page's own |deltaY| per notch in and out (a 1.2x step where
- *    the library's rule allows it, else one mouse notch); the peak is recorded.
- *    A library without wheel zoom gets no zoom rows, and its capability says so.
+ *  - zoom: a fresh page, the mouse at the chart's centre, Control held,
+ *    8 notches in and 8 out, 50 ms apart, the page's own |deltaY| per notch
+ *    in and out (a 1.2x step); the peak is recorded.
  *
- * Missed frame: as in the vis comparison (V = 1000/60 ms; an interval
+ * Missed frame: as in the throttled benchmark (V = 1000/60 ms; an interval
  * d > 1.5 V lost round(d / V) - 1 frames; missed % = lost / (lost + intervals)).
  *
- * Bytes: the JavaScript each page loaded for its library (recorded from the
- * network, the first time the page loads), each file minified (ours with oxc, since our dist is
- * not minified; the rivals as shipped or as bundled) and gzipped at level 9,
- * summed. Stylesheets are not counted. The React baseline is its own row.
+ * Bytes: the JavaScript each page loaded for the library (recorded from the
+ * network, the first time the page loads), each file minified with oxc,
+ * since the dist is not minified, and gzipped at level 9, summed.
+ * Stylesheets are not counted.
  *
  * Verification — the run is not blind; on any failure results.json is NOT
  * written and the report goes to .bench-work/field-results.failed.json:
@@ -65,7 +54,7 @@
  * or 5 (gantt); the pan did not move the view later by half the expected
  * distance after 12 strokes, or did not come back within a quarter of it;
  * a zoom that did not reach 1.3x or did not come back within 25%; any item
- * edited by a pan or a zoom; a page that loaded no script of its library.
+ * edited by a pan or a zoom; a page that loaded no script of the library.
  *
  * Output: packages/docs/site/benchmark/field/results.json
  */
@@ -73,7 +62,7 @@
 /* global fetch, setTimeout, window */
 
 import { spawnSync } from "node:child_process";
-import { copyFileSync, createReadStream, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { createReadStream, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { arch, cpus, platform, release, totalmem, version as osVersion } from "node:os";
 import { dirname, extname, join, resolve, sep } from "node:path";
@@ -88,24 +77,9 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const docsDir = join(repoRoot, "packages", "docs");
 const fieldDir = join(docsDir, "bench", "field");
 const workDir = join(docsDir, ".bench-work");
-const workModules = join(workDir, "node_modules");
-const bundleSrc = join(workDir, "field-src");
-const bundleDist = join(workDir, "field-dist");
 const outFile = process.env.FIELD_SMOKE === "1" ? join(docsDir, ".bench-work", "field-smoke.json") : join(docsDir, "site", "benchmark", "field", "results.json");
 const failedFile = join(workDir, "field-results.failed.json");
 
-/** The rivals and their peers, pinned. react-calendar-timeline's npm "latest" tag is a beta. */
-const PINNED = {
-  "vis-timeline": "8.5.6",
-  "vis-data": "8.0.6",
-  "react-calendar-timeline": "0.30.0-beta.4",
-  "frappe-gantt": "1.2.2",
-  "@svar-ui/react-gantt": "2.8.2",
-  react: "18.3.1",
-  "react-dom": "18.3.1",
-  dayjs: "1.11.13",
-  interactjs: "1.10.27",
-};
 const PORT = Number(process.env.TL_BENCH_FIELD_PORT ?? 41768);
 const BASE = `http://127.0.0.1:${String(PORT)}`;
 const VIEWPORT = { width: 1440, height: 900 };
@@ -116,19 +90,11 @@ const LAUNCH = { chromium: () => chromium.launch({ channel: "chromium-headless-s
 const NS = SMOKE ? { timeline: [1000], gantt: [200] } : { timeline: [1000, 10000], gantt: [500, 2000] };
 const PAGES = [
   { library: "temporeum", workload: "timeline", page: "temporeum-timeline.html" },
-  { library: "vis-timeline", workload: "timeline", page: "vis-timeline.html" },
-  { library: "react-calendar-timeline", workload: "timeline", page: "react-calendar-timeline.html" },
   { library: "temporeum", workload: "gantt", page: "temporeum-gantt.html" },
-  { library: "frappe-gantt", workload: "gantt", page: "frappe-gantt.html" },
-  { library: "svar", workload: "gantt", page: "svar-gantt.html" },
 ];
-/** Which loaded scripts are the library's (the kit is ours on every page, and not counted). */
+/** Which loaded scripts are the library's (the kit is on every page, and not counted). */
 const SCRIPT_OF = {
   temporeum: (path) => path.startsWith("/core/") || path.startsWith("/element/"),
-  "vis-timeline": (path) => path.startsWith("/vis/"),
-  "react-calendar-timeline": (path) => path === "/work/rct.js",
-  "frappe-gantt": (path) => path.startsWith("/nm/frappe-gantt/"),
-  svar: (path) => path === "/work/svar.js",
 };
 const VSYNC = 1000 / 60;
 const MISSED_FRAME_DEFINITION =
@@ -159,42 +125,11 @@ function run(command, args, cwd) {
 console.log("building @temporeum/timeline-core and @temporeum/timeline-element ...");
 run("npm", ["run", "--silent", "build", "-w", "@temporeum/timeline-core", "-w", "@temporeum/timeline-element"], repoRoot);
 
-// --- 2. the rivals, outside the workspace -----------------------------------------
-const installed = (name) => {
-  const file = join(workModules, ...name.split("/"), "package.json");
-  return existsSync(file) ? JSON.parse(readFileSync(file, "utf8")).version : null;
-};
-if (Object.entries(PINNED).some(([name, version]) => installed(name) !== version)) {
-  console.log(`installing ${Object.entries(PINNED).map(([name, version]) => `${name}@${version}`).join(" ")} into ${workDir} ...`);
-  mkdirSync(workDir, { recursive: true });
-  writeFileSync(join(workDir, "package.json"), `${JSON.stringify({ name: "temporeum-bench-work", private: true, description: "the benchmark's rivals, outside the workspace" }, null, 2)}\n`);
-  run("npm", ["install", "--no-save", "--no-audit", "--no-fund", "--prefix", workDir, ...Object.entries(PINNED).map(([name, version]) => `${name}@${version}`)], workDir);
-}
-
-// --- 3. the React bundles ------------------------------------------------------------
-const { build } = await import("rolldown");
-mkdirSync(bundleSrc, { recursive: true });
-mkdirSync(bundleDist, { recursive: true });
-for (const name of ["rct", "svar", "react-baseline"]) {
-  // Copied next to .bench-work/node_modules, so the rivals' own React resolves, not the workspace's.
-  copyFileSync(join(fieldDir, "src", `${name}.js`), join(bundleSrc, `${name}.js`));
-  await build({
-    input: join(bundleSrc, `${name}.js`),
-    platform: "browser",
-    transform: { define: { "process.env.NODE_ENV": JSON.stringify("production") } },
-    output: { file: join(bundleDist, `${name}.js`), format: "iife", minify: true },
-    logLevel: "warn",
-  });
-}
-
-// --- 4. own server ----------------------------------------------------------------------
+// --- 2. own server ----------------------------------------------------------------------
 const ROOTS = [
   ["/field/", fieldDir],
   ["/core/", join(repoRoot, "packages", "core", "dist")],
   ["/element/", join(repoRoot, "packages", "web-component", "dist")],
-  ["/vis/", workModules],
-  ["/nm/", workModules],
-  ["/work/", bundleDist],
 ];
 const TYPES = { ".html": "text/html; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json", ".map": "application/json", ".svg": "image/svg+xml", ".woff2": "font/woff2" };
 function fileFor(pathname) {
@@ -252,7 +187,7 @@ async function openPage(browser, browserName, spec, n) {
   page.on("pageerror", (error) => {
     const message = String(error.message ?? error);
     // The one error the run lets pass: WebKit reports a ResizeObserver loop as a page error, which
-    // the specification calls a notice (SVAR triggers it). It is counted in the results, not hidden.
+    // the specification calls a notice. It is counted in the results, not hidden.
     if (BENIGN.test(message)) {
       ignored.set(`${browserName}|${spec.library}`, (ignored.get(`${browserName}|${spec.library}`) ?? 0) + 1);
       return;
@@ -294,7 +229,7 @@ async function wheelStroke(page, x, y, dx) {
   }
 }
 
-// --- 5. measure ------------------------------------------------------------------------------
+// --- 3. measure ------------------------------------------------------------------------------
 const samples = new Map();
 const add = (library, workload, browser, n, metric, unit, value) => {
   if (value === null || value === undefined || Number.isNaN(value)) return;
@@ -318,7 +253,7 @@ for (const browserName of BROWSERS) {
   try {
     for (const spec of PAGES) {
       for (const n of NS[spec.workload]) {
-        const tag = `${browserName.padEnd(8)} ${spec.library.padEnd(24)} ${spec.workload.padEnd(8)} n=${String(n).padStart(5)}`;
+        const tag = `${browserName.padEnd(8)} ${spec.workload.padEnd(8)} n=${String(n).padStart(5)}`;
         for (let rep = 0; rep < REPS; rep += 1) {
           // --- load + pan ---
           let zoomSupported = false;
@@ -337,9 +272,9 @@ for (const browserName of BROWSERS) {
             const zoom = await page.evaluate(() => window.benchField.zoom);
             zoomSupported = zoom.supported;
             zoomStep = { in: zoom.stepIn, out: zoom.stepOut };
-            capabilities[spec.library] = { ...(capabilities[spec.library] ?? {}), wheelZoom: zoom.supported };
+            capabilities[spec.workload] = { ...(capabilities[spec.workload] ?? {}), wheelZoom: zoom.supported };
             const pan = await page.evaluate(() => window.benchField.pan);
-            capabilities[spec.library] = { ...capabilities[spec.library], pan: pan.mode };
+            capabilities[spec.workload] = { ...capabilities[spec.workload], pan: pan.mode };
             await page.evaluate(() => window.benchField.frames.start());
             let mid = null;
             for (let index = 0; index < PAN.strokes; index += 1) {
@@ -426,17 +361,12 @@ for (const { library, workload } of PAGES) {
   for (const path of list) {
     const file = fileFor(path);
     const source = readFileSync(file, "utf8");
-    const shipped = library === "temporeum" ? oxc(file, source) : source;
+    const shipped = oxc(file, source);
     min += Buffer.byteLength(shipped);
     minGz += gz(shipped);
   }
   add(library, workload, null, null, "js-min", "kB", min / 1000);
   add(library, workload, null, null, "js-min-gz", "kB", minGz / 1000);
-}
-{
-  const source = readFileSync(join(bundleDist, "react-baseline.js"), "utf8");
-  add("react (baseline)", null, null, null, "js-min", "kB", Buffer.byteLength(source) / 1000);
-  add("react (baseline)", null, null, null, "js-min-gz", "kB", gz(source) / 1000);
 }
 
 // --- report ------------------------------------------------------------------------------------
@@ -458,20 +388,15 @@ const report = {
     ns: NS,
     missedFrameDefinition: MISSED_FRAME_DEFINITION,
     readyDefinition: "navigationStart -> the rAF at which item nodes are in the box AND visible, and two consecutive rAFs have seen no DOM mutation in it",
-    pan: { ...PAN, input: "the library's own: drag (mouse down, move, up) or wheel-x (horizontal wheel steps), as the page says" },
-    zoom: { ...ZOOM, input: "Control held + mouse wheel at the chart's centre, the page's |deltaY| per notch in and out: one 1.2x step where the library's rule allows it (Temporeum, vis-timeline, react-calendar-timeline), one mouse notch (100) for SVAR" },
+    pan: { ...PAN, input: "the chart's own: drag (mouse down, move, up) or wheel-x (horizontal wheel steps), as the page says" },
+    zoom: { ...ZOOM, input: "Control held + mouse wheel at the chart's centre, the page's |deltaY| per notch in and out: one 1.2x step" },
     heap: "Chromium only: CDP HeapProfiler.collectGarbage, then Performance.getMetrics JSHeapUsedSize",
     runSeconds: Math.round((performance.now() - startedAt) / 1000),
   },
   libraries: {
     temporeum: { version: pkg(join(repoRoot, "packages", "web-component", "package.json")).version },
-    "vis-timeline": { version: installed("vis-timeline"), with: { "vis-data": installed("vis-data") } },
-    "react-calendar-timeline": { version: installed("react-calendar-timeline"), with: { react: installed("react"), dayjs: installed("dayjs"), interactjs: installed("interactjs") } },
-    "frappe-gantt": { version: installed("frappe-gantt") },
-    svar: { name: "@svar-ui/react-gantt", version: installed("@svar-ui/react-gantt"), with: { react: installed("react") } },
-    "react (baseline)": { version: installed("react") },
   },
-  workloads: { timeline: ["temporeum", "vis-timeline", "react-calendar-timeline"], gantt: ["temporeum", "frappe-gantt", "svar"] },
+  workloads: { timeline: ["temporeum"], gantt: ["temporeum"] },
   capabilities,
   files,
   ignoredPageErrors: { pattern: String(BENIGN), counts: Object.fromEntries(ignored) },

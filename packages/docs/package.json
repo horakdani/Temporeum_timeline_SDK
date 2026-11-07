@@ -2,7 +2,7 @@
   "name": "@temporeum/timeline-docs",
   "version": "0.0.0",
   "private": true,
-  "description": "Docs site with live examples and recipes, framework templates, the comparison benchmark, and the Playwright device-emulation suites.",
+  "description": "Docs site with live examples and recipes, framework templates, the throttled benchmark, and the Playwright device-emulation suites.",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -39,6 +39,6 @@
     "test:e2e:tooltip": "npm run --silent build -w @temporeum/timeline-core && npm run --silent build -w @temporeum/timeline-element && node -e \"for (const f of ['.tooltip-browser-log.json','.e2e-tooltip-report.json']) require('node:fs').rmSync(f,{force:true})\" && (TL_PAGES_SPEC=tooltip.spec.ts TL_PAGES_REPORT=.e2e-tooltip-report.json TL_PAGES_PORT=41767 playwright test -c playwright.pages.config.ts; node ../../scripts/sdk_check_tooltip.mjs)",
     "test:e2e:drop": "npm run --silent build -w @temporeum/timeline-core && npm run --silent build -w @temporeum/timeline-element && node -e \"for (const f of ['.drop-browser-log.json','.e2e-drop-report.json']) require('node:fs').rmSync(f,{force:true})\" && (TL_PAGES_SPEC=drop.spec.ts TL_PAGES_REPORT=.e2e-drop-report.json playwright test -c playwright.pages.config.ts; node ../../scripts/sdk_check_drop.mjs)",
     "test:e2e:template": "npm run --silent build -w @temporeum/timeline-core && npm run --silent build -w @temporeum/timeline-element && TL_PAGES_SPEC=template.spec.ts TL_PAGES_REPORT=.e2e-template-report.json playwright test -c playwright.pages.config.ts",
-    "bench:field": "npm run --silent build && node -e \"require('node:fs').rmSync('site/benchmark/field/results.json',{force:true})\" && node ../../scripts/sdk_bench_rivals.mjs && npm run --silent build && node ../../scripts/sdk_check_bench_field.mjs"
+    "bench:field": "npm run --silent build && node -e \"require('node:fs').rmSync('site/benchmark/field/results.json',{force:true})\" && node ../../scripts/sdk_bench_browsers.mjs && npm run --silent build && node ../../scripts/sdk_check_bench_field.mjs"
   }
 }

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Comparison benchmark — @temporeum/timeline-element</title>
+    <title>Throttled benchmark — @temporeum/timeline-element</title>
     <style>
       html,
       body {
@@ -11,7 +11,7 @@
         overflow: hidden;
         font-family: system-ui, sans-serif;
       }
-      /* The measured container: the viewport's 1440 x 900, the same box as vis.html. */
+      /* The measured container: the viewport's 1440 x 900. */
       #frame {
         position: relative;
         width: 1440px;
@@ -21,7 +21,7 @@
     </style>
     <!--
       The recommended 1.0 public path: the package names, resolved by an
-      import map to the BUILT dist files the comparison script serves. No
+      import map to the BUILT dist files the benchmark script serves. No
       bundler, so the browser loads exactly the four files a no-build user
       loads (core index + dom, element index + its shared chunk).
     -->
@@ -50,8 +50,7 @@
 
     <script type="module">
       /*
-       * One page per library, same dataset, same box. Shared contract with
-       * vis.html (read by scripts/sdk_bench_compare.mjs):
+       * The page's contract with scripts/sdk_bench_compare.mjs:
        *
        *   window.benchCompare = {
        *     marker, library, n,
@@ -69,7 +68,7 @@
       const params = new URLSearchParams(location.search);
       const n = Number(params.get("n") ?? 1000);
 
-      // --- the dataset: identical generator in vis.html --------------------
+      // --- the dataset ------------------------------------------------------
       // 60 interleaved streams, an 8-day item every 10 days in each, so the
       // items overlap and pack into ~48 rows. The view is the second fifth
       // of the whole range.
@@ -91,7 +90,7 @@
       const frame = document.querySelector("#frame");
       let edits = 0;
 
-      // --- the frame recorder (identical in vis.html) -----------------------
+      // --- the frame recorder -----------------------------------------------
       const recorder = { times: [], on: false };
       const record = (time) => {
         if (!recorder.on) return;
@@ -111,7 +110,7 @@
         },
       };
 
-      // --- ready: item nodes in the DOM and visible, then two quiet rAFs (identical in vis.html)
+      // --- ready: item nodes in the DOM and visible, then two quiet rAFs
       const itemSelector = "rect.tl-item";
       let mutated = false;
       new MutationObserver(() => {
@@ -121,8 +120,7 @@
         let quiet = 0;
         let firstItemsMs = null;
         const check = () => {
-          // Present AND shown: vis keeps its root visibility:hidden until its
-          // initial range settles, and a hidden drawing is not a render.
+          // Present AND shown: a hidden drawing is not a render.
           const first = frame.querySelector(itemSelector);
           if (first !== null && firstItemsMs === null) firstItemsMs = performance.now();
           const present = first !== null && first.checkVisibility({ visibilityProperty: true, opacityProperty: true });

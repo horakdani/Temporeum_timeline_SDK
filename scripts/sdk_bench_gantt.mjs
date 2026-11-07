@@ -5,7 +5,7 @@
  * wheel zoom, with 4x CPU throttling, on fresh pages — and the same without
  * arrow culling (`?cull=0`), as the negative control.
  *
- * The pan and the zoom are the same gestures as in the vis comparison
+ * The pan and the zoom are the same gestures as in the throttled benchmark
  * measurement (sdk_bench_field.mjs): 24 drags on the axis, and Control + 8
  * notches in and 8 out every 50 ms. The verdict is sdk_check_perf_gantt.mjs's.
  */

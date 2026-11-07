@@ -1,7 +1,7 @@
 /*
- * The field benchmark's shared page kit (scripts/sdk_bench_rivals.mjs).
- * Every page — one per library and workload — builds the same data with
- * the same generator, puts the library into the same 1440 x 900 box, and
+ * The field benchmark's shared page kit (scripts/sdk_bench_browsers.mjs).
+ * Every page — one per workload — builds its data with
+ * the generator below, puts the chart into the same 1440 x 900 box, and
  * answers the harness through one contract:
  *
  *   window.benchField = {
@@ -11,7 +11,7 @@
  *     counts(),            { itemNodes, visibleItems, elements }
  *     offsetPx(),          how far the view has moved along time since load, in px (later is positive)
  *     zoomFactor(),        how far it is zoomed in since load (2 = twice as close), or null without zoom
- *     pan,                 { mode: "drag" | "wheel-x", x, y }: the library's own way to move along time, and where
+ *     pan,                 { mode: "drag" | "wheel-x", x, y }: the chart's own way to move along time, and where
  *     zoom,                { supported, stepIn, stepOut }: ctrl + wheel, and the |deltaY| of one notch in and out
  *     edits(),             item edits the page has seen (a pan or a zoom must make none)
  *   }
@@ -119,7 +119,7 @@ export function installBench(spec) {
   };
 }
 
-/** offsetPx and zoomFactor for a library that reports its window as times. */
+/** offsetPx and zoomFactor from the window the timeline reports as times. */
 export function timeWindow(getRange, width = VIEWPORT.width) {
   let first = null;
   const initial = () => (first ??= getRange());
@@ -134,17 +134,6 @@ export function timeWindow(getRange, width = VIEWPORT.width) {
       const r = getRange();
       return (r0.end - r0.start) / (r.end - r.start);
     },
-    mark: initial,
-  };
-}
-
-/** offsetPx and zoomFactor for a library that scrolls a native scroller: how far it scrolled, and how wide the content became. */
-export function scrollWindow(scroller) {
-  let first = null;
-  const initial = () => (first ??= { left: scroller().scrollLeft, width: scroller().scrollWidth });
-  return {
-    offsetPx: () => scroller().scrollLeft - initial().left,
-    zoomFactor: () => scroller().scrollWidth / initial().width,
     mark: initial,
   };
 }

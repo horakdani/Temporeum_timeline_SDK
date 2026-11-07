@@ -193,7 +193,7 @@ in English, left to right, on the Gregorian axis. For that it loads the
 core's main entry point, `/dom`, `/live` and `/words`, and not the core's
 `/tools`, `/groups`, `/items` or `/intl`. Measured the way the field benchmark
 measures (minified, gzipped, per file), a plain timeline's page loads
-58.37 kB of JavaScript, and a Gantt chart's (with `/gantt`) 66.29 kB. An
+58.38 kB of JavaScript, and a Gantt chart's (with `/gantt`) 66.29 kB. An
 import map needs `@temporeum/timeline-core/live` and `/words`, and the
 subpaths of the plugins it uses.
 

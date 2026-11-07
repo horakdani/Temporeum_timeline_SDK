@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The bench-labels check and the pan-memory check: the measurement on the vis comparison's
+ * The bench-labels check and the pan-memory check: the measurement on the throttled benchmark's
  * OWN page (packages/docs/bench/temporeum.html), with 10 000 items and the
  * same input as sdk_bench_compare.mjs: 1440 x 900, DPR 1, 4x CPU throttling
  * before navigation, a fresh browser context for every page.
@@ -109,7 +109,7 @@ await new Promise((done, fail) => {
 const marker = await (await fetch(`${BASE}/bench/temporeum.html`)).text();
 if (!marker.includes('data-bench-compare="temporeum"')) {
   server.close();
-  throw new Error("something other than the vis comparison page answers on the port");
+  throw new Error("something other than the throttled benchmark's page answers on the port");
 }
 
 // --- helpers -------------------------------------------------------------

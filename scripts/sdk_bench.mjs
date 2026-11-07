@@ -13,13 +13,13 @@
  *   node scripts/sdk_bench.mjs deep     -> packages/docs/.bench-deep.json
  *   node scripts/sdk_bench.mjs wheel    -> packages/docs/.bench-wheel.json
  *
- * `wheel` (the perf-wheel check) measures the vis comparison's zoom on BOTH paths,
+ * `wheel` (the perf-wheel check) measures the throttled benchmark's zoom on BOTH paths,
  * the same way: a FRESH, quiet page (on the public path still untouched, no
  * extras), Control held down, a real `page.mouse.wheel` in the middle of the
  * view, 8 notches in and 8 out, every 50 ms, 1.2x per notch (deltaY 45.6:
  * exp(45.6 * 0.004)), and recording continues for 300 ms after the last
  * notch so the settling frames are included. Every variant runs on WHEEL_REPS
- * (3) fresh pages, and the check judges the median (the vis comparison also
+ * (3) fresh pages, and the check judges the median (the throttled benchmark also
  * reports the median). Negative controls: without element space on both
  * paths, and on the core page without a wheel run (?run=0: the host settles
  * after every notch).
@@ -85,7 +85,7 @@ const SCENARIOS = ["pan", "zoom", "pan-labelled", "zoom-deep", "pan-long"];
 /** The long pan: 24 drags x 240 px = 5760 px, about 4 view widths of the data. */
 const SWIPES = 24;
 
-/** The vis comparison's zoom (sdk_bench_compare.mjs ZOOM), with our deltaY. */
+/** The throttled benchmark's zoom (sdk_bench_compare.mjs ZOOM), with our deltaY. */
 const WHEEL = { notches: 8, intervalMs: 50, deltaY: 45.6, tailMs: 300 };
 const WHEEL_REPS = Number(process.env.TL_WHEEL_REPS ?? 3);
 
@@ -207,7 +207,7 @@ try {
         page: "bench-public.html",
         marker: "temporeum-timeline-bench-public",
         source: `${coreSource}|${sourceHash(elementDir)}`,
-        // The vis comparison page's settings: editing on, density at its
+        // The throttled benchmark page's settings: editing on, density at its
         // default. The published number is produced on that page.
         modes: [
           ["space", "mode=space&editing=1&density=auto"],

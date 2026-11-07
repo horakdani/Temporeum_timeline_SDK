@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * The perf-wheel check: proves that the vis comparison's zoom — on a fresh, quiet
+ * The perf-wheel check: proves that the throttled benchmark's zoom — on a fresh, quiet
  * page, Control + a real wheel, 8 notches in and 8 out, every 50 ms, 1.2x per
  * notch, a 4.3x peak — also holds the perf check's thresholds, on the core path
  * (bench.html, the README's loop) AND on the public path (bench-public.html,
- * createTimeline from the shipped bundle, with the vis comparison page's
+ * createTimeline from the shipped bundle, with the throttled benchmark's page's
  * settings: editing on, the default density), and that the measurement
  * FAILS on three negative controls.
  *
@@ -19,7 +19,7 @@
  * report holds every run, and the check prints the worst one as well.
  *
  * Before the wheel run was treated as one gesture, this scenario was at 9.8%
- * in the vis comparison on the public path; on the README's loop, which
+ * in the throttled benchmark on the public path; on the README's loop, which
  * settled after every wheel notch, 53%.
  *
  * Validity — if any of these is violated, the check FAILS:

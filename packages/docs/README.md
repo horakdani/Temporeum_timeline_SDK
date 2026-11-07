@@ -1,7 +1,7 @@
 # Docs workspace
 
 The documentation site, its live examples and recipes, the framework
-templates, the comparison benchmark, and the end-to-end suites that run under
+templates, the throttled benchmark, and the end-to-end suites that run under
 Playwright device emulation.
 
 It is a workspace like the packages it documents, and the commands below

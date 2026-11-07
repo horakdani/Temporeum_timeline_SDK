@@ -141,7 +141,7 @@ describe("what the reference pages and READMEs list is what there is (R54–R63)
     const list = /temporeum: \[([^\]]*)\]/.exec(script)?.[1] ?? "";
     const count = [...list.matchAll(/"\/[^"]+"/g)].length;
     const words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
-    expect(source("../../docs/site/pages/benchmark.md")).toContain(`${words[count] ?? String(count)} ES modules for Temporeum`);
+    expect(source("../../docs/site/pages/benchmark.md")).toContain(`the ${words[count] ?? String(count)} ES modules of a plain timeline's page`);
   });
 });
 

@@ -37,7 +37,7 @@
       registerPlugin(ganttPlugin);
       const n = Number(new URLSearchParams(location.search).get("n") ?? 500);
       const { tasks, links } = ganttData(n);
-      // About thirty days in the box, as frappe-gantt's day columns and SVAR's cells show.
+      // About thirty days in the box.
       const view = [Date.UTC(2026, 0, 1), Date.UTC(2026, 0, 31)];
       const frame = document.querySelector("#frame");
       let edits = 0;

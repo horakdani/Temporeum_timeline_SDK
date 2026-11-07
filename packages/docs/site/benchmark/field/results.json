@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-06T15:23:14.474Z",
+  "generatedAt": "2026-11-07T17:48:23.144Z",
   "smoke": false,
   "machine": {
     "cpu": "Apple M4",
@@ -40,79 +40,36 @@
       "moveEveryMs": 16,
       "gapMs": 100,
       "wheelSteps": 25,
-      "input": "the library's own: drag (mouse down, move, up) or wheel-x (horizontal wheel steps), as the page says"
+      "input": "the chart's own: drag (mouse down, move, up) or wheel-x (horizontal wheel steps), as the page says"
     },
     "zoom": {
       "notches": 8,
       "intervalMs": 50,
       "tailMs": 300,
-      "input": "Control held + mouse wheel at the chart's centre, the page's |deltaY| per notch in and out: one 1.2x step where the library's rule allows it (Temporeum, vis-timeline, react-calendar-timeline), one mouse notch (100) for SVAR"
+      "input": "Control held + mouse wheel at the chart's centre, the page's |deltaY| per notch in and out: one 1.2x step"
     },
     "heap": "Chromium only: CDP HeapProfiler.collectGarbage, then Performance.getMetrics JSHeapUsedSize",
-    "runSeconds": 2671
+    "runSeconds": 735
   },
   "libraries": {
     "temporeum": {
       "version": "1.0.0"
-    },
-    "vis-timeline": {
-      "version": "8.5.6",
-      "with": {
-        "vis-data": "8.0.6"
-      }
-    },
-    "react-calendar-timeline": {
-      "version": "0.30.0-beta.4",
-      "with": {
-        "react": "18.3.1",
-        "dayjs": "1.11.13",
-        "interactjs": "1.10.27"
-      }
-    },
-    "frappe-gantt": {
-      "version": "1.2.2"
-    },
-    "svar": {
-      "name": "@svar-ui/react-gantt",
-      "version": "2.8.2",
-      "with": {
-        "react": "18.3.1"
-      }
-    },
-    "react (baseline)": {
-      "version": "18.3.1"
     }
   },
   "workloads": {
     "timeline": [
-      "temporeum",
-      "vis-timeline",
-      "react-calendar-timeline"
+      "temporeum"
     ],
     "gantt": [
-      "temporeum",
-      "frappe-gantt",
-      "svar"
+      "temporeum"
     ]
   },
   "capabilities": {
-    "temporeum": {
-      "wheelZoom": true,
-      "pan": "wheel-x"
-    },
-    "vis-timeline": {
+    "timeline": {
       "wheelZoom": true,
       "pan": "drag"
     },
-    "react-calendar-timeline": {
-      "wheelZoom": true,
-      "pan": "drag"
-    },
-    "frappe-gantt": {
-      "wheelZoom": false,
-      "pan": "wheel-x"
-    },
-    "svar": {
+    "gantt": {
       "wheelZoom": true,
       "pan": "wheel-x"
     }
@@ -127,12 +84,6 @@
       "/element/element.shared.mjs",
       "/element/index.mjs"
     ],
-    "vis-timeline|timeline": [
-      "/vis/vis-timeline/standalone/umd/vis-timeline-graph2d.min.js"
-    ],
-    "react-calendar-timeline|timeline": [
-      "/work/rct.js"
-    ],
     "temporeum|gantt": [
       "/core/chunks/index.mjs",
       "/core/dom.mjs",
@@ -143,19 +94,11 @@
       "/element/element.shared.mjs",
       "/element/gantt.mjs",
       "/element/index.mjs"
-    ],
-    "frappe-gantt|gantt": [
-      "/nm/frappe-gantt/dist/frappe-gantt.umd.js"
-    ],
-    "svar|gantt": [
-      "/work/svar.js"
     ]
   },
   "ignoredPageErrors": {
     "pattern": "/^ResizeObserver loop (completed with undelivered notifications|limit exceeded)/",
-    "counts": {
-      "webkit|svar": 12
-    }
+    "counts": {}
   },
   "results": [
     {
@@ -166,16 +109,16 @@
       "metric": "first-render",
       "unit": "ms",
       "samples": [
-        89.70000004768372,
-        72.10000002384186,
-        74.19999992847443,
-        72.19999992847443,
-        72,
-        90.40000009536743
+        111.29999995231628,
+        71.39999997615814,
+        71.79999995231628,
+        71.39999997615814,
+        70.29999995231628,
+        70.90000009536743
       ],
-      "median": 73.19999992847443,
-      "min": 72,
-      "max": 90.40000009536743
+      "median": 71.39999997615814,
+      "min": 70.29999995231628,
+      "max": 111.29999995231628
     },
     {
       "library": "temporeum",
@@ -233,13 +176,13 @@
       "metric": "heap-after-load",
       "unit": "MB",
       "samples": [
-        2.670184,
-        2.668344,
-        2.66838
+        2.673928,
+        2.680456,
+        2.667884
       ],
-      "median": 2.66838,
-      "min": 2.668344,
-      "max": 2.670184
+      "median": 2.673928,
+      "min": 2.667884,
+      "max": 2.680456
     },
     {
       "library": "temporeum",
@@ -249,13 +192,13 @@
       "metric": "pan-missed-frames",
       "unit": "%",
       "samples": [
-        0,
+        0.12755102040816327,
         0,
         0
       ],
       "median": 0,
       "min": 0,
-      "max": 0
+      "max": 0.12755102040816327
     },
     {
       "library": "temporeum",
@@ -265,11 +208,11 @@
       "metric": "pan-p95-frame",
       "unit": "ms",
       "samples": [
-        16.700000000000728,
+        16.799999999999272,
         16.799999999999272,
         16.700000000000728
       ],
-      "median": 16.700000000000728,
+      "median": 16.799999999999272,
       "min": 16.700000000000728,
       "max": 16.799999999999272
     },
@@ -281,13 +224,13 @@
       "metric": "heap-after-pan",
       "unit": "MB",
       "samples": [
-        4.056788,
-        4.049136,
-        4.045128
+        4.05532,
+        4.062428,
+        4.077608
       ],
-      "median": 4.049136,
-      "min": 4.045128,
-      "max": 4.056788
+      "median": 4.062428,
+      "min": 4.05532,
+      "max": 4.077608
     },
     {
       "library": "temporeum",
@@ -345,16 +288,16 @@
       "metric": "first-render",
       "unit": "ms",
       "samples": [
-        104.60000002384186,
-        104.89999997615814,
-        103.89999997615814,
-        105.60000002384186,
-        103.5,
-        105.20000004768372
+        105.90000009536743,
+        87.90000009536743,
+        88.29999995231628,
+        86.60000002384186,
+        87.20000004768372,
+        105
       ],
-      "median": 104.75,
-      "min": 103.5,
-      "max": 105.60000002384186
+      "median": 88.10000002384186,
+      "min": 86.60000002384186,
+      "max": 105.90000009536743
     },
     {
       "library": "temporeum",
@@ -412,13 +355,13 @@
       "metric": "heap-after-load",
       "unit": "MB",
       "samples": [
-        6.660256,
-        6.717224,
-        6.716008
+        6.725064,
+        6.723416,
+        6.725064
       ],
-      "median": 6.716008,
-      "min": 6.660256,
-      "max": 6.717224
+      "median": 6.725064,
+      "min": 6.723416,
+      "max": 6.725064
     },
     {
       "library": "temporeum",
@@ -429,12 +372,12 @@
       "unit": "%",
       "samples": [
         0,
-        0,
+        0.1272264631043257,
         0
       ],
       "median": 0,
       "min": 0,
-      "max": 0
+      "max": 0.1272264631043257
     },
     {
       "library": "temporeum",
@@ -444,13 +387,13 @@
       "metric": "pan-p95-frame",
       "unit": "ms",
       "samples": [
-        16.700000000000728,
-        16.700000000000728,
+        16.799999999999272,
+        16.799999999999272,
         16.700000000000728
       ],
-      "median": 16.700000000000728,
+      "median": 16.799999999999272,
       "min": 16.700000000000728,
-      "max": 16.700000000000728
+      "max": 16.799999999999272
     },
     {
       "library": "temporeum",
@@ -460,13 +403,13 @@
       "metric": "heap-after-pan",
       "unit": "MB",
       "samples": [
-        11.132696,
-        11.17816,
-        11.172968
+        11.187464,
+        11.19704,
+        11.18862
       ],
-      "median": 11.172968,
-      "min": 11.132696,
-      "max": 11.17816
+      "median": 11.18862,
+      "min": 11.187464,
+      "max": 11.19704
     },
     {
       "library": "temporeum",
@@ -476,13 +419,13 @@
       "metric": "zoom-missed-frames",
       "unit": "%",
       "samples": [
-        0,
+        1.5625,
         0,
         0
       ],
       "median": 0,
       "min": 0,
-      "max": 0
+      "max": 1.5625
     },
     {
       "library": "temporeum",
@@ -492,13 +435,13 @@
       "metric": "zoom-p95-frame",
       "unit": "ms",
       "samples": [
-        16.799999999999955,
-        16.799999999999955,
+        16.80000000000001,
+        16.700000000000045,
         16.700000000000045
       ],
-      "median": 16.799999999999955,
+      "median": 16.700000000000045,
       "min": 16.700000000000045,
-      "max": 16.799999999999955
+      "max": 16.80000000000001
     },
     {
       "library": "temporeum",
@@ -517,722 +460,6 @@
       "max": 4.299817198269885
     },
     {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        1088.3000000715256,
-        1088.3000000715256,
-        1088.1000000238419,
-        1087.5,
-        1087.3999999761581,
-        1088.3999999761581
-      ],
-      "median": 1088.2000000476837,
-      "min": 1087.3999999761581,
-      "max": 1088.3999999761581
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        680,
-        680,
-        680
-      ],
-      "median": 680,
-      "min": 680,
-      "max": 680
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        122,
-        122,
-        122
-      ],
-      "median": 122,
-      "min": 122,
-      "max": 122
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        92,
-        92,
-        92
-      ],
-      "median": 92,
-      "min": 92,
-      "max": 92
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "heap-after-load",
-      "unit": "MB",
-      "samples": [
-        6.633992,
-        6.633736,
-        6.633928
-      ],
-      "median": 6.633928,
-      "min": 6.633736,
-      "max": 6.633992
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.700000000000728,
-        16.73400000000015,
-        16.700000000000728
-      ],
-      "median": 16.700000000000728,
-      "min": 16.700000000000728,
-      "max": 16.73400000000015
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "heap-after-pan",
-      "unit": "MB",
-      "samples": [
-        7.344856,
-        7.344492,
-        7.344288
-      ],
-      "median": 7.344492,
-      "min": 7.344288,
-      "max": 7.344856
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.700000000000273,
-        16.700000000000273,
-        16.700000000000273
-      ],
-      "median": 16.700000000000273,
-      "min": 16.700000000000273,
-      "max": 16.700000000000273
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        4.2998169610345185,
-        4.2998169610345185,
-        4.2998169610345185
-      ],
-      "median": 4.2998169610345185,
-      "min": 4.2998169610345185,
-      "max": 4.2998169610345185
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        1088.6000000238419,
-        1088.8999999761581,
-        1088.7000000476837,
-        1087.8999999761581,
-        1089.6000000238419,
-        1095.7000000476837
-      ],
-      "median": 1088.800000011921,
-      "min": 1087.8999999761581,
-      "max": 1095.7000000476837
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        3802,
-        3802,
-        3802
-      ],
-      "median": 3802,
-      "min": 3802,
-      "max": 3802
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        906,
-        906,
-        906
-      ],
-      "median": 906,
-      "min": 906,
-      "max": 906
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        567,
-        567,
-        567
-      ],
-      "median": 567,
-      "min": 567,
-      "max": 567
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "heap-after-load",
-      "unit": "MB",
-      "samples": [
-        38.349528,
-        38.349076,
-        38.348944
-      ],
-      "median": 38.349076,
-      "min": 38.348944,
-      "max": 38.349528
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        1.2330456226880395,
-        1.4705882352941175,
-        1.0935601458080195
-      ],
-      "median": 1.2330456226880395,
-      "min": 1.0935601458080195,
-      "max": 1.4705882352941175
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.799999999999272,
-        16.799999999999272,
-        16.799999999999272
-      ],
-      "median": 16.799999999999272,
-      "min": 16.799999999999272,
-      "max": 16.799999999999272
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "heap-after-pan",
-      "unit": "MB",
-      "samples": [
-        39.20356,
-        39.198272,
-        39.207744
-      ],
-      "median": 39.20356,
-      "min": 39.198272,
-      "max": 39.207744
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.799999999999727,
-        16.700000000000045,
-        16.799999999999955
-      ],
-      "median": 16.799999999999727,
-      "min": 16.700000000000045,
-      "max": 16.799999999999955
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        4.299816959626618,
-        4.299816959626618,
-        4.299816959626618
-      ],
-      "median": 4.299816959626618,
-      "min": 4.299816959626618,
-      "max": 4.299816959626618
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        70,
-        73.39999997615814,
-        69.69999992847443,
-        72.5,
-        70.19999992847443,
-        71.10000002384186
-      ],
-      "median": 70.64999997615814,
-      "min": 69.69999992847443,
-      "max": 73.39999997615814
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        1635,
-        1635,
-        1635
-      ],
-      "median": 1635,
-      "min": 1635,
-      "max": 1635
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        629,
-        629,
-        629
-      ],
-      "median": 629,
-      "min": 629,
-      "max": 629
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        130,
-        130,
-        130
-      ],
-      "median": 130,
-      "min": 130,
-      "max": 130
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "heap-after-load",
-      "unit": "MB",
-      "samples": [
-        6.610068,
-        6.610156,
-        6.614352
-      ],
-      "median": 6.610156,
-      "min": 6.610068,
-      "max": 6.614352
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        0.6297229219143577,
-        0.12642225031605564,
-        0.25220680958385877
-      ],
-      "median": 0.25220680958385877,
-      "min": 0.12642225031605564,
-      "max": 0.6297229219143577
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.700000000000728,
-        16.799999999999272,
-        16.799999999999272
-      ],
-      "median": 16.799999999999272,
-      "min": 16.700000000000728,
-      "max": 16.799999999999272
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "heap-after-pan",
-      "unit": "MB",
-      "samples": [
-        8.187444,
-        8.177936,
-        8.184848
-      ],
-      "median": 8.184848,
-      "min": 8.177936,
-      "max": 8.187444
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        1.5625,
-        3.076923076923077,
-        1.5625
-      ],
-      "median": 1.5625,
-      "min": 1.5625,
-      "max": 3.076923076923077
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.799999999999955,
-        16.800000000000068,
-        16.700000000000045
-      ],
-      "median": 16.799999999999955,
-      "min": 16.700000000000045,
-      "max": 16.800000000000068
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 1000,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        4.2998166973836565,
-        4.2998166973836565,
-        4.2998166973836565
-      ],
-      "median": 4.2998166973836565,
-      "min": 4.2998166973836565,
-      "max": 4.2998166973836565
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        312.39999997615814,
-        324.7999999523163,
-        330.2000000476837,
-        303.5,
-        306.89999997615814,
-        307.5
-      ],
-      "median": 309.94999998807907,
-      "min": 303.5,
-      "max": 330.2000000476837
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        12220,
-        12220,
-        12220
-      ],
-      "median": 12220,
-      "min": 12220,
-      "max": 12220
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        6029,
-        6029,
-        6029
-      ],
-      "median": 6029,
-      "min": 6029,
-      "max": 6029
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        1065,
-        1065,
-        1065
-      ],
-      "median": 1065,
-      "min": 1065,
-      "max": 1065
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "heap-after-load",
-      "unit": "MB",
-      "samples": [
-        36.355816,
-        36.357236,
-        36.355684
-      ],
-      "median": 36.355816,
-      "min": 36.355684,
-      "max": 36.357236
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        26.33969118982743,
-        19.72972972972973,
-        22.08872458410351
-      ],
-      "median": 22.08872458410351,
-      "min": 19.72972972972973,
-      "max": 26.33969118982743
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        33.30000000000109,
-        16.80000000000109,
-        33.30000000000018
-      ],
-      "median": 33.30000000000018,
-      "min": 16.80000000000109,
-      "max": 33.30000000000109
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "heap-after-pan",
-      "unit": "MB",
-      "samples": [
-        42.365064,
-        42.552612,
-        42.637092
-      ],
-      "median": 42.552612,
-      "min": 42.365064,
-      "max": 42.637092
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        17.74891774891775,
-        17.84037558685446,
-        17.061611374407583
-      ],
-      "median": 17.74891774891775,
-      "min": 17.061611374407583,
-      "max": 17.84037558685446
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        49.90000000000009,
-        49.90000000000009,
-        50
-      ],
-      "median": 49.90000000000009,
-      "min": 49.90000000000009,
-      "max": 50
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "chromium",
-      "n": 10000,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        4.2998166976546175,
-        4.2998166976546175,
-        4.2998166976546175
-      ],
-      "median": 4.2998166976546175,
-      "min": 4.2998166976546175,
-      "max": 4.2998166976546175
-    },
-    {
       "library": "temporeum",
       "workload": "gantt",
       "browser": "chromium",
@@ -1240,201 +467,22 @@
       "metric": "first-render",
       "unit": "ms",
       "samples": [
+        72.10000002384186,
         71.70000004768372,
-        72.39999997615814,
-        71.79999995231628,
-        71.60000002384186,
-        70.5,
-        71.59999990463257
-      ],
-      "median": 71.65000003576279,
-      "min": 70.5,
-      "max": 72.39999997615814
-    },
-    {
-      "library": "temporeum",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        166,
-        166,
-        166
-      ],
-      "median": 166,
-      "min": 166,
-      "max": 166
-    },
-    {
-      "library": "temporeum",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        13,
-        13,
-        13
-      ],
-      "median": 13,
-      "min": 13,
-      "max": 13
-    },
-    {
-      "library": "temporeum",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        13,
-        13,
-        13
-      ],
-      "median": 13,
-      "min": 13,
-      "max": 13
-    },
-    {
-      "library": "temporeum",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "heap-after-load",
-      "unit": "MB",
-      "samples": [
-        2.522544,
-        2.522532,
-        2.523556
-      ],
-      "median": 2.522544,
-      "min": 2.522532,
-      "max": 2.523556
-    },
-    {
-      "library": "temporeum",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "temporeum",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.799999999995634,
-        16.700000000000728,
-        16.799999999999272
-      ],
-      "median": 16.799999999995634,
-      "min": 16.700000000000728,
-      "max": 16.799999999999272
-    },
-    {
-      "library": "temporeum",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "heap-after-pan",
-      "unit": "MB",
-      "samples": [
-        3.442456,
-        3.443444,
-        3.443296
-      ],
-      "median": 3.443296,
-      "min": 3.442456,
-      "max": 3.443444
-    },
-    {
-      "library": "temporeum",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "temporeum",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.700000000000045,
-        16.799999999999955,
-        16.800000000000068
-      ],
-      "median": 16.799999999999955,
-      "min": 16.700000000000045,
-      "max": 16.800000000000068
-    },
-    {
-      "library": "temporeum",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        4.299817198270844,
-        4.299817198270844,
-        4.299817198270844
-      ],
-      "median": 4.299817198270844,
-      "min": 4.299817198270844,
-      "max": 4.299817198270844
-    },
-    {
-      "library": "temporeum",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        71.80000007152557,
         71.5,
-        70.79999995231628,
+        71.5,
         71.39999997615814,
-        71.79999995231628,
-        70.69999992847443
+        71.60000002384186
       ],
-      "median": 71.44999998807907,
-      "min": 70.69999992847443,
-      "max": 71.80000007152557
+      "median": 71.55000001192093,
+      "min": 71.39999997615814,
+      "max": 72.10000002384186
     },
     {
       "library": "temporeum",
       "workload": "gantt",
       "browser": "chromium",
-      "n": 2000,
+      "n": 500,
       "metric": "dom-elements-after-load",
       "unit": "elements",
       "samples": [
@@ -1450,7 +498,7 @@
       "library": "temporeum",
       "workload": "gantt",
       "browser": "chromium",
-      "n": 2000,
+      "n": 500,
       "metric": "item-nodes-after-load",
       "unit": "nodes",
       "samples": [
@@ -1466,7 +514,7 @@
       "library": "temporeum",
       "workload": "gantt",
       "browser": "chromium",
-      "n": 2000,
+      "n": 500,
       "metric": "visible-items-after-load",
       "unit": "items",
       "samples": [
@@ -1482,23 +530,23 @@
       "library": "temporeum",
       "workload": "gantt",
       "browser": "chromium",
-      "n": 2000,
+      "n": 500,
       "metric": "heap-after-load",
       "unit": "MB",
       "samples": [
-        3.355104,
-        3.355104,
-        3.355104
+        2.525244,
+        2.5243,
+        2.524288
       ],
-      "median": 3.355104,
-      "min": 3.355104,
-      "max": 3.355104
+      "median": 2.5243,
+      "min": 2.524288,
+      "max": 2.525244
     },
     {
       "library": "temporeum",
       "workload": "gantt",
       "browser": "chromium",
-      "n": 2000,
+      "n": 500,
       "metric": "pan-missed-frames",
       "unit": "%",
       "samples": [
@@ -1514,17 +562,196 @@
       "library": "temporeum",
       "workload": "gantt",
       "browser": "chromium",
-      "n": 2000,
+      "n": 500,
       "metric": "pan-p95-frame",
       "unit": "ms",
       "samples": [
-        16.700000000000728,
-        16.700000000000728,
+        16.799999999999272,
+        16.700000000004366,
         16.700000000004366
       ],
-      "median": 16.700000000000728,
+      "median": 16.700000000004366,
+      "min": 16.700000000004366,
+      "max": 16.799999999999272
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "heap-after-pan",
+      "unit": "MB",
+      "samples": [
+        3.45016,
+        3.44896,
+        3.44944
+      ],
+      "median": 3.44944,
+      "min": 3.44896,
+      "max": 3.45016
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "zoom-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "zoom-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.80000000000001,
+        16.700000000000045,
+        16.80000000000001
+      ],
+      "median": 16.80000000000001,
+      "min": 16.700000000000045,
+      "max": 16.80000000000001
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 500,
+      "metric": "zoom-peak-factor",
+      "unit": "x",
+      "samples": [
+        4.299817198270844,
+        4.299817198270844,
+        4.299817198270844
+      ],
+      "median": 4.299817198270844,
+      "min": 4.299817198270844,
+      "max": 4.299817198270844
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "first-render",
+      "unit": "ms",
+      "samples": [
+        71.5,
+        71.60000002384186,
+        71.59999990463257,
+        70.10000002384186,
+        71.5,
+        72.69999992847443
+      ],
+      "median": 71.54999995231628,
+      "min": 70.10000002384186,
+      "max": 72.69999992847443
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "dom-elements-after-load",
+      "unit": "elements",
+      "samples": [
+        166,
+        166,
+        166
+      ],
+      "median": 166,
+      "min": 166,
+      "max": 166
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "item-nodes-after-load",
+      "unit": "nodes",
+      "samples": [
+        13,
+        13,
+        13
+      ],
+      "median": 13,
+      "min": 13,
+      "max": 13
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "visible-items-after-load",
+      "unit": "items",
+      "samples": [
+        13,
+        13,
+        13
+      ],
+      "median": 13,
+      "min": 13,
+      "max": 13
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "heap-after-load",
+      "unit": "MB",
+      "samples": [
+        3.359964,
+        3.35894,
+        3.360044
+      ],
+      "median": 3.359964,
+      "min": 3.35894,
+      "max": 3.360044
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "pan-missed-frames",
+      "unit": "%",
+      "samples": [
+        0,
+        0,
+        0
+      ],
+      "median": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "library": "temporeum",
+      "workload": "gantt",
+      "browser": "chromium",
+      "n": 2000,
+      "metric": "pan-p95-frame",
+      "unit": "ms",
+      "samples": [
+        16.799999999999272,
+        16.700000000000728,
+        16.799999999999272
+      ],
+      "median": 16.799999999999272,
       "min": 16.700000000000728,
-      "max": 16.700000000004366
+      "max": 16.799999999999272
     },
     {
       "library": "temporeum",
@@ -1534,13 +761,13 @@
       "metric": "heap-after-pan",
       "unit": "MB",
       "samples": [
-        4.270776,
-        4.271608,
-        4.272736
+        4.460328,
+        4.281408,
+        4.283488
       ],
-      "median": 4.271608,
-      "min": 4.270776,
-      "max": 4.272736
+      "median": 4.283488,
+      "min": 4.281408,
+      "max": 4.460328
     },
     {
       "library": "temporeum",
@@ -1568,11 +795,11 @@
       "samples": [
         16.700000000000045,
         16.700000000000045,
-        16.799999999999955
+        16.700000000000045
       ],
       "median": 16.700000000000045,
       "min": 16.700000000000045,
-      "max": 16.799999999999955
+      "max": 16.700000000000045
     },
     {
       "library": "temporeum",
@@ -1589,620 +816,6 @@
       "median": 4.299817198270844,
       "min": 4.299817198270844,
       "max": 4.299817198270844
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        89.30000007152557,
-        88.19999992847443,
-        88
-      ],
-      "median": 88.19999992847443,
-      "min": 88,
-      "max": 89.30000007152557
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        7807,
-        7807,
-        7807
-      ],
-      "median": 7807,
-      "min": 7807,
-      "max": 7807
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        500,
-        500,
-        500
-      ],
-      "median": 500,
-      "min": 500,
-      "max": 500
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        10,
-        10,
-        10
-      ],
-      "median": 10,
-      "min": 10,
-      "max": 10
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "heap-after-load",
-      "unit": "MB",
-      "samples": [
-        2.62632,
-        2.62632,
-        2.626308
-      ],
-      "median": 2.62632,
-      "min": 2.626308,
-      "max": 2.62632
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        25.462089777442475,
-        25.469571750563485,
-        25.21608417888012
-      ],
-      "median": 25.462089777442475,
-      "min": 25.21608417888012,
-      "max": 25.469571750563485
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        66.69999999999709,
-        66.70000000000073,
-        66.69999999999891
-      ],
-      "median": 66.69999999999891,
-      "min": 66.69999999999709,
-      "max": 66.70000000000073
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "heap-after-pan",
-      "unit": "MB",
-      "samples": [
-        3.18396,
-        3.18384,
-        3.183948
-      ],
-      "median": 3.183948,
-      "min": 3.18384,
-      "max": 3.18396
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        256.7000000476837,
-        258,
-        254.69999992847443
-      ],
-      "median": 256.7000000476837,
-      "min": 254.69999992847443,
-      "max": 258
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        30157,
-        30157,
-        30157
-      ],
-      "median": 30157,
-      "min": 30157,
-      "max": 30157
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        2000,
-        2000,
-        2000
-      ],
-      "median": 2000,
-      "min": 2000,
-      "max": 2000
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        10,
-        10,
-        10
-      ],
-      "median": 10,
-      "min": 10,
-      "max": 10
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "heap-after-load",
-      "unit": "MB",
-      "samples": [
-        5.55348,
-        5.5534,
-        5.553496
-      ],
-      "median": 5.55348,
-      "min": 5.5534,
-      "max": 5.553496
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        57.0863393064929,
-        56.53184565318456,
-        56.14117647058824
-      ],
-      "median": 56.53184565318456,
-      "min": 56.14117647058824,
-      "max": 57.0863393064929
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        283.2999999999993,
-        283.2999999999993,
-        283.2000000000007
-      ],
-      "median": 283.2999999999993,
-      "min": 283.2000000000007,
-      "max": 283.2999999999993
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "heap-after-pan",
-      "unit": "MB",
-      "samples": [
-        6.022976,
-        5.970544,
-        6.278524
-      ],
-      "median": 6.022976,
-      "min": 5.970544,
-      "max": 6.278524
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        105,
-        104.79999995231628,
-        86.79999995231628,
-        88.19999992847443,
-        86.79999995231628,
-        103.5
-      ],
-      "median": 95.84999996423721,
-      "min": 86.79999995231628,
-      "max": 105
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        338,
-        338,
-        338
-      ],
-      "median": 338,
-      "min": 338,
-      "max": 338
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        26,
-        26,
-        26
-      ],
-      "median": 26,
-      "min": 26,
-      "max": 26
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        12,
-        12,
-        12
-      ],
-      "median": 12,
-      "min": 12,
-      "max": 12
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "heap-after-load",
-      "unit": "MB",
-      "samples": [
-        4.091608,
-        4.048544,
-        4.048548
-      ],
-      "median": 4.048548,
-      "min": 4.048544,
-      "max": 4.091608
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.799999999999272,
-        16.799999999999272,
-        16.700000000000728
-      ],
-      "median": 16.799999999999272,
-      "min": 16.700000000000728,
-      "max": 16.799999999999272
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "heap-after-pan",
-      "unit": "MB",
-      "samples": [
-        4.084764,
-        4.082052,
-        4.082664
-      ],
-      "median": 4.082664,
-      "min": 4.082052,
-      "max": 4.084764
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.700000000000045,
-        16.700000000000045,
-        16.700000000000045
-      ],
-      "median": 16.700000000000045,
-      "min": 16.700000000000045,
-      "max": 16.700000000000045
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 500,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        3.32,
-        3.26,
-        3.32
-      ],
-      "median": 3.32,
-      "min": 3.26,
-      "max": 3.32
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        171.69999992847443,
-        171.60000002384186,
-        169.70000004768372,
-        170.60000002384186,
-        171.60000002384186,
-        170.69999992847443
-      ],
-      "median": 171.14999997615814,
-      "min": 169.70000004768372,
-      "max": 171.69999992847443
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        338,
-        338,
-        338
-      ],
-      "median": 338,
-      "min": 338,
-      "max": 338
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        26,
-        26,
-        26
-      ],
-      "median": 26,
-      "min": 26,
-      "max": 26
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        12,
-        12,
-        12
-      ],
-      "median": 12,
-      "min": 12,
-      "max": 12
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "heap-after-load",
-      "unit": "MB",
-      "samples": [
-        7.493548,
-        7.50824,
-        7.49126
-      ],
-      "median": 7.493548,
-      "min": 7.49126,
-      "max": 7.50824
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.700000000000728,
-        16.700000000000728,
-        16.700000000000728
-      ],
-      "median": 16.700000000000728,
-      "min": 16.700000000000728,
-      "max": 16.700000000000728
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "heap-after-pan",
-      "unit": "MB",
-      "samples": [
-        5.241816,
-        5.237924,
-        5.241256
-      ],
-      "median": 5.241256,
-      "min": 5.237924,
-      "max": 5.241816
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.700000000000045,
-        16.700000000000045,
-        16.700000000000045
-      ],
-      "median": 16.700000000000045,
-      "min": 16.700000000000045,
-      "max": 16.700000000000045
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "chromium",
-      "n": 2000,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        3.32,
-        3.32,
-        3.3
-      ],
-      "median": 3.32,
-      "min": 3.3,
-      "max": 3.32
     },
     {
       "library": "temporeum",
@@ -2212,16 +825,16 @@
       "metric": "first-render",
       "unit": "ms",
       "samples": [
-        117,
-        86,
-        84,
-        86,
-        76,
-        73
+        171,
+        81,
+        87,
+        94,
+        74,
+        69
       ],
-      "median": 85,
-      "min": 73,
-      "max": 117
+      "median": 84,
+      "min": 69,
+      "max": 171
     },
     {
       "library": "temporeum",
@@ -2279,13 +892,13 @@
       "metric": "pan-missed-frames",
       "unit": "%",
       "samples": [
-        0.12422360248447205,
+        0,
         0,
         0
       ],
       "median": 0,
       "min": 0,
-      "max": 0.12422360248447205
+      "max": 0
     },
     {
       "library": "temporeum",
@@ -2327,13 +940,13 @@
       "metric": "zoom-p95-frame",
       "unit": "ms",
       "samples": [
-        16.960000000000008,
         16.680000000000064,
-        16.680000000000007
+        17.119999999999976,
+        16.680000000000064
       ],
       "median": 16.680000000000064,
-      "min": 16.680000000000007,
-      "max": 16.960000000000008
+      "min": 16.680000000000064,
+      "max": 17.119999999999976
     },
     {
       "library": "temporeum",
@@ -2359,16 +972,16 @@
       "metric": "first-render",
       "unit": "ms",
       "samples": [
-        118,
-        105,
         116,
+        112,
+        116,
+        121,
         108,
-        116,
-        123
+        120
       ],
       "median": 116,
-      "min": 105,
-      "max": 123
+      "min": 108,
+      "max": 121
     },
     {
       "library": "temporeum",
@@ -2427,12 +1040,12 @@
       "unit": "%",
       "samples": [
         0,
-        0,
+        0.1226993865030675,
         0
       ],
       "median": 0,
       "min": 0,
-      "max": 0
+      "max": 0.1226993865030675
     },
     {
       "library": "temporeum",
@@ -2459,12 +1072,12 @@
       "unit": "%",
       "samples": [
         0,
-        1.5873015873015872,
+        0,
         0
       ],
       "median": 0,
       "min": 0,
-      "max": 1.5873015873015872
+      "max": 0
     },
     {
       "library": "temporeum",
@@ -2474,13 +1087,13 @@
       "metric": "zoom-p95-frame",
       "unit": "ms",
       "samples": [
-        16.95999999999998,
-        16.8599999999999,
-        16.75999999999999
+        16.680000000000064,
+        16.680000000000064,
+        16.680000000000064
       ],
-      "median": 16.8599999999999,
-      "min": 16.75999999999999,
-      "max": 16.95999999999998
+      "median": 16.680000000000064,
+      "min": 16.680000000000064,
+      "max": 16.680000000000064
     },
     {
       "library": "temporeum",
@@ -2499,594 +1112,6 @@
       "max": 3.5831807999999503
     },
     {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        1113,
-        1092,
-        1093,
-        1091,
-        1089,
-        1095
-      ],
-      "median": 1092.5,
-      "min": 1089,
-      "max": 1113
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        620,
-        620,
-        620
-      ],
-      "median": 620,
-      "min": 620,
-      "max": 620
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        107,
-        107,
-        107
-      ],
-      "median": 107,
-      "min": 107,
-      "max": 107
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        88,
-        88,
-        88
-      ],
-      "median": 88,
-      "min": 88,
-      "max": 88
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.68000000000029,
-        16.68000000000029,
-        16.68000000000029
-      ],
-      "median": 16.68000000000029,
-      "min": 16.68000000000029,
-      "max": 16.68000000000029
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.680000000000064,
-        16.680000000000064,
-        16.680000000000064
-      ],
-      "median": 16.680000000000064,
-      "min": 16.680000000000064,
-      "max": 16.680000000000064
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        25.628906294821327,
-        25.628906294821327,
-        25.628906294821327
-      ],
-      "median": 25.628906294821327,
-      "min": 25.628906294821327,
-      "max": 25.628906294821327
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        538,
-        1098,
-        544,
-        548,
-        1098,
-        542
-      ],
-      "median": 546,
-      "min": 538,
-      "max": 1098
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        3198,
-        3198,
-        3198
-      ],
-      "median": 3198,
-      "min": 3198,
-      "max": 3198
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        755,
-        755,
-        755
-      ],
-      "median": 755,
-      "min": 755,
-      "max": 755
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        540,
-        540,
-        540
-      ],
-      "median": 540,
-      "min": 540,
-      "max": 540
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        2.7127003699136867,
-        3.5891089108910887,
-        3.1784841075794623
-      ],
-      "median": 3.1784841075794623,
-      "min": 2.7127003699136867,
-      "max": 3.5891089108910887
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.94000000000051,
-        17.220000000000255,
-        16.840000000000146
-      ],
-      "median": 16.94000000000051,
-      "min": 16.840000000000146,
-      "max": 17.220000000000255
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        17.299999999999955,
-        16.680000000000064,
-        16.680000000000064
-      ],
-      "median": 16.680000000000064,
-      "min": 16.680000000000064,
-      "max": 17.299999999999955
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        25.62890624766458,
-        25.62890624766458,
-        25.62890624766458
-      ],
-      "median": 25.62890624766458,
-      "min": 25.62890624766458,
-      "max": 25.62890624766458
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        119,
-        108,
-        86,
-        107,
-        103,
-        102
-      ],
-      "median": 105,
-      "min": 86,
-      "max": 119
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        1635,
-        1635,
-        1635
-      ],
-      "median": 1635,
-      "min": 1635,
-      "max": 1635
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        629,
-        629,
-        629
-      ],
-      "median": 629,
-      "min": 629,
-      "max": 629
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        130,
-        130,
-        130
-      ],
-      "median": 130,
-      "min": 130,
-      "max": 130
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0.12345679012345678,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0.12345679012345678
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.68000000000029,
-        16.68000000000029,
-        16.68000000000029
-      ],
-      "median": 16.68000000000029,
-      "min": 16.68000000000029,
-      "max": 16.68000000000029
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.680000000000064,
-        16.680000000000064,
-        16.680000000000007
-      ],
-      "median": 16.680000000000064,
-      "min": 16.680000000000007,
-      "max": 16.680000000000064
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 1000,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        4.2998169610345185,
-        4.2998169610345185,
-        4.2998169610345185
-      ],
-      "median": 4.2998169610345185,
-      "min": 4.2998169610345185,
-      "max": 4.2998169610345185
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        342,
-        378,
-        380,
-        342,
-        379,
-        379
-      ],
-      "median": 378.5,
-      "min": 342,
-      "max": 380
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        12220,
-        12220,
-        12220
-      ],
-      "median": 12220,
-      "min": 12220,
-      "max": 12220
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        6029,
-        6029,
-        6029
-      ],
-      "median": 6029,
-      "min": 6029,
-      "max": 6029
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        1065,
-        1065,
-        1065
-      ],
-      "median": 1065,
-      "min": 1065,
-      "max": 1065
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        20.48331415420023,
-        16.60939289805269,
-        17.75486827033219
-      ],
-      "median": 17.75486827033219,
-      "min": 16.60939289805269,
-      "max": 20.48331415420023
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        33.340000000000146,
-        33.340000000000146,
-        33.340000000000146
-      ],
-      "median": 33.340000000000146,
-      "min": 33.340000000000146,
-      "max": 33.340000000000146
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        55.952380952380956,
-        57.831325301204814,
-        54.65116279069767
-      ],
-      "median": 55.952380952380956,
-      "min": 54.65116279069767,
-      "max": 57.831325301204814
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        116.65999999999985,
-        116.67999999999984,
-        133.31999999999994
-      ],
-      "median": 116.67999999999984,
-      "min": 116.65999999999985,
-      "max": 133.31999999999994
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "firefox",
-      "n": 10000,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        4.2998169602655745,
-        4.2998169602655745,
-        4.2998169602655745
-      ],
-      "median": 4.2998169602655745,
-      "min": 4.2998169602655745,
-      "max": 4.2998169602655745
-    },
-    {
       "library": "temporeum",
       "workload": "gantt",
       "browser": "firefox",
@@ -3094,16 +1119,16 @@
       "metric": "first-render",
       "unit": "ms",
       "samples": [
-        86,
-        79,
+        72,
+        90,
         77,
-        80,
-        82,
-        82
+        73,
+        71,
+        94
       ],
-      "median": 81,
-      "min": 77,
-      "max": 86
+      "median": 75,
+      "min": 71,
+      "max": 94
     },
     {
       "library": "temporeum",
@@ -3162,12 +1187,12 @@
       "unit": "%",
       "samples": [
         0,
-        0,
+        0.07733952049497293,
         0
       ],
       "median": 0,
       "min": 0,
-      "max": 0
+      "max": 0.07733952049497293
     },
     {
       "library": "temporeum",
@@ -3210,12 +1235,12 @@
       "unit": "ms",
       "samples": [
         16.680000000000064,
-        16.680000000000007,
+        16.779999999999973,
         16.680000000000064
       ],
       "median": 16.680000000000064,
-      "min": 16.680000000000007,
-      "max": 16.680000000000064
+      "min": 16.680000000000064,
+      "max": 16.779999999999973
     },
     {
       "library": "temporeum",
@@ -3241,16 +1266,16 @@
       "metric": "first-render",
       "unit": "ms",
       "samples": [
-        77,
-        88,
-        84,
         76,
-        83,
-        84
+        75,
+        80,
+        74,
+        80,
+        76
       ],
-      "median": 83.5,
-      "min": 76,
-      "max": 88
+      "median": 76,
+      "min": 74,
+      "max": 80
     },
     {
       "library": "temporeum",
@@ -3309,12 +1334,12 @@
       "unit": "%",
       "samples": [
         0,
-        0.07704160246533129,
+        0,
         0
       ],
       "median": 0,
       "min": 0,
-      "max": 0.07704160246533129
+      "max": 0
     },
     {
       "library": "temporeum",
@@ -3325,12 +1350,12 @@
       "unit": "ms",
       "samples": [
         16.68000000000029,
-        16.69999999999709,
+        16.68000000000029,
         16.68000000000029
       ],
       "median": 16.68000000000029,
       "min": 16.68000000000029,
-      "max": 16.69999999999709
+      "max": 16.68000000000029
     },
     {
       "library": "temporeum",
@@ -3356,13 +1381,13 @@
       "metric": "zoom-p95-frame",
       "unit": "ms",
       "samples": [
-        16.680000000000064,
-        16.719999999999914,
-        17.100000000000136
+        16.75999999999999,
+        16.699999999999932,
+        16.680000000000064
       ],
-      "median": 16.719999999999914,
+      "median": 16.699999999999932,
       "min": 16.680000000000064,
-      "max": 17.100000000000136
+      "max": 16.75999999999999
     },
     {
       "library": "temporeum",
@@ -3379,492 +1404,6 @@
       "median": 3.583180799999955,
       "min": 3.583180799999955,
       "max": 3.583180799999955
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 500,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        120,
-        133,
-        117
-      ],
-      "median": 120,
-      "min": 117,
-      "max": 133
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 500,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        7807,
-        7807,
-        7807
-      ],
-      "median": 7807,
-      "min": 7807,
-      "max": 7807
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 500,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        500,
-        500,
-        500
-      ],
-      "median": 500,
-      "min": 500,
-      "max": 500
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 500,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        10,
-        10,
-        10
-      ],
-      "median": 10,
-      "min": 10,
-      "max": 10
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 500,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        0.13550135501355012,
-        0.06798096532970768,
-        0.2715546503733876
-      ],
-      "median": 0.13550135501355012,
-      "min": 0.06798096532970768,
-      "max": 0.2715546503733876
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 500,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.68000000000029,
-        16.68000000000029,
-        16.68000000000029
-      ],
-      "median": 16.68000000000029,
-      "min": 16.68000000000029,
-      "max": 16.68000000000029
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 2000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        339,
-        342,
-        343
-      ],
-      "median": 342,
-      "min": 339,
-      "max": 343
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 2000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        30157,
-        30157,
-        30157
-      ],
-      "median": 30157,
-      "min": 30157,
-      "max": 30157
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 2000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        2000,
-        2000,
-        2000
-      ],
-      "median": 2000,
-      "min": 2000,
-      "max": 2000
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 2000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        10,
-        10,
-        10
-      ],
-      "median": 10,
-      "min": 10,
-      "max": 10
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 2000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        0.5481120584652862,
-        0.42168674698795183,
-        0.42168674698795183
-      ],
-      "median": 0.42168674698795183,
-      "min": 0.42168674698795183,
-      "max": 0.5481120584652862
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 2000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.720000000001164,
-        16.68000000000029,
-        16.68000000000029
-      ],
-      "median": 16.68000000000029,
-      "min": 16.68000000000029,
-      "max": 16.720000000001164
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 500,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        137,
-        142,
-        121,
-        125,
-        119,
-        126
-      ],
-      "median": 125.5,
-      "min": 119,
-      "max": 142
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 500,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        338,
-        338,
-        338
-      ],
-      "median": 338,
-      "min": 338,
-      "max": 338
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 500,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        26,
-        26,
-        26
-      ],
-      "median": 26,
-      "min": 26,
-      "max": 26
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 500,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        12,
-        12,
-        12
-      ],
-      "median": 12,
-      "min": 12,
-      "max": 12
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 500,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 500,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.68000000000029,
-        16.68000000000029,
-        16.68000000000029
-      ],
-      "median": 16.68000000000029,
-      "min": 16.68000000000029,
-      "max": 16.68000000000029
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 500,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 500,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.680000000000064,
-        16.680000000000064,
-        17.079999999999927
-      ],
-      "median": 16.680000000000064,
-      "min": 16.680000000000064,
-      "max": 17.079999999999927
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 500,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        2.82,
-        2.68,
-        2.8
-      ],
-      "median": 2.8,
-      "min": 2.68,
-      "max": 2.82
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 2000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        245,
-        247,
-        254,
-        247,
-        240,
-        248
-      ],
-      "median": 247,
-      "min": 240,
-      "max": 254
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 2000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        338,
-        338,
-        338
-      ],
-      "median": 338,
-      "min": 338,
-      "max": 338
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 2000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        26,
-        26,
-        26
-      ],
-      "median": 26,
-      "min": 26,
-      "max": 26
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 2000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        12,
-        12,
-        12
-      ],
-      "median": 12,
-      "min": 12,
-      "max": 12
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 2000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 2000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.68000000000029,
-        16.68000000000029,
-        16.68000000000029
-      ],
-      "median": 16.68000000000029,
-      "min": 16.68000000000029,
-      "max": 16.68000000000029
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 2000,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 2000,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16.680000000000064,
-        16.68000000000029,
-        17.200000000000273
-      ],
-      "median": 16.68000000000029,
-      "min": 16.680000000000064,
-      "max": 17.200000000000273
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "firefox",
-      "n": 2000,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        2.76,
-        2.5,
-        2.68
-      ],
-      "median": 2.68,
-      "min": 2.5,
-      "max": 2.76
     },
     {
       "library": "temporeum",
@@ -3874,16 +1413,16 @@
       "metric": "first-render",
       "unit": "ms",
       "samples": [
-        115,
-        54,
-        65,
-        57,
+        128,
+        62,
+        51,
+        66,
         63,
-        74
+        72
       ],
-      "median": 64,
-      "min": 54,
-      "max": 115
+      "median": 64.5,
+      "min": 51,
+      "max": 128
     },
     {
       "library": "temporeum",
@@ -3941,13 +1480,13 @@
       "metric": "pan-missed-frames",
       "unit": "%",
       "samples": [
-        0.2061855670103093,
-        0,
+        0.2068252326783868,
+        0.205761316872428,
         0
       ],
-      "median": 0,
+      "median": 0.205761316872428,
       "min": 0,
-      "max": 0.2061855670103093
+      "max": 0.2068252326783868
     },
     {
       "library": "temporeum",
@@ -3989,12 +1528,12 @@
       "metric": "zoom-p95-frame",
       "unit": "ms",
       "samples": [
-        16,
-        16,
+        17,
+        17,
         17
       ],
-      "median": 16,
-      "min": 16,
+      "median": 17,
+      "min": 17,
       "max": 17
     },
     {
@@ -4021,16 +1560,16 @@
       "metric": "first-render",
       "unit": "ms",
       "samples": [
-        90,
+        105,
+        96,
+        99,
         93,
-        92,
         103,
-        92,
-        103
+        92
       ],
-      "median": 92.5,
-      "min": 90,
-      "max": 103
+      "median": 97.5,
+      "min": 92,
+      "max": 105
     },
     {
       "library": "temporeum",
@@ -4104,13 +1643,13 @@
       "metric": "pan-p95-frame",
       "unit": "ms",
       "samples": [
-        15,
-        15,
+        16,
+        16,
         15
       ],
-      "median": 15,
+      "median": 16,
       "min": 15,
-      "max": 15
+      "max": 16
     },
     {
       "library": "temporeum",
@@ -4136,13 +1675,13 @@
       "metric": "zoom-p95-frame",
       "unit": "ms",
       "samples": [
-        17,
-        17,
-        17
+        16,
+        15,
+        16
       ],
-      "median": 17,
-      "min": 17,
-      "max": 17
+      "median": 16,
+      "min": 15,
+      "max": 16
     },
     {
       "library": "temporeum",
@@ -4161,594 +1700,6 @@
       "max": 3.525421487365355
     },
     {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        1104,
-        1067,
-        1072,
-        1069,
-        1066,
-        1061
-      ],
-      "median": 1068,
-      "min": 1061,
-      "max": 1104
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        680,
-        680,
-        680
-      ],
-      "median": 680,
-      "min": 680,
-      "max": 680
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        122,
-        122,
-        122
-      ],
-      "median": 122,
-      "min": 122,
-      "max": 122
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        92,
-        92,
-        92
-      ],
-      "median": 92,
-      "min": 92,
-      "max": 92
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0.20876826722338201,
-        0.10460251046025104
-      ],
-      "median": 0.10460251046025104,
-      "min": 0,
-      "max": 0.20876826722338201
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        15,
-        15,
-        16
-      ],
-      "median": 15,
-      "min": 15,
-      "max": 16
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        17,
-        17,
-        19
-      ],
-      "median": 17,
-      "min": 17,
-      "max": 19
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        25.628906294821327,
-        25.628906294821327,
-        25.628906294821327
-      ],
-      "median": 25.628906294821327,
-      "min": 25.628906294821327,
-      "max": 25.628906294821327
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        1105,
-        1105,
-        1101,
-        1104,
-        1112,
-        1105
-      ],
-      "median": 1105,
-      "min": 1101,
-      "max": 1112
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        3802,
-        3802,
-        3802
-      ],
-      "median": 3802,
-      "min": 3802,
-      "max": 3802
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        906,
-        906,
-        906
-      ],
-      "median": 906,
-      "min": 906,
-      "max": 906
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        567,
-        567,
-        567
-      ],
-      "median": 567,
-      "min": 567,
-      "max": 567
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        26.057906458797326,
-        26.512651265126514,
-        26.298342541436465
-      ],
-      "median": 26.298342541436465,
-      "min": 26.057906458797326,
-      "max": 26.512651265126514
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        32,
-        32,
-        31
-      ],
-      "median": 32,
-      "min": 31,
-      "max": 32
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        7.792207792207792,
-        8.974358974358974,
-        6.493506493506493
-      ],
-      "median": 7.792207792207792,
-      "min": 6.493506493506493,
-      "max": 8.974358974358974
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        28,
-        27,
-        24
-      ],
-      "median": 27,
-      "min": 24,
-      "max": 28
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        25.62890624766458,
-        25.62890624766458,
-        25.62890624766458
-      ],
-      "median": 25.62890624766458,
-      "min": 25.62890624766458,
-      "max": 25.62890624766458
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        151,
-        146,
-        145,
-        146,
-        145,
-        145
-      ],
-      "median": 145.5,
-      "min": 145,
-      "max": 151
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        1635,
-        1635,
-        1635
-      ],
-      "median": 1635,
-      "min": 1635,
-      "max": 1635
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        629,
-        629,
-        629
-      ],
-      "median": 629,
-      "min": 629,
-      "max": 629
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        130,
-        130,
-        130
-      ],
-      "median": 130,
-      "min": 130,
-      "max": 130
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        0.5128205128205128,
-        0.7157464212678937,
-        0.7135575942915392
-      ],
-      "median": 0.7135575942915392,
-      "min": 0.5128205128205128,
-      "max": 0.7157464212678937
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        19,
-        20,
-        19
-      ],
-      "median": 19,
-      "min": 19,
-      "max": 20
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        10.588235294117647,
-        11.904761904761903,
-        12.048192771084338
-      ],
-      "median": 11.904761904761903,
-      "min": 10.588235294117647,
-      "max": 12.048192771084338
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        38,
-        38,
-        38
-      ],
-      "median": 38,
-      "min": 38,
-      "max": 38
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 1000,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        4.034276969040392,
-        4.034276969040392,
-        4.034276969040392
-      ],
-      "median": 4.034276969040392,
-      "min": 4.034276969040392,
-      "max": 4.034276969040392
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        893,
-        907,
-        913,
-        903,
-        918,
-        920
-      ],
-      "median": 910,
-      "min": 893,
-      "max": 920
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        12220,
-        12220,
-        12220
-      ],
-      "median": 12220,
-      "min": 12220,
-      "max": 12220
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        6029,
-        6029,
-        6029
-      ],
-      "median": 6029,
-      "min": 6029,
-      "max": 6029
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        1065,
-        1065,
-        1065
-      ],
-      "median": 1065,
-      "min": 1065,
-      "max": 1065
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        73.6929460580913,
-        73.27227310574521,
-        73.83333333333333
-      ],
-      "median": 73.6929460580913,
-      "min": 73.27227310574521,
-      "max": 73.83333333333333
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        116,
-        118,
-        119
-      ],
-      "median": 118,
-      "min": 116,
-      "max": 119
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        81.57894736842105,
-        81.34715025906736,
-        81.48148148148148
-      ],
-      "median": 81.48148148148148,
-      "min": 81.34715025906736,
-      "max": 81.57894736842105
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        206,
-        204,
-        205
-      ],
-      "median": 205,
-      "min": 204,
-      "max": 206
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": "webkit",
-      "n": 10000,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        4.034276974674803,
-        4.034276974674803,
-        4.034276974674803
-      ],
-      "median": 4.034276974674803,
-      "min": 4.034276974674803,
-      "max": 4.034276974674803
-    },
-    {
       "library": "temporeum",
       "workload": "gantt",
       "browser": "webkit",
@@ -4756,16 +1707,16 @@
       "metric": "first-render",
       "unit": "ms",
       "samples": [
-        59,
-        63,
+        64,
+        55,
+        52,
         62,
-        53,
-        54,
-        52
+        56,
+        55
       ],
-      "median": 56.5,
+      "median": 55.5,
       "min": 52,
-      "max": 63
+      "max": 64
     },
     {
       "library": "temporeum",
@@ -4903,16 +1854,16 @@
       "metric": "first-render",
       "unit": "ms",
       "samples": [
+        51,
+        57,
+        54,
         52,
-        60,
-        52,
-        53,
-        65,
+        58,
         62
       ],
-      "median": 56.5,
-      "min": 52,
-      "max": 65
+      "median": 55.5,
+      "min": 51,
+      "max": 62
     },
     {
       "library": "temporeum",
@@ -5043,492 +1994,6 @@
       "max": 3.525421487364926
     },
     {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 500,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        136,
-        124,
-        127
-      ],
-      "median": 127,
-      "min": 124,
-      "max": 136
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 500,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        7807,
-        7807,
-        7807
-      ],
-      "median": 7807,
-      "min": 7807,
-      "max": 7807
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 500,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        500,
-        500,
-        500
-      ],
-      "median": 500,
-      "min": 500,
-      "max": 500
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 500,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        10,
-        10,
-        10
-      ],
-      "median": 10,
-      "min": 10,
-      "max": 10
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 500,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        20.563230605738575,
-        20.499203398831654,
-        20.18104366347178
-      ],
-      "median": 20.499203398831654,
-      "min": 20.18104366347178,
-      "max": 20.563230605738575
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 500,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        22,
-        22,
-        23
-      ],
-      "median": 22,
-      "min": 22,
-      "max": 23
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 2000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        523,
-        536,
-        537
-      ],
-      "median": 536,
-      "min": 523,
-      "max": 537
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 2000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        30157,
-        30157,
-        30157
-      ],
-      "median": 30157,
-      "min": 30157,
-      "max": 30157
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 2000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        2000,
-        2000,
-        2000
-      ],
-      "median": 2000,
-      "min": 2000,
-      "max": 2000
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 2000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        10,
-        10,
-        10
-      ],
-      "median": 10,
-      "min": 10,
-      "max": 10
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 2000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        65.73411863693731,
-        65.11820821236002,
-        65.47870097005483
-      ],
-      "median": 65.47870097005483,
-      "min": 65.11820821236002,
-      "max": 65.73411863693731
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 2000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        249,
-        250,
-        252
-      ],
-      "median": 250,
-      "min": 249,
-      "max": 252
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 500,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        162,
-        154,
-        148,
-        150,
-        145,
-        147
-      ],
-      "median": 149,
-      "min": 145,
-      "max": 162
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 500,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        338,
-        338,
-        338
-      ],
-      "median": 338,
-      "min": 338,
-      "max": 338
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 500,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        26,
-        26,
-        26
-      ],
-      "median": 26,
-      "min": 26,
-      "max": 26
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 500,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        12,
-        12,
-        12
-      ],
-      "median": 12,
-      "min": 12,
-      "max": 12
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 500,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0.06968641114982578,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0.06968641114982578
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 500,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        15,
-        15,
-        15
-      ],
-      "median": 15,
-      "min": 15,
-      "max": 15
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 500,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        1.2658227848101267,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 1.2658227848101267
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 500,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        15,
-        15,
-        15
-      ],
-      "median": 15,
-      "min": 15,
-      "max": 15
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 500,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        2.68,
-        2.76,
-        2.76
-      ],
-      "median": 2.76,
-      "min": 2.68,
-      "max": 2.76
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 2000,
-      "metric": "first-render",
-      "unit": "ms",
-      "samples": [
-        437,
-        434,
-        438,
-        436,
-        439,
-        436
-      ],
-      "median": 436.5,
-      "min": 434,
-      "max": 439
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 2000,
-      "metric": "dom-elements-after-load",
-      "unit": "elements",
-      "samples": [
-        338,
-        338,
-        338
-      ],
-      "median": 338,
-      "min": 338,
-      "max": 338
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 2000,
-      "metric": "item-nodes-after-load",
-      "unit": "nodes",
-      "samples": [
-        26,
-        26,
-        26
-      ],
-      "median": 26,
-      "min": 26,
-      "max": 26
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 2000,
-      "metric": "visible-items-after-load",
-      "unit": "items",
-      "samples": [
-        12,
-        12,
-        12
-      ],
-      "median": 12,
-      "min": 12,
-      "max": 12
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 2000,
-      "metric": "pan-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 2000,
-      "metric": "pan-p95-frame",
-      "unit": "ms",
-      "samples": [
-        15,
-        15,
-        15
-      ],
-      "median": 15,
-      "min": 15,
-      "max": 15
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 2000,
-      "metric": "zoom-missed-frames",
-      "unit": "%",
-      "samples": [
-        0,
-        0,
-        0
-      ],
-      "median": 0,
-      "min": 0,
-      "max": 0
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 2000,
-      "metric": "zoom-p95-frame",
-      "unit": "ms",
-      "samples": [
-        16,
-        16,
-        15
-      ],
-      "median": 16,
-      "min": 15,
-      "max": 16
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": "webkit",
-      "n": 2000,
-      "metric": "zoom-peak-factor",
-      "unit": "x",
-      "samples": [
-        2.64,
-        2.64,
-        2.68
-      ],
-      "median": 2.64,
-      "min": 2.64,
-      "max": 2.68
-    },
-    {
       "library": "temporeum",
       "workload": "timeline",
       "browser": null,
@@ -5536,11 +2001,11 @@
       "metric": "js-min",
       "unit": "kB",
       "samples": [
-        164.883
+        163.943
       ],
-      "median": 164.883,
-      "min": 164.883,
-      "max": 164.883
+      "median": 163.943,
+      "min": 163.943,
+      "max": 163.943
     },
     {
       "library": "temporeum",
@@ -5550,67 +2015,11 @@
       "metric": "js-min-gz",
       "unit": "kB",
       "samples": [
-        58.369
+        58.376
       ],
-      "median": 58.369,
-      "min": 58.369,
-      "max": 58.369
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": null,
-      "n": null,
-      "metric": "js-min",
-      "unit": "kB",
-      "samples": [
-        548.303
-      ],
-      "median": 548.303,
-      "min": 548.303,
-      "max": 548.303
-    },
-    {
-      "library": "vis-timeline",
-      "workload": "timeline",
-      "browser": null,
-      "n": null,
-      "metric": "js-min-gz",
-      "unit": "kB",
-      "samples": [
-        155.822
-      ],
-      "median": 155.822,
-      "min": 155.822,
-      "max": 155.822
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": null,
-      "n": null,
-      "metric": "js-min",
-      "unit": "kB",
-      "samples": [
-        328.681
-      ],
-      "median": 328.681,
-      "min": 328.681,
-      "max": 328.681
-    },
-    {
-      "library": "react-calendar-timeline",
-      "workload": "timeline",
-      "browser": null,
-      "n": null,
-      "metric": "js-min-gz",
-      "unit": "kB",
-      "samples": [
-        97.649
-      ],
-      "median": 97.649,
-      "min": 97.649,
-      "max": 97.649
+      "median": 58.376,
+      "min": 58.376,
+      "max": 58.376
     },
     {
       "library": "temporeum",
@@ -5620,11 +2029,11 @@
       "metric": "js-min",
       "unit": "kB",
       "samples": [
-        184.853
+        183.913
       ],
-      "median": 184.853,
-      "min": 184.853,
-      "max": 184.853
+      "median": 183.913,
+      "min": 183.913,
+      "max": 183.913
     },
     {
       "library": "temporeum",
@@ -5634,95 +2043,11 @@
       "metric": "js-min-gz",
       "unit": "kB",
       "samples": [
-        66.286
+        66.293
       ],
-      "median": 66.286,
-      "min": 66.286,
-      "max": 66.286
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": null,
-      "n": null,
-      "metric": "js-min",
-      "unit": "kB",
-      "samples": [
-        48.175
-      ],
-      "median": 48.175,
-      "min": 48.175,
-      "max": 48.175
-    },
-    {
-      "library": "frappe-gantt",
-      "workload": "gantt",
-      "browser": null,
-      "n": null,
-      "metric": "js-min-gz",
-      "unit": "kB",
-      "samples": [
-        13.45
-      ],
-      "median": 13.45,
-      "min": 13.45,
-      "max": 13.45
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": null,
-      "n": null,
-      "metric": "js-min",
-      "unit": "kB",
-      "samples": [
-        423.462
-      ],
-      "median": 423.462,
-      "min": 423.462,
-      "max": 423.462
-    },
-    {
-      "library": "svar",
-      "workload": "gantt",
-      "browser": null,
-      "n": null,
-      "metric": "js-min-gz",
-      "unit": "kB",
-      "samples": [
-        131.14
-      ],
-      "median": 131.14,
-      "min": 131.14,
-      "max": 131.14
-    },
-    {
-      "library": "react (baseline)",
-      "workload": null,
-      "browser": null,
-      "n": null,
-      "metric": "js-min",
-      "unit": "kB",
-      "samples": [
-        140.779
-      ],
-      "median": 140.779,
-      "min": 140.779,
-      "max": 140.779
-    },
-    {
-      "library": "react (baseline)",
-      "workload": null,
-      "browser": null,
-      "n": null,
-      "metric": "js-min-gz",
-      "unit": "kB",
-      "samples": [
-        44.948
-      ],
-      "median": 44.948,
-      "min": 44.948,
-      "max": 44.948
+      "median": 66.293,
+      "min": 66.293,
+      "max": 66.293
     }
   ]
 }

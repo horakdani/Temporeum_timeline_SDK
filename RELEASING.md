@@ -46,7 +46,7 @@ npm run test:e2e:touch:webkit -w @temporeum/timeline-docs   # WebKit, and Mobile
 node scripts/sdk_check_acr.mjs                         # every test the conformance report names
 ```
 
-Each prints `<name>: passed` or fails with what it measured. `test:e2e:touch:webkit` drives the iOS Simulator through `safaridriver` and needs macOS with Xcode; the published benchmark page (`npm run bench:field -w @temporeum/timeline-docs`, about 45 minutes) is measured again when its numbers should change. [scripts/README.md](scripts/README.md) says what each check proves.
+Each prints `<name>: passed` or fails with what it measured. `test:e2e:touch:webkit` drives the iOS Simulator through `safaridriver` and needs macOS with Xcode; the published benchmark page (`npm run bench:field -w @temporeum/timeline-docs`, about 15 minutes) is measured again when its numbers should change. [scripts/README.md](scripts/README.md) says what each check proves.
 
 ## Secrets and permissions
 

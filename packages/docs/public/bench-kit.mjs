@@ -217,7 +217,7 @@ export function createBenchKit({ frame, counters, settleAt, origin }) {
   /**
    * Recording for input that comes from outside (the perf-wheel check): the real
    * wheel is sent by the measuring script from Node (`page.mouse.wheel`), as
-   * in the vis comparison, so the browser's own input path is part of the
+   * in the throttled benchmark, so the browser's own input path is part of the
    * measurement. The recording collects rAF times, the wheel events reaching
    * the page and the loop's draws. `stop()` summarises the same way as for
    * gestures; the settle frame here is the longest frame after the last wheel
@@ -228,7 +228,7 @@ export function createBenchKit({ frame, counters, settleAt, origin }) {
 
   async function startRecording(extras = {}) {
     await settleAt(origin);
-    // It starts from a quiet page, as the vis comparison does: there the
+    // It starts from a quiet page, as the throttled benchmark does: there the
     // measurement begins after `ready` (two consecutive frames without a
     // draw), and here too it waits until the loop has not drawn for two frames.
     for (let quiet = 0, waited = 0; quiet < 2 && waited < 300; waited += 1) {

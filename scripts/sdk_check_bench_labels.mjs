@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The bench-labels check: proves that on the 10,000-item page of the vis comparison,
+ * The bench-labels check: proves that on the 10,000-item page of the throttled benchmark,
  * panning and wheel zoom stay within the perf check's thresholds (<= 5% missed
  * vsync, <= 100 ms longest frame), and that on the same page, zoomed in with
  * a real wheel up to the density limit (the core's SHORTEN_DENSITY_LIMIT,

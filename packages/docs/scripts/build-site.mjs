@@ -7,11 +7,11 @@
  *   site/examples/<id>/      the live examples: example.js, meta.json,
  *                            and an optional example.html (the body markup)
  *   site/assets/             the stylesheet, the playground script and the icon
- *   site/benchmark/          results.json, written by the comparison benchmark
+ *   site/benchmark/          results.json, written by the throttled benchmark
  *   site/migration/<lib>.json the migration guides' mapping tables ({{migration:<lib>}})
  *   site/conformance/<name>.json the conformance report's table ({{acr:<name>}}), and the
  *                            same report as a VPAT® 2.5 INT ({{vpat:<name> <part>}})
- *   site/benchmark/field/results.json the field benchmark ({{bench:field}}, {{bench:field-method}}, {{bench:field-losses}}, {{bench:field-tradeoff}}; scripts/field-bench.mjs)
+ *   site/benchmark/field/results.json the field benchmark ({{bench:field}}, {{bench:field-method}}, {{bench:field-budget}}; scripts/field-bench.mjs)
  *   site/project.json        the public repository and the docs' address
  *
  * Next to the pages it writes llms.txt (every page, one line each) and
@@ -38,7 +38,7 @@ import { dirname, join, posix, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { escapeHtml, parseMarkdown, renderBlocks, renderInline } from "./markdown.mjs";
-import { fieldLossesHtml, fieldMarkdown, fieldMethodHtml, fieldTablesHtml, fieldTradeoffHtml } from "./field-bench.mjs";
+import { fieldBudgetHtml, fieldMarkdown, fieldMethodHtml, fieldTablesHtml } from "./field-bench.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DOCS_DIR = resolve(here, "..");
@@ -734,8 +734,7 @@ export async function buildSite({ docsDir = DOCS_DIR, outDir = join(DOCS_DIR, "d
         if (block.argument === "results") slots.push(benchTables(docsDir));
         else if (block.argument === "field") slots.push(fieldTablesHtml(docsDir));
         else if (block.argument === "field-method") slots.push(fieldMethodHtml(docsDir));
-        else if (block.argument === "field-losses") slots.push(fieldLossesHtml(docsDir));
-        else if (block.argument === "field-tradeoff") slots.push(fieldTradeoffHtml(docsDir));
+        else if (block.argument === "field-budget") slots.push(fieldBudgetHtml(docsDir));
         else fail(`site/pages/${page.id}.md:${String(block.line)}: unknown {{bench:${block.argument}}}`);
       } else if (block.name === "changelog") {
         slots.push(changelogHtml({ href, excerptHref }));

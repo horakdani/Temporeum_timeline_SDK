@@ -10,4 +10,4 @@ labels: enhancement
 **What you do today instead**
 
 **Coming from another library?**
-<!-- If vis-timeline or another library has this, name the option. -->
+<!-- If another library has this, name the library and the option. -->
