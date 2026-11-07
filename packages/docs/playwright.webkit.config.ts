@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-/** The port: not the Chromium suite's (41737), so the two can run side by side. */
-const PORT = Number(process.env.TL_E2E_PORT ?? 41738);
+/** The port: not the Chromium suite's (31737), so the two can run side by side. */
+const PORT = Number(process.env.TL_E2E_PORT ?? 31738);
 
 /**
  * The e2e-touch-webkit check: the same gesture suite (`e2e/touch.spec.ts`) as

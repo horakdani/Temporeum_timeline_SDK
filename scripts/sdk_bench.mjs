@@ -37,7 +37,7 @@
  *
  * Three things without which the measurement could lie:
  *
- *  1. OUR OWN server, on our own port (41738, TL_BENCH_PORT), and we check
+ *  1. OUR OWN server, on our own port (31738, TL_BENCH_PORT), and we check
  *     the page's marker: we never measure someone else's page (a lesson
  *     learned the hard way).
  *  2. A FRESH dist: the page reads the source fingerprint from
@@ -68,7 +68,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const coreDir = join(repoRoot, "packages", "core");
 const elementDir = join(repoRoot, "packages", "web-component");
 const docsDir = join(repoRoot, "packages", "docs");
-const PORT = Number(process.env.TL_BENCH_PORT ?? 41738);
+const PORT = Number(process.env.TL_BENCH_PORT ?? 31738);
 const BASE = `http://127.0.0.1:${String(PORT)}`;
 const VIEWPORT = { width: 1440, height: 900 };
 /** An approximation of a mid-range Android device: Lighthouse's mobile convention. Recorded in the state file. */

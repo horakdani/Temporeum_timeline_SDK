@@ -31,7 +31,7 @@
  * lost / (lost + recorded intervals).
  *
  * Validity (it goes into the report, and the check fails on it): our own
- * server, our own port (41766, TL_BENCH_FIELD_PORT), the page's marker; a
+ * server, our own port (31766, TL_BENCH_FIELD_PORT), the page's marker; a
  * FRESH dist (the core's and the element's build.json source fingerprint
  * matches the source); the drag really moved the view (+2880 px +-25% after
  * 12 drags, back to within one drag after 24); the zoom went above 4x and
@@ -57,7 +57,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const docsDir = join(repoRoot, "packages", "docs");
 const coreDir = join(repoRoot, "packages", "core");
 const elementDir = join(repoRoot, "packages", "web-component");
-const PORT = Number(process.env.TL_BENCH_FIELD_PORT ?? 41766);
+const PORT = Number(process.env.TL_BENCH_FIELD_PORT ?? 31766);
 const BASE = `http://127.0.0.1:${String(PORT)}`;
 const VIEWPORT = { width: 1440, height: 900 };
 const THROTTLE = 4;

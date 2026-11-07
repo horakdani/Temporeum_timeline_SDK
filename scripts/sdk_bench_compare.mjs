@@ -12,7 +12,7 @@
  *
  *  1. Builds core + element (`npm run build -w ...`), so the browser runs the
  *     shipped dist, not a stale one.
- *  2. Starts its OWN static server on 127.0.0.1:41764 (TL_BENCH_COMPARE_PORT)
+ *  2. Starts its OWN static server on 127.0.0.1:31764 (TL_BENCH_COMPARE_PORT)
  *     and refuses to run if the port is taken or answers with a page that is
  *     not ours (page marker check), so a foreign page is never measured.
  *  3. Chromium (Playwright, chromium-headless-shell), 1440 x 900, DPR 1, a
@@ -103,7 +103,7 @@ const workDir = join(docsDir, ".bench-work");
 const outFile = join(docsDir, "site", "benchmark", "results.json");
 const failedFile = join(workDir, "results.failed.json");
 
-const PORT = Number(process.env.TL_BENCH_COMPARE_PORT ?? 41764);
+const PORT = Number(process.env.TL_BENCH_COMPARE_PORT ?? 31764);
 const BASE = `http://127.0.0.1:${String(PORT)}`;
 const VIEWPORT = { width: 1440, height: 900 };
 const THROTTLE = 4;

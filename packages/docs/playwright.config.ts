@@ -5,7 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
  * other project running on the machine could sit on it. A check that
  * measures a foreign page is worse than a missing check.
  */
-const PORT = Number(process.env.TL_E2E_PORT ?? 41737);
+const PORT = Number(process.env.TL_E2E_PORT ?? 31737);
 
 /**
  * Playwright: the browser evidence.

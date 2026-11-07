@@ -49,7 +49,7 @@ A timeline is opened once and then dragged and zoomed for a long time, so the qu
 npm run bench:compare -w @temporeum/timeline-docs
 ```
 
-It builds the core and the element, serves the page from its own server on port 41764, and writes `packages/docs/site/benchmark/results.json`. `BENCH_REPS` changes the repetitions. The full run takes a few minutes.
+It builds the core and the element, serves the page from its own server on port 31764, and writes `packages/docs/site/benchmark/results.json`. `BENCH_REPS` changes the repetitions. The full run takes a few minutes.
 
 ## Results
 

@@ -7,7 +7,7 @@ import { defineConfig, devices } from "@playwright/test";
  * be measured instead). Desktop Chromium only: the examples are code, not
  * gestures, and the accessibility suite covers the phone viewport.
  */
-const PORT = Number(process.env.TL_EXAMPLES_PORT ?? 41765);
+const PORT = Number(process.env.TL_EXAMPLES_PORT ?? 31765);
 
 export default defineConfig({
   // A stray test.only would quietly run one test and call the suite green.

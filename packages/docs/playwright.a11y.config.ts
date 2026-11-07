@@ -9,7 +9,7 @@ import { defineConfig, devices } from "@playwright/test";
  * keyboard path run here — and Pixel 7, where the narrow view and the
  * bottom sheet are put in front of axe.
  */
-const PORT = Number(process.env.TL_A11Y_PORT ?? 41741);
+const PORT = Number(process.env.TL_A11Y_PORT ?? 31741);
 
 export default defineConfig({
   // A stray test.only would quietly run one test and call the suite green.

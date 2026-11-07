@@ -227,7 +227,7 @@ const SPECS = {
   "packages/docs/e2e/tooltip.spec.ts": {
     config: "playwright.pages.config.ts",
     report: ".e2e-tooltip-report.json",
-    env: { TL_PAGES_SPEC: "tooltip.spec.ts", TL_PAGES_REPORT: ".e2e-tooltip-report.json", TL_PAGES_PORT: "41767" },
+    env: { TL_PAGES_SPEC: "tooltip.spec.ts", TL_PAGES_REPORT: ".e2e-tooltip-report.json", TL_PAGES_PORT: "31767" },
   },
 };
 const docs = join(repo, "packages", "docs");

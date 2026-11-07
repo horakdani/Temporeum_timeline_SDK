@@ -59,7 +59,7 @@ npm run build -w @temporeum/timeline-docs
 npm run serve -w @temporeum/timeline-docs
 ```
 
-Then open <http://localhost:41737/site/>.
+Then open <http://localhost:31737/site/>.
 
 ## Why another timeline
 

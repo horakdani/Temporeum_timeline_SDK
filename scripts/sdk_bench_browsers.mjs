@@ -14,7 +14,7 @@
  * What it does, in order:
  *
  *  1. Builds core + element, so the browser runs the shipped dist.
- *  2. Starts its OWN server on 127.0.0.1:41768 (TL_BENCH_FIELD_PORT) and
+ *  2. Starts its OWN server on 127.0.0.1:31768 (TL_BENCH_FIELD_PORT) and
  *     refuses to run if the port is taken or a page is not ours.
  *  3. Two workloads, each on its own page of packages/docs/bench/field with
  *     the generator of bench/field/kit.js, in a 1440 x 900 box, DPR 1, a
@@ -80,7 +80,7 @@ const workDir = join(docsDir, ".bench-work");
 const outFile = process.env.FIELD_SMOKE === "1" ? join(docsDir, ".bench-work", "field-smoke.json") : join(docsDir, "site", "benchmark", "field", "results.json");
 const failedFile = join(workDir, "field-results.failed.json");
 
-const PORT = Number(process.env.TL_BENCH_FIELD_PORT ?? 41768);
+const PORT = Number(process.env.TL_BENCH_FIELD_PORT ?? 31768);
 const BASE = `http://127.0.0.1:${String(PORT)}`;
 const VIEWPORT = { width: 1440, height: 900 };
 const SMOKE = process.env.FIELD_SMOKE === "1";

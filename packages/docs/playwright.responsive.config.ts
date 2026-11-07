@@ -1,7 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
 /** The same port of our own as the touch suite's — the two run one after the other. */
-const PORT = Number(process.env.TL_E2E_PORT ?? 41737);
+const PORT = Number(process.env.TL_E2E_PORT ?? 31737);
 
 /**
  * The responsive suite's config — a SEPARATE file, not a second project next

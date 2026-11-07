@@ -33,7 +33,7 @@ const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const docs = join(repo, "packages", "docs");
 const templatesDir = join(docs, "templates");
 const work = join(docs, ".templates-work");
-const BASE_PORT = Number(process.env.TL_TEMPLATES_PORT ?? 41766);
+const BASE_PORT = Number(process.env.TL_TEMPLATES_PORT ?? 31766);
 const ENV = { ...process.env, NEXT_TELEMETRY_DISABLED: "1", NUXT_TELEMETRY_DISABLED: "1", ASTRO_TELEMETRY_DISABLED: "1" };
 
 const problems = [];

@@ -71,9 +71,9 @@ import { fileURLToPath } from "node:url";
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const docs = join(repo, "packages", "docs");
 const reportFile = join(docs, ".ios-touch-report.json");
-const PAGE_PORT = 41739;
-const BEACON_PORT = 41740;
-const DRIVER_PORT = 41741;
+const PAGE_PORT = 31739;
+const BEACON_PORT = 31740;
+const DRIVER_PORT = 31741;
 const SETTLE_MS = 1500;
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 

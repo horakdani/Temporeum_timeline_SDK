@@ -11,7 +11,7 @@ address it by package name (`-w @temporeum/timeline-docs`).
 
 ```bash
 npm run build -w @temporeum/timeline-docs      # → packages/docs/dist
-npm run serve -w @temporeum/timeline-docs      # http://127.0.0.1:41737/site/
+npm run serve -w @temporeum/timeline-docs      # http://127.0.0.1:31737/site/
 ```
 
 - `site/pages/` — the pages, in the Markdown subset of `scripts/markdown.mjs`;

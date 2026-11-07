@@ -205,9 +205,9 @@
     "test": "npm run --silent build -w @temporeum/timeline-core && npm run --silent build && npm run --silent typecheck && vitest run --coverage"
   },
   "devDependencies": {
-    "@vitest/browser-playwright": "^5.0.5",
-    "@vitest/coverage-v8": "^5.0.5",
+    "@vitest/browser-playwright": "^5.1.0",
+    "@vitest/coverage-v8": "^5.1.0",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   }
 }

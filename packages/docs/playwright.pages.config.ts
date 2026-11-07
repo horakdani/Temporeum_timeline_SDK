@@ -7,7 +7,7 @@ import { defineConfig, devices } from "@playwright/test";
  *
  * Its own port, as for every e2e suite.
  */
-const PORT = Number(process.env.TL_PAGES_PORT ?? 41751);
+const PORT = Number(process.env.TL_PAGES_PORT ?? 31751);
 
 export default defineConfig({
   // A stray test.only would quietly run one test and call the suite green.

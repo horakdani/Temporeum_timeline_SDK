@@ -8,7 +8,7 @@ import { defineConfig, devices } from "@playwright/test";
  * one). Two devices: desktop Chromium (mouse, wheel, keys) and a Pixel 7
  * emulation, where a tap is a real touch event.
  */
-const PORT = Number(process.env.TL_CLUSTER_PORT ?? 41745);
+const PORT = Number(process.env.TL_CLUSTER_PORT ?? 31745);
 
 export default defineConfig({
   // A stray test.only would quietly run one test and call the suite green.

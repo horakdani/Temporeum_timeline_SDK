@@ -8,7 +8,7 @@ import { defineConfig, devices } from "@playwright/test";
  * one). Desktop Chromium: the fast zoom here is Ctrl+wheel — the same path
  * a trackpad pinch takes.
  */
-const PORT = Number(process.env.TL_ASYNC_PORT ?? 41743);
+const PORT = Number(process.env.TL_ASYNC_PORT ?? 31743);
 
 export default defineConfig({
   // A stray test.only would quietly run one test and call the suite green.

@@ -49,15 +49,15 @@ const work = join(docs, ".ssr-work");
 const REPORT = join(docs, ".e2e-ssr-report.json");
 const REACT = createRequire(join(repo, "packages/react/package.json"))("react/package.json").version;
 const FRAMEWORKS = {
-  next: { deps: { next: "16.4.3", react: REACT, "react-dom": REACT }, port: 41761 },
-  nuxt: { deps: { nuxt: "4.6.3", vue: "^3.5.0" }, port: 41762 },
+  next: { deps: { next: "16.4.3", react: REACT, "react-dom": REACT }, port: 31761 },
+  nuxt: { deps: { nuxt: "4.6.3", vue: "^3.5.0" }, port: 31762 },
   // 7.4.1, not 7.4.2: 7.4.2 requires Node >=22.23.4, this machine's Node is
   // 22.22.0 (7.4.1 requires >=22.22.0). The last one that runs here.
-  astro: { deps: { astro: "7.4.1" }, port: 41763 },
+  astro: { deps: { astro: "7.4.1" }, port: 31763 },
   // SvelteKit 3.1 requires Node >=22.17: this machine's 22.22.0 is enough.
   sveltekit: {
     deps: { "@sveltejs/kit": "3.1.0", "@sveltejs/adapter-node": "6.0.0", "@sveltejs/vite-plugin-svelte": "7.3.1", svelte: "5.57.3", vite: "8.3.5" },
-    port: 41764,
+    port: 31764,
   },
   // The Angular 21 line: 22 requires Node ^22.22.3, this machine has 22.22.0.
   // The build requires TS 5.9 (<6.0); the fixture's .npmrc sets
@@ -81,7 +81,7 @@ const FRAMEWORKS = {
       rxjs: "7.8.2",
       typescript: "5.9.3",
     },
-    port: 41765,
+    port: 31765,
   },
 };
 const CLAIMS = ["server-html", "no-js", "hydrates"];

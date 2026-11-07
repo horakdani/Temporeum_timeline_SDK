@@ -23,9 +23,9 @@ const publicDir = resolve(here, "..", "public");
 const coreDist = resolve(here, "..", "..", "core", "dist");
 const elementDist = resolve(here, "..", "..", "web-component", "dist");
 const siteDist = resolve(here, "..", "dist");
-// playwright.config.ts passes the same environment variable; 41737 is
+// playwright.config.ts passes the same environment variable; 31737 is
 // deliberately not Vite preview's default (4173).
-const port = Number(process.env.TL_E2E_PORT ?? process.env.PORT ?? 41737);
+const port = Number(process.env.TL_E2E_PORT ?? process.env.PORT ?? 31737);
 
 const TYPES = {
   ".html": "text/html; charset=utf-8",
