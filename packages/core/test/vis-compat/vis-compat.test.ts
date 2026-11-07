@@ -216,6 +216,24 @@ describe("compat: vis-timeline's documentation examples through the compatibilit
     expect(warnings.map((warning) => warning.message.split(" is not")[0])).toEqual(["Infinity", "Invalid Date", expect.stringContaining("2024")]);
   });
 
+  it("warns, not throws, on a BigInt or a circular object where a time is (Z8)", () => {
+    // The warning's JSON.stringify threw on them, so one unreadable value stopped the whole conversion.
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+    const { config, warnings } = fromVis(
+      [
+        { id: 1, content: "a", start: 10n as never },
+        { id: 2, content: "b", start: circular as never },
+        { id: 3, content: "c", start: 86_400_000 },
+      ],
+      null,
+      {},
+      { timeZone: "UTC" },
+    );
+    expect(config.items.map((item) => item.id)).toContain("3");
+    expect(warnings.length).toBeGreaterThan(0);
+  });
+
   it("[claim:warnings] what does not carry over is named: subgroups, a hidden group, an item without its group, unknown options", () => {
     const { warnings } = fromVis(
       [

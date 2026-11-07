@@ -38,6 +38,7 @@ import type { KeyAction, KeyBinding, KeySample, NavEntry, Navigator } from "./ke
 import { clampDomain, createTimeScale, panDomainBy, spanOf, zoomDomainAt } from "./scale.js";
 import type { TimeWarp } from "./scale.js";
 import type { TouchActionMode } from "./theme.js";
+import { APPROX_MS } from "./ticks.js";
 import { toTimeMs } from "./time.js";
 import type {
   Command,
@@ -953,7 +954,8 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
     for (let index = 1; index < hits.length; index += 1) {
       const other = hits[index];
       if (other !== undefined) {
-        patches.push(movePatch(other, { deltaMs: shift }));
+        // On the zone's calendar, as the first: by UTC months a quarter grew a month (Z3).
+        patches.push(movePatch(other, { deltaMs: shift, timeZone: editing.timeZone }));
       }
     }
     return patches;
@@ -1349,16 +1351,16 @@ export function createInputMachine<T = unknown>(options: InputOptions<T>): Input
     }
     const sign = action === "moveLater" || action === "endLater" || action === "startLater" ? 1 : -1;
     // Ten pixels' worth (or `stepMs`), and never smaller than the grid, which
-    // would round it back (X18), nor than one unit of an item known to one,
-    // from the edge it moves: 10 px of a week's view rounded a day item back
-    // to its midnight (X16), and one unit alone is a millisecond or a day in
-    // a two-year view, which nobody sees (Y2).
+    // would round it back (X18). An item known to a unit steps whole units
+    // from the edge it moves, at least one: 10 px of a week's view rounded a
+    // day item back to its midnight (X16), one unit alone is a day in a
+    // two-year view, which nobody sees (Y2), and the same count either way
+    // lets a press back undo a press (Z4).
     const unit = unitOf(hit.item);
     const edge = action[0] === "e" ? hit.span.end : hit.span.start;
     const snap = editing.snapMs ?? 0;
-    const step =
-      sign *
-      Math.max(keyboard.stepMs ?? (snap || (spanOf(domain) / mainSize) * KEY_STEP_PX), snap, unit ? sign * (addCalendar(edge, unit, sign, editing.timeZone) - edge) : 0);
+    const pixels = Math.max(keyboard.stepMs ?? (snap || (spanOf(domain) / mainSize) * KEY_STEP_PX), snap);
+    const step = unit ? addCalendar(edge, unit, sign * Math.max(1, Math.round(pixels / APPROX_MS[unit])), editing.timeZone) - edge : sign * pixels;
     const ids =
       editing.multiSelect === true && selectedIds.includes(hit.item.id)
         ? [hit.item.id, ...selectedIds.filter((id) => id !== hit.item.id)]

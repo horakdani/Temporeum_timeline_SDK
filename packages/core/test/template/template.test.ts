@@ -286,4 +286,15 @@ describe("the end tags HTML implies (Y18)", () => {
     expect(printed("<ul><li>a<ul><li>b</li></ul></li><li>c</li></ul>")).toBe("<ul><li>a<ul><li>b</li></ul></li><li>c</li></ul>");
     expect(printed("<ul><li>a<ul><li>b<li>c</ul></ul>")).toBe("<ul><li>a<ul><li>b</li><li>c</li></ul></li></ul>");
   });
+
+  it("does not close a list item across a block the parser stops at (Z5)", () => {
+    // HTML's list-item walk stops at a special element other than div and p:
+    // Y18 walked past a section or a heading and closed the outer item.
+    const unsafe = (html: string): string => tree(parseTemplate(html, { sanitize: false }));
+    expect(unsafe("<ul><li>a<section>x<li>b</section></ul>")).toBe("<ul><li>a<section>x<li>b</li></section></li></ul>");
+    expect(unsafe("<ul><li>a<h1>x<li>b</h1></ul>")).toBe("<ul><li>a<h1>x<li>b</li></h1></li></ul>");
+    expect(unsafe("<ul><li>a<blockquote>x<li>b</blockquote></ul>")).toBe("<ul><li>a<blockquote>x<li>b</li></blockquote></li></ul>");
+    // Through a div or a p it still closes.
+    expect(unsafe("<ul><li>a<div>x<li>b</div></ul>")).toBe("<ul><li>a<div>x</div></li><li>b</li></ul>");
+  });
 });

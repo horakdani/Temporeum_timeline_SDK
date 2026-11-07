@@ -262,7 +262,7 @@ function renderNow(decoration: NowDecoration, ctx: DecorationContext): readonly 
       },
     },
   ];
-  if (decoration.label !== undefined && decoration.label !== "") {
+  if (decoration.label) {
     const label = labelAfter(
       ctx,
       main,
@@ -301,7 +301,7 @@ function renderEra(decoration: EraDecoration, ctx: DecorationContext): readonly 
       },
     },
   ];
-  if (decoration.label !== undefined && decoration.label !== "") {
+  if (decoration.label) {
     const need = ctx.measure(decoration.label);
     if (need.main <= end - main) {
       nodes.push(
@@ -385,7 +385,7 @@ function renderMarker(
       decoration.id,
     ),
   ];
-  if (decoration.label !== undefined && decoration.label !== "") {
+  if (decoration.label) {
     const label = labelAfter(
       ctx,
       main + radius,

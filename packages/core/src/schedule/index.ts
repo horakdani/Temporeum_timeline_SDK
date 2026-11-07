@@ -136,6 +136,12 @@ interface Task {
    * February, a day moved onto a 23-hour day is that day (Y3).
    */
   readonly endOf: ((start: TimeMs) => TimeMs) | undefined;
+  /**
+   * Its inverse: the start whose end by whole units is the latest at or
+   * before `end` — or, `early`, the earliest at or after it. Slack, a finish
+   * link and a finish constraint step back from an end by units too (Z2).
+   */
+  readonly startBy: ((end: TimeMs, early: boolean) => TimeMs) | undefined;
   readonly ins: Link[];
   readonly outs: Link[];
   /** Its own instants, and where its start is in working time: a moment nothing moves keeps them. */
@@ -165,10 +171,20 @@ function edge(task: Task, at: number, end: boolean): TimeMs {
   return end ? (task.endOf?.(at) ?? task.time.finish(at + task.duration)) : task.time.start(at);
 }
 
+/** Its end, in working time, when it starts at `at`. */
+function finishOf(task: Task, at: number): number {
+  return task.endOf !== undefined && task.duration !== 0 ? task.endOf(at) : at + task.duration;
+}
+
+/** The start, in working time, that puts its end at `end`: the latest at or before it, or `early`, the earliest at or after. */
+function startFor(task: Task, end: number, early: boolean): number {
+  return task.startBy !== undefined && task.duration !== 0 ? task.startBy(end, early) : end - task.duration;
+}
+
 /** The latest start, in working time, that puts the task's edge at or before `limit`. */
 function latest(task: Task, end: boolean, limit: TimeMs): number {
   const work = task.time.work(limit);
-  if (end || task.duration === 0) return work - (end ? task.duration : 0);
+  if (end || task.duration === 0) return end ? startFor(task, work, false) : work;
   // Where work resumes after `limit` is later than `limit` when it falls in a
   // break: the start has to be the moment before.
   return task.time.start(work) > limit ? work - 1 : work;
@@ -252,12 +268,17 @@ export function scheduleTasks<T>(items: readonly Item<T>[], dependencies: readon
     const endMs = hasEnd ? (span?.end ?? toTimeMs(item.end as TimeInput)) : undefined;
     const start = time.work(startMs);
     let endOf: Task["endOf"];
+    let startBy: Task["startBy"];
     const unit = item.granularity;
     if (span !== undefined && time === CONTINUOUS && unit !== undefined && !FIXED_UNITS.has(unit)) {
       const zone = options.timeZone;
       let units = 0;
       for (let at = span.start; at < span.end; at = addCalendar(at, unit, 1, zone)) units += 1;
       endOf = (at) => addCalendar(startOf(at, unit, zone), unit, units, zone);
+      startBy = (end, early) => {
+        const at = startOf(end, unit, zone);
+        return addCalendar(early && at < end ? addCalendar(at, unit, 1, zone) : at, unit, -units, zone);
+      };
     }
     const task: Task = {
       item: item as Item<unknown>,
@@ -268,6 +289,7 @@ export function scheduleTasks<T>(items: readonly Item<T>[], dependencies: readon
       hasEnd,
       duration: endMs === undefined ? 0 : Math.max(0, time.work(endMs) - start),
       endOf,
+      startBy,
       ins: [],
       outs: [],
       startMs,
@@ -317,11 +339,12 @@ export function scheduleTasks<T>(items: readonly Item<T>[], dependencies: readon
   for (const task of order) {
     let lower = projectStart === undefined ? -Infinity : task.time.work(projectStart);
     for (const link of task.ins) {
-      lower = Math.max(lower, task.time.work(edge(link.from, link.from.at, !link.fromStart)) + link.lag - (link.toEnd ? task.duration : 0));
+      const at = task.time.work(edge(link.from, link.from.at, !link.fromStart)) + link.lag;
+      lower = Math.max(lower, link.toEnd ? startFor(task, at, true) : at);
     }
     const type = task.constraint?.type;
     if (type !== undefined && LOWER_START.has(type)) lower = Math.max(lower, task.date);
-    if (type !== undefined && LOWER_FINISH.has(type)) lower = Math.max(lower, task.date - task.duration);
+    if (type !== undefined && LOWER_FINISH.has(type)) lower = Math.max(lower, startFor(task, task.date, true));
     // Nothing places it: it stays.
     if (lower !== -Infinity) task.at = lower;
   }
@@ -337,11 +360,11 @@ export function scheduleTasks<T>(items: readonly Item<T>[], dependencies: readon
 
   /** The latest start the finish and the successors, where they are, allow. */
   const limit = (task: Task, use: (link: Link) => number): number => {
-    let at = task.time.work(last) - task.duration;
+    let at = startFor(task, task.time.work(last), false);
     for (const link of task.outs) {
       // The successor's edge minus the lag, in its working time; the latest
       // instant with no more work than that.
-      at = Math.min(at, latest(task, !link.fromStart, link.to.time.start(use(link) + (link.toEnd ? link.to.duration : 0) - link.lag)));
+      at = Math.min(at, latest(task, !link.fromStart, link.to.time.start((link.toEnd ? finishOf(link.to, use(link)) : use(link)) - link.lag)));
     }
     return at;
   };
@@ -366,8 +389,9 @@ export function scheduleTasks<T>(items: readonly Item<T>[], dependencies: readon
       if (task.at > task.date) conflicts.push({ id: task.item.id, constraint: task.constraint as TaskConstraint, byMs: task.at - task.date });
     }
     if (type !== undefined && UPPER_FINISH.has(type)) {
-      late = Math.min(late, task.date - task.duration);
-      if (task.at + task.duration > task.date) conflicts.push({ id: task.item.id, constraint: task.constraint as TaskConstraint, byMs: task.at + task.duration - task.date });
+      late = Math.min(late, startFor(task, task.date, false));
+      const done = finishOf(task, task.at);
+      if (done > task.date) conflicts.push({ id: task.item.id, constraint: task.constraint as TaskConstraint, byMs: done - task.date });
     }
     task.late = late;
   }

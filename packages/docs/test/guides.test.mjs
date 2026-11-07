@@ -13,6 +13,11 @@ test("the scheduling guide writes an end the scheduler reads, not a string it th
   assert.match(text, /end: new Date\("2026-03-03"\)/);
 });
 
+test("the scheduling guide says its date-only end is midnight in UTC, not in every zone (Z11)", () => {
+  // In America/New_York, 2026-03-03T00:00Z is still the 2nd: "runs to the end of the 3rd" did not hold.
+  assert.match(guide("scheduling"), /That `Date` is midnight in UTC; with another `timeZone`, give that zone's midnight/);
+});
+
 test("the editing guide says the snap grid is on the zone's wall clock, not a multiple of the step (Y28)", () => {
   // Since X17 a sub-day grid is anchored at the zone's offset, a day grid on its midnights.
   const text = guide("editing");

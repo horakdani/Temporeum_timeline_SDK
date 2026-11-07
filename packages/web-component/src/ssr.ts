@@ -186,8 +186,8 @@ export function renderTimelineHtml<T>(config: TimelineConfig<T>, options: Server
   // On the element, where the client reads it — not in the JSON, which any
   // script could read, while the browser hides an attribute's nonce.
   const attributes: Record<string, string> = { ...options.attributes, ...(config.nonce === undefined ? {} : { nonce: config.nonce }) };
-  // Only a height the client would draw: a string here was printed into the style as it was (Y20).
-  if (Number.isFinite(config.height) && (config.height as number) >= 0) {
+  // Only a height the client would draw: a string here was printed into the style as it was (Y20), and 0 the client leaves out (Z10).
+  if (Number.isFinite(config.height) && (config.height as number) > 0) {
     const style = attributes.style === undefined ? "" : `${attributes.style.trimEnd().replace(/;$/, "")};`;
     attributes.style = `${style}--tl-height:${String(config.height)}px`;
   }

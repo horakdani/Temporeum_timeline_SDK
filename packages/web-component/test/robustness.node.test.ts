@@ -107,6 +107,22 @@ describe("a server render with a bad item or option", () => {
     expect(renderTimelineHtml({ height: 200, items: [good], decorations: [era] } as never, { width: 800 })).toContain('data-tl-id="ok"');
   });
 
+  it("draws a decoration whose label is null on the server, as the client does (Z6)", async () => {
+    // The null label went to the text measure, which threw: no markup at all.
+    const { renderTimelineHtml } = await import("../src/index.js");
+    const items = [{ id: "ok", start: 0, end: 86_400_000 }];
+    const decorations = [
+      { kind: "marker", id: "m", time: 43_200_000, label: null },
+      { kind: "era", id: "e", start: 0, end: 86_400_000, label: null },
+      { kind: "now", time: 43_200_000, label: null },
+    ];
+    for (const decoration of decorations) {
+      const html = renderTimelineHtml({ height: 200, domain: [-86_400_000, 172_800_000], items, decorations: [decoration] } as never, { width: 800 });
+      expect(html, decoration.kind).toContain('data-tl-id="ok"');
+      expect(html, decoration.kind).not.toContain(">null<");
+    }
+  });
+
   it("prints only a height the client draws into the host's style (Y20)", async () => {
     // A height from a query string was printed as it was: `--tl-height:100;background:url(…)px`.
     const { renderTimelineHtml } = await import("../src/index.js");
@@ -114,7 +130,8 @@ describe("a server render with a bad item or option", () => {
     const hostile = renderTimelineHtml({ height: "100;background:url(https://evil.example/x);x:" as never, items }, { width: 800 });
     // The start tag has no style; the JSON keeps the value, which the client reads as no height and reports.
     expect(hostile.slice(0, hostile.indexOf(">"))).toBe("<temporeum-timeline");
-    for (const height of [Number.NaN, -1, Number.POSITIVE_INFINITY]) {
+    // Nor a height of 0, which the client leaves out too (Z10).
+    for (const height of [Number.NaN, -1, Number.POSITIVE_INFINITY, 0]) {
       const html = renderTimelineHtml({ height, items }, { width: 800 });
       expect(html.slice(0, html.indexOf(">")), String(height)).not.toContain("--tl-height");
     }

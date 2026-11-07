@@ -146,7 +146,10 @@ describe("<temporeum-timeline>", () => {
     Object.defineProperty(document, "readyState", { configurable: true, get: () => "loading" });
     const el = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
     el.style.width = "600px";
-    const after = document.createTextNode("\n");
+    // The page's script after the element: in the document, and the one running.
+    const after = document.createElement("script");
+    after.type = "text/plain";
+    const script = Object.getOwnPropertyDescriptor(Document.prototype, "currentScript");
     try {
       document.body.append(el);
       // Still parsing its children: nothing yet, and a zoomTo is kept as the range.
@@ -156,12 +159,15 @@ describe("<temporeum-timeline>", () => {
       json.type = "application/json";
       json.textContent = JSON.stringify({ items: [{ id: "x", start: "2026-03-01", end: "2026-03-05", label: "X" }] });
       el.append(json);
-      // The parser moves past the end tag: what follows the element is in the document.
+      // The parser moves past the end tag, and runs the script that follows the element.
       document.body.append(after);
+      Object.defineProperty(document, "currentScript", { configurable: true, get: () => after });
       const timeline = el.timeline;
       expect(timeline).toBeDefined();
       expect(timeline?.getSnapshot().domain).toEqual([Date.UTC(2026, 0, 1), Date.UTC(2026, 11, 31)]);
     } finally {
+      delete (document as { currentScript?: unknown }).currentScript;
+      expect(Object.getOwnPropertyDescriptor(Document.prototype, "currentScript")).toEqual(script);
       delete (document as { readyState?: unknown }).readyState;
       expect(Object.getOwnPropertyDescriptor(Document.prototype, "readyState")).toEqual(state);
     }
@@ -176,6 +182,94 @@ describe("<temporeum-timeline>", () => {
       el.remove();
       after.remove();
     }
+  });
+
+  describe("while the page loads, the parser and a script tell apart by the running script (Z1)", () => {
+    // Before, the element guessed the parser was past its end tag from any
+    // node after it or after an ancestor: a cookie banner an earlier script
+    // appended to the body, or a shadow root, set it up before its JSON child.
+    const ready = Object.getOwnPropertyDescriptor(Document.prototype, "readyState");
+    const current = Object.getOwnPropertyDescriptor(Document.prototype, "currentScript");
+    let running: HTMLScriptElement | null = null;
+    beforeEach(() => {
+      running = null;
+      Object.defineProperty(document, "readyState", { configurable: true, get: () => "loading" });
+      Object.defineProperty(document, "currentScript", { configurable: true, get: () => running });
+    });
+    afterEach(() => {
+      delete (document as { readyState?: unknown }).readyState;
+      delete (document as { currentScript?: unknown }).currentScript;
+      expect(Object.getOwnPropertyDescriptor(Document.prototype, "readyState")).toEqual(ready);
+      expect(Object.getOwnPropertyDescriptor(Document.prototype, "currentScript")).toEqual(current);
+    });
+    const json = (): HTMLScriptElement => {
+      const child = document.createElement("script");
+      child.type = "application/json";
+      child.textContent = JSON.stringify({ items: [{ id: "x", start: "2026-03-01", end: "2026-03-05", label: "X" }], domain: ["2026-02-25", "2026-03-15"] });
+      return child;
+    };
+    const loaded = async (el: TemporeumTimelineElement): Promise<void> => {
+      delete (document as { readyState?: unknown }).readyState;
+      document.dispatchEvent(new Event("DOMContentLoaded"));
+      await drawn(el);
+      expect(nodeOf(el, "x")).not.toBeNull();
+    };
+
+    it("waits for its children when an earlier script put something after its parent", async () => {
+      const app = document.createElement("div");
+      const banner = document.createElement("div");
+      document.body.append(app, banner);
+      const el = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
+      el.style.width = "600px";
+      try {
+        app.append(el);
+        expect(el.timeline).toBeUndefined();
+        el.append(json());
+        await loaded(el);
+      } finally {
+        app.remove();
+        banner.remove();
+      }
+    });
+
+    it("waits for its children in a shadow root", async () => {
+      const host = document.createElement("div");
+      document.body.append(host);
+      const el = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
+      el.style.width = "600px";
+      try {
+        host.attachShadow({ mode: "open" }).append(el);
+        expect(el.timeline).toBeUndefined();
+        el.append(json());
+        await loaded(el);
+      } finally {
+        host.remove();
+      }
+    });
+
+    it("sets up at once for a script that creates it, and not for a script inside it", async () => {
+      running = document.createElement("script");
+      document.body.append(running);
+      const el = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
+      el.style.width = "600px";
+      const inner = document.createElement("temporeum-timeline") as TemporeumTimelineElement;
+      try {
+        el.items = [{ id: "x", start: Date.parse("2026-03-01"), end: Date.parse("2026-03-05"), label: "X" }];
+        el.domain = [Date.parse("2026-02-25"), Date.parse("2026-03-15")];
+        document.body.append(el);
+        expect(el.timeline).toBeDefined();
+        // The parser runs a script among the element's children: the rest are still to come.
+        running = document.createElement("script");
+        inner.append(running);
+        document.body.append(inner);
+        expect(inner.timeline).toBeUndefined();
+        await loaded(el);
+      } finally {
+        el.remove();
+        inner.remove();
+        running?.remove();
+      }
+    });
   });
 
   it("reads the JSON child's lanes, groups and selection back through its properties, as it does its items (X23)", async () => {

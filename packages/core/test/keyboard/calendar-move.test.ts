@@ -108,3 +108,47 @@ describe("the keyboard step is at least ten pixels' worth (Y2)", () => {
     expect(press(item, "ArrowRight", later)).toEqual({ id: "d", start: Date.UTC(2026, 0, 1 + days), end: Date.UTC(2026, 0, 5 + days) });
   });
 });
+
+describe("a multi-selection moves every item on the zone's calendar (Z3)", () => {
+  it("keeps each quarter three months long east of UTC", () => {
+    // Berlin's midnights are 23:00 UTC the day before; a quarter by the month, twice.
+    const zone = "Europe/Berlin";
+    const midnight = (month: number, date: number): number => Date.UTC(2026, month, date) - HOUR;
+    const quarter = (id: string, laneId: string): Item => ({ id, start: midnight(0, 1), end: midnight(2, 31), laneId, granularity: "month" });
+    const view: [number, number] = [Date.UTC(2025, 6, 1), Date.UTC(2026, 11, 1)];
+    const items = [quarter("q1", "l1"), quarter("q2", "l2")];
+    const layout = layoutItems(items, { lanes: [{ id: "l1" }, { id: "l2" }], timeZone: zone });
+    const tester = createHitTester({ layout, scale: createTimeScale(view, WIDTH) });
+    const machine = createInputMachine({
+      domain: view,
+      mainSize: WIDTH,
+      crossSize: 300,
+      contentCrossSize: 300,
+      orientation: "horizontal",
+      editing: { enabled: true, multiSelect: true, timeZone: zone, hitTest: tester.hitTest, lookup: tester.lookup },
+      keyboard: { navigator: createNavigator(layout) },
+    });
+    machine.setSelection(["q1", "q2"]);
+    machine.setFocus("q1");
+    const after = machine.key(key("ArrowRight", later)).find((effect: InputEffect): effect is EditEndEffect => effect.type === "editEnd")?.command?.after;
+    // February to April each: the second was moved by UTC months, into May.
+    expect(after).toEqual([
+      { id: "q1", start: midnight(1, 1), end: midnight(3, 30) },
+      { id: "q2", start: midnight(1, 1), end: midnight(3, 30) },
+    ]);
+  });
+});
+
+describe("a keyboard resize of a unit item steps the same whole units either way (Z4)", () => {
+  it("moves each edge as far as a move goes, and back", () => {
+    // Ten pixels of a two-year view are 9.125 days: an edge went 10 days one
+    // way and 9 the other, so a press back did not undo a press.
+    const days = Math.round(((VIEW[1] - VIEW[0]) / WIDTH) * 10 / DAY);
+    const item: Item = { id: "d", start: Date.UTC(2026, 0, 10), end: Date.UTC(2026, 0, 20), laneId: "l1", granularity: "day" };
+    expect(press(item, "ArrowRight", { shiftKey: true })).toEqual({ id: "d", end: Date.UTC(2026, 0, 20 + days) });
+    expect(press(item, "ArrowLeft", { shiftKey: true })).toEqual({ id: "d", end: Date.UTC(2026, 0, 20 - days) });
+    expect(press(item, "ArrowRight", { shiftKey: true, altKey: true })).toEqual({ id: "d", start: Date.UTC(2026, 0, 10 + days) });
+    expect(press(item, "ArrowLeft", { shiftKey: true, altKey: true })).toEqual({ id: "d", start: Date.UTC(2026, 0, 10 - days) });
+    expect(press(item, "ArrowRight", later)).toEqual({ id: "d", start: Date.UTC(2026, 0, 10 + days), end: Date.UTC(2026, 0, 20 + days) });
+  });
+});

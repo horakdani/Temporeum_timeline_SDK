@@ -125,7 +125,7 @@ const LOADING_STYLE = /\\|@import|(?:url|image|image-set|cross-fade|element|expr
  * template that leaves those end tags out — valid HTML — drew `<li>a<li>b`
  * nested, and printed server markup the browser parsed back as another tree.
  */
-const BLOCK = /^(?:div|p|[uo]l|li|d[dlt]|h[1-6r]|pre|table|blockquote|section|article|aside|header|footer|nav|main|figure|form)$/;
+const BLOCK = /^(?:div|p|[uo]l|li|menu|d[dlt]|h[1-6r]|pre|table|blockquote|section|article|aside|header|footer|nav|main|figure|form)$/;
 const SCOPE = /^(?:button|table|t[dh]|caption|object|template|svg|math)$/;
 
 const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
@@ -300,12 +300,12 @@ export function parseTemplate(html: string, options: TemplateOptions = {}): Scen
     }
     // The end tags the parser implies (Y18), before the new element opens:
     // the open `name` nearest the top, unless a scope boundary (for a list
-    // item, a list too) comes first.
+    // item, any block but a div or a p, as HTML's walk stops there: Z5) comes first.
     const imply = (name: string, list?: boolean): void => {
       for (let i = stack.length - 1; i > 0; i -= 1) {
         const open = (stack[i] as Draft).tag;
         if (open === name) stack.length = i;
-        if (open === name || SCOPE.test(open) || (list === true && /^(?:[uo]l|menu)$/.test(open))) return;
+        if (open === name || SCOPE.test(open) || (list === true && BLOCK.test(open) && !/^(?:div|p)$/.test(open))) return;
       }
     };
     if (tag === "li") imply("li", true);

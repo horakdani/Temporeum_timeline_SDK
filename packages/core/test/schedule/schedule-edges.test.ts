@@ -290,3 +290,62 @@ describe("tasks by the month, the year and the day without a working calendar (Y
     expect(scheduleTasks(items, [], { calendar: { week: OFFICE_WEEK } }).tasks.get("M")?.moved).toBe(false);
   });
 });
+
+describe("slack, finish links and finish constraints by whole units too (Z2)", () => {
+  // Y3 put a month task's end on whole months, but every step back from an
+  // end still took off the milliseconds it was written with: a chain with no
+  // slack had negative slack and a last task off the critical path, an FF
+  // successor finished a month before its predecessor, and a finish
+  // constraint was broken with no conflict.
+  const utc = (y: number, m: number, d = 1): number => Date.UTC(y, m - 1, d);
+
+  it("keeps a chain of month tasks on the critical path with no slack", () => {
+    const items = [
+      { id: "A", start: utc(2026, 1), end: utc(2026, 1), granularity: "month" as const },
+      { id: "B", start: utc(2026, 1), end: utc(2026, 1), granularity: "month" as const },
+      { id: "C", start: utc(2026, 1), end: utc(2026, 2), granularity: "month" as const },
+    ];
+    const schedule = scheduleTasks(items, [
+      { from: "A", to: "B" },
+      { from: "B", to: "C" },
+    ]);
+    expect(schedule.critical).toEqual(["A", "B", "C"]);
+    expect([...schedule.tasks.values()].map((task) => task.slackMs)).toEqual([0, 0, 0]);
+    expect(schedule.tasks.get("C")).toMatchObject({ start: utc(2026, 3), end: utc(2026, 4) });
+  });
+
+  it("finishes an FF successor with its predecessor, and by a finish-no-earlier date", () => {
+    const month = { id: "B", start: utc(2026, 7), end: utc(2026, 7), granularity: "month" as const };
+    const ff = scheduleTasks([{ id: "A", start: utc(2026, 2, 10), end: utc(2026, 3) }, month], [{ from: "A", to: "B", type: "FF" }]);
+    // February: it ends on 1 March, as A does — not January.
+    expect(ff.tasks.get("B")).toMatchObject({ start: utc(2026, 2), end: utc(2026, 2), slackMs: 0 });
+    const constrained = scheduleTasks([month], [], { constraintOf: () => ({ type: "finishNoEarlierThan", date: utc(2026, 3) }) });
+    expect(constrained.tasks.get("B")).toMatchObject({ start: utc(2026, 2), slackMs: 0 });
+    expect(constrained.conflicts).toEqual([]);
+  });
+
+  it("counts days in the zone across the spring change, for slack and for an FF link", () => {
+    const zone = "Europe/Budapest";
+    // Local midnights: UTC+1 before 29 March 2026, UTC+2 from then.
+    const local = (d: number): number => Date.UTC(2026, 2, d) - (d < 30 ? HOUR : 2 * HOUR);
+    const chain = scheduleTasks(
+      [
+        { id: "A", start: local(16), end: local(18), granularity: "day" as const },
+        { id: "B", start: local(28), end: local(30), granularity: "day" as const },
+      ],
+      [{ from: "A", to: "B" }],
+      { timeZone: zone },
+    );
+    expect(chain.critical).toEqual(["A", "B"]);
+    const ff = scheduleTasks(
+      [
+        { id: "A", start: local(20), end: local(32) },
+        { id: "B", start: local(10), end: local(12), granularity: "day" as const },
+      ],
+      [{ from: "A", to: "B", type: "FF" }],
+      { timeZone: zone },
+    );
+    // 29–31 March, ending at midnight on 1 April as A does — not a day early.
+    expect(ff.tasks.get("B")).toMatchObject({ start: local(29), end: local(31) });
+  });
+});

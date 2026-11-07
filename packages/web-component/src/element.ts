@@ -225,15 +225,14 @@ export class TemporeumTimelineElement<T = unknown> extends Base {
 
   /**
    * Whether the parser may still add the element's children: the document
-   * is loading, and nothing follows the element or any of its ancestors yet,
-   * so the parser has not passed its end tag (X15, Y5).
+   * is loading, and no script is running but one among them — the parser
+   * itself connected the element. A script outside it runs where the parser
+   * has passed its end tag, or created it (X15, Y5, Z1).
    */
   #parsing(): boolean {
     const doc = this.ownerDocument;
-    if (doc.readyState !== "loading" || this.getRootNode() !== doc) return false;
-    let next = this.nextSibling;
-    for (let node = this.parentNode; next === null && node !== null; node = node.parentNode) next = node.nextSibling;
-    return next === null;
+    const script = doc.currentScript;
+    return doc.readyState === "loading" && (script === null || this.contains(script));
   }
 
   /**
