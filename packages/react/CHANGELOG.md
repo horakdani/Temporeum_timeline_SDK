@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 — Unreleased
+## 1.0.0 — 2026-11-07
 
 The first release, on 1.0.0 of `@temporeum/timeline-element`. From here on the package follows [semantic versioning](https://horakdani.github.io/Temporeum_timeline_SDK/stability.html).
 

@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 — Unreleased
+## 1.0.0 — 2026-11-07
 
 The first release. From here on the package follows [semantic versioning](https://horakdani.github.io/Temporeum_timeline_SDK/stability.html): nothing public is removed before 2.0.
 
