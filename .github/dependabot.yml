@@ -26,6 +26,10 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "@angular/*"
         update-types: ["version-update:semver-major"]
+      # TypeScript's next major waits for the compilers that read it: the
+      # Angular compiler and typescript-eslint take a range below it.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 5
   - package-ecosystem: github-actions
     directory: /
