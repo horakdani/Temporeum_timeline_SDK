@@ -35,7 +35,7 @@
 import { withClass } from "../draw.js";
 import { describeItem } from "../a11y.js";
 import { DEFAULT_TIME_ZONE } from "../calendar.js";
-import { defaultItemNode } from "../render.js";
+import { defaultItemNode, FOCUS_RING_GAP } from "../render.js";
 import type { ItemRenderContext, RenderHooks } from "../render.js";
 import { formatNumber } from "../scene.js";
 import type { SceneElement } from "../scene.js";
@@ -552,26 +552,35 @@ function xy(context: ItemRenderContext<unknown>, main: number, cross: number): {
   return { x: point.x, y: point.y };
 }
 
+/**
+ * A milestone's diamond, centred on its start and as tall as its row, as a
+ * path — grown by `gap` on every side for its focus ring.
+ */
+function diamondPath(context: ItemRenderContext<unknown>, gap = 0): string {
+  const centre = context.scale.toMain(context.placed.span.start);
+  const half = milestoneHalf(context.box.crossSize);
+  const tall = context.box.crossSize / 2;
+  // Each side moves out by `gap`; its corners move further, along the axes.
+  const slant = Math.hypot(half, tall);
+  const across = half + (gap * slant) / tall;
+  const down = tall + (gap * slant) / half;
+  const middle = context.box.cross + tall;
+  const corners = [
+    xy(context, centre - across, middle),
+    xy(context, centre, middle - down),
+    xy(context, centre + across, middle),
+    xy(context, centre, middle + down),
+  ];
+  return corners.map((point, at) => `${at === 0 ? "M" : "L"}${formatNumber(point.x)} ${formatNumber(point.y)}`).join(" ") + " Z";
+}
+
 /** A milestone: a diamond centred on its start, as tall as its row. */
 function milestoneNode(context: ItemRenderContext<unknown>): SceneElement {
   const item = context.placed.item;
-  const centre = context.scale.toMain(context.placed.span.start);
-  const half = milestoneHalf(context.box.crossSize);
-  const middle = context.box.cross + context.box.crossSize / 2;
-  const corners = [
-    xy(context, centre - half, middle),
-    xy(context, centre, middle - context.box.crossSize / 2),
-    xy(context, centre + half, middle),
-    xy(context, centre, middle + context.box.crossSize / 2),
-  ];
   const classes = withClass(`tl-item tl-item--milestone${context.selected ? " tl-item--selected" : ""}`, item.className);
   return {
     tag: "path",
-    attrs: {
-      class: classes,
-      "data-tl-id": item.id,
-      d: corners.map((point, at) => `${at === 0 ? "M" : "L"}${formatNumber(point.x)} ${formatNumber(point.y)}`).join(" ") + " Z",
-    },
+    attrs: { class: classes, "data-tl-id": item.id, d: diamondPath(context) },
     children: [{ tag: "title", text: context.name }],
   };
 }
@@ -671,6 +680,11 @@ export function ganttHooks<T>(hooks: RenderHooks<T> = {}, options: GanttHookOpti
       return { tag: "g", attrs: { "data-tl-id": item.id }, children: [withoutId(node), ...extras] };
     },
     describeItem: (placed) => describeTask(placed, options, describe),
+    renderFocus(context) {
+      // A diamond's ring is a diamond round it, not a pill round its start.
+      if (context.placed.item.kind !== "milestone") return hooks.renderFocus?.(context);
+      return { tag: "path", attrs: { class: "tl-focus-ring", d: diamondPath(context as ItemRenderContext<unknown>, FOCUS_RING_GAP) } };
+    },
   };
 }
 

@@ -186,6 +186,13 @@ export interface RenderHooks<T = unknown> {
   /** Called for each selected item. Nothing is drawn unless this is given. */
   readonly renderDetail?: (context: ItemRenderContext<T>) => SceneElement | null;
   /**
+   * Draws the keyboard's focus ring around an item whose shape is not its
+   * box: a dot, a diamond. `undefined` draws the default ring, a rounded
+   * rect around the box. Give the shape the `tl-focus-ring` class: it
+   * strokes the shape and hides it while the timeline does not have focus.
+   */
+  readonly renderFocus?: (context: ItemRenderContext<T>) => SceneElement | undefined;
+  /**
    * The accessible name of an item, replacing "label, date range, lane".
    * For a host whose items mean more than their label says.
    */
@@ -570,7 +577,7 @@ function clusterNameOf<T>(cluster: Cluster<T>, semantics: ItemSemantics<T> | und
 const STRETCH_DECIMALS = 9;
 
 /** Pixels between an item and its focus ring: clear of the selection stroke. */
-const FOCUS_RING_GAP = 3;
+export const FOCUS_RING_GAP = 3;
 
 /** Width of the loading mark, across the axis. */
 const LOADING_MARK = 3;
@@ -861,6 +868,20 @@ function crossBoxOf(
   return { cross: clipped, crossSize: crossEnd - clipped };
 }
 
+/** What a render hook is handed for one drawn item. */
+function itemContextOf<T>(context: DrawContext<T>, entry: DrawnItem<T>, selected: ReadonlySet<string>): ItemRenderContext<T> {
+  return {
+    placed: entry.placed,
+    box: entry.box,
+    rect: context.projector.projectRect(entry.box),
+    selected: selected.has(entry.placed.item.id),
+    name: nameOf(entry.placed, context.semantics),
+    metrics: context.metrics,
+    projector: context.projector,
+    scale: context.itemScale,
+  };
+}
+
 /** The item, label and detail nodes for what was drawn and placed. */
 function itemNodesOf<T>(
   options: RenderOptions<T>,
@@ -869,7 +890,7 @@ function itemNodesOf<T>(
   kept: readonly PlacedLabel[],
   selected: ReadonlySet<string>,
 ): { items: SceneElement[]; labels: SceneElement[]; details: SceneElement[] } {
-  const { metrics, projector, itemScale } = context;
+  const { metrics, projector } = context;
   const hooks = options.hooks ?? {};
   const items: SceneElement[] = [];
   const details: SceneElement[] = [];
@@ -885,16 +906,7 @@ function itemNodesOf<T>(
       }
       continue;
     }
-    const itemContext: ItemRenderContext<T> = {
-      placed: entry.placed,
-      box: entry.box,
-      rect: projector.projectRect(entry.box),
-      selected: selected.has(id),
-      name: nameOf(entry.placed, semantics),
-      metrics,
-      projector,
-      scale: itemScale,
-    };
+    const itemContext = itemContextOf(context, entry, selected);
     const node =
       hooks.renderItem === undefined ? defaultItemNode(itemContext) : hooks.renderItem(itemContext);
     if (node !== null) {
@@ -2493,9 +2505,14 @@ export function renderTimeline<T = unknown>(options: RenderOptions<T>): RenderRe
   }
   if (focused !== undefined) {
     const gap = FOCUS_RING_GAP;
+    // A dot or a diamond is not its box: the hook that drew it draws its ring.
+    const own =
+      focused.cluster === undefined
+        ? options.hooks?.renderFocus?.(itemContextOf(context, focused, new Set(options.selectedIds)))
+        : undefined;
     overlay = [
       ...overlay,
-      {
+      own ?? {
         tag: "rect",
         attrs: {
           class: "tl-focus-ring",

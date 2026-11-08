@@ -165,6 +165,35 @@ describeBothOrientations("item kinds", (orientation) => {
     expect(onRemoveHandle(box, { main: box.main + 2, cross: box.cross + 2 })).toBe(false);
     expect(onRemoveHandle(box, { main: handle.main - 3, cross: handle.cross }, 4)).toBe(true);
   });
+
+  it("rings a focused point with a circle round its dot, and every other item with the default ring", () => {
+    const focusOn = (focusedId: string, hooks = itemKindHooks()) =>
+      renderTimeline({ items: splitBackgrounds(ITEMS).items, domain: DOMAIN, width: 900, height: 400, orientation, focusedId, hooks });
+    const result = focusOn("dot");
+    const rings = (scene: SceneElement): SceneElement[] => {
+      const out: SceneElement[] = [];
+      const walk = (node: SceneElement): void => {
+        if (node.attrs?.class === "tl-focus-ring") out.push(node);
+        for (const child of node.children ?? []) walk(child);
+      };
+      walk(scene);
+      return out;
+    };
+    const [ring] = rings(result.scene);
+    const dot = find(result.scene, (node) => node.attrs?.class === "tl-item-dot");
+    // A circle, on the dot's centre, wider than the dot by the ring's gap: not a pill round the row.
+    expect(rings(result.scene)).toHaveLength(1);
+    expect(ring?.tag).toBe("circle");
+    expect(ring?.attrs?.cx).toBe(dot?.attrs?.cx);
+    expect(ring?.attrs?.cy).toBe(dot?.attrs?.cy);
+    expect(Number(ring?.attrs?.r)).toBe(Number(dot?.attrs?.r) + 3);
+    // A range and a box keep the rounded rect round their box.
+    for (const id of ["bar", "box"]) expect(rings(focusOn(id).scene).map((node) => node.tag), id).toEqual(["rect"]);
+    // A host's own ring is kept for what the kinds do not draw.
+    const own = itemKindHooks({ renderFocus: () => ({ tag: "ellipse", attrs: { class: "tl-focus-ring" } }) });
+    expect(rings(focusOn("bar", own).scene).map((node) => node.tag)).toEqual(["ellipse"]);
+    expect(rings(focusOn("dot", own).scene).map((node) => node.tag)).toEqual(["circle"]);
+  });
 });
 
 it("leaves a list without backgrounds as it is, and an open background reaching the end", () => {

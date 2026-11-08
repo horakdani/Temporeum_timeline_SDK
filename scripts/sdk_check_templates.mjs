@@ -15,6 +15,12 @@
  *     least three `option`s are visible (it also looks into the element's
  *     shadow root), and a click on an item selects it (aria-selected="true").
  *
+ * TL_TEMPLATES_FROM=npm: the PUBLISHED packages instead — nothing is packed,
+ * the template's own `^x.y.z` ranges are installed from the registry into a
+ * clean folder (.templates-npm), and each template must resolve every
+ * @temporeum package to the registry at the version on npm's `latest`. This is
+ * what a user who copies a template gets after a release.
+ *
  * Every template must pass; a missing, unrunnable or skipped template FAILS.
  * The list comes from the templates/ folder, not from this file: a new
  * template is picked up on its own.
@@ -32,7 +38,8 @@ import { chromium } from "@playwright/test";
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const docs = join(repo, "packages", "docs");
 const templatesDir = join(docs, "templates");
-const work = join(docs, ".templates-work");
+const FROM_NPM = process.env.TL_TEMPLATES_FROM === "npm";
+const work = join(docs, FROM_NPM ? ".templates-npm" : ".templates-work");
 const BASE_PORT = Number(process.env.TL_TEMPLATES_PORT ?? 31766);
 const ENV = { ...process.env, NEXT_TELEMETRY_DISABLED: "1", NUXT_TELEMETRY_DISABLED: "1", ASTRO_TELEMETRY_DISABLED: "1" };
 
@@ -109,7 +116,8 @@ if (templates.length === 0) {
 }
 mkdirSync(join(work, "packs"), { recursive: true });
 const tarballs = {};
-for (const [name, dir] of [
+const latest = {};
+for (const [name, dir] of FROM_NPM ? [] : [
   ["@temporeum/timeline-core", "packages/core"],
   ["@temporeum/timeline-element", "packages/web-component"],
   ["@temporeum/timeline-react", "packages/react"],
@@ -126,6 +134,15 @@ for (const [name, dir] of [
   }
 }
 
+if (FROM_NPM) {
+  for (const name of ["@temporeum/timeline-core", "@temporeum/timeline-element", "@temporeum/timeline-react", "@temporeum/timeline-vue", "@temporeum/timeline-svelte", "@temporeum/timeline-angular"]) {
+    try {
+      latest[name] = run("npm", ["view", name, "dist-tags.latest"]).trim();
+    } catch (error) {
+      problems.push(`${name}: not on npm\n${tail(error)}`);
+    }
+  }
+}
 
 /** The same verdict for every template: it draws, it selects on a click, it says nothing on the console. */
 async function probe(url) {
@@ -160,7 +177,7 @@ for (const [index, name] of templates.entries()) {
   const port = BASE_PORT + index;
   const started = Date.now();
   // The fresh copy: the template's source and nothing else (node_modules stays, for speed).
-  for (const entry of existsSync(dir) ? readdirSync(dir) : []) if (entry !== "node_modules") rmSync(join(dir, entry), { recursive: true, force: true });
+  for (const entry of existsSync(dir) ? readdirSync(dir) : []) if (FROM_NPM || entry !== "node_modules") rmSync(join(dir, entry), { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   cpSync(join(templatesDir, name), dir, { recursive: true, filter: (source) => !/[/\\](node_modules|dist|\.next|\.nuxt|\.output|\.astro|\.angular|\.svelte-kit)([/\\]|$)/.test(source.slice(templatesDir.length)) });
   const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
@@ -169,15 +186,41 @@ for (const [index, name] of templates.entries()) {
     problems.push(`${name}: the template requires no @temporeum package — it does not show the library`);
     continue;
   }
-  manifest.dependencies = { ...manifest.dependencies, ...Object.fromEntries(Object.entries(tarballs).map(([pkg, file]) => [pkg, `file:${file}`])) };
-  writeFileSync(join(dir, "package.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  if (!FROM_NPM) {
+    manifest.dependencies = { ...manifest.dependencies, ...Object.fromEntries(Object.entries(tarballs).map(([pkg, file]) => [pkg, `file:${file}`])) };
+    writeFileSync(join(dir, "package.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  }
   try {
     run("npm", ["install", "--no-audit", "--no-fund", "--no-package-lock", "--loglevel=error"], { cwd: dir });
     // Same version number, different content: the file: dependency is reinstalled explicitly.
-    run("npm", ["install", "--no-audit", "--no-fund", "--no-package-lock", "--no-save", "--loglevel=error", ...Object.values(tarballs)], { cwd: dir });
+    if (!FROM_NPM) run("npm", ["install", "--no-audit", "--no-fund", "--no-package-lock", "--no-save", "--loglevel=error", ...Object.values(tarballs)], { cwd: dir });
   } catch (error) {
     problems.push(`${name}: the install failed\n${tail(error)}`);
     continue;
+  }
+  if (FROM_NPM) {
+    // Every @temporeum package in the tree, the transitive ones too, from the registry at `latest`.
+    let listing;
+    try {
+      listing = run("npm", ["ls", "--all", "--json"], { cwd: dir });
+    } catch (error) {
+      listing = String(error.stdout ?? "{}"); // npm ls exits 1 on any extraneous or invalid package; the tree is still printed
+    }
+    const tree = JSON.parse(listing);
+    const wrong = [];
+    const walk = (node) => {
+      for (const [pkg, child] of Object.entries(node.dependencies ?? {})) {
+        // A deduped copy carries no `resolved`: the one it points at is checked where it is listed in full.
+        const fromRegistry = child.resolved === undefined || String(child.resolved).startsWith("https://registry.npmjs.org/");
+        if (pkg.startsWith("@temporeum/") && (child.version !== latest[pkg] || !fromRegistry)) wrong.push(`${pkg}@${child.version} from ${child.resolved ?? "?"}`);
+        walk(child);
+      }
+    };
+    walk(tree);
+    if (wrong.length > 0) {
+      problems.push(`${name}: not the published packages: ${wrong.join(", ")}`);
+      continue;
+    }
   }
   try {
     run("npm", ["run", "build"], { cwd: dir });
@@ -253,4 +296,4 @@ if (problems.length > 0) {
   for (const problem of problems) console.error(`  ✗ ${problem}`);
   process.exit(1);
 }
-console.log(`\nTemplates: all ${String(templates.length)} build and draw with the packed tarballs.`);
+console.log(`\nTemplates: all ${String(templates.length)} build and draw with ${FROM_NPM ? `the packages on npm (${Object.entries(latest).map(([pkg, version]) => `${pkg.slice(20)} ${version}`).join(", ")})` : "the packed tarballs"}.`);

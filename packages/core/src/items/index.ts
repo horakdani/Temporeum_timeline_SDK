@@ -19,7 +19,7 @@ import type { EraDecoration } from "../decorations.js";
 import { lineAttrs, rectAttrs, withClass } from "../draw.js";
 import type { KeySample } from "../keyboard.js";
 import { MAX_SUBLANE_SPAN, resolveSpan } from "../layout.js";
-import { defaultItemNode } from "../render.js";
+import { defaultItemNode, FOCUS_RING_GAP } from "../render.js";
 import type { ItemRenderContext, RenderHooks } from "../render.js";
 import type { TimeScale } from "../scale.js";
 import type { SceneElement } from "../scene.js";
@@ -86,12 +86,10 @@ function classesOf<T>(context: ItemRenderContext<T>, kind: string): string {
 function kindNode<T>(context: ItemRenderContext<T>, kind: "box" | "point"): SceneElement {
   const { box, projector, metrics } = context;
   const at = kind === "point" ? box.main : box.main + box.mainSize / 2;
-  const middle = box.cross + box.crossSize / 2;
-  const centre = projector.projectPoint({ main: at, cross: middle });
   const shape: SceneElement =
     kind === "box"
       ? { tag: "rect", attrs: { class: "tl-item-box", ...rectAttrs(box, projector), rx: metrics.cornerRadius } }
-      : { tag: "circle", attrs: { class: "tl-item-dot", cx: centre.x, cy: centre.y, r: Math.min(box.crossSize / 2, POINT_RADIUS) } };
+      : dotNode(context, "tl-item-dot", 0);
   return {
     tag: "g",
     attrs: { class: classesOf(context, kind), "data-tl-id": context.placed.item.id },
@@ -110,6 +108,13 @@ function kindNode<T>(context: ItemRenderContext<T>, kind: "box" | "point"): Scen
       { tag: "title", text: context.name },
     ],
   };
+}
+
+/** A point's dot at its start, in the middle of its row — or, `grow` wider, its focus ring. */
+function dotNode<T>(context: ItemRenderContext<T>, className: string, grow: number): SceneElement {
+  const box = context.box;
+  const centre = context.projector.projectPoint({ main: box.main, cross: box.cross + box.crossSize / 2 });
+  return { tag: "circle", attrs: { class: className, cx: centre.x, cy: centre.y, r: Math.min(box.crossSize / 2, POINT_RADIUS) + grow } };
 }
 
 /** A remove handle: a square with a cross in it. Hidden from assistive technology — its twin is the `Delete` key. */
@@ -157,6 +162,10 @@ export function itemKindHooks<T>(hooks: RenderHooks<T> = {}, options: ItemKindOp
         return node;
       }
       return { tag: "g", attrs: { "data-tl-id": context.placed.item.id }, children: [withoutId(node), removeHandleNode(context)] };
+    },
+    renderFocus(context) {
+      // A dot's ring is a circle round the dot, not a pill round its row.
+      return context.placed.item.kind === "point" ? dotNode(context, "tl-focus-ring", FOCUS_RING_GAP) : hooks.renderFocus?.(context);
     },
   };
 }

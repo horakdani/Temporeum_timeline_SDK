@@ -70,6 +70,41 @@ describeBothOrientations("gantt drawing", (orientation) => {
     expect(String(gate?.attrs?.["aria-label"])).toContain("after Half");
   });
 
+  it("rings a focused milestone with a diamond round its diamond, a bar with the default ring", () => {
+    const focused = (focusedId: string): SceneElement | undefined =>
+      find(
+        renderTimeline({
+          items,
+          lanes: [{ id: "a" }, { id: "b" }, { id: "c" }],
+          domain: [ORIGIN - 5 * DAY, ORIGIN + 20 * DAY],
+          width: orientation === "horizontal" ? 1000 : 300,
+          height: orientation === "horizontal" ? 300 : 1000,
+          orientation,
+          focusedId,
+          hooks: ganttHooks({}, { items }),
+        }).scene,
+        (node) => node.attrs?.class === "tl-focus-ring",
+      );
+    const corners = (d: unknown): number[][] =>
+      [...String(d).matchAll(/[ML](-?[\d.]+) (-?[\d.]+)/g)].map((match) => [Number(match[1]), Number(match[2])]);
+    const ring = focused("gate");
+    expect(ring?.tag).toBe("path");
+    const diamond = corners(find(frame.scene, (node) => node.attrs?.["data-tl-id"] === "gate")?.attrs?.d);
+    const around = corners(ring?.attrs?.d);
+    expect(around).toHaveLength(4);
+    // The same centre, every corner further out: the ring follows the diamond, 3 px off each side.
+    const centre = (points: number[][]): number[] => [0, 1].map((axis) => points.reduce((sum, point) => sum + (point[axis] ?? 0), 0) / 4);
+    expect(centre(around)[0]).toBeCloseTo(centre(diamond)[0] ?? 0, 2);
+    expect(centre(around)[1]).toBeCloseTo(centre(diamond)[1] ?? 0, 2);
+    around.forEach((point, at) => {
+      const [x, y] = point;
+      const [cx, cy] = centre(diamond);
+      const [dx, dy] = diamond[at] ?? [];
+      expect(Math.hypot((x ?? 0) - (cx ?? 0), (y ?? 0) - (cy ?? 0))).toBeCloseTo(Math.hypot((dx ?? 0) - (cx ?? 0), (dy ?? 0) - (cy ?? 0)) + 3 * Math.SQRT2, 1);
+    });
+    expect(focused("plain")?.tag).toBe("rect");
+  });
+
   it("leaves a plain item as it was, with the default name", () => {
     const plain = find(frame.scene, (node) => node.attrs?.["data-tl-id"] === "plain");
     expect(plain?.tag).toBe("rect");

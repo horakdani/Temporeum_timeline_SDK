@@ -23,6 +23,7 @@ export default [
       // The templates' and the benchmark's working directories: installed
       // frameworks, for the same reason as .ssr-work.
       "**/.templates-work/**",
+      "**/.templates-npm/**",
       "**/.bench-work/**",
       // svelte-package's working folder and the server-compiled component of
       // the Svelte hydration test: output, not source.

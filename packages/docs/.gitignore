@@ -14,6 +14,7 @@ playwright-report/
 .e2e-ssr-report.json
 .bench-work/
 .templates-work/
+.templates-npm/
 .examples-results.json
 .e2e-examples-report.json
 dist/

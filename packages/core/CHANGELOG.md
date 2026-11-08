@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 — Unreleased
+
+### Fixed
+
+- The keyboard's focus ring follows a point's dot and a milestone's diamond. It was a rounded rect round the item's box: on a dot, a tall oval beside it, the box being as tall as the row and starting at the dot's centre. A new render hook, `renderFocus`, draws the ring of an item whose shape is not its box; `/items` gives a point a circle round its dot, `/gantt` a milestone a diamond round its diamond, and every other item keeps the default ring.
+- The `/items` entry point's budget is 4.5 kB on top of the engine (was 4.25 kB): the point's ring is 40 B over the old one.
+
 ## 1.0.0 — 2026-11-07
 
 The first release. From here on the package follows [semantic versioning](https://horakdani.github.io/Temporeum_timeline_SDK/stability.html): nothing public is removed before 2.0.
