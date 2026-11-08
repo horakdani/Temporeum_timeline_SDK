@@ -30,6 +30,11 @@ updates:
       # Angular compiler and typescript-eslint take a range below it.
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
+      # The bundler writes the bytes the size budgets count: a new minor
+      # changes them (1.3.0 put the engine 30 B over its budget), so it
+      # changes by hand, with the sizes measured again.
+      - dependency-name: "rolldown"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
     open-pull-requests-limit: 5
   - package-ecosystem: github-actions
     directory: /

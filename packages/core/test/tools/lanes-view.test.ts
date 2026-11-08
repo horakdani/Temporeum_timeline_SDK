@@ -70,13 +70,22 @@ describe("sticky lane headers", () => {
     expect(idsOf(short)).toEqual(["a"]);
   });
 
-  it("sizes the plate to a measurer when given, and turns with the orientation", () => {
+  it("sizes the plate to a measurer when given, and keeps it a line of text in either orientation", () => {
     const measured = laneHeaderNodes(layout, { orientation: "horizontal", density: "comfortable", crossOffset: 0, crossSize: 2000, measure: () => 100 });
     expect(rectOf(measured[0]).width).toBe(100 + 2 * metrics.labelPadding);
+    expect(rectOf(measured[0]).height).toBe(headerHeight);
+    // Running down, the name is still read across: as wide as the name, a line high, at the top of its
+    // own column — not a strip as tall as the name standing over the column's first items.
     const vertical = laneHeaderNodes(layout, { orientation: "vertical", density: "comfortable", crossOffset: 0, crossSize: 2000, measure: () => 100 });
     const verticalMetrics = densityMetrics("comfortable", "vertical");
-    expect(rectOf(vertical[0]).y).toBe(0);
-    expect(rectOf(vertical[0]).height).toBe(100 + 2 * verticalMetrics.labelPadding);
+    const plate = rectOf(vertical[0]);
+    expect(plate.y).toBe(0);
+    expect(plate.x).toBe((layout.lanes[0]?.cross ?? 0) + verticalMetrics.axisSize);
+    expect(plate.width).toBe(100 + 2 * verticalMetrics.labelPadding);
+    expect(plate.height).toBe(verticalMetrics.lineHeight + verticalMetrics.labelPadding);
+    const text = vertical[0]?.children?.[1]?.attrs ?? {};
+    expect(text.x).toBe(Number(plate.x) + verticalMetrics.labelPadding);
+    expect(text.y).toBe(Number(plate.y) + Number(plate.height) / 2);
   });
 
   it("goes in a layer of its own, under the foreground, hidden from assistive technology", () => {

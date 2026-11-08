@@ -37,26 +37,30 @@ export function laneHeaderNodes(layout: Layout, options: LaneHeaderOptions): rea
   const projector = createProjector(options.orientation);
   const inset = metrics.axisSize;
   const height = metrics.lineHeight + metrics.labelPadding;
+  const vertical = options.orientation === "vertical";
   const nodes: SceneElement[] = [];
   for (const laid of layout.lanes) {
     const label = laid.lane.label;
     if (label === undefined || label === "") continue;
+    const width = (options.measure?.(label) ?? label.length * metrics.fontSize * 0.6) + 2 * metrics.labelPadding;
+    // The name is read across the screen in both orientations: a line high and its width long on the
+    // screen, so along the time axis when it runs across, and across the lane when it runs down.
+    const along = vertical ? height : width;
+    const across = vertical ? width : height;
     const from = laid.cross + inset - options.crossOffset;
     const to = from + laid.crossSize;
     if (to <= inset || from >= options.crossSize) continue;
-    // Held at the top of what is left of the lane, and not past its end.
-    const cross = Math.min(Math.max(from, inset), to - height);
-    if (cross < inset - height / 2) continue;
-    const width = (options.measure?.(label) ?? label.length * metrics.fontSize * 0.6) + 2 * metrics.labelPadding;
+    // Held at the top of what is left of the lane, and not past its end — nor before its start, where a
+    // lane is narrower than its name.
+    const cross = Math.max(Math.min(Math.max(from, inset), to - across), from);
+    if (cross < inset - across / 2) continue;
+    const box = { main: 0, mainSize: along, cross, crossSize: across };
     nodes.push({
       tag: "g",
       attrs: { class: "tl-lane-header", "data-tl-lane-header": laid.lane.id },
       children: [
-        {
-          tag: "rect",
-          attrs: { class: "tl-lane-header-bg", ...projector.projectRect({ main: 0, mainSize: width, cross, crossSize: height }), rx: 3 },
-        },
-        textNode({ main: 0, mainSize: width, cross, crossSize: height }, label, projector, "tl-lane-header-text", metrics.labelPadding),
+        { tag: "rect", attrs: { class: "tl-lane-header-bg", ...projector.projectRect(box), rx: 3 } },
+        textNode(box, label, projector, "tl-lane-header-text", metrics.labelPadding),
       ],
     });
   }

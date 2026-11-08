@@ -6,6 +6,7 @@
 
 - The keyboard's focus ring follows a point's dot and a milestone's diamond. It was a rounded rect round the item's box: on a dot, a tall oval beside it, the box being as tall as the row and starting at the dot's centre. A new render hook, `renderFocus`, draws the ring of an item whose shape is not its box; `/items` gives a point a circle round its dot, `/gantt` a milestone a diamond round its diamond, and every other item keeps the default ring.
 - The `/items` entry point's budget is 4.5 kB on top of the engine (was 4.25 kB): the point's ring is 40 B over the old one.
+- A vertical timeline's lane headers (`/tools`) are a line of text at the top of their column, as wide as the name. The plate was turned with the axis: as tall as the name and a line wide, it stood over the column's first items. A plate wider than its lane starts at the lane, not before it.
 
 ## 1.0.0 — 2026-11-07
 
