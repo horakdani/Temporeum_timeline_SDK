@@ -5,7 +5,7 @@
     "AA"
   ],
   "product": "@temporeum/timeline-core and @temporeum/timeline-element",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "date": "2026-11-09",
   "description": "A timeline for the web: a custom element and a live instance over a DOM-free engine, drawn as SVG — items in lanes along an axis of time, to pan, zoom, select and edit by pointer, touch or keyboard.",
   "scope": "The timeline as the library draws it — the element, its views and tools, in the default configuration and with editing on — in Chromium, on the documentation's own pages. The page around it, its title, language, headings, links and help, is the host's.",

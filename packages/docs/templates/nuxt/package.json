@@ -9,7 +9,7 @@
     "preview": "nuxt preview"
   },
   "dependencies": {
-    "@temporeum/timeline-vue": "^1.0.1",
+    "@temporeum/timeline-vue": "^1.0.2",
     "nuxt": "^4.6.3",
     "vue": "^3.5.44"
   }

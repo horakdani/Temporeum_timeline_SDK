@@ -1,6 +1,6 @@
 {
   "name": "@temporeum/timeline-core",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "An editable, responsive timeline engine: layout, ticks, collision-free lanes and rendering to an SVG scene, in Node or the browser. Zero runtime dependencies.",
   "license": "MIT",
   "author": "Daniel Horak",

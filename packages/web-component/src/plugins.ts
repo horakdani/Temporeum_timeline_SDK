@@ -175,7 +175,7 @@ export type PluginName = keyof Features;
 export type TimelinePlugin = { readonly [K in PluginName]: { readonly name: K; readonly feature: Features[K] } }[PluginName];
 
 /** This package's version; `scripts/sdk_check_pack.mjs` holds it to the manifest. */
-const RELEASE = "1.0.1";
+const RELEASE = "1.0.2";
 
 /**
  * The registry, on the global object under a registered symbol: a page with

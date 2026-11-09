@@ -4,5 +4,5 @@
   "private": true,
   "type": "module",
   "scripts": { "dev": "astro dev", "build": "astro build", "preview": "astro preview" },
-  "dependencies": { "@temporeum/timeline-element": "^1.0.1", "astro": "7.4.1" }
+  "dependencies": { "@temporeum/timeline-element": "^1.0.2", "astro": "7.4.1" }
 }

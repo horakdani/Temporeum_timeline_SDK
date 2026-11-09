@@ -1,6 +1,6 @@
 {
   "name": "@temporeum/timeline-angular",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "The Temporeum timeline as an Angular standalone component: editable, accessible, server-rendered and hydrated.",
   "license": "MIT",
   "author": "Daniel Horak",
@@ -46,8 +46,8 @@
     "node": ">=22.12.0"
   },
   "dependencies": {
-    "@temporeum/timeline-core": "^1.0.1",
-    "@temporeum/timeline-element": "^1.0.1"
+    "@temporeum/timeline-core": "^1.0.2",
+    "@temporeum/timeline-element": "^1.0.2"
   },
   "peerDependencies": {
     "@angular/common": ">=21.0.0 <23.0.0",
