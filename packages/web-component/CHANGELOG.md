@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1 — 2026-11-09
+
+On 1.0.1 of `@temporeum/timeline-core`.
+
+### Fixed
+
+- The keyboard's focus ring on a point is a circle round its dot, on a Gantt milestone a diamond round its diamond, not a tall oval beside them.
+- A vertical timeline's lane headers (`laneHeaders: true`) sit at the top of their column, a line of text as wide as the name, not over the column's first items.
+
 ## 1.0.0 — 2026-11-07
 
 The first release, on 1.0.0 of `@temporeum/timeline-core`. From here on the package follows [semantic versioning](https://horakdani.github.io/Temporeum_timeline_SDK/stability.html): nothing public is removed before 2.0.

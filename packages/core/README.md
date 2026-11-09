@@ -3,7 +3,7 @@
 An editable, responsive timeline engine for the web — from millennia down to
 seconds, with collision-free lanes and **zero runtime dependencies**.
 
-> **Status: 1.0.0.** Stable: the API follows semantic versioning
+> **Status: 1.0.1.** Stable: the API follows semantic versioning
 > ([stability policy](https://horakdani.github.io/Temporeum_timeline_SDK/stability.html)). Most
 > hosts want the live timeline on top of this engine —
 > [`@temporeum/timeline-element`](https://github.com/horakdani/Temporeum_timeline_SDK/tree/main/packages/web-component#readme) (`createTimeline`

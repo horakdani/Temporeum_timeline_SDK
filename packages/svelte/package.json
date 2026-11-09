@@ -1,6 +1,6 @@
 {
   "name": "@temporeum/timeline-svelte",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The Temporeum timeline as a Svelte 5 component: editable, accessible, server-rendered and hydrated.",
   "license": "MIT",
   "author": "Daniel Horak",
@@ -48,8 +48,8 @@
     "node": ">=22.12.0"
   },
   "dependencies": {
-    "@temporeum/timeline-core": "^1.0.0",
-    "@temporeum/timeline-element": "^1.0.0"
+    "@temporeum/timeline-core": "^1.0.1",
+    "@temporeum/timeline-element": "^1.0.1"
   },
   "peerDependencies": {
     "svelte": "^5.46.4"

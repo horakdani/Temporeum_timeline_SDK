@@ -1,6 +1,6 @@
 {
   "name": "@temporeum/timeline-element",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An editable, accessible timeline for the web: <temporeum-timeline>, a live instance (createTimeline) and server-rendered markup that hydrates.",
   "license": "MIT",
   "author": "Daniel Horak",
@@ -195,7 +195,7 @@
     "node": ">=22.12.0"
   },
   "dependencies": {
-    "@temporeum/timeline-core": "^1.0.0"
+    "@temporeum/timeline-core": "^1.0.1"
   },
   "scripts": {
     "test:passthrough": "node ../../scripts/sdk_check_passthrough.mjs",

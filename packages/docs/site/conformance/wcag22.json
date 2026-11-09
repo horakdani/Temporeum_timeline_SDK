@@ -5,8 +5,8 @@
     "AA"
   ],
   "product": "@temporeum/timeline-core and @temporeum/timeline-element",
-  "version": "1.0.0",
-  "date": "2026-11-03",
+  "version": "1.0.1",
+  "date": "2026-11-09",
   "description": "A timeline for the web: a custom element and a live instance over a DOM-free engine, drawn as SVG — items in lanes along an axis of time, to pan, zoom, select and edit by pointer, touch or keyboard.",
   "scope": "The timeline as the library draws it — the element, its views and tools, in the default configuration and with editing on — in Chromium, on the documentation's own pages. The page around it, its title, language, headings, links and help, is the host's.",
   "statuses": {
@@ -263,7 +263,7 @@
       "name": "Text Spacing",
       "level": "AA",
       "status": "supports",
-      "remarks": "The element measures each label with the spacing it is drawn with \u2014 the reader's letter and word spacing, read off a drawn label \u2014 and measures and lays out again when that spacing comes or goes after load, with no resize or call: under WCAG's spacing (line height 1.5, letters 0.12em, words 0.16em, paragraphs 2em, all `!important`) every label of the element's test page keeps its whole text in a box that holds it, as without the spacing, also after it draws again at another size; the taller line stays centred in its box, nothing runs into the axis, the keys still work, and the item's accessible name keeps the whole label (tested on the element in its shadow root and on an instance in the page). Where the core's renderer is used directly, labels are measured with what the host passes as `measureText`, or, without one, with a font-free estimate that knows no spacing: a label the spacing widens past its box then ends in an ellipsis and is never cut through a letter, and its whole text stays in the accessible name (tested on the demo, horizontal and vertical). Spacing a reader turns on while transitions are switched off is measured at the next resize.",
+      "remarks": "The element measures each label with the spacing it is drawn with — the reader's letter and word spacing, read off a drawn label — and measures and lays out again when that spacing comes or goes after load, with no resize or call: under WCAG's spacing (line height 1.5, letters 0.12em, words 0.16em, paragraphs 2em, all `!important`) every label of the element's test page keeps its whole text in a box that holds it, as without the spacing, also after it draws again at another size; the taller line stays centred in its box, nothing runs into the axis, the keys still work, and the item's accessible name keeps the whole label (tested on the element in its shadow root and on an instance in the page). Where the core's renderer is used directly, labels are measured with what the host passes as `measureText`, or, without one, with a font-free estimate that knows no spacing: a label the spacing widens past its box then ends in an ellipsis and is never cut through a letter, and its whole text stays in the accessible name (tested on the demo, horizontal and vertical). Spacing a reader turns on while transitions are switched off is measured at the next resize.",
       "tests": [
         {
           "file": "packages/web-component/test/element.browser.test.ts",
@@ -493,7 +493,7 @@
       "name": "Focus Visible",
       "level": "AA",
       "status": "supports",
-      "remarks": "The focused item is drawn with a ring that meets 3:1, in both themes, and the ring moves with the arrows. The timeline's own outline is drawn inside its box, so a container with `overflow: hidden` does not cut it: every pixel of the four edges of a clipping card exactly the timeline's size is the outline's colour, and none is when the same outline is drawn outside (the control). In forced colours the ring and the outline take the reader's `Highlight`, the ring 3 pixels wide.",
+      "remarks": "The focused item is drawn with a ring that meets 3:1, in both themes, and the ring moves with the arrows. It follows the item's shape: a rounded rect round a bar, a circle round a point's dot, a diamond round a milestone's. The timeline's own outline is drawn inside its box, so a container with `overflow: hidden` does not cut it: every pixel of the four edges of a clipping card exactly the timeline's size is the outline's colour, and none is when the same outline is drawn outside (the control). In forced colours the ring and the outline take the reader's `Highlight`, the ring 3 pixels wide.",
       "tests": [
         {
           "file": "packages/core/test/theme.test.ts",
@@ -514,6 +514,14 @@
         {
           "file": "packages/docs/e2e/a11y.spec.ts",
           "test": "paint in the reader's system colours, wider where selected"
+        },
+        {
+          "file": "packages/core/test/item-kinds/item-kinds.test.ts",
+          "test": "rings a focused point with a circle round its dot"
+        },
+        {
+          "file": "packages/core/test/gantt/gantt-draw.test.ts",
+          "test": "rings a focused milestone with a diamond round its diamond"
         }
       ]
     },
