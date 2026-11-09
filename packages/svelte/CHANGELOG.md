@@ -7,6 +7,7 @@ On 1.0.2 of `@temporeum/timeline-element`; no change of the component's own.
 ### Fixed
 
 - An era's name is in the axis band, where the items cannot cover it, not at the top of the lane area under the first row's items.
+- Down a vertical timeline, a point's label starts past its dot, not under it.
 
 ## 1.0.1 — 2026-11-09
 

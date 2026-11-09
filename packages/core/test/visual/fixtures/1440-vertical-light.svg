@@ -79,10 +79,10 @@
     <foreignObject class="tl-label" data-tl-label="decision" x="306.12" y="206.328" width="83.76" height="16">
       <div xmlns="http://www.w3.org/1999/xhtml">Decision day</div>
     </foreignObject>
-    <foreignObject class="tl-label tl-label--after" data-tl-label="brief" x="85.92" y="77.373" width="164.16" height="16">
+    <foreignObject class="tl-label tl-label--after" data-tl-label="brief" x="85.92" y="83.373" width="164.16" height="16">
       <div xmlns="http://www.w3.org/1999/xhtml">A very long name that is c…</div>
     </foreignObject>
-    <foreignObject class="tl-label tl-label--after" data-tl-label="instant" x="142.92" y="255.896" width="50.16" height="16">
+    <foreignObject class="tl-label tl-label--after" data-tl-label="instant" x="142.92" y="261.896" width="50.16" height="16">
       <div xmlns="http://www.w3.org/1999/xhtml">Instant</div>
     </foreignObject>
   </g>

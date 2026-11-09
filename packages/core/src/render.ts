@@ -45,7 +45,7 @@ import type { Projector, ScreenRect } from "./geometry.js";
 import { containerExtents, createProjector } from "./geometry.js";
 import type { LabelCandidate, LabelLayout, LabelOverflow, MeasureText, PlacedLabel } from "./labels.js";
 import { createNavigator } from "./keyboard.js";
-import { estimateTextWidth, labelSpace, placeLabels, search } from "./labels.js";
+import { afterGap, estimateTextWidth, labelSpace, placeLabelsWithGap, search } from "./labels.js";
 import type { Layout, LayoutItem } from "./layout.js";
 import { itemRect, layoutItems } from "./layout.js";
 import type { SceneElement } from "./scene.js";
@@ -1004,12 +1004,12 @@ function drawExactItems<T>(
 ): { drawn: DrawnItem<T>[]; labels: LabelLayout; items: SceneElement[]; labelNodes: SceneElement[]; details: SceneElement[] } {
   const drawn = exactEntries(context.layout.items, context, domain, options.measureText);
   const candidates = drawn.filter((entry) => entry.labelled).map((entry) => candidateOf(entry, true));
-  const labels = placeLabels(candidates, {
+  const labels = placeLabelsWithGap(candidates, {
     mainSize: context.mainSize,
     measure: labelSpace(context.metrics, options.measureText ?? estimateTextWidth),
     ...(options.maxLabels === undefined ? {} : { maxLabels: options.maxLabels }),
     ...overflowAt(options, candidates.length),
-  });
+  }, afterGap(context.metrics));
   const nodes = itemNodesOf(options, context, drawn, labels.kept, new Set(options.selectedIds ?? []));
   return { drawn, labels, items: nodes.items, labelNodes: nodes.labels, details: nodes.details };
 }
@@ -1717,7 +1717,7 @@ function drawTiles<T>(
     }
     const labels =
       fit > 0
-        ? placeLabels(candidates, {
+        ? placeLabelsWithGap(candidates, {
             mainStart: index * tileSize,
             mainSize: tileSize,
             measure,
@@ -1730,7 +1730,7 @@ function drawTiles<T>(
             // whenever it is.
             ...overflowAt(options, densityAt(index)),
             ...(fit < 1 ? { roomScale: fit } : {}),
-          })
+          }, afterGap(metrics))
         : { kept: [], dropped: [] };
     const nodes = itemNodesOf(options, context, drawn, labels.kept, selected);
     // A cluster's members are all its own: selecting one changes the marker.
@@ -2038,12 +2038,12 @@ function placeInView<T>(
       }
     }
   }
-  const placed = placeLabels(candidates, {
+  const placed = placeLabelsWithGap(candidates, {
     mainSize,
     measure: labelSpace(metrics, options.measureText ?? estimateTextWidth),
     ...(options.maxLabels === undefined || inView ? {} : { maxLabels: options.maxLabels }),
     ...overflowAt(options, density),
-  });
+  }, afterGap(metrics));
   const renderLabel = options.hooks?.renderLabel ?? defaultLabelNode;
   const nodes: SceneElement[] = [];
   const kept: PlacedLabel[] = [];

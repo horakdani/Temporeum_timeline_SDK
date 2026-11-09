@@ -328,6 +328,27 @@ export function placeLabels(
   candidates: readonly LabelCandidate[],
   options: LabelOptions,
 ): LabelLayout {
+  return placeLabelsWithGap(candidates, options, 0);
+}
+
+/**
+ * The room along the time axis between an item and a label placed after it.
+ *
+ * Across, the text's own padding is along the axis, and is the gap. Down, the
+ * padding is across the lane, and a label after a point started two pixels
+ * past the dot's centre: the dot's lower half lay on the text. The padding is
+ * that gap down too.
+ */
+export function afterGap(metrics: DensityMetrics): number {
+  return metrics.orientation === "vertical" ? metrics.labelPadding : 0;
+}
+
+/** {@link placeLabels}, a label placed after its item starting `gap` past it ({@link afterGap}). */
+export function placeLabelsWithGap(
+  candidates: readonly LabelCandidate[],
+  options: LabelOptions,
+  gap: number,
+): LabelLayout {
   // Each row's item extents sorted by start, with the furthest end so far
   // beside them: what can reach past `from` begins at the first index whose
   // reach does, so a query costs a binary search and its neighbours, not the
@@ -470,20 +491,22 @@ export function placeLabels(
     const insideRoom = boxEnd - insideFrom;
     const inside = insideFrom + Math.min(CLEARANCE, Math.max(insideRoom - need.main, 0));
     const insideFits = crossFits && need.main <= insideRoom;
-    const afterMain0 = box.main + box.mainSize;
     // Whether the item gets a label at all, at a share of its room: the room
     // it had where the reader last saw it. Where the label goes, and how much
     // of it shows, is then decided in the room it has now.
     const fitted = options.roomScale ?? 1;
     if (fitted < 1) {
-      const then = Math.max(insideRoom, freeUntil(rows, afterMain0, candidate.id) - afterMain0) * fitted;
+      // The room is scaled, the gap after the item is not: it is the same few pixels at every scale.
+      const then = Math.max(insideRoom * fitted, (freeUntil(rows, boxEnd, candidate.id) - boxEnd) * fitted - gap);
       const fitsThen = (fit: MainCross): boolean => fit.cross <= box.crossSize && fit.main <= then;
       if (!fitsThen(need) && (options.overflow === "drop" || shortenLabel(candidate.text, options.measure, fitsThen) === undefined)) {
         dropped.push({ id: candidate.id, reason: "no-room" });
         continue;
       }
     }
-    const afterMain = box.main + box.mainSize;
+    // A label after its item starts `gap` past it. The gap is the item's too, so its room is free from the item's
+    // end: a label never leaps over an item that sits in its gap.
+    const afterMain = box.main + box.mainSize + gap;
     // The reach is the tile's own bound, not the item's room: not scaled.
     const afterFits = crossFits && afterMain + need.main <= high + (options.afterReach ?? 0);
 
@@ -501,7 +524,7 @@ export function placeLabels(
       continue;
     }
 
-    if (afterFits && isFree(rows, afterMain, afterMain + need.main, candidate.id)) {
+    if (afterFits && isFree(rows, boxEnd, afterMain + need.main, candidate.id)) {
       const placed: PlacedLabel = {
         id: candidate.id,
         text: candidate.text,
@@ -524,12 +547,12 @@ export function placeLabels(
       // One search, in the larger of the two rooms; the cut then goes inside
       // when it fits there too — at the same length, inside reads as the
       // item's own — and after it otherwise.
-      const afterRoom = Math.min(freeUntil(rows, afterMain, candidate.id), high + (options.afterReach ?? 0)) - afterMain;
+      const afterRoom = Math.min(freeUntil(rows, boxEnd, candidate.id), high + (options.afterReach ?? 0)) - afterMain;
       const room = Math.max(insideRoom, afterRoom);
       const short = shortenLabel(candidate.text, options.measure, (fit) => fit.cross <= box.crossSize && fit.main <= room);
       const useAfter = short !== undefined && short.need.main > insideRoom;
       const start = useAfter || short === undefined ? afterMain : insideFrom + Math.min(CLEARANCE, insideRoom - short.need.main);
-      if (short !== undefined && isFree(rows, start, start + short.need.main, candidate.id)) {
+      if (short !== undefined && isFree(rows, useAfter ? boxEnd : start, start + short.need.main, candidate.id)) {
         kept.push({
           id: candidate.id,
           text: short.text,

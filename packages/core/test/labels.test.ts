@@ -5,10 +5,12 @@ import { budgetMs } from "./time-budget.js";
 import { densityMetrics } from "../src/density.js";
 import {
   LABEL_ELLIPSIS,
+  afterGap,
   estimateTextWidth,
   findLabelOverlap,
   labelSpace,
   placeLabels,
+  placeLabelsWithGap,
 } from "../src/labels.js";
 import type { LabelCandidate, LabelOverflow } from "../src/labels.js";
 
@@ -104,6 +106,30 @@ describe("placeLabels", () => {
     const { kept } = place([candidate("a", 100, 4, "Alpha")]);
     expect(kept[0]?.placement).toBe("after");
     expect(kept[0]?.box.main).toBe(104);
+  });
+
+  it("keeps a gap between a label and the item it follows, down a timeline, and never leaps over an item in the gap", () => {
+    // Down, the padding runs across the lane: along the axis, a label after its item had no gap at all.
+    const down = densityMetrics("compact", "vertical");
+    const gap = afterGap(down);
+    expect(gap).toBe(down.labelPadding);
+    expect(afterGap(metrics)).toBe(0);
+    const options = { mainSize: MAIN_SIZE, measure: labelSpace(down) };
+    const lane = (id: string, main: number, mainSize: number, text: string): LabelCandidate => ({
+      id,
+      text,
+      box: { main, mainSize, cross: 0, crossSize: down.rowSize },
+      row: 0,
+      rowSpan: 1,
+    });
+    const alone = placeLabelsWithGap([lane("a", 100, 2, "Alpha")], options, gap);
+    expect(alone.kept[0]?.placement).toBe("after");
+    expect(alone.kept[0]?.box.main).toBe(102 + gap);
+    // An instant 1 px past the item, inside the gap: the label does not jump over it to the room behind.
+    const crowded = placeLabelsWithGap([lane("a", 100, 2, "Alpha"), lane("b", 103, 2, "Beta")], options, gap);
+    const a = crowded.kept.find((label) => label.id === "a");
+    expect(a === undefined || a.box.main + a.box.mainSize <= 103).toBe(true);
+    expect(crowded.kept.find((label) => label.id === "b")?.box.main).toBe(105 + gap);
   });
 
   it("gives the label up when neither placement fits on screen", () => {

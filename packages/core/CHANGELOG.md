@@ -5,6 +5,7 @@
 ### Fixed
 
 - An era's name is in the axis band, as near the middle of what is seen of the era as the dates leave room — shortened with an ellipsis if only that fits. It was at the top of the lane area, where the first row's items are drawn over it. A now line and a marker keep their place in the band, and the era's name goes round them. Without room in the band, not even shortened, the name stays at the lane area's top, as before. The same holds for a `background` item's label (`/items`), which is drawn like an era's.
+- Down a vertical timeline, a label placed after its item starts the label padding past it, as it does across. It started at the item's end: a point's label (`/items`) began two pixels past the dot's centre, and the dot's lower half lay on the text. The gap is the item's own room, so a label never leaps over an item that sits in it. Across, nothing changes.
 
 ### Changed
 

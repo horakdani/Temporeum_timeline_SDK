@@ -7,6 +7,7 @@ On 1.0.2 of `@temporeum/timeline-core`.
 ### Fixed
 
 - An era's name (`decorations`) is in the axis band, where the items cannot cover it — the core's fix.
+- Down a vertical timeline, a point's label starts past its dot, not under it — the core's fix.
 
 ### Changed
 

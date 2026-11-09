@@ -36,7 +36,7 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import { densityMetrics } from "../../src/density.js";
 import { containerExtents } from "../../src/geometry.js";
-import { estimateTextWidth, findLabelOverlap, LABEL_ELLIPSIS, labelSpace, MIN_SHORT_LABEL_CHARACTERS } from "../../src/labels.js";
+import { afterGap, estimateTextWidth, findLabelOverlap, LABEL_ELLIPSIS, labelSpace, MIN_SHORT_LABEL_CHARACTERS } from "../../src/labels.js";
 import type { LabelOverflow, PlacedLabel } from "../../src/labels.js";
 import { itemRect } from "../../src/layout.js";
 import { renderTimeline } from "../../src/render.js";
@@ -201,7 +201,8 @@ function check(generated: GeneratedCase<View>, overflow: LabelOverflow): string 
     const shortest = characters.length <= MIN_SHORT_LABEL_CHARACTERS ? text : `${characters.slice(0, MIN_SHORT_LABEL_CHARACTERS).join("").trimEnd()}${LABEL_ELLIPSIS}`;
     const need = measure(shortest);
     const fitsAcross = need.cross <= placed.crossSize;
-    if (fitsAcross && (need.main <= visibleEnd - visibleStart || need.main <= next - visibleEnd)) {
+    // After it, past the gap a label keeps from its item (down a timeline, the padding; across, none).
+    if (fitsAcross && (need.main <= visibleEnd - visibleStart || need.main <= next - visibleEnd - afterGap(metrics))) {
       required.push({ id: placed.item.id, text });
     }
   }

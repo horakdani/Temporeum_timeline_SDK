@@ -194,6 +194,19 @@ describeBothOrientations("item kinds", (orientation) => {
     expect(rings(focusOn("bar", own).scene).map((node) => node.tag)).toEqual(["ellipse"]);
     expect(rings(focusOn("dot", own).scene).map((node) => node.tag)).toEqual(["circle"]);
   });
+
+  it("starts a point's label past its dot, not under it", () => {
+    const { result, metrics } = frame(orientation);
+    const dot = find(result.scene, (node) => node.attrs?.class === "tl-item-dot");
+    const label = find(result.scene, (node) => node.attrs?.["data-tl-label"] === "dot");
+    expect(label?.attrs?.class).toBe("tl-label tl-label--after");
+    const r = Number(dot?.attrs?.r);
+    // Across, the text starts after its padding, along the axis; down, the line's top is where it starts. Down a
+    // vertical timeline the label started 2 px past the dot's centre, and the dot's lower half lay on the text.
+    const start = orientation === "horizontal" ? Number(label?.attrs?.x) + metrics.labelPadding : Number(label?.attrs?.y);
+    const dotEnd = Number(dot?.attrs?.[orientation === "horizontal" ? "cx" : "cy"]) + r;
+    expect(start).toBeGreaterThanOrEqual(dotEnd);
+  });
 });
 
 it("leaves a list without backgrounds as it is, and an open background reaching the end", () => {

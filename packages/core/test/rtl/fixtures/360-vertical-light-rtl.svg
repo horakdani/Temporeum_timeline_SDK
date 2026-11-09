@@ -68,10 +68,10 @@
       <foreignObject class="tl-label" data-tl-label="decision" x="168.1" y="206.328" width="67.8" height="12">
         <div xmlns="http://www.w3.org/1999/xhtml">Decision day</div>
       </foreignObject>
-      <foreignObject class="tl-label tl-label--after" data-tl-label="brief" x="68.2" y="77.373" width="79.6" height="12">
+      <foreignObject class="tl-label tl-label--after" data-tl-label="brief" x="68.2" y="81.373" width="79.6" height="12">
         <div xmlns="http://www.w3.org/1999/xhtml">A very long na…</div>
       </foreignObject>
-      <foreignObject class="tl-label tl-label--after" data-tl-label="instant" x="88.1" y="254.896" width="39.8" height="12">
+      <foreignObject class="tl-label tl-label--after" data-tl-label="instant" x="88.1" y="258.896" width="39.8" height="12">
         <div xmlns="http://www.w3.org/1999/xhtml">Instant</div>
       </foreignObject>
     </g>
