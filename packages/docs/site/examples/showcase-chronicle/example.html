@@ -94,13 +94,13 @@
   #track { position: relative; height: 77px; cursor: pointer; touch-action: none; user-select: none; }
   #sections { position: absolute; inset: 0 0 auto; height: 24px; }
   .section {
-    position: absolute; top: 0; height: 24px; padding: 0 6px 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;
+    position: absolute; top: 0; height: 24px; left: var(--at); width: var(--length); padding: 0 6px 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;
     border: 0; border-left: 1px solid var(--rule); background: transparent; color: var(--muted); font: 500 9.5px/18px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
   }
   .section:hover, .section[aria-current="true"] { color: var(--gold); }
   #marks { position: absolute; left: 0; right: 0; top: 31px; width: 100%; height: 46px; }
   #moments { position: absolute; left: 0; right: 0; top: 30px; height: 0; }
-  .moment { position: absolute; top: -2.5px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--ivory); opacity: 0.45; cursor: pointer; transition: transform 0.3s, opacity 0.3s; }
+  .moment { position: absolute; top: -2.5px; left: var(--at); width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--ivory); opacity: 0.45; cursor: pointer; transition: transform 0.3s, opacity 0.3s; }
   .moment.current { opacity: 1; background: var(--c); transform: scale(1.8); box-shadow: 0 0 10px var(--c); }
   .shade { position: absolute; top: 24px; bottom: 0; background: rgba(7, 9, 13, 0.62); pointer-events: none; }
   .shade.before { left: 0; width: var(--from, 0%); }
@@ -126,6 +126,40 @@
   .jumps { display: flex; flex-direction: column; gap: 6px; padding-top: 14px; }
   .jump { min-height: 28px; padding: 0 12px; border: 1px solid var(--rule); border-radius: 999px; background: rgba(255, 255, 255, 0.03); color: var(--ivory); font-size: 12px; cursor: pointer; white-space: nowrap; }
   .jump:hover { border-color: rgba(232, 194, 122, 0.5); color: var(--gold); }
+
+  /* Down a phone the overview turns with the timeline: a column beside it, time down and the regions across,
+     and the lens as tall as the time in view. The buttons that fly stay above the timeline. */
+  .chronicle[data-vertical] { grid-template-columns: minmax(0, 1fr) auto; }
+  .chronicle[data-vertical] > * { grid-column: 1 / -1; }
+  .chronicle[data-vertical] .overview { display: contents; }
+  .chronicle[data-vertical] .jumps { grid-row: 4; flex-direction: row; padding: 10px 14px 8px; border-top: 1px solid var(--rule); }
+  .chronicle[data-vertical] .legend { grid-row: 5; }
+  .chronicle[data-vertical] #timeline { grid-row: 6; grid-column: 1; }
+  .chronicle[data-vertical] .overview > div:first-child { grid-row: 6; grid-column: 2; display: grid; min-height: 0; padding: 12px 10px 14px 4px; border-top: 1px solid var(--rule); }
+  .chronicle[data-vertical] .scale { display: none; }
+  .chronicle[data-vertical] #track { height: auto; width: 77px; }
+  .chronicle[data-vertical] #sections { inset: 0 auto 0 0; width: 24px; height: auto; }
+  .chronicle[data-vertical] .section { top: var(--at); height: var(--length); left: 0; width: 24px; padding: 6px 6px 6px 0; writing-mode: vertical-rl; border-left: 0; border-top: 1px solid var(--rule); }
+  .chronicle[data-vertical] #moments { inset: 0 auto 0 30px; width: 0; height: auto; }
+  .chronicle[data-vertical] .moment { top: var(--at); left: -2.5px; margin: -2.5px 0 0; }
+  .chronicle[data-vertical] #marks { inset: 0 auto 0 31px; width: 46px; height: 100%; }
+  .chronicle[data-vertical] .shade { inset: auto 0 auto 24px; width: auto; height: auto; }
+  .chronicle[data-vertical] .shade.before { top: 0; height: var(--from, 0%); }
+  .chronicle[data-vertical] .shade.after { top: var(--to, 100%); bottom: 0; }
+  .chronicle[data-vertical] .shade.above, .chronicle[data-vertical] .shade.below { top: var(--from, 0%); bottom: calc(100% - var(--to, 100%)); }
+  .chronicle[data-vertical] .shade.above { left: 31px; right: auto; width: var(--vt, 0px); }
+  .chronicle[data-vertical] .shade.below { left: calc(31px + var(--vt, 0px) + var(--vh, 46px)); }
+  .chronicle[data-vertical] #lens { left: calc(28px + var(--vt, 0px)); width: calc(var(--vh, 46px) + 6px); top: var(--from, 0%); height: max(calc(var(--to, 100%) - var(--from, 0%)), 6px); }
+  .chronicle[data-vertical] #lens .grip, .chronicle[data-vertical] #lens .grip-t { inset: 0 auto; width: 14px; height: auto; cursor: ew-resize; }
+  .chronicle[data-vertical] #lens .grip { right: -8px; }
+  .chronicle[data-vertical] #lens .grip-t { left: -8px; }
+  .chronicle[data-vertical] #lens .grip::after, .chronicle[data-vertical] #lens .grip-t::after { inset: 50% auto auto 5px; width: 3px; height: min(22px, 60%); margin: 0; transform: translateY(-50%); }
+  .chronicle[data-vertical] #lens .grip-l, .chronicle[data-vertical] #lens .grip-x { inset: auto 0; width: auto; height: 14px; cursor: ns-resize; }
+  .chronicle[data-vertical] #lens .grip-l { top: -8px; }
+  .chronicle[data-vertical] #lens .grip-x { bottom: -8px; }
+  .chronicle[data-vertical] #lens .grip-l::after, .chronicle[data-vertical] #lens .grip-x::after { inset: 5px auto auto 50%; width: min(18px, 60%); height: 3px; transform: translateX(-50%); }
+  /* Zoomed out to the whole picture, a column is narrower than its region's name: the colours name the regions then, as in the legend. */
+  .chronicle[data-vertical][data-small] #timeline .tl-lane-header { opacity: 0; }
 
   /* The legend, which spotlights a region. */
   .legend { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 24px 10px; }

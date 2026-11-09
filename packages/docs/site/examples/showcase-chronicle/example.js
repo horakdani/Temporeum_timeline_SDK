@@ -337,8 +337,9 @@ const ACROSS = SETTINGS.metrics;
 const DOWN = { ...ACROSS, rowSize: 132, rowGap: 8, laneGap: 18, axisSize: 64 };
 // The sizes the lanes are zoomed from (the overview's lens, below): the ones for the way the timeline is drawn.
 let BASE = vertical ? DOWN : ACROSS;
-// How far the lanes are zoomed from those sizes.
+// How far the lanes are zoomed from those sizes, and whether the reader zoomed them (the overview's lens, below).
 let rows = 1;
+let manual = false;
 // The whole five thousand years in view. Down a phone the lane names head the columns, so the view starts two
 // centuries earlier, and the first pharaoh's dot clears them.
 const everything = () => (vertical ? [year(-3500), WHOLE[1]] : WHOLE);
@@ -367,16 +368,20 @@ timeline.on("viewportChanged", () => {
 // The page's CSS places the lane names one way across and another way down; and a bar's room is another question.
 // The first frame says which way it was drawn, and "orientationChanged" every turn after it.
 const turned = (orientation) => {
-  if (orientation === undefined) return;
+  if (orientation === undefined || vertical === (orientation === "vertical")) return;
   vertical = orientation === "vertical";
   chronicle.toggleAttribute("data-vertical", vertical);
+  // The overview turns with the timeline.
+  requestAnimationFrame(drawOverview);
 };
+chronicle.toggleAttribute("data-vertical", vertical);
 timeline.subscribe(() => turned(timeline.getSnapshot().viewport?.orientation));
 timeline.on("orientationChanged", ({ orientation }) => {
   turned(orientation);
   BASE = vertical ? DOWN : ACROSS;
   rows = 1;
   timeline.update({ metrics: BASE, slots: (item) => roomy(item) });
+  requestAnimationFrame(wholePicture);
 });
 
 // Each bar's content, in HTML of the page's own: its name, and its years.
@@ -436,6 +441,8 @@ const still = matchMedia("(prefers-reduced-motion: reduce)");
 let flight = 0;
 function fly(to) {
   cancelAnimationFrame(flight);
+  // The camera takes the lanes' size back too: it follows the time in view again (the whole picture, below).
+  manual = false;
   if (still.matches) return timeline.zoomTo(to);
   const route = path(timeline.getSnapshot().domain, to);
   const ms = Math.min(2600, Math.max(700, route.S * 380));
@@ -539,7 +546,7 @@ host.addEventListener(
       // Alt + wheel zooms down the lanes: the rows grow or shrink, and the overview's lens follows.
       event.preventDefault();
       event.stopImmediatePropagation();
-      return setRows(rows * Math.exp(-Math.sign(event.deltaY) * 0.12));
+      return zoomRows(rows * Math.exp(-Math.sign(event.deltaY) * 0.12));
     }
     if (relaying || event.ctrlKey || event.shiftKey || event.metaKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
     event.preventDefault();
@@ -583,16 +590,26 @@ const dots = new Map();
 function drawOverview() {
   const now = timeline.items;
   marks.replaceChildren();
+  // The strip runs the way the timeline does: time across and the regions in rows, or time down and the regions in columns.
+  marks.setAttribute("viewBox", vertical ? "0 0 56 1000" : "0 0 1000 56");
   lanes.forEach((lane, row) => {
     for (const item of now.filter((each) => each.laneId === lane.id)) {
       const mark = document.createElementNS(svg, "rect");
-      const width = item.end === undefined ? 0.18 : Math.max(((at(item.end) - at(item.start)) / 100) * 1000, 1.2);
-      for (const [name, value] of Object.entries({ x: (at(item.start) / 100) * 1000, y: row * 8 + 1, width, height: 5, rx: 1.5, fill: lane.color, opacity: item.end === undefined ? 0.95 : 0.7 })) mark.setAttribute(name, String(value));
+      const length = item.end === undefined ? 0.18 : Math.max(((at(item.end) - at(item.start)) / 100) * 1000, 1.2);
+      const along = (at(item.start) / 100) * 1000;
+      const place = vertical ? { x: row * 8 + 1, y: along, width: 5, height: length } : { x: along, y: row * 8 + 1, width: length, height: 5 };
+      for (const [name, value] of Object.entries({ ...place, rx: 1.5, fill: lane.color, opacity: item.end === undefined ? 0.95 : 0.7 })) mark.setAttribute(name, String(value));
       marks.append(mark);
     }
   });
   // The story's moments follow their events when one is moved.
-  for (const item of now) if (dots.has(item.id)) dots.get(item.id).style.left = `${String(at(item.start))}%`;
+  for (const item of now) if (dots.has(item.id)) dots.get(item.id).style.setProperty("--at", `${String(at(item.start))}%`);
+  lens.setAttribute(
+    "aria-label",
+    `The view on the five thousand years: ${vertical ? "up and down arrows pan, + and − zoom, left and right arrows scroll the lanes, with shift zoom them" : "left and right arrows pan, + and − zoom, up and down arrows scroll the lanes, with shift zoom them"}`,
+  );
+  // An edit can stack the bars differently, and a turn changes the room: the lanes are sized again.
+  requestAnimationFrame(wholePicture);
 }
 // The story's moments: a dot each, which opens its slide.
 for (const item of slides) {
@@ -615,8 +632,8 @@ const sections = document.querySelector("#sections");
 for (const age of ERAS) {
   const button = Object.assign(document.createElement("button"), { type: "button", className: "section", textContent: age.label });
   button.dataset.era = age.id;
-  button.style.left = `${String(at(age.start))}%`;
-  button.style.width = `${String(at(age.end) - at(age.start))}%`;
+  button.style.setProperty("--at", `${String(at(age.start))}%`);
+  button.style.setProperty("--length", `${String(at(age.end) - at(age.start))}%`);
   button.addEventListener("click", () => fly(age.view));
   sections.append(button);
 }
@@ -658,10 +675,16 @@ function frameDown() {
   const { viewport, crossOffset } = timeline.getSnapshot();
   const room = viewport === undefined ? 0 : viewport.crossSize - BASE.axisSize;
   const scrolls = layout !== undefined && room > 0 && layout.crossSize > room + 1;
-  const top = scrolls ? down(layout, crossOffset) : 0;
-  const bottom = scrolls ? down(layout, crossOffset + room) : 1;
+  let top = scrolls ? down(layout, crossOffset) : 0;
+  let bottom = scrolls ? down(layout, crossOffset + room) : 1;
+  // A lens over one lane would be all handles: it is never thinner than a finger can grab between them.
+  const least = 0.36;
+  if (bottom - top < least) {
+    top = Math.min(Math.max((top + bottom - least) / 2, 0), 1 - least);
+    bottom = top + least;
+  }
   overview.style.setProperty("--vt", `${String(top * STRIP)}px`);
-  overview.style.setProperty("--vh", `${String(Math.max(bottom - top, 0.06) * STRIP)}px`);
+  overview.style.setProperty("--vh", `${String((bottom - top) * STRIP)}px`);
   overview.toggleAttribute("data-scrolls", scrolls);
 }
 // A scroll across the lanes changes no domain, so it is the snapshot that says so, not "viewportChanged".
@@ -669,39 +692,77 @@ timeline.subscribe(frameDown);
 timeline.on("slotsChanged", frameDown);
 frameDown();
 // The first frame comes after this runs, and a resize changes how much of the lanes is in sight.
-new ResizeObserver(frameDown).observe(host);
-requestAnimationFrame(() => requestAnimationFrame(frameDown));
+new ResizeObserver(() => {
+  frameDown();
+  wholePicture();
+}).observe(host);
+requestAnimationFrame(() =>
+  requestAnimationFrame(() => {
+    frameDown();
+    wholePicture();
+  }),
+);
 
 // Zoom down the lanes: the rows are sizes in `metrics`, so the lanes' scale is a number the page keeps and hands back.
 // The lens has a handle on each edge: the edge opposite the one pulled stays where it is.
 const track = document.querySelector("#track");
 const ROWS_MAX = 1.6;
 const sized = (scale) => ({ ...BASE, rowSize: BASE.rowSize * scale, rowGap: BASE.rowGap * scale, laneGap: BASE.laneGap * scale });
+/**
+ * The scale at which every lane is in sight. The lanes' length is their rows, the gaps between those and the gaps
+ * between the lanes, all of which scale; it is worked out from how many rows there are, because the layout the
+ * timeline hands out is the one it drew last, and a size just asked for is not drawn yet.
+ */
+function fitRows() {
+  const layout = timeline.layout;
+  const { viewport } = timeline.getSnapshot();
+  if (layout === undefined || viewport === undefined) return 1;
+  const lanesCount = layout.lanes.length;
+  const length = layout.rowCount * BASE.rowSize + (layout.rowCount - lanesCount) * BASE.rowGap + (lanesCount - 1) * BASE.laneGap;
+  return ((viewport.crossSize - BASE.axisSize) / length) * 0.995;
+}
 function setRows(want, keepBottom = false) {
   // Zooming out stops where every lane is in view, however small the rows get by then.
-  const layout = timeline.layout;
   const { viewport, crossOffset: offset } = timeline.getSnapshot();
   const room = viewport === undefined ? 0 : viewport.crossSize - BASE.axisSize;
-  const fit = layout === undefined ? 0.6 : (room / (layout.crossSize / rows)) * 0.99;
-  let next = Math.min(Math.max(want, Math.min(fit, 1)), ROWS_MAX);
+  const next = Math.min(Math.max(want, Math.min(fitRows(), 1)), ROWS_MAX);
   if (Math.abs(next - rows) < 0.002) return;
   timeline.update({ metrics: sized(next) });
-  // A lane is not all rows (headers, padding), so the size the lanes came to settles the last of it.
-  if (next <= (fit / 0.99) * 1.001) {
-    for (let pass = 0; pass < 3; pass += 1) {
-      const now = timeline.layout;
-      if (now === undefined || now.crossSize <= room) break;
-      next *= (room / now.crossSize) * 0.995;
-      timeline.update({ metrics: sized(next) });
-    }
-  }
   // Rows scale about the top of the view, or about its bottom when that is the edge that stays.
   timeline.scrollLanes(keepBottom ? ((offset + room) * next) / rows - room - offset : (offset * next) / rows - offset);
   rows = next;
+  chronicle.toggleAttribute("data-small", rows < 0.75);
   frameDown();
 }
+/** The reader zooms the lanes: from then on the size is theirs, until the camera flies somewhere (fly) or two presses put it back. */
+function zoomRows(want, keepBottom = false) {
+  manual = true;
+  setRows(want, keepBottom);
+}
+// The whole picture: the further out the view, the smaller the rows, until at the five thousand years every lane is in
+// sight at once; zoomed in to an age, they are back at their size, and the names in the bars with them.
+const NEAR = 2300 * YEAR;
+const FAR = 4600 * YEAR;
+function wholePicture() {
+  if (manual || timeline.layout === undefined) return;
+  const [from, to] = timeline.getSnapshot().domain;
+  const t = Math.min(1, Math.max(0, Math.log((to - from) / NEAR) / Math.log(FAR / NEAR)));
+  setRows(1 - t * t * (3 - 2 * t) * (1 - Math.min(fitRows(), 1)));
+}
+let settling = 0;
+timeline.on("viewportChanged", () => {
+  cancelAnimationFrame(settling);
+  settling = requestAnimationFrame(wholePicture);
+});
 const grips = { down: lens.querySelector(".grip"), up: lens.querySelector(".grip-t"), right: lens.querySelector(".grip-x"), left: lens.querySelector(".grip-l") };
-// Two presses on the bottom handle put the rows back. (The drag captures the pointer, so a "dblclick" would land on the strip, not here.)
+// Along the strip is time and across it the lanes: x and y across a desktop, y and x down a phone.
+const along = (event) => (vertical ? event.clientY : event.clientX);
+const across = (event) => (vertical ? event.clientX : event.clientY);
+function length() {
+  const box = track.getBoundingClientRect();
+  return vertical ? { start: box.top, size: box.height } : { start: box.left, size: box.width };
+}
+// Two presses on the far lanes' handle put the rows back. (The drag captures the pointer, so a "dblclick" would land on the strip, not here.)
 let pressed = 0;
 /** Pointer moves, while a handle is held, are handed to `move`. */
 function hold(event, move) {
@@ -715,7 +776,7 @@ function hold(event, move) {
   track.addEventListener("pointerup", end);
   track.addEventListener("pointercancel", end);
 }
-// Drag the lens's top or bottom edge: how much of the lanes is in the lens decides how large their rows are.
+// Drag the lens's edge across the lanes: how much of the lanes is in the lens decides how large their rows are.
 function dragRows(event, edge) {
   const layout = timeline.layout;
   const { viewport } = timeline.getSnapshot();
@@ -724,20 +785,20 @@ function dragRows(event, edge) {
   const whole = layout.crossSize / rows;
   const top = Number.parseFloat(overview.style.getPropertyValue("--vt")) / STRIP;
   const bottom = top + Number.parseFloat(overview.style.getPropertyValue("--vh")) / STRIP;
-  const start = event.clientY;
+  const start = across(event);
   hold(event, (next) => {
-    const moved = (next.clientY - start) / STRIP;
+    const moved = (across(next) - start) / STRIP;
     const share = Math.min(Math.max(edge === "down" ? bottom + moved - top : bottom - (top + moved), 0.1), 1);
-    setRows(room / (share * whole), edge === "up");
+    zoomRows(room / (share * whole), edge === "up");
   });
 }
-// Drag the lens's left or right edge: the opposite edge of the view stays, and how much time the lens holds is the zoom across.
+// Drag the lens's edge along time: the opposite edge of the view stays, and how much time the lens holds is the zoom.
 function dragSpan(event, edge) {
-  const box = track.getBoundingClientRect();
+  const { start, size } = length();
   const [from, to] = timeline.getSnapshot().domain;
   const least = 10 * 60_000;
   hold(event, (next) => {
-    const at = timeAt(Math.min(Math.max((next.clientX - box.left) / box.width, 0), 1));
+    const at = timeAt(Math.min(Math.max((along(next) - start) / size, 0), 1));
     timeline.zoomTo(edge === "right" ? [from, Math.max(at, from + least)] : [Math.min(at, to - least), to]);
   });
 }
@@ -747,7 +808,7 @@ track.addEventListener(
   (event) => {
     if (!event.altKey) return;
     event.preventDefault();
-    setRows(rows * Math.exp(-Math.sign(event.deltaY) * 0.12));
+    zoomRows(rows * Math.exp(-Math.sign(event.deltaY) * 0.12));
   },
   { passive: false },
 );
@@ -759,58 +820,51 @@ track.addEventListener("pointerdown", (event) => {
   if (event.target === grips.right || event.target === grips.left) return dragSpan(event, event.target === grips.right ? "right" : "left");
   if (event.target === grips.up) return dragRows(event, "up");
   if (event.target === grips.down) {
-    if (event.timeStamp - pressed < 350) return setRows(1);
+    if (event.timeStamp - pressed < 350) {
+      manual = false;
+      return wholePicture();
+    }
     pressed = event.timeStamp;
     return dragRows(event, "down");
   }
-  const box = track.getBoundingClientRect();
+  const { start, size } = length();
   const [from, to] = timeline.getSnapshot().domain;
   if (event.target !== lens) {
-    const middle = timeAt((event.clientX - box.left) / box.width);
+    const middle = timeAt((along(event) - start) / size);
     const span = Math.min(to - from, 1200 * YEAR);
     return fly([middle - span / 2, middle + span / 2]);
   }
-  track.setPointerCapture(event.pointerId);
-  const grab = event.clientX;
-  const grabY = event.clientY;
+  const grab = along(event);
+  const grabAcross = across(event);
   const lanesAt = timeline.getSnapshot().crossOffset;
   let asked = lanesAt;
-  const move = (next) => {
-    const shift = ((next.clientX - grab) / box.width) * (WHOLE[1] - WHOLE[0]);
+  hold(event, (next) => {
+    const shift = ((along(next) - grab) / size) * (WHOLE[1] - WHOLE[0]);
     timeline.zoomTo([from + shift, to + shift]);
-    // Down the strip the lens scrolls the lanes: its height is the strip's share of the lanes' length.
+    // Across the strip the lens scrolls the lanes: its breadth is the strip's share of the lanes' length.
     // (The snapshot catches up a frame later, so the offset asked for last is kept here.)
     const layout = timeline.layout;
     const { viewport } = timeline.getSnapshot();
     if (layout !== undefined && viewport !== undefined && overview.hasAttribute("data-scrolls")) {
-      const target = Math.min(Math.max(lanesAt + ((next.clientY - grabY) / STRIP) * layout.crossSize, 0), layout.crossSize - (viewport.crossSize - BASE.axisSize));
+      const target = Math.min(Math.max(lanesAt + ((across(next) - grabAcross) / STRIP) * layout.crossSize, 0), layout.crossSize - (viewport.crossSize - BASE.axisSize));
       timeline.scrollLanes(target - asked);
       asked = target;
     }
-  };
-  const end = () => {
-    track.removeEventListener("pointermove", move);
-    track.removeEventListener("pointerup", end);
-    track.removeEventListener("pointercancel", end);
-  };
-  track.addEventListener("pointermove", move);
-  track.addEventListener("pointerup", end);
-  track.addEventListener("pointercancel", end);
+  });
 });
-// From the keyboard the lens is a slider: the arrows pan a tenth of the view, + and - zoom.
+// From the keyboard the lens is a slider: the arrows along the strip pan a tenth of the view, + and - zoom;
+// the arrows across it scroll the lanes, and with shift zoom them.
 lens.addEventListener("keydown", (event) => {
   const [from, to] = timeline.getSnapshot().domain;
   const span = to - from;
   const middle = (from + to) / 2;
-  if (event.shiftKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
-    setRows(rows * (event.key === "ArrowUp" ? 1.15 : 1 / 1.15));
+  const sideways = (vertical ? { ArrowLeft: -1, ArrowRight: 1 } : { ArrowUp: -1, ArrowDown: 1 })[event.key];
+  if (sideways !== undefined) {
+    if (event.shiftKey) zoomRows(rows * (sideways < 0 ? 1.15 : 1 / 1.15));
+    else timeline.scrollLanes(sideways * 60);
     return event.preventDefault();
   }
-  if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-    timeline.scrollLanes(event.key === "ArrowUp" ? -60 : 60);
-    return event.preventDefault();
-  }
-  const by = { ArrowLeft: -0.1, ArrowRight: 0.1, PageUp: -1, PageDown: 1 }[event.key];
+  const by = { ...(vertical ? { ArrowUp: -0.1, ArrowDown: 0.1 } : { ArrowLeft: -0.1, ArrowRight: 0.1 }), PageUp: -1, PageDown: 1 }[event.key];
   const zoom = { "+": 0.5, "=": 0.5, "-": 2 }[event.key];
   if (by !== undefined) timeline.zoomTo([from + by * span, to + by * span]);
   else if (zoom !== undefined) fly([middle - (span * zoom) / 2, middle + (span * zoom) / 2]);
