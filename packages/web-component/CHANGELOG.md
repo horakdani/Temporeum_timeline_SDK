@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.2 — Unreleased
+
+### Fixed
+
+- An era's name (`decorations`) is in the axis band, where the items cannot cover it — the core's fix.
+
+### Changed
+
+- The element's size budget is 58.5 kB with the engine (was 53 kB), the UMD file's 116 kB (was 106 kB): room of at least 10% over the size, so a fix is not a hunt for bytes. The sizes are what they were.
+
 ## 1.0.1 — 2026-11-09
 
 On 1.0.1 of `@temporeum/timeline-core`.

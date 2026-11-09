@@ -6,7 +6,7 @@
     <g class="tl-layer tl-layer--background" aria-hidden="true">
       <rect class="tl-band" x="72" y="0" width="696" height="239.284"/>
       <rect class="tl-era" data-tl-era="q1" x="72" y="0" width="696" height="239.284"/>
-      <text class="tl-era-label" x="77" y="7" dominant-baseline="central" text-anchor="start">End of Q1</text>
+      <text class="tl-era-label" x="5" y="119.642" dominant-baseline="central" text-anchor="start">End of Q1</text>
     </g>
     <g class="tl-layer tl-layer--axis" aria-hidden="true">
       <line class="tl-tick" x1="0" y1="0" x2="768" y2="0"/>
@@ -88,7 +88,6 @@
       <line class="tl-now" x1="0" y1="222.09" x2="768" y2="222.09"/>
       <text class="tl-now-label" x="20.95" y="210.09" dominant-baseline="central" text-anchor="start">now</text>
       <polygon class="tl-marker" data-tl-marker="dst" points="31,209.194 41,214.194 41,204.194"/>
-      <text class="tl-marker-label" x="0.85" y="226.194" dominant-baseline="central" text-anchor="start">clock change</text>
       <circle class="tl-marker" data-tl-marker="demo" cx="36" cy="376.836" r="5"/>
       <text class="tl-marker-label" x="18.25" y="393.836" dominant-baseline="central" text-anchor="start">demo</text>
     </g>

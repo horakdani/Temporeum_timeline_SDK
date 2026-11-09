@@ -4,7 +4,7 @@
   <g class="tl-layer tl-layer--background" aria-hidden="true">
     <rect class="tl-band" x="0" y="18" width="179.463" height="462"/>
     <rect class="tl-era" data-tl-era="q1" x="0" y="18" width="179.463" height="462"/>
-    <text class="tl-era-label" x="4" y="24" dominant-baseline="central" text-anchor="start">End of Q1</text>
+    <text class="tl-era-label" x="69.526" y="9" dominant-baseline="central" text-anchor="start">End of Q1</text>
   </g>
   <g class="tl-layer tl-layer--axis" aria-hidden="true">
     <line class="tl-tick" x1="0" y1="0" x2="0" y2="480"/>

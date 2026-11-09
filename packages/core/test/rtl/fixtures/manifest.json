@@ -1,56 +1,56 @@
 {
   "note": "The rtl check's visual provenance: the visual check's matrix, mirrored. The sha256 of the scenario, the matrix and every fixture.",
-  "core": "1.0.0",
+  "core": "1.0.1",
   "scenarioSha256": "4b0d628b793c6e22c090b5785b85ebb83c18636f14e4bc605c502ef1f9ef80fc",
   "matrixSha256": "0bf6cde62825378334fe1b6eb39752a050d417211fc3efb9be3d60ab15409a58",
   "cases": [
     {
       "name": "360-horizontal-light-rtl",
-      "sha256": "be37fc2d5ba31468df6d282f74c686c9f8099b8c2ae5582ad6671092b513dece"
+      "sha256": "a64e970f7112a61851b71816945ebfd26996a0bf59108ec941c63d6265b25321"
     },
     {
       "name": "360-horizontal-dark-rtl",
-      "sha256": "a210a2a1ca10431ca3672ae2ba31f1df72dcda02fc55c7fd00032965480ef30d"
+      "sha256": "6d6601fb929ff886f25cc0859347699a1a2c235978940e94a7b37b69bb5c6448"
     },
     {
       "name": "360-vertical-light-rtl",
-      "sha256": "7689c7d1f88443d79e1f5bdef5a46d3b5219b88274f86794666e118a64bd2c55"
+      "sha256": "6857c12ea287046507b16f620c0e80ff8341f16f6b7a53a9882c701130ebe59c"
     },
     {
       "name": "360-vertical-dark-rtl",
-      "sha256": "0496921b2570932efb304a5e6df2b021c1efcb1df3d2f87d453ee35daff3e9f3"
+      "sha256": "ea798a44f5c039f569fb50110a07c5de5ff3f13a72ffb886f1ea0835fdda31fb"
     },
     {
       "name": "768-horizontal-light-rtl",
-      "sha256": "e79a4f79556025b16d1bc4dbaf0b0cb6b79517f4cee88f825e315777b22666ed"
+      "sha256": "b753d536d2f3ca6e86294aee58b8980eaf8941f838c74d0467952a165ac8c5d1"
     },
     {
       "name": "768-horizontal-dark-rtl",
-      "sha256": "1f7bd6369a8ec310f455c43a42362eb6d18195a68b460f483e9e2039c5b53740"
+      "sha256": "0883ad22b788a56e7cdac7568d6498f616d7ae337f081bdb130ab088bd930ffc"
     },
     {
       "name": "768-vertical-light-rtl",
-      "sha256": "def3a148f4829c5d169e125366e4ef867890b610a192baea4febcf43032abf6e"
+      "sha256": "6c42e1002f6f3324506fb0fcf0915f36491870c312fed0ae810e0a8bdb025a95"
     },
     {
       "name": "768-vertical-dark-rtl",
-      "sha256": "c4931cccb911e8a5064ca0a1f440b517b8cb4d7980db788910cf5dbb905b650b"
+      "sha256": "ed324b9611847bea1f43269c28b3b885dac76dd6bfc09fe25989c623a499c3e3"
     },
     {
       "name": "1440-horizontal-light-rtl",
-      "sha256": "3dbff711346478e97fb70d4a5b5f835888195f46f755ea5367eca3a0b009d32d"
+      "sha256": "7d913f3be3e33ae84e5c6c5a4e9cf01b16c298d0c132518175422f79dd742704"
     },
     {
       "name": "1440-horizontal-dark-rtl",
-      "sha256": "87641ddb7f28352a1732a2623ef0422314a87cdd10ef076fc09289ad171d2a95"
+      "sha256": "ca390784834190d522de64584c93e4f7a9236af41e09735a96dd07b407c8e645"
     },
     {
       "name": "1440-vertical-light-rtl",
-      "sha256": "44ef05f5e022040c475a8b9655ff7c4b2ac7ff0a4faa9938461b729aaaffd6aa"
+      "sha256": "5021ad1722c9d5326c227f31641b04ce7588c9ec0b0b531f04391894cbf4ff29"
     },
     {
       "name": "1440-vertical-dark-rtl",
-      "sha256": "a49cb1f6142d7e911563baf22c9b9dd4097873ce6beaf349414539348d4f225a"
+      "sha256": "af05a4c79774c82a7c9f57b3260fbff969f22f5c9f2b8524dd7d89fe547bb354"
     }
   ]
 }

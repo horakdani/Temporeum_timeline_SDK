@@ -343,6 +343,44 @@ describe("decorations in a frame", () => {
     expect(foreground).toContain("tl-now");
     expect(foreground).toContain("tl-marker");
   });
+
+  it("names an era in the axis band, where no item covers it, clear of the dates and of a now line's label", () => {
+    const now = DOMAIN[0] + 10 * DAY;
+    for (const orientation of ["horizontal", "vertical"] as const) {
+      const width = orientation === "horizontal" ? 900 : 300;
+      const height = orientation === "horizontal" ? 300 : 900;
+      // The era's middle is where the now line and its label are; the era comes first in the list.
+      const { scene } = render({
+        orientation,
+        density: "comfortable",
+        width,
+        height,
+        decorations: [
+          { kind: "era", id: "q", start: DOMAIN[0] + 6 * DAY, end: DOMAIN[0] + 14 * DAY, label: "Q1" },
+          { kind: "now", time: now, label: "Today" },
+        ],
+      });
+      const metrics = densityMetrics("comfortable", orientation);
+      const label = layerOf(scene, "background").find((node) => node.attrs?.class === "tl-era-label");
+      expect(label?.text).toBe("Q1");
+      const across = Number(orientation === "horizontal" ? label?.attrs?.y : label?.attrs?.x);
+      const along = Number(orientation === "horizontal" ? label?.attrs?.x : label?.attrs?.y);
+      expect(across).toBeLessThan(metrics.axisSize);
+      const need = labelSpace(metrics, estimateTextWidth, metrics.tickFontSize)("Q1").main;
+      const [start, end] = orientation === "horizontal" ? [along - metrics.labelPadding, along - metrics.labelPadding + need] : [along - need / 2, along + need / 2];
+      // Within the era, and off the line and the label of now.
+      const span = orientation === "horizontal" ? width : height;
+      const toMain = (time: number) => ((time - DOMAIN[0]) / (DOMAIN[1] - DOMAIN[0])) * span;
+      expect(start).toBeGreaterThanOrEqual(toMain(DOMAIN[0] + 6 * DAY) - 0.5);
+      expect(end).toBeLessThanOrEqual(toMain(DOMAIN[0] + 14 * DAY) + 0.5);
+      const nowLabel = layerOf(scene, "foreground").find((node) => node.attrs?.class === "tl-now-label");
+      expect(nowLabel).toBeDefined();
+      const nowAt = Number(orientation === "horizontal" ? nowLabel?.attrs?.x : nowLabel?.attrs?.y);
+      const nowNeed = labelSpace(metrics, estimateTextWidth, metrics.tickFontSize)("Today").main;
+      const [nowStart, nowEnd] = orientation === "horizontal" ? [nowAt, nowAt + nowNeed] : [nowAt - nowNeed / 2, nowAt + nowNeed / 2];
+      expect(end <= Math.min(nowStart, toMain(now) - 1) || start >= nowEnd).toBe(true);
+    }
+  });
 });
 
 describe("what a render reports back", () => {

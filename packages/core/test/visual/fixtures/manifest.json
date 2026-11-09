@@ -1,6 +1,6 @@
 {
   "note": "The visual check's provenance. The sha256 of the scenario and of the fixtures; a stale fixture or a hand edit shows up here.",
-  "core": "1.0.0",
+  "core": "1.0.1",
   "scenarioSha256": "4b0d628b793c6e22c090b5785b85ebb83c18636f14e4bc605c502ef1f9ef80fc",
   "matrixSha256": "0bf6cde62825378334fe1b6eb39752a050d417211fc3efb9be3d60ab15409a58",
   "cases": [
@@ -12,8 +12,8 @@
       "labelsKept": 9,
       "labelsDropped": 1,
       "ticks": 3,
-      "bytes": 13881,
-      "sha256": "f35fe9fd864d88a446dc87db8bb4281d896a63fc77d8e53f7ba90e345193a8b8"
+      "bytes": 13885,
+      "sha256": "d9dc29e8597cec8bdaff4eccffe091ac1b366c5827e82d0063bb0a155ef28d2e"
     },
     {
       "name": "360-horizontal-dark",
@@ -23,8 +23,8 @@
       "labelsKept": 9,
       "labelsDropped": 1,
       "ticks": 3,
-      "bytes": 13821,
-      "sha256": "82a81ee9a7769476264f670a8a6412a12269fb5f3e41fdbc8491bea1b93c5585"
+      "bytes": 13825,
+      "sha256": "b13e5fa8eeac079b318730c3d9f21e6fc8439c8f5901167d480461d13f1f59b5"
     },
     {
       "name": "360-vertical-light",
@@ -34,8 +34,8 @@
       "labelsKept": 8,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 12926,
-      "sha256": "8059482e317662eefeb973a891c538d084f85c82bed22c49b31226c2e70c6045"
+      "bytes": 12931,
+      "sha256": "9cd4604ca251a7c4bf86b5385a6f06165edbbe087511890a53d5cf3411db4f63"
     },
     {
       "name": "360-vertical-dark",
@@ -45,8 +45,8 @@
       "labelsKept": 8,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 12868,
-      "sha256": "d106e63bb07a6c643fdab314529c77c8a9d2a246395570a02ebdcf0913234b66"
+      "bytes": 12873,
+      "sha256": "07e233631ce5b40c22c188b25e35b0845a592e9dba5f5c1bc3d9786d391e2568"
     },
     {
       "name": "768-horizontal-light",
@@ -56,8 +56,8 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 14134,
-      "sha256": "af9dfee2db3c7705955ea8f6faff48dcf7dea7a9a6efe70603146d3e2540ccd9"
+      "bytes": 14140,
+      "sha256": "f267bc8df13571a1bfd150694d5fdb6bc4555db39ab1105c4690e3f749ebef6f"
     },
     {
       "name": "768-horizontal-dark",
@@ -67,30 +67,30 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 14074,
-      "sha256": "8317135591b07a4b5bbe6f180bd90172500cec9cc8c2b13c81ef0a874b1b4069"
+      "bytes": 14080,
+      "sha256": "1cf344c694f201a562104b007b3c97c5956165a282295abcb005960ec281fd04"
     },
     {
       "name": "768-vertical-light",
-      "nodes": 70,
+      "nodes": 69,
       "items": 11,
       "rows": 8,
       "labelsKept": 9,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 13875,
-      "sha256": "753e4ac185a4375fb83c620bb12cdf8b84f35fce2bcc754744f36d2cb4f34882"
+      "bytes": 13757,
+      "sha256": "b995fa939fe38197378e73c5f49e66cabb4cc16a9dbc6011bf1dbf4e507e6554"
     },
     {
       "name": "768-vertical-dark",
-      "nodes": 70,
+      "nodes": 69,
       "items": 11,
       "rows": 8,
       "labelsKept": 9,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 13815,
-      "sha256": "822c31c8e52c8a5789a390a2c3d1d33cc59110abae4fbb6456a7e73bbe465abc"
+      "bytes": 13697,
+      "sha256": "50df5bfa123db4ca8056417a61484bf6e30618420b83190f7b35d487ea6a52e3"
     },
     {
       "name": "1440-horizontal-light",
@@ -100,8 +100,8 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 15,
-      "bytes": 16872,
-      "sha256": "8236dc9c7150815f48b6e94056251af3ae17d08bc89980f29739a7e15852a8f2"
+      "bytes": 16878,
+      "sha256": "b26cf52c010711d9386b6650c29a4bc8e8cb2b3482686b457b368ad14e91350d"
     },
     {
       "name": "1440-horizontal-dark",
@@ -111,30 +111,30 @@
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 15,
-      "bytes": 16812,
-      "sha256": "f1ab4a838d6fd3ad7a175d721cab8557de85855f476bed1288abc706b53ec7e4"
+      "bytes": 16818,
+      "sha256": "925fd4d174347ad04a536e261e203de073feb2508547866a9ad9180cf93d657b"
     },
     {
       "name": "1440-vertical-light",
-      "nodes": 73,
+      "nodes": 72,
       "items": 11,
       "rows": 8,
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 14236,
-      "sha256": "70654b93f281494aff47b9b774f5aa975552db67f8188bf51e178e1ff5c1b03d"
+      "bytes": 14117,
+      "sha256": "818b84cda64d21b5aa9357498067ffcb6b3c75f00802b0c612789eaf9f982b2c"
     },
     {
       "name": "1440-vertical-dark",
-      "nodes": 73,
+      "nodes": 72,
       "items": 11,
       "rows": 8,
       "labelsKept": 10,
       "labelsDropped": 0,
       "ticks": 3,
-      "bytes": 14176,
-      "sha256": "20dda3500c7f8e51d7cbab1d78f244ff3f28a4f63f232ea5e3cd1e0fd2f2491c"
+      "bytes": 14057,
+      "sha256": "a7fde53b3f057019e151ce13d04abc34d9757e1a473ed854d4296fdb3a3f54e9"
     }
   ]
 }

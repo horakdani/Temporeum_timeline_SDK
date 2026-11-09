@@ -1168,6 +1168,23 @@ function drawFrame<T>(
     axisClaimed.push({ start, end });
     return true;
   };
+  // The free room nearest `at` starts at `at`, at an edge of the range, or
+  // against a label already there: those are the only places to try.
+  const placeLabel = (from: number, to: number, size: number, at: number, take = true): number | undefined => {
+    let best: number | undefined;
+    for (const spot of [at, ...axisClaimed.flatMap((taken) => [taken.end, taken.start - size])]) {
+      const start = Math.min(Math.max(spot, from, 0), to - size, frameSize - size);
+      if (
+        start >= from &&
+        start >= 0 &&
+        axisClaimed.every((taken) => taken.end <= start || taken.start >= start + size) &&
+        (best === undefined || Math.abs(start - at) < Math.abs(best - at))
+      ) {
+        best = start;
+      }
+    }
+    return best === undefined || !take || claimLabelRoom(best, best + size) ? best : undefined;
+  };
   for (const tick of ticks) {
     const main = frameScale.toMain(tick.time);
     axisNodes.push({
@@ -1235,12 +1252,17 @@ function drawFrame<T>(
     timeZone,
     measure: measureTick,
     claimLabelRoom,
+    placeLabel,
   };
   const background: SceneElement[] = [];
   const foreground: SceneElement[] = [];
-  for (const decoration of options.decorations ?? []) {
-    const nodes = renderDecoration(decoration, decorationContext);
-    (decorationLayer(decoration) === "background" ? background : foreground).push(...nodes);
+  // The foreground's first: a now line's or a marker's label belongs at its
+  // time, and an era's can move along the era to make room for it.
+  for (const front of [true, false]) {
+    for (const decoration of options.decorations ?? []) {
+      if ((decorationLayer(decoration) === "foreground") !== front) continue;
+      (front ? foreground : background).push(...renderDecoration(decoration, decorationContext));
+    }
   }
 
   const style = styleNode(options, orientation, metrics);

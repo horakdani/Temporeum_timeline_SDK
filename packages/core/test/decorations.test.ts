@@ -256,6 +256,28 @@ describe("eras", () => {
   });
 });
 
+describe("an era's name in the axis band", () => {
+  const domain: Domain = [Date.UTC(2025, 2, 1), Date.UTC(2025, 2, 11)];
+  const era = { kind: "era", id: "e", start: Date.UTC(2025, 2, 2), end: Date.UTC(2025, 2, 8), label: "The first phase of the work" } as const;
+
+  it("sits in the band, shortened when only that fits there, and at the lane area's top when not even that does", () => {
+    const base = context(domain);
+    const roomFor = (most: number): DecorationContext => ({
+      ...base,
+      placeLabel: (_from, _to, size, at) => (size <= most ? at : undefined),
+    });
+    const whole = renderDecoration(era, roomFor(Infinity))[1];
+    expect(whole?.text).toBe("The first phase of the work");
+    expect(number(whole?.attrs?.y)).toBeLessThan(base.metrics.axisSize);
+    const short = renderDecoration(era, roomFor(80))[1];
+    expect(short?.text).toMatch(/^The fi.*…$/);
+    expect(number(short?.attrs?.y)).toBeLessThan(base.metrics.axisSize);
+    const none = renderDecoration(era, roomFor(5))[1];
+    expect(none?.text).toBe("The first phase of the work");
+    expect(number(none?.attrs?.y)).toBeGreaterThan(base.metrics.axisSize);
+  });
+});
+
 describe("markers", () => {
   const domain: Domain = [Date.UTC(2025, 2, 1), Date.UTC(2025, 2, 11)];
   const at = Date.UTC(2025, 2, 6);

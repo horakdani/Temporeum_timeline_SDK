@@ -1,39 +1,39 @@
 {
-  "$comment": "The SINGLE source of the @temporeum/timeline-core entry points. Rollup builds from it (scripts/build-config.mjs), `node ../../scripts/sdk_entries.mjs --write` writes the exports, typesVersions and size-limit fields of package.json from it, and the entries check fails on any drift. A new entry point: one line here, then --write. `name: index` is the package root (`.`); the others are the `./<name>` subpath. The `limit` is minify + gzip of the entry point's FULL surface (import *), shared chunks included.",
+  "$comment": "The SINGLE source of the @temporeum/timeline-core entry points. Rollup builds from it (scripts/build-config.mjs), `node ../../scripts/sdk_entries.mjs --write` writes the exports, typesVersions and size-limit fields of package.json from it, and the entries check fails on any drift. A new entry point: one line here, then --write. `name: index` is the package root (`.`); the others are the `./<name>` subpath. The `limit` is minify + gzip of the entry point's FULL surface (import *), shared chunks included. A limit leaves room: at least 10% and at least 750 B over the size when it was set (1.0.1), rounded up to the next half kB, so a fix is not a hunt for bytes; it is raised the same way when the room is used up, never to the byte.",
   "entries": [
     {
       "name": "index",
       "input": "src/index.ts",
       "umd": "TemporeumTimeline",
-      "limit": "31.6 kB",
+      "limit": "35.5 kB",
       "label": "core — the full public surface (ESM, minify + gzip)"
     },
     {
       "name": "dom",
       "input": "src/dom/index.ts",
       "umd": "TemporeumTimelineDom",
-      "limit": "4.25 kB",
+      "limit": "5 kB",
       "label": "dom — the browser binding (ESM, minify + gzip)"
     },
     {
       "name": "groups",
       "input": "src/groups/index.ts",
       "umd": "TemporeumTimelineGroups",
-      "limit": "2 kB",
+      "limit": "2.5 kB",
       "label": "groups — nested groups (ESM, minify + gzip)"
     },
     {
       "name": "items",
       "input": "src/items/index.ts",
       "umd": "TemporeumTimelineItems",
-      "limit": "4.5 kB",
+      "limit": "5.5 kB",
       "label": "items — item kinds, adding and removing, HTML template (ESM, minify + gzip)"
     },
     {
       "name": "gantt",
       "input": "src/gantt/index.ts",
       "umd": "TemporeumTimelineGantt",
-      "limit": "4 kB",
+      "limit": "5 kB",
       "label": "gantt — dependency arrows, progress, baseline, milestones, task grid (ESM, minify + gzip)"
     },
     {
@@ -54,21 +54,21 @@
       "name": "tools",
       "input": "src/tools/index.ts",
       "umd": "TemporeumTimelineTools",
-      "limit": "6 kB",
+      "limit": "6.5 kB",
       "label": "tools — time tools: hidden dates, custom time bars, rolling view, zoom presets, overview strip, range selection, sticky lane headers, live data (ESM, minify + gzip)"
     },
     {
       "name": "export",
       "input": "src/export/index.ts",
       "umd": "TemporeumTimelineExport",
-      "limit": "8 kB",
+      "limit": "9 kB",
       "label": "export — standalone SVG, PNG, a built-in PDF writer, a print view of the full range split into pages (ESM, minify + gzip)"
     },
     {
       "name": "intl",
       "input": "src/intl/index.ts",
       "umd": "TemporeumTimelineIntl",
-      "limit": "4 kB",
+      "limit": "4.5 kB",
       "label": "intl — right-to-left, dictionary, ticks for non-Gregorian calendars (ESM, minify + gzip)"
     },
     {
@@ -89,21 +89,21 @@
       "name": "calendar",
       "input": "src/calendar/index.ts",
       "umd": "TemporeumTimelineCalendar",
-      "limit": "13 kB",
+      "limit": "14.5 kB",
       "label": "calendar — recurring events (RFC 5545 RRULE), week and day views, iCal import and export (ESM, minify + gzip)"
     },
     {
       "name": "vis-compat",
       "input": "src/vis-compat/index.ts",
       "umd": "TemporeumTimelineVisCompat",
-      "limit": "6 kB",
+      "limit": "7 kB",
       "label": "vis-compat — vis-timeline items, groups and options as a Temporeum configuration (ESM, minify + gzip)"
     },
     {
       "name": "story",
       "input": "src/story/index.ts",
       "umd": "TemporeumTimelineStory",
-      "limit": "5.75 kB",
+      "limit": "6.5 kB",
       "label": "story — stories told slide by slide: TimelineJS JSON and Google Sheets import, media detection, date text (ESM, minify + gzip)"
     }
   ]

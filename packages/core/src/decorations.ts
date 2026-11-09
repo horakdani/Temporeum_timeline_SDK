@@ -23,6 +23,7 @@ import { toCalendarParts, zoneOffsetMs } from "./calendar.js";
 import type { DensityMetrics } from "./density.js";
 import { lineAttrs, polygonPoints, rectAttrs, textNode, withClass } from "./draw.js";
 import type { Projector } from "./geometry.js";
+import { shortenLabel } from "./labels.js";
 import type { SceneElement } from "./scene.js";
 import type { TimeScale } from "./scale.js";
 import { toTimeMs } from "./time.js";
@@ -106,6 +107,12 @@ export interface DecorationContext {
    * a date carries more than a marker's name.
    */
   readonly claimLabelRoom?: (start: number, end: number) => boolean;
+  /**
+   * Find room of `size` in the axis band between `from` and `to`, as near
+   * `at` as is free, and take it unless `take` is false: its start, or
+   * undefined when none is left.
+   */
+  readonly placeLabel?: (from: number, to: number, size: number, at: number, take?: boolean) => number | undefined;
 }
 
 const MS_PER_DAY = 86_400_000;
@@ -262,6 +269,8 @@ function renderNow(decoration: NowDecoration, ctx: DecorationContext): readonly 
       },
     },
   ];
+  // The line crosses the axis band: an era's label is not written over it.
+  ctx.claimLabelRoom?.(main - 1, main + 1);
   if (decoration.label) {
     const label = labelAfter(
       ctx,
@@ -303,7 +312,36 @@ function renderEra(decoration: EraDecoration, ctx: DecorationContext): readonly 
   ];
   if (decoration.label) {
     const need = ctx.measure(decoration.label);
-    if (need.main <= end - main) {
+    // In the axis band, where no item can cover it: the lane area's top is
+    // where the first row's items are, drawn over the era. As near the middle
+    // of what is seen of the era as the dates and the now label leave room,
+    // shortened if only that fits; without room there, at the lane area's top.
+    const room = (space: MainCross, take: boolean): number | undefined =>
+      space.cross > ctx.metrics.axisSize || space.main > end - main
+        ? undefined
+        : (ctx.placeLabel ?? ((_from: number, _to: number, _size: number, at: number) => at))(
+            main,
+            end,
+            space.main,
+            (main + end - space.main) / 2,
+            take,
+          );
+    const label =
+      room(need, false) === undefined
+        ? (shortenLabel(decoration.label, ctx.measure, (space) => room(space, false) !== undefined) ?? { text: decoration.label, need })
+        : { text: decoration.label, need };
+    const at = room(label.need, true);
+    if (at !== undefined) {
+      nodes.push(
+        textNode(
+          { main: at, mainSize: label.need.main, cross: 0, crossSize: ctx.metrics.axisSize },
+          label.text,
+          ctx.projector,
+          "tl-era-label",
+          ctx.metrics.labelPadding,
+        ),
+      );
+    } else if (need.main <= end - main) {
       nodes.push(
         textNode(
           {
@@ -398,6 +436,8 @@ function renderMarker(
       nodes.push(label);
     }
   }
+  // The shape sits in the axis band: an era's label is not written over it.
+  ctx.claimLabelRoom?.(main - radius, main + radius);
   return nodes;
 }
 

@@ -11,7 +11,7 @@
  *   where a calendar's own begin; {@link calendarTickLabel} writes ticks in
  *   a locale, from `Intl`.
  *
- * Its own entry point: the base timeline's 31.6 kB budget does not pay for
+ * Its own entry point: the base timeline's budget does not pay for
  * languages it is not shown in.
  */
 export { describeHooks } from "./describe.js";

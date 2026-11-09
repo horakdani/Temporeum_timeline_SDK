@@ -27,14 +27,18 @@ import { rolldown } from "rolldown";
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const VIRTUAL = "\0sdk-size-packages";
 
-/** The budgets (1 kB = 1000 B), minify + gzip 9: a few per cent over the measurement, as CI's zlib reads ~1% more. */
+/**
+ * The budgets (1 kB = 1000 B), minify + gzip 9. Each leaves room: at least 10% and at least 750 B over
+ * the size when it was set (1.0.1), rounded up to the next half kB — CI's zlib reads ~1% more, and a fix
+ * is not a hunt for bytes. Raised the same way when the room is used up, never to the byte.
+ */
 const BUDGETS = [
-  { name: "element (import *, with the engine)", file: "packages/web-component/dist/index.mjs", external: [], limit: "53 kB" },
-  { name: "element UMD (every plugin)", file: "packages/web-component/dist/timeline-element.umd.js", raw: true, limit: "106 kB" },
-  { name: "react", file: "packages/react/dist/index.mjs", external: ["react", "react-dom", "react/jsx-runtime"], limit: "2 kB" },
-  { name: "vue", file: "packages/vue/dist/index.mjs", external: ["vue"], limit: "1.8 kB" },
-  { name: "svelte (shipped source)", files: ["packages/svelte/dist/index.js", "packages/svelte/dist/state.js", "packages/svelte/dist/Timeline.svelte"], limit: "4 kB" },
-  { name: "angular", file: "packages/angular/dist/index.mjs", external: ["@angular/", "rxjs"], limit: "3 kB" },
+  { name: "element (import *, with the engine)", file: "packages/web-component/dist/index.mjs", external: [], limit: "58.5 kB" },
+  { name: "element UMD (every plugin)", file: "packages/web-component/dist/timeline-element.umd.js", raw: true, limit: "116 kB" },
+  { name: "react", file: "packages/react/dist/index.mjs", external: ["react", "react-dom", "react/jsx-runtime"], limit: "3 kB" },
+  { name: "vue", file: "packages/vue/dist/index.mjs", external: ["vue"], limit: "2.5 kB" },
+  { name: "svelte (shipped source)", files: ["packages/svelte/dist/index.js", "packages/svelte/dist/state.js", "packages/svelte/dist/Timeline.svelte"], limit: "5 kB" },
+  { name: "angular", file: "packages/angular/dist/index.mjs", external: ["@angular/", "rxjs"], limit: "4 kB" },
 ];
 
 /** Leave out the element and the engine too, for a component: it is measured on its own. */

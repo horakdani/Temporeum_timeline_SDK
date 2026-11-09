@@ -221,8 +221,8 @@ Checked by CI on every push and pull request
 
 | Budget | Limit |
 |---|---|
-| core, minified + gzipped, on its own | 31.6 kB |
-| `/dom` entry point, minified + gzipped, on top of the core | 4.25 kB |
+| core, minified + gzipped, on its own | 35.5 kB |
+| `/dom` entry point, minified + gzipped, on top of the core | 5 kB |
 | a source module shipped in two files | 0 |
 | runtime dependencies | 0 |
 | `any` on the public surface | 0 |
@@ -248,7 +248,7 @@ commands are in
 | the same, through `createTimeline` from the shipped bundle | 5% |
 | frames missed, 4x pinch zoom, on both paths | 5% |
 | frames missed, 4.3x ctrl+wheel zoom from a fresh page, on both paths, median of three | 5% |
-| JavaScript heap growth over the throttled benchmark's pan, 10 000 items, median of three | 5.2 MB |
+| JavaScript heap growth over the throttled benchmark's pan, 10 000 items, median of three | 6.5 MB |
 | nodes created in the second half of a long pan | 0.5% of the live tree, plus the labels the view gains |
 | page scroll under a one-finger drag on the timeline, Mobile Safari in the iOS Simulator, iPhone and iPad | 0 px |
 

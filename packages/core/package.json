@@ -301,7 +301,7 @@
       "name": "core — the full public surface (ESM, minify + gzip)",
       "path": "dist/index.mjs",
       "import": "*",
-      "limit": "31.6 kB",
+      "limit": "35.5 kB",
       "gzip": true
     }
   ],

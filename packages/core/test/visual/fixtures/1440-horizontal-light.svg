@@ -10,7 +10,7 @@
     <rect class="tl-band" x="1027.343" y="24" width="103.164" height="456"/>
     <rect class="tl-band" x="1233.672" y="24" width="103.164" height="456"/>
     <rect class="tl-era" data-tl-era="q1" x="0" y="24" width="717.851" height="456"/>
-    <text class="tl-era-label" x="6" y="32" dominant-baseline="central" text-anchor="start">End of Q1</text>
+    <text class="tl-era-label" x="340.033" y="12" dominant-baseline="central" text-anchor="start">End of Q1</text>
   </g>
   <g class="tl-layer tl-layer--axis" aria-hidden="true">
     <line class="tl-tick" x1="0" y1="0" x2="0" y2="480"/>

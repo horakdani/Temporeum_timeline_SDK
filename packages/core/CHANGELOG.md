@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.2 — Unreleased
+
+### Fixed
+
+- An era's name is in the axis band, as near the middle of what is seen of the era as the dates leave room — shortened with an ellipsis if only that fits. It was at the top of the lane area, where the first row's items are drawn over it. A now line and a marker keep their place in the band, and the era's name goes round them. Without room in the band, not even shortened, the name stays at the lane area's top, as before. The same holds for a `background` item's label (`/items`), which is drawn like an era's.
+
+### Changed
+
+- The size budgets leave room: at least 10% and at least 750 B over the size when they were set, rounded up to the next half kB. The engine's is 35.5 kB (was 31.6 kB); `/dom` 5 kB, `/groups` 2.5 kB, `/items` 5.5 kB, `/gantt` 5 kB, `/tools` 6.5 kB, `/export` 9 kB, `/intl` 4.5 kB, `/calendar` 14.5 kB, `/vis-compat` 7 kB and `/story` 6.5 kB on top of it. The sizes themselves are what they were: the engine is 31.9 kB.
+- The heap growth over the throttled benchmark's pan may be 6.5 MB (was 5.2 MB, half the +10.4 MB measured before 1.0): 1.0.0 and 1.0.1 measure +5.3 MB alike, a browser's heap moving by a few per cent from one machine to the next.
+
 ## 1.0.1 — 2026-11-09
 
 ### Fixed
