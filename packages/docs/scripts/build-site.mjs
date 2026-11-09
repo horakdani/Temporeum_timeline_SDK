@@ -138,6 +138,8 @@ export function loadExamples(docsDir = DOCS_DIR) {
     }
     // "showcase": the result first and full width, the code folded away under it — for a demo, not a lesson.
     if (meta.layout !== undefined && meta.layout !== "showcase") fail(`example "${id}": layout is "showcase" or absent`);
+    // A demo that turns vertical on a phone wants more height there than across a desktop.
+    if (meta.narrowHeight !== undefined && !(Number.isInteger(meta.narrowHeight) && meta.narrowHeight > 0)) fail(`example "${id}": narrowHeight is a whole number of pixels`);
     // What the sandboxed frame may do beyond running scripts: save a file, open the print dialog. Never same-origin.
     const grants = meta.allow ?? [];
     if (!Array.isArray(grants) || grants.some((grant) => grant !== "downloads" && grant !== "modals")) fail(`example "${id}": allow is a list of "downloads" and "modals"`);
@@ -147,6 +149,7 @@ export function loadExamples(docsDir = DOCS_DIR) {
       title: meta.title,
       layout: meta.layout ?? "lesson",
       height: meta.height ?? 360,
+      narrowHeight: meta.narrowHeight,
       allow: grants,
       expect: meta.expect,
       code: readFileSync(codePath, "utf8"),
@@ -164,7 +167,7 @@ function renderExample(example) {
     `<textarea id="${codeId}" spellcheck="false" autocapitalize="off" autocomplete="off" rows="16">${escapeHtml(example.code)}</textarea>`,
     `<div class="example-actions"><button type="button" data-action="run">Run</button><button type="button" data-action="reset">Reset</button></div>`,
   ];
-  const frame = `<iframe class="example-frame" title="${escapeHtml(example.title)} — result" sandbox="${["allow-scripts", ...example.allow.map((grant) => `allow-${grant}`)].join(" ")}" style="height:${String(example.height)}px"></iframe>`;
+  const frame = `<iframe class="example-frame" title="${escapeHtml(example.title)} — result" sandbox="${["allow-scripts", ...example.allow.map((grant) => `allow-${grant}`)].join(" ")}" style="height:${String(example.height)}px${example.narrowHeight === undefined ? "" : `;--frame-narrow:${String(example.narrowHeight)}px`}"${example.narrowHeight === undefined ? "" : " data-narrow"}></iframe>`;
   const code = showcase
     ? [`<details class="example-code"><summary>The code</summary><label for="${codeId}">Code — edit it and press Run</label>`, ...editor, `</details>`]
     : [`<div class="example-code"><label for="${codeId}">Code — edit it and press Run</label>`, ...editor, `</div>`];

@@ -78,3 +78,18 @@ test("the home page's title says the name once, every page has the icon, and the
   const page = readFileSync(join(docs, "site", "pages", "reference", "entry-points.md"), "utf8");
   for (const entry of entries) assert.ok(page.includes(`\`${entry.umd}\``), entry.umd);
 });
+
+test("a demo that turns vertical on a phone gets a taller frame there, from its meta.json (narrowHeight)", async () => {
+  const out = join(scratch, "out-narrow");
+  await buildSite({ outDir: out });
+  const home = readFileSync(join(out, "index.html"), "utf8");
+  // The chronicle turns vertical on a phone: 920 px across a desktop, 1290 down a phone.
+  assert.match(home, /<iframe class="example-frame" title="Five thousand years[^"]*" sandbox="[^"]*" style="height:920px;--frame-narrow:1290px" data-narrow><\/iframe>/);
+  assert.match(readFileSync(join(out, "assets", "site.css"), "utf8"), /@media \(max-width: 640px\) \{ \.example-frame\[data-narrow\] \{ height: var\(--frame-narrow\) !important; \} \}/);
+  // A frame without it keeps its one height.
+  assert.doesNotMatch(home.replace(/<iframe[^>]*Five thousand years[^>]*><\/iframe>/, ""), /data-narrow/);
+  const dir = copy("narrow-height");
+  const meta = join(dir, "site", "examples", "showcase-chronicle", "meta.json");
+  writeFileSync(meta, JSON.stringify({ ...JSON.parse(readFileSync(meta, "utf8")), narrowHeight: "tall" }));
+  await assert.rejects(buildSite({ docsDir: dir, outDir: join(dir, "dist") }), /narrowHeight is a whole number of pixels/);
+});

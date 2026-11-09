@@ -174,8 +174,10 @@
   #timeline .era-antiquity { fill: rgba(111, 176, 240, 0.03); }
   #timeline .era-medieval { fill: rgba(240, 139, 176, 0.03); }
   #timeline .era-modern { fill: rgba(169, 139, 255, 0.035); }
-  /* A lane's name sits in the gap above its first row, clear of the bars. */
-  #timeline .tl-lane-header { transform: translateY(-19px); }
+  /* Across, a lane's name sits in the gap above its first row, clear of the bars; down a phone, at the top of its column. */
+  .chronicle:not([data-vertical]) #timeline .tl-lane-header { transform: translateY(-19px); }
+  /* Down a phone a point's name starts just past its dot, not under its lower half (the library's own placement, for now). */
+  .chronicle[data-vertical] #timeline .tl-label--after { transform: translateY(7px); }
   #timeline .tl-lane-header-bg { display: none; }
   #timeline .tl-lane-header-text { font-weight: 600; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; fill: var(--c, var(--muted)); }
   #timeline [data-tl-lane-header="neareast"] { --c: var(--c-neareast); }
@@ -199,7 +201,8 @@
   .log { color: var(--muted); border-top: 1px solid var(--rule); background: var(--ink); }
 
   @media (max-width: 640px) {
-    .chronicle { grid-template-rows: auto 1px 356px auto auto minmax(0, 1fr); }
+    /* Down a phone the timeline turns vertical, and wants the height: the frame is taller there (meta.json, narrowHeight). */
+    .chronicle { grid-template-rows: auto 1px 356px auto auto minmax(0, 1fr); height: 1262px; }
     .masthead { padding: 12px 14px 10px; gap: 10px; }
     .masthead h1 { font-size: 22px; }
     .play { padding: 0 8px; }

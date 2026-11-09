@@ -304,9 +304,13 @@ await Promise.all(["400 13px Geist", "500 13px Geist", "500 11px 'Geist Mono'", 
 const measure = document.createElement("canvas").getContext("2d");
 measure.font = `500 13px ${SANS}`;
 const host = document.querySelector("#timeline");
+const chronicle = document.querySelector("#chronicle");
 let timeline;
+// Which way the timeline is drawn: down below its 640 px breakpoint ("auto"), across above it.
+let vertical = host.clientWidth < 640;
 function roomy(item) {
-  if (item.end === undefined) return false;
+  // Down a phone a bar is a column one row wide: its name is the timeline's own label.
+  if (item.end === undefined || vertical) return false;
   const [from, to] = timeline?.getSnapshot().domain ?? WHOLE;
   return ((item.end - item.start) / (to - from)) * host.clientWidth >= measure.measureText(item.label).width + 30;
 }
@@ -318,7 +322,7 @@ const SETTINGS = {
   ariaLabel: "Five thousand years of history, from Egypt to the Moon",
   // Sizes are configuration: rows with air between them, round corners, the labels in Geist.
   metrics: { rowSize: 30, rowGap: 10, laneGap: 26, fontSize: 13, lineHeight: 16, labelPadding: 8, cornerRadius: 8, tickFontSize: 11, axisSize: 40, fontFamily: SANS },
-  // Under a story the timeline stays a strip across, on a phone too.
+  // On paper (the exports below) the timeline is a strip across; on screen it turns vertical on a phone (below).
   orientation: "horizontal",
   locale: "en-GB",
   formatTick,
@@ -328,11 +332,25 @@ const SETTINGS = {
   decorations: /** @type {import("@temporeum/timeline-core").Decoration[]} */ ([...ERAS.map(({ id, label, start, end }) => ({ kind: "era", id, label, start, end, className: `era-${id}` })), { kind: "now", time: Date.now(), label: "Today" }]),
 };
 
+// Down a phone a lane is a column: its rows as wide as a name, and the axis wide enough for "3000 BC".
+const ACROSS = SETTINGS.metrics;
+const DOWN = { ...ACROSS, rowSize: 132, rowGap: 8, laneGap: 18, axisSize: 64 };
+// The sizes the lanes are zoomed from (the overview's lens, below): the ones for the way the timeline is drawn.
+let BASE = vertical ? DOWN : ACROSS;
+// How far the lanes are zoomed from those sizes.
+let rows = 1;
+// The whole five thousand years in view. Down a phone the lane names head the columns, so the view starts two
+// centuries earlier, and the first pharaoh's dot clears them.
+const everything = () => (vertical ? [year(-3500), WHOLE[1]] : WHOLE);
+
 timeline = createTimeline(host, {
   ...SETTINGS,
+  // Across a desktop, down a phone: the container's width decides, and goes on deciding as it changes.
+  orientation: "auto",
+  metrics: BASE,
   items,
   theme: CHRONICLE,
-  domain: WHOLE,
+  domain: everything(),
   tooltip: (item) => `${item.label}\n${years(item)}`,
   slots: roomy,
 });
@@ -344,6 +362,21 @@ timeline.on("viewportChanged", () => {
   const drawn = timeline.slots;
   const stale = items.some((item) => item.end !== undefined && item.end > from && item.start < to && roomy(item) !== drawn.has(item.id));
   if (stale) timeline.update({ slots: (item) => roomy(item) });
+});
+
+// The page's CSS places the lane names one way across and another way down; and a bar's room is another question.
+// The first frame says which way it was drawn, and "orientationChanged" every turn after it.
+const turned = (orientation) => {
+  if (orientation === undefined) return;
+  vertical = orientation === "vertical";
+  chronicle.toggleAttribute("data-vertical", vertical);
+};
+timeline.subscribe(() => turned(timeline.getSnapshot().viewport?.orientation));
+timeline.on("orientationChanged", ({ orientation }) => {
+  turned(orientation);
+  BASE = vertical ? DOWN : ACROSS;
+  rows = 1;
+  timeline.update({ metrics: BASE, slots: (item) => roomy(item) });
 });
 
 // Each bar's content, in HTML of the page's own: its name, and its years.
@@ -460,7 +493,7 @@ story.on("slideChanged", ({ index, item, source }) => {
   stage.classList.remove("turn");
   void stage.offsetWidth;
   stage.classList.add("turn");
-  if (source !== "timeline") fly(item === undefined ? WHOLE : viewOf(item));
+  if (source !== "timeline") fly(item === undefined ? everything() : viewOf(item));
   if (item !== undefined) timeline.revealLane(item.laneId);
   for (const dot of moments.children) dot.classList.toggle("current", dot.dataset.id === item?.id);
   log.textContent = item === undefined ? "The title: the whole five thousand years." : `${String(index)} of ${String(slides.length)} · ${item.label} · ${years(item)}`;
@@ -587,7 +620,7 @@ for (const age of ERAS) {
   button.addEventListener("click", () => fly(age.view));
   sections.append(button);
 }
-document.querySelector("#whole").addEventListener("click", () => fly(WHOLE));
+document.querySelector("#whole").addEventListener("click", () => fly(everything()));
 document.querySelector("#apollo").addEventListener("click", () => {
   fly(APOLLO);
   timeline.revealLane("space");
@@ -609,7 +642,7 @@ timeline.on("viewportChanged", ({ viewport: { domain } }) => view(domain));
 view(timeline.getSnapshot().domain);
 
 // The lens frames the view down the strip too: the lanes scroll across, and the rows in sight are the part of the strip it holds.
-const AXIS = 40; // the timeline's metrics.axisSize: the lanes scroll under the axis
+// The lanes scroll under the axis band, which is the metrics' axisSize wide.
 const STRIP = 46; // the strip's height in pixels (#marks)
 /** Where a position across the lanes falls on the strip, 0 to 1: a lane is a row of the strip, and its sublanes divide that row. */
 function down(layout, position) {
@@ -623,7 +656,7 @@ function down(layout, position) {
 function frameDown() {
   const layout = timeline.layout;
   const { viewport, crossOffset } = timeline.getSnapshot();
-  const room = viewport === undefined ? 0 : viewport.crossSize - AXIS;
+  const room = viewport === undefined ? 0 : viewport.crossSize - BASE.axisSize;
   const scrolls = layout !== undefined && room > 0 && layout.crossSize > room + 1;
   const top = scrolls ? down(layout, crossOffset) : 0;
   const bottom = scrolls ? down(layout, crossOffset + room) : 1;
@@ -642,15 +675,13 @@ requestAnimationFrame(() => requestAnimationFrame(frameDown));
 // Zoom down the lanes: the rows are sizes in `metrics`, so the lanes' scale is a number the page keeps and hands back.
 // The lens has a handle on each edge: the edge opposite the one pulled stays where it is.
 const track = document.querySelector("#track");
-const BASE = SETTINGS.metrics;
 const ROWS_MAX = 1.6;
-let rows = 1;
 const sized = (scale) => ({ ...BASE, rowSize: BASE.rowSize * scale, rowGap: BASE.rowGap * scale, laneGap: BASE.laneGap * scale });
 function setRows(want, keepBottom = false) {
   // Zooming out stops where every lane is in view, however small the rows get by then.
   const layout = timeline.layout;
   const { viewport, crossOffset: offset } = timeline.getSnapshot();
-  const room = viewport === undefined ? 0 : viewport.crossSize - AXIS;
+  const room = viewport === undefined ? 0 : viewport.crossSize - BASE.axisSize;
   const fit = layout === undefined ? 0.6 : (room / (layout.crossSize / rows)) * 0.99;
   let next = Math.min(Math.max(want, Math.min(fit, 1)), ROWS_MAX);
   if (Math.abs(next - rows) < 0.002) return;
@@ -689,7 +720,7 @@ function dragRows(event, edge) {
   const layout = timeline.layout;
   const { viewport } = timeline.getSnapshot();
   if (layout === undefined || viewport === undefined) return;
-  const room = viewport.crossSize - AXIS;
+  const room = viewport.crossSize - BASE.axisSize;
   const whole = layout.crossSize / rows;
   const top = Number.parseFloat(overview.style.getPropertyValue("--vt")) / STRIP;
   const bottom = top + Number.parseFloat(overview.style.getPropertyValue("--vh")) / STRIP;
@@ -752,7 +783,7 @@ track.addEventListener("pointerdown", (event) => {
     const layout = timeline.layout;
     const { viewport } = timeline.getSnapshot();
     if (layout !== undefined && viewport !== undefined && overview.hasAttribute("data-scrolls")) {
-      const target = Math.min(Math.max(lanesAt + ((next.clientY - grabY) / STRIP) * layout.crossSize, 0), layout.crossSize - (viewport.crossSize - AXIS));
+      const target = Math.min(Math.max(lanesAt + ((next.clientY - grabY) / STRIP) * layout.crossSize, 0), layout.crossSize - (viewport.crossSize - BASE.axisSize));
       timeline.scrollLanes(target - asked);
       asked = target;
     }
@@ -812,7 +843,6 @@ for (const lane of lanes) {
 
 // --- rewrite history: the same timeline, editable, with an exact undo -----------------------------
 
-const chronicle = document.querySelector("#chronicle");
 const editButton = document.querySelector("#edit");
 const undoButton = document.querySelector("#undo");
 const restoreButton = document.querySelector("#restore");

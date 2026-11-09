@@ -1,6 +1,7 @@
 {
   "title": "Five thousand years, told: the chronology restyled from outside, with a story and a camera",
   "height": 920,
+  "narrowHeight": 1290,
   "allow": ["downloads", "modals"],
   "layout": "showcase",
   "expect": [
