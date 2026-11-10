@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timeline — plain HTML</title>
+    <!-- The library: the file npm installed next to this page. -->
+    <script src="node_modules/@temporeum/timeline-element/dist/timeline-element.umd.js"></script>
+  </head>
+  <body style="margin: 0; font-family: system-ui, sans-serif">
+    <main style="padding: 16px">
+      <h1 style="font-size: 18px">Release plan</h1>
+
+      <!-- The timeline. Its items are the JSON inside it; dates may be text here. -->
+      <temporeum-timeline height="300" theme="auto" editable snap-ms="86400000" aria-label="Release plan">
+        <script type="application/json">
+          {
+            "items": [
+              { "id": "design", "start": "2026-03-02", "end": "2026-03-09", "label": "Design" },
+              { "id": "build", "start": "2026-03-07", "end": "2026-03-21", "label": "Build" },
+              { "id": "launch", "start": "2026-03-27", "label": "Launch" }
+            ]
+          }
+        </script>
+      </temporeum-timeline>
+
+      <p id="log">Click an item, or drag it.</p>
+    </main>
+
+    <!-- Your code: the timeline tells you what the reader did. -->
+    <script>
+      const timeline = document.querySelector("temporeum-timeline");
+      const log = document.querySelector("#log");
+
+      timeline.addEventListener("item-click", (event) => {
+        log.textContent = "You clicked " + event.detail.item.label;
+      });
+      timeline.addEventListener("item-moved", (event) => {
+        log.textContent = event.detail.item.label + " now starts " + new Date(event.detail.to.start).toDateString();
+      });
+    </script>
+  </body>
+</html>

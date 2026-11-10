@@ -819,7 +819,9 @@ function templatesHtml(docsDir) {
     .map((template) => {
       const path = `packages/docs/templates/${template.name}`;
       const stackblitz = `https://stackblitz.com/github/${REPO_URL.replace(/^https:\/\/github\.com\//, "")}/tree/${TEMPLATE_BRANCH}/${path}`;
-      return `<tr id="template-${template.name}"><th scope="row"><code>${escapeHtml(template.name)}</code></th><td>${escapeHtml(template.title)}</td><td><code>${escapeHtml(path)}</code></td><td><a href="${escapeHtml(stackblitz)}">Open in StackBlitz<span class="visually-hidden">: ${escapeHtml(template.name)}</span></a></td></tr>`;
+      // A template with no dev server is a page opened from disk: StackBlitz would have nothing to start.
+      const online = template.start === "" ? "None needed: open <code>index.html</code>" : `<a href="${escapeHtml(stackblitz)}">Open in StackBlitz<span class="visually-hidden">: ${escapeHtml(template.name)}</span></a>`;
+      return `<tr id="template-${template.name}"><th scope="row"><code>${escapeHtml(template.name)}</code></th><td>${escapeHtml(template.title)}</td><td><code>${escapeHtml(path)}</code></td><td>${online}</td></tr>`;
     })
     .join("");
   return `<div class="table-wrap" tabindex="0" role="region" aria-label="Table, scrolls sideways on a narrow screen"><table class="templates"><caption>Starter projects. Each one is built and run in a real browser on every check of the examples, from the packed packages.</caption><thead><tr><th scope="col">Template</th><th scope="col">What it is</th><th scope="col">Folder in <a href="${REPO_URL}">the repository</a></th><th scope="col">Online</th></tr></thead><tbody>${rows}</tbody></table></div>`;

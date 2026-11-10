@@ -11,41 +11,158 @@ An editable, accessible, responsive timeline for the web, covering spans from mi
 
 **[Live demo and documentation →](https://horakdani.github.io/Temporeum_timeline_SDK/)**
 
+## Your first timeline, step by step
+
+All you need is [Node.js](https://nodejs.org/), which comes with `npm`, and a browser. Nothing else to install, no build step.
+
+**1. Make a folder and install the package.** In a terminal:
+
 ```bash
+mkdir my-timeline
+cd my-timeline
+npm init -y
 npm install @temporeum/timeline-element
 ```
 
-```js excerpt:example/quick-start
-import { createTimeline, registerPlugin } from "@temporeum/timeline-element";
-import { groupsPlugin } from "@temporeum/timeline-element/groups";
+`npm init -y` creates `package.json`, the list of what the folder uses. `npm install` downloads the library into `node_modules/`.
 
-// Rows with a visible name are groups, a plugin: registered once, before the first timeline.
-registerPlugin(groupsPlugin);
+**2. Save this page as `index.html` in the same folder:**
 
+```html excerpt:template/html/index.html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timeline — plain HTML</title>
+    <!-- The library: the file npm installed next to this page. -->
+    <script src="node_modules/@temporeum/timeline-element/dist/timeline-element.umd.js"></script>
+  </head>
+  <body style="margin: 0; font-family: system-ui, sans-serif">
+    <main style="padding: 16px">
+      <h1 style="font-size: 18px">Release plan</h1>
+
+      <!-- The timeline. Its items are the JSON inside it; dates may be text here. -->
+      <temporeum-timeline height="300" theme="auto" editable snap-ms="86400000" aria-label="Release plan">
+        <script type="application/json">
+          {
+            "items": [
+              { "id": "design", "start": "2026-03-02", "end": "2026-03-09", "label": "Design" },
+              { "id": "build", "start": "2026-03-07", "end": "2026-03-21", "label": "Build" },
+              { "id": "launch", "start": "2026-03-27", "label": "Launch" }
+            ]
+          }
+        </script>
+      </temporeum-timeline>
+
+      <p id="log">Click an item, or drag it.</p>
+    </main>
+
+    <!-- Your code: the timeline tells you what the reader did. -->
+    <script>
+      const timeline = document.querySelector("temporeum-timeline");
+      const log = document.querySelector("#log");
+
+      timeline.addEventListener("item-click", (event) => {
+        log.textContent = "You clicked " + event.detail.item.label;
+      });
+      timeline.addEventListener("item-moved", (event) => {
+        log.textContent = event.detail.item.label + " now starts " + new Date(event.detail.to.start).toDateString();
+      });
+    </script>
+  </body>
+</html>
+```
+
+**3. Open it.** Double-click `index.html`, or type `open index.html` (macOS), `start index.html` (Windows) or `xdg-open index.html` (Linux).
+
+You see three items on a timeline: two spans, and `Launch`, a single moment because it has no `end`. Click one, and the line under the timeline names it. Drag one, and the line says where it starts now. Drag the empty background to move through time; hold Ctrl and turn the mouse wheel (or pinch on a trackpad) to zoom.
+
+The page has three parts:
+
+- **The `<script src="node_modules/…">` tag** loads the library, which teaches the browser the `<temporeum-timeline>` tag.
+- **`<temporeum-timeline>`** is the timeline. Its attributes set the height, the colour scheme (`theme="auto"` follows the system), dragging (`editable`) and dragging by whole days (`snap-ms`, a day in milliseconds). The JSON inside it lists the items: an `id`, a `start`, an optional `end` and a `label`.
+- **The last `<script>`** is your code. The timeline reports what the reader does as events (`item-click`, `item-moved`), and the details are in `event.detail`.
+
+The library never saves anything. Reload the page and the items are back where the JSON puts them. To keep an edit, send `event.detail.to` (the item's new times) to your server in the `item-moved` handler.
+
+This page is the [`html` starter](packages/docs/templates/html) in the repository, and it is opened in a real browser on every check.
+
+### Next: JavaScript files and `import`
+
+A larger project keeps its code in `.js` files and writes `import { createTimeline } from "@temporeum/timeline-element"`. A browser alone cannot follow that `import`: the name is a folder inside `node_modules/`, and only a build tool knows where to find it. [Vite](https://vite.dev/) is one. In the same folder:
+
+```bash
+npm install --save-dev vite
+```
+
+Replace `index.html` with this page:
+
+```html excerpt:template/vanilla/index.html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timeline — plain JavaScript</title>
+  </head>
+  <body style="margin: 0; font-family: system-ui, sans-serif">
+    <main style="padding: 16px">
+      <h1 style="font-size: 18px">Release plan</h1>
+      <button id="undo" type="button" disabled>Undo</button>
+      <div id="timeline" style="height: 320px; margin-top: 8px"></div>
+    </main>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
+```
+
+and save the code beside it as `main.js`:
+
+```js excerpt:template/vanilla/main.js
+import { createTimeline } from "@temporeum/timeline-element";
+
+const DAY = 86_400_000;
+const t = Date.UTC(2026, 2, 2);
 const items = [
-  { id: "design", start: new Date("2026-03-02"), end: new Date("2026-03-09"), label: "Design", laneId: "work" },
-  { id: "launch", start: new Date("2026-03-27"), end: new Date("2026-04-03"), label: "Launch", laneId: "ship" },
+  { id: "design", label: "Design", laneId: "work", start: t, end: t + 7 * DAY },
+  { id: "build", label: "Build", laneId: "work", start: t + 5 * DAY, end: t + 19 * DAY },
+  { id: "review", label: "Review", laneId: "ship", start: t + 21 * DAY },
+  { id: "launch", label: "Launch", laneId: "ship", start: t + 25 * DAY, end: t + 32 * DAY },
 ];
-const groups = [
+const lanes = [
   { id: "work", label: "Work" },
   { id: "ship", label: "Shipping" },
 ];
 
-const log = document.querySelector("#log");
 const timeline = createTimeline(document.querySelector("#timeline"), {
   items,
-  groups,
+  lanes,
   ariaLabel: "Release plan",
-  editing: { enabled: true, snapMs: 86_400_000 },
+  editing: { enabled: true, snapMs: DAY },
 });
 
-// The library never saves: an edit comes out as a command, and it is yours.
-timeline.on("itemMoved", ({ item, to }) => {
-  log.textContent = `${item.label} now starts ${new Date(to.start ?? item.start).toDateString()}`;
+const undo = [];
+const button = document.querySelector("#undo");
+timeline.on("command", ({ command }) => {
+  undo.push(command);
+  button.disabled = false;
+});
+button.addEventListener("click", () => {
+  timeline.applyCommand(undo.pop().inverse);
+  button.disabled = undo.length === 0;
 });
 ```
 
-The page needs a `<div id="timeline" style="height: 300px">` and a `<p id="log">`. [Getting started](https://horakdani.github.io/Temporeum_timeline_SDK/getting-started.html) goes on from here; the [frameworks page](https://horakdani.github.io/Temporeum_timeline_SDK/frameworks.html) has the same in React, Vue, Svelte and Angular.
+Then start Vite, and open the address it prints (<http://localhost:5173/>). Ctrl + C in the terminal stops it.
+
+```bash
+npx vite
+```
+
+Here the items are in two rows (`lanes`), and times are numbers: milliseconds since 1970, which `Date.UTC` gives. Every edit arrives as a `command`, and its `inverse` undoes it, which is all the Undo button does. This is the [`vanilla` starter](packages/docs/templates/vanilla).
+
+[Getting started](https://horakdani.github.io/Temporeum_timeline_SDK/getting-started.html) goes on from here: plugins, the element's properties and events, server rendering. The [frameworks page](https://horakdani.github.io/Temporeum_timeline_SDK/frameworks.html) has a starter like these for React, Vue, Svelte, Angular, Next, Nuxt and Astro.
 
 ## Try it
 

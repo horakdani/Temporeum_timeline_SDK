@@ -1,0 +1,6 @@
+{
+  "name": "temporeum-timeline-html",
+  "description": "Plain HTML, no build step: one page that loads the installed package with a script tag, opened by a double-click",
+  "private": true,
+  "dependencies": { "@temporeum/timeline-element": "^1.0.2" }
+}

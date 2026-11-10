@@ -8,9 +8,11 @@
  *  2. the @temporeum/* dependencies are replaced with the six `npm pack`
  *     tarballs (all of them, because the element needs the core, the adapters
  *     need the element, and the versions are not on npm);
- *  3. npm install, npm run build — the template's OWN build script;
+ *  3. npm install, npm run build — the template's OWN build script; a template
+ *     without one (plain HTML) is opened from disk as well, by its file:// URL;
  *  4. serving: the Vite and Astro output statically, Next with `next start`,
- *     Nuxt from the Nitro output, on its own port (a port in use: FAIL);
+ *     Nuxt from the Nitro output, a template without a build from its own
+ *     folder, on its own port (a port in use: FAIL);
  *  5. real Chromium: the page loads without console errors or exceptions, at
  *     least three `option`s are visible (it also looks into the element's
  *     shadow root), and a click on an item selects it (aria-selected="true").
@@ -31,7 +33,7 @@ import { cpSync, createReadStream, existsSync, mkdirSync, readdirSync, readFileS
 import { createServer } from "node:http";
 import { createServer as createNetServer } from "node:net";
 import { dirname, extname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { chromium } from "@playwright/test";
 
@@ -222,13 +224,29 @@ for (const [index, name] of templates.entries()) {
       continue;
     }
   }
-  try {
-    run("npm", ["run", "build"], { cwd: dir });
-  } catch (error) {
-    problems.push(`${name}: the build failed\n${tail(error)}`);
-    continue;
+  // A template without a build script is a page that runs as it is: served
+  // from its own folder, and opened from disk too — the double-click it promises.
+  const noBuild = manifest.scripts?.build === undefined;
+  let fromDisk;
+  if (noBuild) {
+    if (!existsSync(join(dir, "index.html"))) {
+      problems.push(`${name}: no build script and no index.html — nothing to open`);
+      continue;
+    }
+    fromDisk = await probe(pathToFileURL(join(dir, "index.html")).href);
+    if (!fromDisk.ok) {
+      problems.push(`${name}, opened from disk: ${fromDisk.detail}`);
+      continue;
+    }
+  } else {
+    try {
+      run("npm", ["run", "build"], { cwd: dir });
+    } catch (error) {
+      problems.push(`${name}: the build failed\n${tail(error)}`);
+      continue;
+    }
   }
-  const plan = servePlan(name, dir);
+  const plan = noBuild ? { kind: "static", root: dir } : servePlan(name, dir);
   if (plan.kind === "none") {
     problems.push(plan.reason);
     continue;
@@ -260,7 +278,7 @@ for (const [index, name] of templates.entries()) {
 
   const verdict = await probe(url);
   server.close();
-  if (verdict.ok) notes.push(`${name}: ${verdict.detail} (${String(Math.round((Date.now() - started) / 1000))} s)`);
+  if (verdict.ok) notes.push(`${name}: ${verdict.detail}${fromDisk ? "; from disk too" : ""} (${String(Math.round((Date.now() - started) / 1000))} s)`);
   else problems.push(`${name}: ${verdict.detail}`);
 }
 
