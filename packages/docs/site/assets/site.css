@@ -114,6 +114,12 @@ table.api td:nth-child(2) code { white-space: pre-wrap; word-break: break-word; 
   border: 1px solid var(--accent); background: var(--bg); color: var(--link);
 }
 .example-actions button[data-action="run"] { background: var(--accent); color: var(--bg); }
+/* The page around the code, and how to run both at home: folded until asked for. */
+.example-page, .example-local { margin-top: 0.75rem; }
+.example-page summary, .example-local summary { cursor: pointer; font-size: 0.9rem; color: var(--muted); }
+.example-page pre { max-height: 24rem; overflow: auto; margin: 0.5rem 0 0; }
+.example-local p { margin: 0.5rem 0; font-size: 0.9rem; }
+.example-local pre { margin: 0.5rem 0; }
 .example-frame { display: block; width: 100%; border: 0; background: #ffffff; }
 /* On a phone a demo that turns vertical takes the height its meta.json gives it (narrowHeight). */
 @media (max-width: 640px) { .example-frame[data-narrow] { height: var(--frame-narrow) !important; } }

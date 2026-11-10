@@ -154,9 +154,24 @@ export function loadExamples(docsDir = DOCS_DIR) {
       expect: meta.expect,
       code: readFileSync(codePath, "utf8"),
       html: existsSync(htmlPath) ? readFileSync(htmlPath, "utf8") : '<div id="timeline"></div>',
+      ownPage: existsSync(htmlPath),
     });
   }
   return examples;
+}
+
+/** How to run the example on your own machine: its two files, and what to install, read off its imports. */
+function localRun(example) {
+  const packages = [...new Set([...example.code.matchAll(/from\s+["'](@temporeum\/timeline-[a-z]+)/g)].map((match) => match[1]))].sort().reverse();
+  return [
+    `<details class="example-local"><summary>Run it on your own machine</summary>`,
+    `<p>Save both files in one folder,</p>`,
+    `<div class="example-actions"><button type="button" data-action="download-page">Download index.html</button><button type="button" data-action="download-code">Download main.js</button></div>`,
+    `<p>then, in a terminal in that folder, install the library and <a href="https://vite.dev/">Vite</a>, which lets the browser follow the <code>import</code>s, and start it:</p>`,
+    `<pre><code>npm init -y\nnpm install ${packages.join(" ")}\nnpm install --save-dev vite\nnpx vite</code></pre>`,
+    `<p>Open the address it prints (<code>http://localhost:5173/</code>). The code you download is the code in the box above, edits and all.</p>`,
+    `</details>`,
+  ];
 }
 
 function renderExample(example) {
@@ -166,6 +181,12 @@ function renderExample(example) {
   const editor = [
     `<textarea id="${codeId}" spellcheck="false" autocapitalize="off" autocomplete="off" rows="16">${escapeHtml(example.code)}</textarea>`,
     `<div class="example-actions"><button type="button" data-action="run">Run</button><button type="button" data-action="reset">Reset</button></div>`,
+    // The code is half of a demo: the page it runs in (its markup and CSS) is the other, and copied without it
+    // the code finds none of what it looks for. Both are shown, and both download as a folder's two files.
+    ...(example.ownPage
+      ? [`<details class="example-page"><summary>The page the code runs in: its HTML and CSS</summary><pre><code>${escapeHtml(example.html)}</code></pre></details>`]
+      : []),
+    ...localRun(example),
   ];
   const frame = `<iframe class="example-frame" title="${escapeHtml(example.title)} — result" sandbox="${["allow-scripts", ...example.allow.map((grant) => `allow-${grant}`)].join(" ")}" style="height:${String(example.height)}px${example.narrowHeight === undefined ? "" : `;--frame-narrow:${String(example.narrowHeight)}px`}"${example.narrowHeight === undefined ? "" : " data-narrow"}></iframe>`;
   const code = showcase

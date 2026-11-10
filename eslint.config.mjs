@@ -124,7 +124,7 @@ export default [
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: "module",
-      globals: { document: "readonly", window: "readonly", addEventListener: "readonly", parent: "readonly", console: "readonly", requestAnimationFrame: "readonly", setTimeout: "readonly", URL: "readonly" },
+      globals: { document: "readonly", window: "readonly", addEventListener: "readonly", parent: "readonly", console: "readonly", requestAnimationFrame: "readonly", setTimeout: "readonly", URL: "readonly", Blob: "readonly" },
     },
     rules: { ...js.configs.recommended.rules, eqeqeq: ["error", "always"] },
   },

@@ -296,9 +296,10 @@ const WHOLE = [year(-3300), year(2060)];
 /** @type {[number, number]} */
 const APOLLO = [Date.parse("1969-07-15T18:00Z"), Date.parse("1969-07-25T12:00Z")];
 
-// The labels are measured in the font they are drawn in, so the font is loaded first.
+// The labels are measured in the font they are drawn in, so the font is loaded first. A font that cannot
+// be fetched (offline, say) is no reason to stop: the page falls back to the system's.
 const SANS = "Geist, system-ui, sans-serif";
-await Promise.all(["400 13px Geist", "500 13px Geist", "500 11px 'Geist Mono'", "400 40px 'Instrument Serif'", "italic 400 40px 'Instrument Serif'"].map((font) => document.fonts.load(font)));
+await Promise.allSettled(["400 13px Geist", "500 13px Geist", "500 11px 'Geist Mono'", "400 40px 'Instrument Serif'", "italic 400 40px 'Instrument Serif'"].map((font) => document.fonts.load(font)));
 
 // A bar shows its name and years inside only when they fit; a narrow one is labelled beside itself.
 const measure = document.createElement("canvas").getContext("2d");

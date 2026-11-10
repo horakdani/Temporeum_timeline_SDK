@@ -58,6 +58,39 @@ function srcdoc(example, code, token) {
   ].join("\n");
 }
 
+/**
+ * The example as a folder of your own: index.html is the frame's page with the code moved out to main.js,
+ * which Vite serves. The page's own files (fonts) are fetched from this site.
+ */
+function pageFile(example) {
+  const html = example.html.replace(/url\((["']?)assets\//g, (_, quote) => `url(${quote}${new URL("assets/", root).href}`);
+  return [
+    "<!doctype html>",
+    '<html lang="en">',
+    "<head>",
+    '<meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    `<title>${example.title.replace(/</g, "&lt;")}</title>`,
+    `<style>${FRAME_STYLE}</style>`,
+    "</head>",
+    "<body>",
+    html,
+    '<script type="module" src="/main.js"></script>',
+    "</body>",
+    "</html>",
+    "",
+  ].join("\n");
+}
+
+function download(name, text, type) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const link = Object.assign(document.createElement("a"), { href: url, download: name });
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 let counter = 0;
 const live = new Map();
 
@@ -101,6 +134,8 @@ for (const section of document.querySelectorAll("section.example")) {
     textarea.value = original;
     run(section, example, original);
   });
+  section.querySelector('[data-action="download-page"]')?.addEventListener("click", () => download("index.html", pageFile(example), "text/html"));
+  section.querySelector('[data-action="download-code"]')?.addEventListener("click", () => download("main.js", textarea.value, "text/javascript"));
   textarea.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
       event.preventDefault();
