@@ -11,3 +11,6 @@ playwright-report/
 .*-log.json
 *.tgz
 .DS_Store
+
+# Claude Code local settings: approved commands may contain secrets
+**/.claude/settings.local.json
