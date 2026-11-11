@@ -41,7 +41,7 @@
     "@eslint/js": "^10.0.1",
     "eslint": "^10.14.0",
     "publint": "0.3.25",
-    "rolldown": "1.2.16",
+    "rolldown": "1.3.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1"
   },
