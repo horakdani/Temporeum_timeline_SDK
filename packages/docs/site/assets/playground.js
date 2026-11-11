@@ -134,6 +134,9 @@ for (const section of document.querySelectorAll("section.example")) {
     textarea.value = original;
     run(section, example, original);
   });
+  // What the reader sees is the file the button saves, skeleton and styles included.
+  const page = section.querySelector('[data-file="page"] code');
+  if (page !== null) page.textContent = pageFile(example);
   section.querySelector('[data-action="download-page"]')?.addEventListener("click", () => download("index.html", pageFile(example), "text/html"));
   section.querySelector('[data-action="download-code"]')?.addEventListener("click", () => download("main.js", textarea.value, "text/javascript"));
   textarea.addEventListener("keydown", (event) => {
